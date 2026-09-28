@@ -5,6 +5,32 @@ import { dirname, join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { PDFDocument } from 'pdf-lib';
 import { DOCUMENTS, PRINT_ROUTES } from '../src/config.ts';
+import { HEADROOM_BUDGETS, assertMinFree, effectiveMinFree, lastPageFreePercent } from './pdf-headroom.mjs';
+
+/** Matches `@page { size: A4; margin: 12mm 14mm; }` in PrintLayout.astro. */
+const PAGE_HEIGHT_MM = 297;
+const MARGIN_Y_MM = 12;
+
+/**
+ * Measure laid-out content height vs the printable A4 area (after emulateMedia('print')).
+ * Runs in the page; returns CSS px so lastPageFreePercent stays pure.
+ * @returns {Promise<{ contentHeight: number; printableHeight: number }>}
+ */
+export async function measurePrintContent(page) {
+  return page.evaluate(({ pageHeightMm, marginYMm }) => {
+    const probe = document.createElement('div');
+    probe.style.cssText = 'position:absolute;left:0;top:0;height:1mm;width:0;visibility:hidden;pointer-events:none';
+    document.body.appendChild(probe);
+    const pxPerMm = probe.getBoundingClientRect().height;
+    probe.remove();
+    if (!(pxPerMm > 0)) throw new Error('could not resolve 1mm to CSS px');
+    const printableHeight = (pageHeightMm - 2 * marginYMm) * pxPerMm;
+    const root = document.querySelector('.print');
+    if (!root) throw new Error('missing .print root');
+    const contentHeight = root.getBoundingClientRect().height;
+    return { contentHeight, printableHeight };
+  }, { pageHeightMm: PAGE_HEIGHT_MM, marginYMm: MARGIN_Y_MM });
+}
 
 /**
  * Chrome/Playwright's `page.pdf()` (CDP Page.printToPDF) has no option for PDF Author/Creator/Producer, and headless
@@ -67,10 +93,24 @@ export async function printPdfs({ preview, launch, distDir = 'dist' }) {
         await page.evaluate(async () => {
           await document.fonts.ready;
         });
+        const { contentHeight, printableHeight } = await measurePrintContent(page);
+        const budget = HEADROOM_BUDGETS[job.id];
+        const pageBudget = budget?.pages ?? Math.max(1, Math.ceil(contentHeight / printableHeight));
+        const freePercent = lastPageFreePercent(contentHeight, printableHeight, pageBudget);
+        if (budget) {
+          const minFree = effectiveMinFree(budget, process.env);
+          if (minFree === 0 && freePercent >= 0 && freePercent < budget.minFreePercent) {
+            console.warn(
+              `warning: ${job.id} has only ${Math.floor(freePercent)}% free on the last page (local budget ≥ ${budget.minFreePercent}%)`,
+            );
+          }
+          assertMinFree(job.id, freePercent, minFree);
+        }
         await page.pdf({ path: job.out, format: 'A4', printBackground: true, preferCSSPageSize: true, tagged: true, outline: true });
         await setPdfMetadata(job.out);
         const { size } = await stat(job.out);
-        console.log(`pdf ${job.out} ${(size / 1024).toFixed(0)} KiB`);
+        const pages = Math.max(1, Math.ceil(contentHeight / printableHeight - 1e-9));
+        console.log(`pdf ${job.out} ${(size / 1024).toFixed(0)} KiB · ${pages} page${pages === 1 ? '' : 's'} · ${Math.round(freePercent)}% free`);
       }
     } finally {
       await browser.close();

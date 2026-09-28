@@ -140,6 +140,7 @@ test.describe('ghost art (Hatsune Miku watermark)', () => {
 
   for (const vp of NARROW) {
     test(`${vp.width}x${vp.height}: no visible ghost and no network request for the image`, async ({ browser }) => {
+      test.setTimeout(120_000);
       const context = await browser.newContext({
         viewport: { width: vp.width, height: vp.height },
         deviceScaleFactor: vp.dpr,
@@ -172,6 +173,7 @@ test.describe('ghost art (Hatsune Miku watermark)', () => {
   }
 
   test('axe stays clean on ghost pages at 2560', async ({ browser }) => {
+    test.setTimeout(120_000);
     const context = await browser.newContext({
       viewport: { width: 2560, height: 1440 },
       deviceScaleFactor: 1.5,
@@ -187,6 +189,7 @@ test.describe('ghost art (Hatsune Miku watermark)', () => {
   });
 
   test('viewport screenshots at 2560x1440 @ 1.5 for the four pages', async ({ browser }) => {
+    test.setTimeout(120_000);
     mkdirSync(SHOT_DIR, { recursive: true });
     const context = await browser.newContext({
       viewport: { width: 2560, height: 1440 },

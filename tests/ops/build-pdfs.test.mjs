@@ -47,7 +47,8 @@ test('printPdfs rejects, but still closes the browser and stops the server, when
     const page = {
       goto: async () => ({ ok: () => true, status: () => 200 }),
       emulateMedia: async () => {},
-      evaluate: async () => {},
+      // fonts.ready ignores the return; headroom measure needs contentHeight << printableHeight so the budget check passes.
+      evaluate: async () => ({ contentHeight: 100, printableHeight: 1000 }),
       // A real page.pdf() never writes garbage, but this stands in for whatever could make the output file
       // unparsable; setPdfMetadata (real pdf-lib, not stubbed) is what actually throws on it.
       pdf: async ({ path }) => writeFile(path, 'not a pdf'),

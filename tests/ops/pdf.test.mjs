@@ -112,16 +112,16 @@ test('the CoG paper is the first project in resume-ko and resume-en', { skip: po
     { id: 'resume-en', cog: 'Predicting League of Legends engagement outcomes', next: 'Restaurant Locations for Young Founders in Busan' },
   ];
   for (const { id, cog, next } of cases) {
-    const text = execFileSync('pdftotext', ['-enc', 'UTF-8', pdfPath(id), '-'], { encoding: 'utf8' });
-    const cogAt = text.indexOf(cog);
-    const nextAt = text.indexOf(next);
+    const text = squash(execFileSync('pdftotext', ['-enc', 'UTF-8', pdfPath(id), '-'], { encoding: 'utf8' }));
+    const cogAt = text.indexOf(squash(cog));
+    const nextAt = text.indexOf(squash(next));
     assert.ok(cogAt >= 0, `${id}: CoG project title "${cog}" not found`);
     assert.ok(nextAt >= 0, `${id}: next project title "${next}" not found`);
     assert.ok(cogAt < nextAt, `${id}: CoG project (at ${cogAt}) is not before the next project (at ${nextAt})`);
   }
   // cv-academic deliberately has no CoG "project" entry (it already covers the paper via Publications/Presentations).
-  const cvText = execFileSync('pdftotext', ['-enc', 'UTF-8', pdfPath('cv-academic'), '-'], { encoding: 'utf8' });
-  assert.doesNotMatch(cvText, /Predicting League of Legends engagement outcomes/, 'cv-academic should not have a CoG project entry');
+  const cvText = squash(execFileSync('pdftotext', ['-enc', 'UTF-8', pdfPath('cv-academic'), '-'], { encoding: 'utf8' }));
+  assert.equal(cvText.includes(squash('Predicting League of Legends engagement outcomes')), false, 'cv-academic should not have a CoG project entry');
 });
 
 test('↗ page links (paper page, case study, project summary; resume-en, cv-academic) are absolute SITE URLs that resolve to real built routes', async () => {

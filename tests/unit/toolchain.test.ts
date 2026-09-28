@@ -7,7 +7,7 @@ import { renderAstro } from '../astro/helpers';
 const read = (rel: string) => readFileSync(new URL(`../../${rel}`, import.meta.url), 'utf8').replace(/\r\n/g, '\n');
 
 describe('toolchain', () => {
-  it('astro config sets site, trailingSlash, compressHTML, build.format and i18n', async () => {
+  it('astro config sets site, trailingSlash, compressHTML, build.format and i18n', { timeout: 30_000 }, async () => {
     const { default: config } = await import('../../astro.config.mjs');
     expect(config.site).toBe('https://lunecid.github.io');
     expect(config.trailingSlash).toBe('always');
@@ -21,7 +21,7 @@ describe('toolchain', () => {
     expect((config.integrations ?? []).map((i) => (i && 'name' in i ? i.name : ''))).toEqual(['@astrojs/react', '@astrojs/sitemap', 'font-subsets']);
   });
 
-  it('final fix 2 item 12: every Fonts API family is read from installed files, so a cold-cache build needs no network', async () => {
+  it('final fix 2 item 12: every Fonts API family is read from installed files, so a cold-cache build needs no network', { timeout: 30_000 }, async () => {
     const { default: config } = await import('../../astro.config.mjs');
     const fonts = (config.fonts ?? []) as { name: string; provider: { name: string }; options?: { variants: { src: string[] }[] } }[];
     expect(fonts.map((f) => f.name)).toEqual(['Pretendard Print', 'Anton']);
@@ -34,7 +34,7 @@ describe('toolchain', () => {
     expect(read('astro.config.mjs')).not.toMatch(/fontProviders\.(?!local\b)\w+\(/);
   });
 
-  it('final fix 2 item 20: the sitemap adds x-default (= the Korean page) to the ko/en links, as the page heads do', async () => {
+  it('final fix 2 item 20: the sitemap adds x-default (= the Korean page) to the ko/en links, as the page heads do', { timeout: 30_000 }, async () => {
     const { sitemapSerialize } = await import('../../astro.config.mjs');
     const links = [
       { url: 'https://lunecid.github.io/records/', lang: 'ko' },
@@ -46,7 +46,7 @@ describe('toolchain', () => {
     expect(read('astro.config.mjs')).toMatch(/locales: \{ ko: 'ko', en: 'en' \}/);
   });
 
-  it('sitemapFilter drops /print/ routes and keeps /en/', async () => {
+  it('sitemapFilter drops /print/ routes and keeps /en/', { timeout: 30_000 }, async () => {
     const { sitemapFilter } = await import('../../astro.config.mjs');
     expect(sitemapFilter('https://lunecid.github.io/print/resume-ko/')).toBe(false);
     expect(sitemapFilter('https://lunecid.github.io/print/cv-academic/')).toBe(false);

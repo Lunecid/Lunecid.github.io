@@ -262,6 +262,21 @@ test('the screenshots artifact is uploaded with if: always()', () => {
   assert.match(String(report.if), /failure\(\)/);
 });
 
+test('the CV PDFs artifact is uploaded with if: always()', () => {
+  const { wf } = readWorkflow();
+  const upload = wf.jobs.build.steps.find((s) => String(s.uses ?? '').startsWith('actions/upload-artifact@') && s.with?.name === 'cv-pdfs');
+  assert.ok(upload, 'cv-pdfs upload step exists');
+  assert.match(String(upload.if), /always\(\)/);
+  assert.equal(upload.with.path, 'dist/cv/*.pdf');
+  assert.equal(upload.with['retention-days'], 14);
+  assert.equal(upload.with['if-no-files-found'], 'ignore');
+  assert.equal(upload.uses, 'actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a');
+  const screenshots = wf.jobs.build.steps.findIndex((s) => s.with?.name === 'screenshots');
+  const pdfs = wf.jobs.build.steps.findIndex((s) => s.with?.name === 'cv-pdfs');
+  const pages = wf.jobs.build.steps.findIndex((s) => String(s.uses ?? '').startsWith('actions/upload-pages-artifact@'));
+  assert.ok(screenshots >= 0 && pdfs > screenshots && pages > pdfs, 'cv-pdfs sits between screenshots and the Pages artifact');
+});
+
 // ── scripts/check-fetch-status.mjs ───────────────────────────────────────
 
 // Each import below uses its own query string, so Node evaluates a fresh module instance (no cached import).

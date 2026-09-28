@@ -135,6 +135,15 @@ jobs:
           retention-days: 14
           if-no-files-found: ignore
 
+      - name: Upload CV PDFs
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: cv-pdfs
+          path: dist/cv/*.pdf
+          retention-days: 14
+          if-no-files-found: ignore
+
       - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
         with:
           path: dist/
