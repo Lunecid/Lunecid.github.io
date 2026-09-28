@@ -1,0 +1,81 @@
+---
+// /research/ and /en/research/: PageHeader → #interests → #publications (year groups) → #in-progress → #for-labs.
+import { getEntry } from 'astro:content';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import GhostArt from '../components/hud/GhostArt.astro';
+import PageHeader from '../components/hud/PageHeader.astro';
+import SectionHead from '../components/hud/SectionHead.astro';
+import InterestCards from '../components/research/InterestCards.astro';
+import InProgressList from '../components/research/InProgressList.astro';
+import PublicationItem from '../components/research/PublicationItem.astro';
+import { researchPage } from '../data/research-page';
+import { PAGE_META } from '../data/copy/pages';
+import { getPublications, toPaperCard } from '../lib/publications';
+import type { Lang } from '../i18n/ui';
+import { t } from '../i18n/utils';
+import { ACADEMIC_CV_HREF } from '../config';
+
+interface Props {
+  lang: Lang;
+}
+
+const { lang } = Astro.props;
+const meta = PAGE_META.research[lang];
+const papers = (await getPublications()).map((entry) => toPaperCard(entry, lang));
+const years = [...new Set(papers.map((paper) => paper.year))].sort((a, b) => b - a);
+const resume = await getEntry('resume', 'resume');
+const ids = resume ? resume.data.researchIds : { scholar: null, orcid: null };
+const forLabs = researchPage.forLabs;
+---
+<BaseLayout lang={lang} title={meta.title} description={meta.description} page="research" section="research" sectionIndex>
+  <PageHeader lang={lang} label="RESEARCH" title={t(lang, 'research.title')} intro={researchPage.intro[lang]}>
+    {/* D-7: professors reach the Academic CV from the research page header (and from #for-labs below). */}
+    <p class="research-cv"><a class="btn btn--line cut cut--line" href={ACADEMIC_CV_HREF} title={t(lang, 'nav.cvAcademic')} download>{t(lang, 'nav.cvAcademic')} <span aria-hidden="true">↓</span></a></p>
+  </PageHeader>
+  <InterestCards lang={lang} interests={researchPage.interests} />
+  <section id="publications" class="pub__section read read-sec" aria-labelledby="publications-title">
+    <GhostArt side="left" />
+    <div class="container">
+      <SectionHead id="publications-title" caption={t(lang, 'section.publications')} title={t(lang, 'research.publications')} />
+      {years.map((year) => (
+        <div class="pub__year">
+          <h3 class="pub__year-title tnum"><span class="lh-idx">{year}</span></h3>
+          <ol class="pub__list" role="list">
+            {papers.filter((paper) => paper.year === year).map((paper) => (
+              <li><PublicationItem lang={lang} paper={paper} headingLevel={4} /></li>
+            ))}
+          </ol>
+        </div>
+      ))}
+    </div>
+  </section>
+  <InProgressList lang={lang} items={researchPage.ongoing} />
+  <section id="for-labs" class="for-labs read read-sec" aria-labelledby="for-labs-title">
+    <div class="container">
+      {/* light HUD panel with corner marks, like [ NOW PLAYING ] (P1-9) */}
+      <div class="for-labs__card lh-frame bracket bracket--sm">
+        <SectionHead id="for-labs-title" caption={t(lang, 'section.forLabs')} title={forLabs.title[lang]} />
+        <p class="for-labs__body">{forLabs.body[lang]}</p>
+        <ul class="for-labs__links lh-chips" role="list">
+          <li><a class="lh-chip lh-chip--mono" href={`mailto:${forLabs.email}`}>{forLabs.email}</a></li>
+          <li><a class="lh-chip" href={ACADEMIC_CV_HREF} title={t(lang, 'nav.cvAcademic')} download>{t(lang, 'nav.cvAcademic')} <span aria-hidden="true">↓</span></a></li>
+          {ids.scholar && <li><a class="lh-chip" href={ids.scholar}>Google Scholar</a></li>}
+          {ids.orcid && <li><a class="lh-chip" href={ids.orcid}>ORCID</a></li>}
+        </ul>
+      </div>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .research-cv { margin-top: 20px; }
+  .pub__section { position: relative; overflow: hidden; }
+  .pub__section > .container { position: relative; z-index: 1; }
+  .pub__year { margin-top: 24px; padding-top: 8px; border-top: 1px solid var(--read-line-strong); }
+  .pub__year-title { font-size: var(--fs-label); line-height: 1.5; }
+  .pub__list { margin-top: 12px; display: grid; gap: 16px; }
+  .for-labs { padding-bottom: 64px; }
+  .for-labs__body { margin-top: 14px; font-size: 17px; line-height: 1.7; max-width: var(--measure); }
+  .for-labs__body:lang(en) { line-height: 1.47; }
+  .for-labs__links { margin-top: 18px; }
+</style>

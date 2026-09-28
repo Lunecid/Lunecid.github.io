@@ -1,0 +1,73 @@
+---
+// /research/<id>/ (+ /en/): the paper page (D-15, owner's request) — the abstract only, typeset like the first
+// page of the IEEE paper, on a white sheet over the dark HUD background. Built from the publication entry;
+// HUD nav and footer stay. Page <title>/URL stay trademark-free; the <h1> is the real paper title.
+import type { CollectionEntry } from 'astro:content';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PaperSheet from '../components/research/PaperSheet.astro';
+import { PAGE_META } from '../data/copy/pages';
+import { fontFaceCss } from '../lib/fonts';
+import { toPaperPage } from '../lib/publications';
+import { RIOT_NOTICE_ON_PAGES } from '../config';
+import type { Lang } from '../i18n/ui';
+import type { NoticeKey } from '../types';
+
+interface Props {
+  lang: Lang;
+  entry: CollectionEntry<'publications'>;
+}
+
+/** Preflight Q19: Riot notice on this page when RIOT_NOTICE_ON_PAGES is true; otherwise credits only. */
+const PAPER_NOTICES: NoticeKey[] = RIOT_NOTICE_ON_PAGES ? ['riot'] : [];
+
+const { lang, entry } = Astro.props;
+const paper = toPaperPage(entry, lang);
+const meta = PAGE_META['research-story'][lang];
+// The Korean serif (Korean title gloss, 국문 초록, footnote) is set up on the Korean page only; the build subsets
+// it to exactly the Hangul inside this page's sheet (scripts/fonts/build.mjs).
+const koreanSerif = paper.titleKo !== null || paper.abstractKo !== null ? fontFaceCss(['serifKo']) : null;
+---
+<BaseLayout
+  lang={lang}
+  title={meta.title}
+  description={meta.description}
+  page="research-story"
+  section="research"
+  sectionIndex={false}
+  notices={PAPER_NOTICES}
+>
+  {koreanSerif && <Fragment slot="head"><style is:inline set:html={koreanSerif}></style></Fragment>}
+  <div class="paper-view hud-grid">
+    <div class="paper-view__frame bracket">
+      <div class="paper-view__sheet">
+        <PaperSheet lang={lang} paper={paper} />
+      </div>
+    </div>
+  </div>
+</BaseLayout>
+
+<style>
+  /* Phones: the sheet spans the width (16px padding inside it). From 734px it floats on the HUD grid like a
+     document open in a viewer, with the HUD's lime bracket corners around it (decoration only, D-11). */
+  .paper-view { padding-block: 0; }
+  .paper-view__frame { max-width: calc(46 * 17px + 24px); margin-inline: auto; border: 0; }
+  .paper-view__frame::before, .paper-view__frame::after { display: none; }
+  .paper-view__sheet { background: var(--paper-bg); }
+  @media (min-width: 734px) {
+    .paper-view { padding: 56px var(--gutter) 80px; }
+    .paper-view__frame { padding: 12px; }
+    .paper-view__frame::before, .paper-view__frame::after { display: block; }
+    .paper-view__sheet { box-shadow: var(--paper-shadow); }
+  }
+
+  /* Print: only the sheet, black on white — no nav, footer, toasts, grid, frame or shadow. */
+  @media print {
+    :global(html[data-page="research-story"] body > :not(main)) { display: none !important; }
+    :global(html[data-page="research-story"]),
+    :global(html[data-page="research-story"] body) { background: var(--paper-bg); color-scheme: light; }
+    .paper-view { padding: 0; background: none; }
+    .paper-view__frame { max-width: none; padding: 0; border: 0; }
+    .paper-view__frame::before, .paper-view__frame::after { display: none; }
+    .paper-view__sheet { box-shadow: none; }
+  }
+</style>

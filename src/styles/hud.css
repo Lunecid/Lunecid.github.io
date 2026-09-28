@@ -1,0 +1,115 @@
+/* src/styles/hud.css — HUD grid, cut corners, brackets, buttons, labels, badges, panels, section rhythm. */
+
+/* ── HUD grid background (v4 .grid, lime-neutral) ── */
+.hud-grid {
+  background-color: var(--hud-bg);
+  background-image:
+    linear-gradient(var(--grid-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+
+/* ── Section rhythm: padding plus a hairline divider on top ── */
+.sec { padding-block: var(--section-pad-y); border-top: 1px solid var(--hud-divider); }
+.read.sec, .read-section.sec { border-top-color: var(--read-line); }
+
+/* ── Cut-corner panel ──────────────────────────────────────────────────────
+   Fixed-px 45° cuts so corners do not change with width. The clip sits on
+   ::before/::after layers so outline/focus rings on the element stay visible. */
+.cut { --c: var(--cut-btn); position: relative; isolation: isolate; background: none; border: 0; }
+.cut::before {
+  content: ""; position: absolute; inset: 0; z-index: -1;
+  background: var(--cut-fill, var(--hud-panel));
+  clip-path: polygon(0 0, calc(100% - var(--c)) 0, 100% var(--c), 100% 100%, var(--c) 100%, 0 calc(100% - var(--c)));
+  transition: background-color var(--dur-hover) linear;
+}
+/* Outlined: a 1px line that also follows the diagonal (outer = line colour, inner = fill) */
+.cut--line::before { background: var(--cut-line, var(--accent)); }
+.cut--line::after {
+  --ci: calc(var(--c) - .59px); /* inner cut for a 1px 45° inset: c − (2 − √2) */
+  content: ""; position: absolute; inset: 1px; z-index: -1;
+  background: var(--cut-fill, var(--hud-bg));
+  clip-path: polygon(0 0, calc(100% - var(--ci)) 0, 100% var(--ci), 100% 100%, var(--ci) 100%, 0 calc(100% - var(--ci)));
+  transition: background-color var(--dur-hover) linear;
+}
+
+/* ── Bracket frame ── */
+.bracket { position: relative; border: 1px solid var(--hud-line); }
+.bracket::before, .bracket::after {
+  content: ""; position: absolute; width: var(--b, var(--bracket)); height: var(--b, var(--bracket));
+  border: 2px solid var(--bracket-color, var(--accent)); pointer-events: none; z-index: 3;
+}
+.bracket::before { left: -2px; top: -2px; border-right: 0; border-bottom: 0; }
+.bracket::after { right: -2px; bottom: -2px; border-left: 0; border-top: 0; }
+.bracket--sm { --b: var(--bracket-sm); }
+.bracket--sm::before { left: -1px; top: -1px; }
+.bracket--sm::after { right: -1px; bottom: -1px; }
+.read .bracket, .read-section .bracket { border-color: var(--read-line); --bracket-color: var(--accent-deep); }
+
+/* ── Buttons: <a class="btn btn--fill cut"> · <a class="btn btn--line cut cut--line"> ── */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  min-height: var(--tap); padding: 0 22px;
+  font: 800 14px/1 var(--font-sans); text-decoration: none; cursor: pointer;
+  transition: color var(--dur-hover) linear, transform var(--dur-press) var(--ease-out);
+}
+.btn:active { transform: scale(.96); }
+.btn--fill { color: var(--accent-ink); --cut-fill: var(--accent); }
+.btn--fill:hover { --cut-fill: var(--accent-hover); }
+.btn--line { color: var(--accent); --cut-line: var(--accent); --cut-fill: var(--accent-wash); }
+.btn--line:hover { --cut-fill: var(--accent-wash-strong); }
+.btn--sm { min-height: 36px; padding: 0 14px; font-size: 13px; } /* add .hit when it stands alone */
+:root[data-motion="reduce"] .btn:active { transform: none; }
+/* Light areas never use --accent (spec §4): buttons there switch to --accent-deep. */
+.read .btn--fill, .read-section .btn--fill { color: var(--read-card); --cut-fill: var(--accent-deep); }
+.read .btn--line, .read-section .btn--line { color: var(--accent-deep); --cut-line: var(--accent-deep); --cut-fill: var(--read-card); }
+.read .btn--line:hover, .read-section .btn--line:hover { --cut-fill: var(--read-bg); }
+
+/* ── HUD label: "[ ■ ] ENGLISH", a numberless bracket mark (D-8: [ NN ] numbers only in the nav) ── */
+.hud-label { font: 600 var(--fs-label)/1.5 var(--font-mono); letter-spacing: var(--ls-label); color: var(--hud-label); text-wrap: balance; }
+.hud-label__ko { font-family: var(--font-sans); font-weight: 700; letter-spacing: 0; }
+.hud-label__en { margin-left: .5em; }
+.hud-label__en:first-child { margin-left: 0; }
+.read .hud-label, .read-section .hud-label { color: var(--read-label); }
+/* The mark is drawn, not a glyph: a square the size of a mono cap between the brackets, lime on the dark HUD and
+   accent-deep on light bands; decoration like the bracket corners (D-11). */
+.hud-label__mark { white-space: nowrap; }
+.hud-label__sq {
+  display: inline-block; width: .6em; height: .6em; margin-inline: .45em; vertical-align: .04em;
+  background: var(--bracket-color, var(--accent));
+}
+.read .hud-label__sq, .read-section .hud-label__sq { background: var(--accent-deep); }
+
+/* ── Section head (D-8): the "[ ■ ] CAPTION" HUD line over the section title (SectionHead.astro). Korean pages set
+      a Korean title under the small English caption; English pages the English title. ── */
+.sec-head { display: grid; gap: 6px; }
+.sec-head__title { font-size: var(--fs-h2); font-weight: 800; line-height: var(--lh-h2); color: var(--hud-strong); }
+.read .sec-head__title, .read-section .sec-head__title { color: var(--read-text); }
+.sec-head__intro { margin-top: 6px; max-width: var(--measure); font-size: var(--fs-small); line-height: 1.6; color: var(--hud-muted); }
+.read .sec-head__intro, .read-section .sec-head__intro { color: var(--read-muted); }
+/* Hangul set directly in a .hud-label (no .hud-label__ko wrapper): sans font, letter-spacing 0
+   (spec §4 "Hangul letter-spacing 0"; JetBrains Mono's own space glyph also widens multi-word labels). */
+.hud-label:lang(ko) { font-family: var(--font-sans); letter-spacing: 0; }
+/* font-family/letter-spacing are inherited properties: lang="en" only changes which :lang() selectors an
+   element matches, it does not stop it inheriting the sans/0 above from its .hud-label:lang(ko) ancestor.
+   Any actual Latin/numeric content marked lang="en" inside one (the [ NN ] index, the trailing English half
+   of a bilingual heading) must have the label's normal mono font and tracking reasserted explicitly. */
+.hud-label:lang(ko) :lang(en) { font-family: var(--font-mono); letter-spacing: var(--ls-label); }
+
+/* ── Badges ── */
+.badge { display: inline-flex; align-items: center; gap: 6px; padding: 3px 8px; font: 800 var(--fs-label)/1.4 var(--font-mono); letter-spacing: 0; }
+.badge--tier { color: var(--gold); border: 1px solid var(--gold-line); background: var(--gold-wash); }
+.badge--kw { color: var(--hud-text); border: 1px solid var(--hud-line); }
+
+/* ── Panel (e.g. NOW PLAYING); combine with .bracket.bracket--sm for corners ── */
+.hud-panel { padding: 14px 16px; background: var(--hud-panel); }
+
+/* ── "More" link at the end of a section (e.g. 프로젝트 전체 보기 ›) ── */
+.sec-more {
+  display: inline-flex; align-items: center; gap: 6px;
+  min-height: var(--tap);
+  font: 700 15px/1.3 var(--font-sans); color: var(--accent); text-decoration: none;
+  transition: color var(--dur-hover) linear;
+}
+.sec-more:hover { color: var(--accent-hover); text-decoration: underline; text-underline-offset: .2em; }
+.read .sec-more, .read-section .sec-more { color: var(--accent-deep); }

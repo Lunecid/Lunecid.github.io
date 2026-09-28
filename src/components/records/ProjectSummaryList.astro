@@ -1,0 +1,45 @@
+---
+// Project summary on /records/ (spec §9.1 "프로젝트: 기록 요약") as indexed light-HUD rows (P1-9): resume.yaml order, title link (plain text for a
+// project without a page, D-4), period,
+// affiliation, "N인 팀"/"N-person team" (never member names), one-line summary.
+import type { ProjectSummaryItem } from '../../lib/records';
+import SectionHead from '../hud/SectionHead.astro';
+import type { Lang } from '../../i18n/ui';
+import { t } from '../../i18n/utils';
+
+interface Props {
+  lang: Lang;
+  items: ProjectSummaryItem[];
+}
+
+const { lang, items } = Astro.props;
+---
+<section id="projects" class="rec read-sec" aria-labelledby="projects-title">
+  <div class="container">
+    <SectionHead id="projects-title" caption={t(lang, 'section.projects')} title={t(lang, 'records.projects')} />
+    <ol class="psum lh-rows" role="list">
+      {items.map((item, i) => (
+        <li class="psum__item lh-row">
+          <span class="lh-idx" aria-hidden="true">{String(i + 1).padStart(2, '0')}</span>
+          <div class="psum__body">
+            <h3 class="psum__title">{item.href ? <a class="hit" href={item.href}>{item.title}</a> : item.title}</h3>
+            <p class="psum__meta"><span class="psum__period tnum">{item.period}</span><span class="psum__org">{item.org}</span><span class="psum__team">{item.team}</span></p>
+            <p class="psum__summary">{item.summary}</p>
+          </div>
+        </li>
+      ))}
+    </ol>
+  </div>
+</section>
+
+<style>
+  .psum { margin-top: 24px; }
+  .psum__body { min-width: 0; }
+  .psum__title { font-size: 18px; font-weight: 700; line-height: 1.4; }
+  .psum__title a { text-underline-offset: 3px; }
+  .psum__meta { margin-top: 4px; display: flex; flex-wrap: wrap; gap: 0 6px; font-size: 14px; line-height: 1.6; color: var(--read-muted); }
+  .psum__meta > span + span::before { content: "·"; margin-right: 6px; }
+  .psum__period { font-family: var(--font-mono); font-size: 13px; white-space: nowrap; }
+  .psum__summary { margin-top: 6px; font-size: 16px; line-height: 1.7; max-width: var(--measure); }
+  .psum__summary:lang(en) { line-height: 1.5; }
+</style>

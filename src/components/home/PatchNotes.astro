@@ -1,0 +1,78 @@
+---
+// Home "[ ■ ] PATCH NOTES / 최근 소식": the latest news notes (newest first, built by toPatchNotes) as a dark hud-grid
+// band (P1-9), so the home rhythm is dark ×3 → light (research) → dark (patch notes) → light (hello) → dark (footer).
+// Each row: a mono version tag from the date (v2026.09), the date, the category as a HUD chip, and the short title —
+// the only link in the row (lime = clickable, underline on hover) — over the full sentence. ▶ appears on hover/focus.
+import SectionHead from '../hud/SectionHead.astro';
+import type { Lang } from '../../i18n/ui';
+import { t } from '../../i18n/utils';
+import type { PatchNoteItem } from '../../lib/news';
+
+interface Props {
+  lang: Lang;
+  notes: PatchNoteItem[];
+}
+
+const { lang, notes } = Astro.props;
+---
+
+<section id="patch-notes" class="pn sec hud-grid" aria-labelledby="pn-title">
+  <div class="container">
+    <SectionHead id="pn-title" caption={t(lang, 'section.patchNotes')} title={t(lang, 'section.patchNotes.title')} />
+    <ol class="pn__list" role="list">
+      {
+        notes.map((note) => (
+          <li class="pn__item">
+            <span class="pn__ptr" aria-hidden="true">▶</span>
+            <span class="pn__ver" lang="en">{note.version}</span>
+            <time class="pn__date" datetime={note.dateIso}>{note.dateLabel}</time>
+            <span class="pn__tag">{note.kindLabel}</span>
+            <div class="pn__body">
+              <p class="pn__title">{note.href ? <a class="pn__link hit" href={note.href}>{note.short ?? note.text}</a> : (note.short ?? note.text)}</p>
+              {note.short && <p class="pn__text">{note.text}</p>}
+            </div>
+          </li>
+        ))
+      }
+    </ol>
+  </div>
+</section>
+
+<style>
+  .pn__list { margin-top: 24px; border-top: 1px solid var(--hud-line); }
+  .pn__item {
+    position: relative;
+    display: grid;
+    grid-template-columns: auto auto minmax(0, 1fr);
+    grid-template-areas: "ver date tag" "body body body";
+    align-items: center;
+    gap: 6px 12px;
+    padding-block: 16px;
+    border-bottom: 1px dashed var(--hud-line-dash);
+  }
+  .pn__ptr {
+    position: absolute; left: -15px; top: 18px;
+    font-size: 12px; line-height: 1; color: var(--accent);
+    opacity: 0; transform: translateX(-4px);
+    transition: opacity var(--dur-hover) linear, transform var(--dur-press) var(--ease-out);
+  }
+  .pn__item:hover .pn__ptr,
+  .pn__item:focus-within .pn__ptr { opacity: 1; transform: none; }
+  :global(:root[data-motion="reduce"]) .pn__ptr { transform: none; }
+  .pn__ver { grid-area: ver; font: 700 var(--fs-label)/1.5 var(--font-mono); letter-spacing: .06em; color: var(--hud-strong); }
+  .pn__date { grid-area: date; font: 500 var(--fs-label)/1.5 var(--font-mono); color: var(--hud-muted); font-variant-numeric: tabular-nums; }
+  .pn__tag {
+    grid-area: tag; justify-self: start; padding: 1px 8px;
+    border: 1px solid var(--hud-line); font-size: var(--fs-label); font-weight: 700; line-height: 1.5; color: var(--hud-text);
+  }
+  .pn__tag:lang(en) { font-family: var(--font-mono); letter-spacing: .06em; }
+  .pn__body { grid-area: body; min-width: 0; }
+  .pn__title { font-size: 17px; font-weight: 700; line-height: 1.45; color: var(--hud-strong); }
+  .pn__link { color: var(--accent); text-decoration: none; text-underline-offset: .2em; transition: color var(--dur-hover) linear; }
+  .pn__link:hover { color: var(--accent-hover); text-decoration: underline; }
+  .pn__text { margin-top: 2px; max-width: var(--measure); font-size: var(--fs-small); line-height: 1.6; color: var(--hud-muted); }
+  @media (min-width: 734px) {
+    .pn__item { grid-template-columns: 76px 104px 64px minmax(0, 1fr); grid-template-areas: "ver date tag body"; align-items: baseline; column-gap: 16px; padding-block: 18px; }
+    .pn__ptr { left: -20px; top: 23px; }
+  }
+</style>

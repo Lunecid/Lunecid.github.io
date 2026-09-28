@@ -1,0 +1,75 @@
+---
+// One project case study (spec §3 사례 연구 틀): PROJECT DETAILS → body with each figure right after the paragraph that
+// first cites it (P1-7) → "게임 팀에게 / 연구 기여" → figures not cited inline → links, plus the certificate modal when
+// the project has an award whose redacted certificate image exists. Everything after PROJECT DETAILS shares the one
+// centred reading column (--measure), so the page keeps one left edge; figures widen symmetrically to 760px.
+import { getCollection, type CollectionEntry } from 'astro:content';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import ProjectDetails from '../components/projects/ProjectDetails.astro';
+import FigureList from '../components/projects/FigureList.astro';
+import ProjectLinks from '../components/projects/ProjectLinks.astro';
+import ProjectAudience from '../components/projects/ProjectAudience.astro';
+import Figure from '../components/common/Figure.astro';
+import CertificateModal, { type Certificate } from '../islands/CertificateModal';
+import type { Lang } from '../i18n/ui';
+import { t } from '../i18n/utils';
+import { projectPageMeta } from '../data/copy/pages';
+import { projectDetailRows } from '../lib/projects';
+import { buildCertificate } from '../lib/certificates';
+import { coverFigureIndex, placeFigures } from '../lib/figures';
+
+interface Props {
+  lang: Lang;
+  entry: CollectionEntry<'projects'>;
+}
+
+const { lang, entry } = Astro.props;
+const { data } = entry;
+const body = entry.rendered?.html;
+if (body === undefined) throw new Error(`ProjectView: ${entry.id} has no rendered body`);
+// A figure that is the cover image is shown once, in PROJECT DETAILS, with its number and caption (fix round 1).
+const coverIndex = coverFigureIndex(data.cover?.src, data.figures);
+const placed = placeFigures(body, data.figures.map((figure, index) => (index === coverIndex ? undefined : figure.inlineAfter)));
+const parts = placed.parts;
+const rest = placed.rest.filter((index) => index !== coverIndex);
+const numbered = data.figures.map((figure, index) => ({ ...figure, number: index + 1 }));
+const bodyParts = parts.map((part) => (part.kind === 'html' ? part : { kind: 'figure' as const, figure: numbered[part.index]! }));
+const meta = projectPageMeta(data.title, data.summary, lang);
+const rows = projectDetailRows(data, lang);
+
+const awardRef = data.award;
+const awardEntry = awardRef ? (await getCollection('awards')).find((a) => a.id === awardRef.certificate) : undefined;
+const certificate: Certificate | null = awardEntry ? await buildCertificate(awardEntry.data, lang) : null;
+const award = awardRef
+  ? { name: awardRef.name, ...(certificate ? { certificateId: certificate.id, certificateHref: certificate.fullSrc } : {}) }
+  : undefined;
+const cited = coverIndex >= 0 ? numbered[coverIndex] : undefined;
+const figure = data.cover
+  ? { src: data.cover.src, alt: data.cover.alt, label: data.cover.label, ...(cited ? { number: cited.number, caption: cited.caption } : {}) }
+  : undefined;
+---
+
+<BaseLayout lang={lang} title={meta.title} description={meta.description} page="project" section="projects" sectionIndex={false}>
+  <ProjectDetails lang={lang} title={data.title} rows={rows} figure={figure} award={award}>
+    <p>{data.summary}</p>
+  </ProjectDetails>
+  {/* .prose.read (read.css) is a full-width light band with the centred reading column */}
+  <article class="prose read">
+    {bodyParts.map((part) =>
+      part.kind === 'html' ? (
+        <Fragment set:html={part.html} />
+      ) : (
+        <Figure lang={lang} src={part.figure.src} alt={part.figure.alt} caption={part.figure.caption} number={part.figure.number} class="figure--inline" />
+      ),
+    )}
+  </article>
+  {data.audience && <ProjectAudience lang={lang} audience={data.audience} />}
+  <FigureList lang={lang} figures={rest.map((index) => numbered[index]!)} />
+  <ProjectLinks lang={lang} links={data.links} />
+  {certificate && <CertificateModal client:idle certificates={[certificate]} labels={{ dialog: t(lang, 'modal.certificate'), close: t(lang, 'action.close') }} />}
+</BaseLayout>
+
+<script>
+  // Markdown tables (figures.ts boxTables): a box that overflows becomes a named, focusable scroll region.
+  import '../scripts/table-scroll';
+</script>

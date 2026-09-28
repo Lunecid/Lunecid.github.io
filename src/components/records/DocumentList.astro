@@ -1,0 +1,26 @@
+---
+// The three résumé PDFs (spec §2 PDF 3종) at the end of /records/: the same cut-corner buttons as the page head
+// (DocButtons.astro, P2-19).
+import SectionHead from '../hud/SectionHead.astro';
+import DocButtons from './DocButtons.astro';
+import type { Lang } from '../../i18n/ui';
+import { t } from '../../i18n/utils';
+
+interface Props {
+  lang: Lang;
+  documents: { id: string; label: string; href: string }[];
+}
+
+const { lang, documents } = Astro.props;
+---
+<section id="documents" class="rec read-sec" aria-labelledby="documents-title">
+  <div class="container">
+    <SectionHead id="documents-title" caption={t(lang, 'section.documents')} title={t(lang, 'records.resumes')} />
+    <div class="docs"><DocButtons documents={documents} /></div>
+  </div>
+</section>
+
+<style>
+  .rec { padding-bottom: 64px; }
+  .docs { margin-top: 24px; }
+</style>

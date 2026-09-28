@@ -1,0 +1,123 @@
+---
+// PROJECT DETAILS (spec §5): the page's only <h1>, ≤6 rows with <th scope="row">, award badge with a
+// "상장 보기" trigger (CertificateModal, no-JS link = certificate WebP), and the cover in a HUD bracket frame with a
+// "FIG · <label>" caption strip (P2-21; a name, never a number headline). From 1068px the figure is centred beside
+// a taller table instead of leaving an empty block under it. Mobile order: head, table, award, figure. The default
+// slot (summary) sits under the <h1>.
+import type { ImageMetadata } from 'astro';
+import { Picture } from 'astro:assets';
+import SectionLabel from '../hud/SectionLabel.astro';
+import type { Lang } from '../../i18n/ui';
+import { t } from '../../i18n/utils';
+import { DETAIL_FIGURE_SIZES, fitWidths, sourceSize } from '../../lib/images';
+import type { CertificateId } from '../../types';
+
+interface Props {
+  lang: Lang;
+  title: string;
+  rows: { label: string; value: string }[];
+  /** number/caption: the cover is also the body's figure N (shown once, here; fix round 1). */
+  figure?: { src: ImageMetadata; alt: string; label?: string; number?: number; caption?: string };
+  award?: { name: string; certificateId?: CertificateId; certificateHref?: string };
+}
+
+const { lang, title, rows, figure, award } = Astro.props;
+const shownRows = rows.slice(0, 6);
+const figWidths = figure ? fitWidths([560, 840, 1120], sourceSize(figure.src).width) : [];
+const label = figure?.label?.trim() ?? '';
+const hasLead = Astro.slots.has('default');
+---
+
+<section id="details" class:list={['pd-sec', 'hud-grid', { 'pd-sec--nofig': !figure }]} aria-labelledby="pd-title">
+  <div class="container container--hud pd">
+    <div class="pd__head">
+      <SectionLabel en={t(lang, 'section.projectDetails')} />
+      <h1 id="pd-title" class="pd__title">{title}</h1>
+      {
+        hasLead && (
+          <div class="pd__lead">
+            <slot />
+          </div>
+        )
+      }
+    </div>
+    <table class="pd__table">
+      <caption class="sr-only">{`${title} · ${t(lang, 'section.projectDetails.title')}`}</caption>
+      <tbody>
+        {
+          shownRows.map((row) => (
+            <tr>
+              <th scope="row">{row.label}</th>
+              <td>{row.value}</td>
+            </tr>
+          ))
+        }
+      </tbody>
+    </table>
+    {
+      award && (
+        <div class="pd__award">
+          {/* text on the same line as its tags: a line break inside would render as a leading/trailing space */}
+          <span class="badge badge--tier"><span aria-hidden="true">◆</span> {award.name}</span>
+          {/* P2-14/D-7: ↗ means "leaves the site"; a certificate button opens an in-page modal, so it gets no symbol. */}
+          {award.certificateId && award.certificateHref && (
+            <a class="btn btn--line cut cut--line" href={award.certificateHref} data-cert-id={award.certificateId} aria-haspopup="dialog">{t(lang, 'action.viewCertificate')}</a>
+          )}
+        </div>
+      )
+    }
+    {
+      figure && (
+        <figure class="pd__fig bracket">
+          <Picture class="pd__img" src={figure.src} alt={figure.alt} formats={['avif', 'webp']} fallbackFormat="webp" widths={figWidths} sizes={DETAIL_FIGURE_SIZES} loading="eager" />
+          {
+            label && figure.number !== undefined ? (
+              <figcaption id={`figure-${figure.number}`} class="pd__figcap pd__figcap--cited">
+                <span class="pd__figcap-strip" lang="en"><span class="pd__figcap-tag">{`FIG ${figure.number}`}</span> · {label}</span>
+                {figure.caption && (
+                  <span class="pd__figcap-text"><b>{t(lang, 'project.figure', { n: figure.number })}</b> {figure.caption}</span>
+                )}
+              </figcaption>
+            ) : (
+              label && <figcaption class="pd__figcap" lang="en"><span class="pd__figcap-tag">FIG</span> · {label}</figcaption>
+            )
+          }
+        </figure>
+      )
+    }
+  </div>
+</section>
+
+<style>
+  .pd-sec { padding-block: var(--section-pad-y); border-top: 1px solid var(--hud-divider); }
+  .pd { display: grid; grid-template-columns: minmax(0, 1fr); gap: 20px; grid-template-areas: "head" "table" "award" "fig"; }
+  .pd__head { grid-area: head; }
+  /* P1-7: without a figure, PROJECT DETAILS aligns to the reading column below it (one left edge per page): the box is
+     the column's measure plus the gutters, centred like .prose.read. */
+  .pd-sec--nofig .pd { max-width: calc(var(--measure) + 2 * var(--gutter)); }
+  .pd__title { margin-top: 8px; font-size: var(--fs-h2); font-weight: 900; line-height: var(--lh-h2); color: var(--hud-strong); }
+  .pd__lead { margin-top: 12px; display: grid; gap: 8px; max-width: var(--measure); font-size: var(--fs-body); line-height: var(--lh-body); color: var(--hud-text); }
+  .pd__table { grid-area: table; width: 100%; border-collapse: collapse; font-size: 15px; }
+  .pd__table th, .pd__table td { padding: 10px 0; border-bottom: 1px dashed var(--hud-line-dash); vertical-align: top; text-align: left; }
+  .pd__table th { width: 92px; padding-right: 12px; font-size: 14px; font-weight: 500; color: var(--hud-muted); }
+  .pd__award { grid-area: award; display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+  .pd__fig { grid-area: fig; margin: 0; }
+  .pd__fig :global(img) { display: block; width: 100%; height: auto; background: var(--read-card); }
+  .pd__figcap {
+    padding: 8px 12px; border-top: 1px solid var(--hud-line); background: var(--hud-panel);
+    font: 600 13px/1.5 var(--font-mono); letter-spacing: .14em; color: var(--hud-label);
+  }
+  .pd__figcap-tag { color: var(--hud-text); }
+  .pd__figcap-strip { display: block; }
+  .pd__figcap-text { display: block; margin-top: 6px; font: 400 14px/1.55 var(--font-sans); letter-spacing: 0; color: var(--hud-muted); }
+  .pd__figcap-text b { margin-right: .4em; font-weight: 700; color: var(--hud-text); }
+  @media (min-width: 1068px) {
+    .pd {
+      grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); column-gap: 34px; row-gap: 0; align-items: start;
+      grid-template-areas: "fig head" "fig table" "fig award";
+    }
+    .pd-sec--nofig .pd { grid-template-columns: minmax(0, 1fr); grid-template-areas: "head" "table" "award"; }
+    .pd__fig { align-self: center; }
+    .pd__award { margin-top: 18px; }
+  }
+</style>

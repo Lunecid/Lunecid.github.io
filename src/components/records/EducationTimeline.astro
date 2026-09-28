@@ -1,0 +1,67 @@
+---
+// QUEST LOG: education on /records/ (spec §9.1 학력) as light-HUD rows (P1-9): the period in a mono column on the
+// left (with "졸업 예정"/"expected"), then school, degree, GPA as value/scale (same string as the PDFs), and the lab
+// link and thesis line when present. Hairlines between rows instead of a drawn timeline with dots.
+import SectionHead from '../hud/SectionHead.astro';
+import type { ResumeData } from '../../content/schemas';
+import type { Lang } from '../../i18n/ui';
+import { formatPeriod, t } from '../../i18n/utils';
+
+interface Props {
+  lang: Lang;
+  items: ResumeData['education'];
+}
+
+const { lang, items } = Astro.props;
+const rows = items.map((e) => ({
+  id: e.id,
+  period: formatPeriod(e.start, e.end, lang, { expected: e.expected }),
+  school: e.school[lang],
+  degree: e.degree[lang],
+  gpa: `${e.gpa.value}/${e.gpa.scale}`,
+  lab: e.lab ? { text: e.lab[lang], href: e.lab.href } : null,
+  thesis: e.thesis ? e.thesis[lang] : null,
+}));
+---
+<section id="education" class="rec read-sec" aria-labelledby="education-title">
+  <div class="container">
+    <SectionHead id="education-title" caption={t(lang, 'section.questLog')} title={t(lang, 'records.education')} />
+    <ol class="timeline lh-rows" role="list">
+      {rows.map((row) => (
+        <li class="timeline__item" data-education={row.id}>
+          <p class="timeline__period tnum">{row.period}</p>
+          <div class="timeline__body">
+            <h3 class="timeline__school">{row.school}</h3>
+            <p class="timeline__degree">{row.degree}</p>
+            <p class="timeline__gpa">{t(lang, 'records.gpa')} <span class="tnum">{row.gpa}</span></p>
+            {row.lab && (
+              <p class="timeline__lab">{t(lang, 'records.lab')} · <a href={row.lab.href}>{row.lab.text}</a></p>
+            )}
+            {row.thesis && <p class="timeline__thesis">{t(lang, 'records.thesis')} · {row.thesis}</p>}
+          </div>
+        </li>
+      ))}
+    </ol>
+  </div>
+</section>
+
+<style>
+  .timeline { margin-top: 24px; }
+  .timeline__item { display: grid; gap: 6px; padding-block: 16px; border-bottom: 1px solid var(--read-line); }
+  .timeline__period { font: 600 var(--fs-label)/1.6 var(--font-mono); color: var(--read-muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .timeline__period:lang(ko) { font-family: var(--font-sans); } /* "(졸업 예정)": no mono-width space in Hangul (P1-10); tabular-nums kept above */
+  .timeline__body { min-width: 0; }
+  .timeline__school { font-size: 19px; font-weight: 700; line-height: 1.4; color: var(--read-text); }
+  .timeline__degree { font-size: 16px; line-height: 1.6; }
+  .timeline__gpa,
+  .timeline__lab,
+  .timeline__thesis { margin-top: 4px; font-size: 14px; line-height: 1.6; color: var(--read-muted); }
+  .timeline__gpa .tnum { font-weight: 600; color: var(--read-text); }
+  /* P2-24: a real 44px target, not padding cancelled by a negative margin (that shrinks the flow footprint
+     without shrinking the rendered/hit-tested box, so the enlarged box silently overlaps neighbouring text). */
+  .timeline__lab a { display: inline-flex; align-items: center; min-height: var(--tap); }
+  @media (min-width: 734px) {
+    .timeline__item { grid-template-columns: 16em minmax(0, 1fr); column-gap: 24px; padding-block: 20px; }
+    .timeline__period { padding-top: 3px; }
+  }
+</style>

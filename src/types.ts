@@ -1,0 +1,19 @@
+// Shared id lists and union types. Import-free and erasable TypeScript only (plain Node imports this file).
+export const CHARACTER_IDS = ['remielle', 'eula', 'mona'] as const;
+export type CharacterId = (typeof CHARACTER_IDS)[number];
+export const NAV_SECTIONS = ['research', 'projects', 'records', 'player-log'] as const;
+export type NavSection = (typeof NAV_SECTIONS)[number];
+export const NOTICE_KEYS = ['cognosphere', 'zzz-fan-guide', 'fan-content', 'riot'] as const; // 'riot' only on the CoG paper page when RIOT_NOTICE_ON_PAGES is true
+export type NoticeKey = (typeof NOTICE_KEYS)[number];
+export const CERTIFICATE_IDS = ['busan-mayor-award', 'cds-encouragement-award', 'multicampus-grand-award'] as const;
+export type CertificateId = (typeof CERTIFICATE_IDS)[number];
+export const ACHIEVEMENT_TRIGGERS = ['open-abstract', 'finish-cog-story', 'open-certificate', 'visit-all-sections', 'switch-language', 'bgm-on', 'konami', 'visit-404'] as const;
+export type AchievementTrigger = (typeof ACHIEVEMENT_TRIGGERS)[number];
+export const GAME_IDS = ['zzz', 'genshin', 'lol', 'dnf', 'steam'] as const;
+export type GameId = (typeof GAME_IDS)[number];
+export const JOBFIT_STATUSES = ['met', 'partial', 'in-progress', 'later', 'n-a'] as const;
+export type JobfitStatus = (typeof JOBFIT_STATUSES)[number];
+export const SFX_NAMES = ['move', 'select', 'open', 'close'] as const;
+export type SfxName = (typeof SFX_NAMES)[number];
+export const PAGE_IDS = ['home', 'research', 'research-story', 'projects', 'project', 'records', 'player-log', 'stats', 'privacy', 'credits', 'not-found', 'print'] as const;
+export type PageId = (typeof PAGE_IDS)[number];

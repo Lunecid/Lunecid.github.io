@@ -1,0 +1,66 @@
+{
+  "name": "lunecid-portfolio",
+  "type": "module",
+  "version": "1.0.0",
+  "private": true,
+  "engines": {
+    "node": ">=22.18.0"
+  },
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "astro": "astro",
+    "check": "astro check",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "assets": "node scripts/import-assets.mjs",
+    "fetch": "node scripts/fetch-github.mjs && node scripts/fetch-goatcounter.mjs",
+    "build:pdf": "node scripts/build-pdfs.mjs",
+    "test:ops": "node --test \"tests/ops/*.test.mjs\"",
+    "test:e2e": "playwright test",
+    "test:links": "linkinator dist --config linkinator.config.json",
+    "test:links:external": "linkinator https://lunecid.github.io --recurse --verbosity error",
+    "test:lh": "lhci autorun && lhci autorun --config=lighthouserc.desktop.json",
+    "verify": "npm run check && npm test && npm run build && npm run build:pdf && npm run test:ops && npm run test:e2e && npm run test:links"
+  },
+  "dependencies": {
+    "@astrojs/react": "^7.0.0",
+    "@astrojs/sitemap": "^3.7.4",
+    "@fontsource-variable/jetbrains-mono": "^5.3.0",
+    "@fontsource-variable/noto-serif-kr": "^5.3.0",
+    "@fontsource/anton": "^5.3.0",
+    "@resvg/resvg-js": "^2.6.2",
+    "astro": "^7.3.5",
+    "js-yaml": "^4.3.2",
+    "motion": "^13.4.4",
+    "pretendard": "^1.3.9",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "satori": "^0.33.5"
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.10",
+    "@axe-core/playwright": "^4.13.0",
+    "@lhci/cli": "^0.15.1",
+    "@playwright/test": "^1.63.0",
+    "@testing-library/dom": "^10.4.2",
+    "@testing-library/jest-dom": "^7.0.1",
+    "@testing-library/react": "^16.3.3",
+    "@testing-library/user-event": "^14.6.7",
+    "@types/js-yaml": "^4.0.9",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "exifr": "^7.1.3",
+    "jsdom": "^30.1.1",
+    "linkinator": "^8.1.0",
+    "pdf-lib": "^1.17.1",
+    "sharp": "^0.35.4",
+    "subset-font": "^2.9.0",
+    "typescript": "~6.0.3",
+    "vitest": "^5.0.2"
+  },
+  "allowScripts": {
+    "esbuild@0.28.2": true
+  }
+}

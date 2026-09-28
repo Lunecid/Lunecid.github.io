@@ -1,0 +1,81 @@
+---
+import { getEntry, render } from 'astro:content';
+import PageHeader from '../components/hud/PageHeader.astro';
+import { PAGE_META } from '../data/copy/pages';
+import type { Lang } from '../i18n/ui';
+import BaseLayout from '../layouts/BaseLayout.astro';
+
+interface Props {
+  lang: Lang;
+  doc: 'privacy' | 'credits';
+}
+const { lang, doc } = Astro.props;
+const entry = await getEntry('legal', `${lang}/${doc}`);
+if (!entry) throw new Error(`Legal entry missing: ${lang}/${doc}`);
+const { Content } = await render(entry);
+const meta = PAGE_META[doc][lang];
+---
+<BaseLayout lang={lang} title={meta.title} description={meta.description} page={doc}>
+  <PageHeader lang={lang} label={doc === 'privacy' ? 'PRIVACY' : 'CREDITS'} title={entry.data.title} />
+  {/* article.prose.read (contract §5.14): read.css spans the light band across the page and centres the text column */}
+  <article class="legal prose read">
+    <Content />
+  </article>
+</BaseLayout>
+
+<script>
+  // Fix round 1 minor: below 734px the CSS stacks every row as a block (`display: block`, see the style block
+  // below) so it reads as one column; that display change also drops the *implicit* ARIA table/row/cell roles a
+  // browser only computes from a `display: table/table-row/table-cell` box (HTML-AAM). Markdown renders a plain
+  // <table> with no attribute hooks, so table semantics are restored explicitly here — the same technique
+  // JobFitTable.astro's own markup uses directly (role="table"/"rowgroup"/"row"/"columnheader"/"cell").
+  document.querySelectorAll<HTMLTableElement>('.legal table').forEach((table) => {
+    table.setAttribute('role', 'table');
+    table.querySelectorAll('thead, tbody').forEach((group) => group.setAttribute('role', 'rowgroup'));
+    table.querySelectorAll('tr').forEach((row) => row.setAttribute('role', 'row'));
+    table.querySelectorAll('thead th').forEach((cell) => cell.setAttribute('role', 'columnheader'));
+    table.querySelectorAll('tbody td').forEach((cell) => cell.setAttribute('role', 'cell'));
+  });
+</script>
+
+<style>
+  /* Notice tables never scroll (Review Focus 1): a scroller would need tabindex/role/label
+     (axe scrollable-region-focusable). Fixed column widths tuned for the three notice columns. */
+  .legal :global(table) { display: table; width: 100%; overflow: visible; table-layout: fixed; font-size: 14px; }
+  .legal :global(th:nth-child(1)) { width: 32%; }
+  .legal :global(th:nth-child(2)) { width: 45%; } /* the long notice / author column; the last column takes the rest */
+  .legal :global(th), .legal :global(td) { padding-inline: 6px; overflow-wrap: anywhere; }
+  .legal :global(blockquote) { overflow-wrap: anywhere; }
+  /* Final fix 2 item 16: the links that stand alone (a font name in its table cell, the contact address on its own
+     line) get the 44px target of .hit (base.css) without moving any text; links inside sentences keep plain text flow. */
+  .legal :global(td > a:only-child),
+  .legal :global(p > a[href^="mailto:"]:only-child) { position: relative; display: inline-block; }
+  .legal :global(td > a:only-child)::after,
+  .legal :global(p > a[href^="mailto:"]:only-child)::after {
+    content: ""; position: absolute; left: 50%; top: 50%; width: max(100%, var(--tap)); height: max(100%, var(--tap)); transform: translate(-50%, -50%);
+  }
+  @media (min-width: 734px) {
+    .legal :global(table) { font-size: var(--fs-small); }
+    .legal :global(th), .legal :global(td) { padding-inline: 12px; }
+  }
+  /* P2-25: below 734px a 3-column notice table (platform/font · notice/author · status/license) is too narrow to
+     read (the notice column alone was ~140px, wrapping the longest notices to 13-16 lines). Stack every row as a
+     block instead, in the same column order the markup already gives: title, then notice, then the status tag.
+     The header row stays in the DOM (screen readers still get the column names) but is visually hidden, matching
+     the same technique already used for JobFitTable (P1-11). */
+  @media (max-width: 733.98px) {
+    .legal :global(table) { display: block; }
+    .legal :global(thead) {
+      position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap;
+    }
+    .legal :global(tbody) { display: block; }
+    .legal :global(tr) { display: block; padding-block: 14px; border-bottom: 1px solid var(--read-line); }
+    .legal :global(tr:first-child) { border-top: 1px solid var(--read-line-strong); }
+    .legal :global(td) { display: block; padding: 3px 0; overflow-wrap: anywhere; }
+    .legal :global(td:first-child) { font-weight: 700; font-size: 16px; color: var(--read-text); }
+    .legal :global(td:last-child) { margin-top: 4px; font: 600 13px/1.5 var(--font-mono); letter-spacing: .04em; color: var(--read-muted); }
+    /* P1-10: Hangul set in a mono element reads badly with tracking added for a fixed-width alphabet that Hangul
+       does not have (fix round 1 minor) — a Korean page's status tag drops to the sans face, no letter-spacing. */
+    .legal :global(td:last-child:lang(ko)) { font-family: var(--font-sans); letter-spacing: 0; }
+  }
+</style>

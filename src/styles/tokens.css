@@ -1,0 +1,145 @@
+/* src/styles/tokens.css — spec §4 is the source of truth. Colour literals live only in this file. */
+:root {
+  /* ── spec §4 colour table (exact) ── */
+  --hud-bg: #0B0D11;
+  --hud-panel: #15181F;
+  --hud-text: #E8EAED;          /* 16.1:1 on --hud-bg */
+  --hud-muted: #8B93A1;         /*  6.3:1 on --hud-bg, 5.7:1 on --hud-panel */
+  --accent: #C8F03C;            /* 14.8:1 on --hud-bg; "clickable" only; never on light areas */
+  --accent-ink: #0B0D11;        /* text on --accent */
+  --accent-deep: #4F6B00;       /*  5.6:1 on --read-bg: links and accents in light areas */
+  --gold: #F5B301;              /* achievements and tier badges only */
+  --read-bg: #F4F5F7;
+  --read-card: #FFFFFF;
+  --read-text: #1D1D1F;         /* 15.4:1 */
+  --read-muted: #6E6E73;        /*  4.65:1 on --read-bg, 5.07:1 on white */
+  --grid-line: rgba(255, 255, 255, .035);
+
+  /* ── derived from home-lime-v4 (computed from the spec colours; keep in sync) ── */
+  --hud-strong: #FFFFFF;                      /* hero name and slogan */
+  --hud-line: rgba(200, 240, 60, .24);        /* hairlines of panels and buttons */
+  --hud-line-strong: rgba(200, 240, 60, .6);  /* active MAIN MENU row */
+  --hud-line-dash: rgba(200, 240, 60, .22);   /* dashed table rules */
+  --accent-wash: #1A1F14;                     /* accent 8% over --hud-bg, opaque (outline-button fill) */
+  --accent-wash-strong: #252D17;              /* accent 14% over --hud-bg (outline-button hover) */
+  --accent-wash-12: rgba(200, 240, 60, .12);  /* active row gradient start */
+  --accent-wash-16: rgba(200, 240, 60, .16);  /* selected game tab gradient start */
+  --accent-hover: #D3F363;                    /* filled button hover (accent + 20% white), ink 15.5:1 */
+  --accent-light: #E6F8A7;                    /* progress-bar gradient end */
+  --accent-streak: rgba(200, 240, 60, .75);   /* light streak core */
+  --hud-divider: #1C2027;                     /* section top border */
+  --hud-frame: #22262E;                       /* outer frame border */
+  --hud-nav-bg: rgba(11, 13, 17, .92);
+  --hud-panel-92: rgba(21, 24, 31, .92);
+  --hud-panel-75: rgba(21, 24, 31, .75);
+  --hud-track: rgba(255, 255, 255, .08);      /* progress track */
+  --hud-fade: rgba(11, 13, 17, .95);          /* tile caption gradient end */
+  --gold-line: rgba(245, 179, 1, .6);
+  --gold-wash: rgba(245, 179, 1, .08);
+  --gold-ink: #2A1A00;                        /* text on --gold, 9.09:1 */
+  --gold-deep: #8A5A00;                       /* gold text on light areas: 5.93:1 on white, 5.42:1 on --read-bg */
+  --read-line: #E2E4E8;
+  --read-line-strong: #C7C7CC;
+  --chip-bg: #23262D;                         /* hello-profile skill chips */
+  --scrim: rgba(0, 0, 0, .42);                /* certificate modal backdrop */
+
+  /* ── paper sheet (D-15): the CoG paper page is a white "first page" on the dark HUD background ── */
+  --paper-bg: #FFFFFF;
+  --paper-ink: #141414;                       /* 18.4:1 on white */
+  --paper-muted: #4A4A4A;                     /*  8.9:1 on white: running header, affiliations, notes */
+  --paper-rule: #BDBDBD;                      /* decorative rules only (footnote rule) */
+  --paper-code-bg: #F5F5F3;                   /* BibTeX box; --paper-ink on it 16.9:1 */
+  --paper-code-line: #DADAD6;
+  --paper-shadow: 0 1px 2px rgba(0, 0, 0, .6), 0 16px 48px rgba(0, 0, 0, .55);
+  /* Times-like system serif (IEEE papers are set in Times), Korean serif appended; never downloaded. */
+  --font-paper: "Times New Roman", Times, "TeX Gyre Termes", "Nimbus Roman", "Liberation Serif",
+                "Noto Serif KR", "Nanum Myeongjo", "AppleMyungjo", "Batang", serif;
+  /* The paper's Korean text: "SB Serif KR" (a build-time subset of Noto Serif KR, Hangul only, loaded only by
+     the Korean paper page) first — Windows ships no Korean serif — then the stack above for everything else. */
+  --font-paper-ko: "SB Serif KR", var(--font-paper);
+
+  /* ── HUD labels (D8 / Task 0 Q13). Accent means "clickable" only, so labels are muted.
+        Q13 = lime flips both lines: --hud-label: var(--accent); --read-label: var(--accent-deep). ── */
+  --hud-label: var(--hud-muted);
+  --read-label: var(--read-muted);
+
+  /* ── character tints: Player Log and showcase backgrounds only (spec §4) ── */
+  --tint-remielle: rgba(255, 79, 139, .18);
+  --tint-eula: rgba(80, 160, 255, .16);
+  --tint-mona: rgba(122, 108, 240, .16);
+
+  /* ── typography (spec §4; mobile-first values = "<734") ── */
+  /* "SB Sans" is the build-time subset of Pretendard Variable (renamed: "Pretendard" is an OFL Reserved Font
+     Name); "JetBrains Mono Variable" is the fontsource latin file of JetBrains Mono. @font-face: src/lib/fonts.ts. */
+  --font-sans: "SB Sans", Pretendard, -apple-system, BlinkMacSystemFont, system-ui,
+               "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+  --font-mono: "JetBrains Mono Variable", "JetBrains Mono", "SB Sans", Pretendard,
+               ui-monospace, SFMono-Regular, Consolas, monospace;   /* Hangul in mono labels falls back to SB Sans */
+  --font-card: var(--font-anton, Impact, "Arial Narrow Bold", sans-serif);  /* membership card only; --font-anton comes from <Font> on Player Log pages */
+
+  --fs-name: 40px;      /* hero name (spec: up to 76) */
+  --fs-display: 32px;
+  --fs-h2: 26px;
+  --fs-sub: 19px;
+  --fs-body: 17px;
+  --fs-small: 15px;
+  --fs-caption: 13px;
+  --fs-label: 13px;
+  --fs-min: 12px;       /* absolute minimum, only for exceptional micro-text */
+  --lh-display: 1.2;
+  --lh-h2: 1.3;
+  --lh-sub: 1.4;
+  --lh-body: 1.7;
+  --lh-caption: 1.5;
+  /* Reading measure (spec §4): ≈38 Korean characters; English pages switch to 36em ≈ 66 characters (P2-37). */
+  --measure: 38em;
+  --ls-label: .16em;    /* Latin HUD labels only; Hangul stays 0 */
+
+  /* ── motion (spec §4) ── */
+  --ease-out: cubic-bezier(.22, 1, .36, 1);
+  --ease-in: cubic-bezier(.4, 0, 1, 1);
+  --ease-wipe: cubic-bezier(.65, 0, .35, 1);
+  --dur-enter: .6s;
+  --dur-exit: .25s;
+  --dur-hover: .1s;
+  --dur-press: .15s;
+  --dur-fade: .2s;       /* reduced-motion replacement */
+  --dur-streak: .8s;
+
+  /* ── layout ── */
+  --container: 1180px;   /* includes gutters; the base width of every band's container */
+  /* D-2: the section container widens on wide screens (XL steps below). Since batch 5 (item 11) every band uses it,
+     dark HUD and light reading bands alike, so all section edges line up at every width. Long-form prose keeps its
+     own centred measure (38em Korean / 36em ≈ 66 characters English) and the paper sheet its own width. */
+  --container-hud: var(--container);
+  --gutter: 16px;
+  --nav-h: 52px;         /* = NAV_HEIGHT_PX in src/config.ts */
+  --section-pad-y: 40px;
+  --tap: 44px;
+  --cut-btn: 10px;
+  --cut-chip: 6px;
+  --cut-panel: 14px;     /* player card */
+  --cut-card: 20px;      /* account card */
+  --cut-row: 14px;       /* active MAIN MENU row */
+  --bracket: 26px;
+  --bracket-sm: 14px;
+}
+@media (min-width: 734px) {
+  :root { --fs-name: 60px; --fs-display: 48px; --fs-h2: 28px; --fs-sub: 21px; --gutter: 32px; --section-pad-y: 44px; }
+}
+@media (min-width: 1068px) {
+  :root { --fs-name: 76px; --fs-display: 56px; --fs-h2: 32px; --fs-sub: 24px; --gutter: 56px; }
+}
+/* D-2 XL steps (the owner reviews at 2560 CSS px): wider HUD container, wider gutters, slightly larger display type.
+   src/lib/images.ts and src/lib/characters.ts compute their `sizes` from these values: keep them in sync. */
+@media (min-width: 1600px) {
+  :root { --container-hud: 1360px; --gutter: 64px; --fs-name: 84px; --fs-display: 60px; --fs-h2: 34px; --fs-sub: 25px; }
+}
+@media (min-width: 1800px) {
+  :root { --container-hud: 1440px; --gutter: 72px; --fs-name: 90px; --fs-display: 64px; --fs-h2: 36px; --fs-sub: 26px; }
+}
+:lang(en) { --lh-display: 1.07; --lh-h2: 1.125; --lh-sub: 1.2; --lh-body: 1.47; --measure: 36em; }
+/* Printed paper page (D-15): black on white. */
+@media print {
+  :root { --paper-bg: #FFFFFF; --paper-ink: #000000; --paper-muted: #000000; }
+}

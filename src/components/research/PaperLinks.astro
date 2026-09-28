@@ -1,0 +1,109 @@
+---
+// A paper's link row and its two disclosures (spec §5 연구 목록: [초록]·[BibTeX] expand, [PDF]/[DOI]/[Code] are links),
+// shared by PublicationItem (/research/, /records/) and the home research highlight (final review fix 1 item 4: the
+// home copy still used <details> inside the flex row, so opening a panel broke the row apart — the P2-9 bug).
+// P2-9 (controller ruling 6): the button row (.pub__links) never breaks — [초록]/[BibTeX] are real
+// <button aria-expanded aria-controls> disclosures whose panels open BELOW the row, not <details> that grows in
+// place. The BibTeX panel reuses BibtexBlock.astro (paper page, D-15) instead of a second hand-rolled copy button,
+// with heading={false} (its own "BibTeX" h2/region landmark would nest under the card's heading and repeat what
+// the toggle button next to it already says) and square (P1-9: square corners in the light-HUD bands).
+// Fix round 1 item 7 (works without JS): the panels render OPEN/visible by default (no `hidden` attribute) so a
+// no-JS visitor simply reads the abstract/BibTeX inline. Fix round 2 item 5: the buttons render aria-expanded="false"
+// (the actual default once JS runs — matching HudNav's own mobile-menu precedent of an SSR-false toggle whose panel is
+// simply always visible without JS) and the panels collapse *before first paint* via CSS keyed on the `html.js` class
+// (set synchronously in <head>, see head-init.ts) and a `data-open` attribute the script toggles — no waiting for the
+// deferred script to run at all. See the `.pub__panel` rule below and disclosure-trigger.ts.
+import type { PaperCardData } from '../../lib/publications';
+import type { Lang } from '../../i18n/ui';
+import { t } from '../../i18n/utils';
+import BibtexBlock from './BibtexBlock.astro';
+
+interface Props {
+  lang: Lang;
+  paper: PaperCardData;
+  /** Prefix of the panel ids (default: the paper id); the home highlight passes its own so ids stay unique. */
+  idBase?: string;
+}
+
+const { lang, paper, idBase = paper.id } = Astro.props;
+const pending = !paper.pdf && !paper.doi && paper.statusNote ? `${t(lang, 'research.pdf')} · ${paper.statusNote}` : null;
+const abstractId = `${idBase}-abstract`;
+const bibtexId = `${idBase}-bibtex`;
+---
+<div class="pub__links">
+  {paper.href && <a class="pub__btn" href={paper.href}>{t(lang, 'action.paperPage')}</a>}
+  <button type="button" class="pub__btn" aria-expanded="false" aria-controls={abstractId} data-trigger="open-abstract" data-disclosure>
+    {t(lang, 'research.abstract')}
+  </button>
+  <button type="button" class="pub__btn" aria-expanded="false" aria-controls={bibtexId} data-disclosure>
+    {t(lang, 'research.bibtex')}
+  </button>
+  {paper.pdf && <a class="pub__btn" href={paper.pdf}>{t(lang, 'research.pdf')}</a>}
+  {paper.doi && <a class="pub__btn" href={`https://doi.org/${paper.doi}`}>{t(lang, 'research.doi')}</a>}
+  {pending && <span class="pub__pending">{pending}</span>}
+  {paper.code && (
+    <a class="pub__btn" href={paper.code}>{t(lang, 'research.code')} <span aria-hidden="true">↗</span></a>
+  )}
+</div>
+<div id={abstractId} class="pub__panel">
+  {/* Fix round 3 item 3: a no-JS-only caption, since the toggle button that would otherwise name this panel
+      is hidden without JS (it does nothing there — no click handler ever attaches). */}
+  <p class="pub__panel-label">{t(lang, 'research.abstract')}</p>
+  <p class="pub__abstract" lang={paper.abstractLang}>{paper.abstract}</p>
+</div>
+<div id={bibtexId} class="pub__panel">
+  <p class="pub__panel-label">{t(lang, 'research.bibtex')}</p>
+  <BibtexBlock lang={lang} bibtex={paper.bibtex} id={`${idBase}-bib`} heading={false} square />
+</div>
+
+<script>
+  import '../../scripts/disclosure-trigger';
+</script>
+
+<style>
+  /* P2-9: the button row never breaks — panels (.pub__panel) render below it, not inside a growing flex item. */
+  .pub__links { margin-top: 12px; display: flex; flex-wrap: wrap; align-items: flex-start; gap: 8px; }
+  .pub__btn,
+  .pub__pending {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--tap);
+    padding: 0 14px;
+    border: 1px solid var(--read-line-strong);
+    background: none;
+    appearance: none;
+    font: 600 13px/1 var(--font-mono);
+    color: var(--read-text);
+    text-decoration: none;
+    cursor: pointer;
+    transition: color var(--dur-hover) linear, border-color var(--dur-hover) linear;
+  }
+  .pub__btn:lang(ko), .pub__pending:lang(ko) { font-family: var(--font-sans); } /* Hangul: no mono-width spaces (P1-10) */
+  .pub__btn:hover { color: var(--accent-deep); border-color: var(--accent-deep); }
+  .pub__btn[aria-expanded="true"] { color: var(--accent-deep); border-color: var(--accent-deep); }
+  .pub__pending { cursor: default; color: var(--read-muted); border-style: dashed; }
+  /* Fix round 3 item 3: without JS, disclosure-trigger.ts never attaches a click handler, so these two buttons
+     would sit there doing nothing next to panels that are already fully visible — dead controls, like HudNav's
+     own toggle would be if it stayed exposed with no JS to run it. Hidden by default, restored once html.js
+     (set synchronously in <head>, head-init.ts) confirms JS actually ran — same technique BibtexBlock's copy
+     button and TagFilter's own group already use, just inverted (hidden without JS instead of hidden with it). */
+  .pub__btn[data-disclosure] { display: none; }
+  :global(html.js) .pub__btn[data-disclosure] { display: inline-flex; }
+  /* The BibTeX panel is BibtexBlock.astro's own box (paper page, D-15): pre-wrap + overflow-wrap: anywhere there
+     already, with its own copy button — nothing to duplicate here beyond the shared top margin below. */
+  .pub__panel { margin-top: 10px; }
+  /* Fix round 2 item 5: collapsed before first paint, with no dependency on the deferred disclosure-trigger.ts
+     module ever running — html.js is set synchronously in <head> (head-init.ts), so a JS visitor's very first
+     frame already matches the buttons' SSR aria-expanded="false", with zero flash and zero layout shift.
+     disclosure-trigger.ts toggles `data-open` on click; a no-JS visitor never gets the `js` class, so this rule
+     never applies and the panel stays in normal flow, always visible, as fix round 1 item 7 requires. */
+  :global(html.js) .pub__panel:not([data-open]) { display: none; }
+  /* Fix round 3 item 3: the caption that stands in for the (now hidden) toggle button's own label, no-JS only. */
+  .pub__panel-label { margin: 0 0 6px; font: 700 13px/1.4 var(--font-mono); color: var(--read-muted); }
+  .pub__panel-label:lang(ko) { font-family: var(--font-sans); }
+  :global(html.js) .pub__panel-label { display: none; }
+  .pub__abstract {
+    padding: 12px 14px; background: var(--read-bg); border-left: 2px solid var(--read-line-strong);
+    font-size: 15px; line-height: 1.7; max-width: var(--measure);
+  }
+</style>

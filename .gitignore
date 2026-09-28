@@ -1,0 +1,27 @@
+# brainstorming mockups & local tooling
+.superpowers/
+docs/superpowers/
+.cursor-handoff/
+.claude/settings.local.json
+.claude/launch.json
+
+# Astro / Node
+node_modules/
+dist/
+dist-no-art/
+.astro/
+.env
+.env.*
+!.env.example
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Generated data, test output, worktrees
+src/data/generated/
+playwright-report/
+test-results/
+.lighthouseci/
+coverage/
+.claude/worktrees/

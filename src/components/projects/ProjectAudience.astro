@@ -1,0 +1,47 @@
+---
+// "게임 팀에게 | 연구 기여" / "For game teams | Research contribution" after a case-study body (spec §3 case-study
+// order, §6 audience{game, research}; P1-8). Two light-HUD panels (square, corner marks, "[ ■ ] CAPTION" over the
+// title, P1-9) on the light reading band, in the same centred text column as the body above.
+import SectionLabel from '../hud/SectionLabel.astro';
+import type { Lang } from '../../i18n/ui';
+import { t } from '../../i18n/utils';
+
+interface Props {
+  lang: Lang;
+  /** Only the parts present are rendered (a page may have only one of the two). */
+  audience: { game?: string; research?: string };
+}
+
+const { lang, audience } = Astro.props;
+const blocks = [
+  { id: 'for-game-teams', caption: t(lang, 'section.forGameTeams'), label: t(lang, 'project.forGameTeams'), text: audience.game },
+  { id: 'research-contribution', caption: t(lang, 'section.researchContribution'), label: t(lang, 'project.researchContribution'), text: audience.research },
+].filter((block): block is { id: string; caption: string; label: string; text: string } => typeof block.text === 'string' && block.text.trim() !== '');
+---
+{blocks.length > 0 && (
+<div class="audience read read-column">
+  <div class:list={['audience__grid', { 'audience__grid--single': blocks.length === 1 }]}>
+    {blocks.map((block) => (
+      <section id={block.id} class="audience__block lh-frame bracket bracket--sm" aria-labelledby={`${block.id}-title`}>
+        <SectionLabel en={block.caption} />
+        <h2 id={`${block.id}-title`} class="audience__label">{block.label}</h2>
+        <p class="audience__text">{block.text}</p>
+      </section>
+    ))}
+  </div>
+</div>
+)}
+
+<style>
+  /* The centred reading column comes from .read-column (read.css), shared with the body above. */
+  .audience { padding-block: 0 var(--section-pad-y); }
+  .audience__grid { display: grid; gap: 12px; }
+  .audience__block { min-width: 0; }
+  .audience__label { margin-top: 6px; font-size: var(--fs-sub); font-weight: 800; line-height: var(--lh-sub); color: var(--read-text); }
+  .audience__text { margin-top: 8px; font-size: 16px; line-height: 1.7; color: var(--read-text); }
+  .audience__text:lang(en) { line-height: 1.5; }
+  @media (min-width: 734px) {
+    .audience__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+    .audience__grid--single { grid-template-columns: minmax(0, 1fr); }
+  }
+</style>

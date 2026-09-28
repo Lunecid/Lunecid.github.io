@@ -1,0 +1,63 @@
+---
+// One figure: <picture> (AVIF + WebP), a caption optionally prefixed "그림 N" / "Figure N",
+// and a "크게 보기" link to a single WebP no wider than 1600px (D4: sources are ≤1600w).
+import type { ImageMetadata } from 'astro';
+import { Picture, getImage } from 'astro:assets';
+import type { Lang } from '../../i18n/ui';
+import { t } from '../../i18n/utils';
+import { FIGURE_SIZES, fitWidths, sourceSize } from '../../lib/images';
+
+interface Props {
+  lang: Lang;
+  src: ImageMetadata;
+  alt: string;
+  caption: string;
+  number?: number;
+  widths?: number[];
+  sizes?: string;
+  loading?: 'lazy' | 'eager';
+  class?: string;
+}
+
+const {
+  lang,
+  src,
+  alt,
+  caption,
+  number,
+  widths = [720, 1080, 1440],
+  sizes = FIGURE_SIZES,
+  loading = 'lazy',
+  class: className,
+} = Astro.props;
+
+const pictureWidths = fitWidths(widths, sourceSize(src).width);
+const full = await getImage({ src, width: Math.min(1600, sourceSize(src).width), format: 'webp' });
+const numberLabel = number !== undefined ? t(lang, 'project.figure', { n: number }) : null;
+const fullLabel = t(lang, 'action.fullSize');
+---
+
+<figure class:list={['figure', className]}>
+  <Picture class="figure__img" src={src} alt={alt} formats={['avif', 'webp']} fallbackFormat="webp" widths={pictureWidths} sizes={sizes} loading={loading} />
+  <figcaption class="figure__cap">
+    {numberLabel && <span class="figure__num">{numberLabel}</span>}
+    <span class="figure__text">{caption}</span>
+    <a class="figure__full" href={full.src} aria-label={`${fullLabel} · ${numberLabel ?? alt}`}>{fullLabel}</a>
+  </figcaption>
+</figure>
+
+<style>
+  .figure { margin: 0; }
+  /* Case-study figures in the reading column (P1-7): right after the paragraph that cites them, widening symmetrically
+     around the column to 760px where the page has room (src/lib/images.ts FIGURE_SIZES follows these widths). */
+  .figure--inline { margin-block: 2em; }
+  @media (min-width: 900px) {
+    .figure--inline { margin-inline: calc((100% - 760px) / 2); }
+  }
+  .figure :global(img) { display: block; width: 100%; height: auto; border: 1px solid var(--read-line); background: var(--read-card); }
+  .figure__cap { margin-top: 10px; font-size: 15px; line-height: 1.6; color: var(--read-muted); }
+  .figure__num { margin-right: .5em; font-weight: 700; color: var(--read-text); }
+  /* padding + a matching negative margin enlarge the tap target without inflating the caption's line box
+     (a plain min-height here doubles the wrapped line's height — P2-12); absolute floor is 24x24 (spec §5). */
+  .figure__full { display: inline-flex; align-items: center; padding-block: 12px; margin-block: -12px; margin-left: .5em; font-weight: 600; }
+</style>

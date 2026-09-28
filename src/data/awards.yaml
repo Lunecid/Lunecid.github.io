@@ -1,0 +1,66 @@
+# awards.yaml — 수상 3건. 기록 페이지 업적 카드, 프로젝트 사례 연구의 '상장 보기', 이력서 PDF가 함께 쓴다.
+# 규칙
+# - 상 이름은 상장 원문 그대로 쓴다('대상'이 아니라 '최우수상').
+# - 상장 이미지는 개인정보를 가린 판본만 올린다(spec §8). 원본 파일은 저장소에 넣지 않는다.
+# - redactionNote: 상장 이미지에서 가린 정보. 가린 것이 없으면 쓰지 않는다.
+# - project: 관련 프로젝트 slug. 상장만으로 프로젝트를 특정할 수 없으면 null로 둔다.
+# - 날짜는 상장에 적힌 수여일이다. 최신순으로 둔다.
+
+- id: busan-mayor-award
+  name:
+    ko: 최우수상(부산광역시장상)
+    en: Top Excellence Award (Mayor of Busan Award)
+  contest:
+    ko: 2025 Big Data 활용 대회 · 빅데이터 분석 부문
+    en: 2025 Big Data Utilization Contest · Big Data Analysis Division
+  org:
+    ko: 부산광역시
+    en: Busan Metropolitan City
+  date: '2025-07-11'
+  project: school-zone-blindspots
+  certificate:
+    alt:
+      ko: 2025 Big Data 활용 대회 빅데이터 분석 부문 최우수상 상장. 부산광역시장이 2025년 7월 11일 백성은에게 수여.
+      en: Certificate of the Top Excellence Award, Big Data Analysis Division, 2025 Big Data Utilization Contest, presented to Seongeun Baek by the Mayor of Busan on July 11, 2025.
+  # 가린 정보가 없어 redactionNote를 두지 않는다(P2-19: 캡션 불필요).
+
+- id: cds-encouragement-award
+  name:
+    ko: 장려상
+    en: Honorable Mention (Encouragement Award)
+  contest:
+    ko: 제5회 CDS빅데이터 경진대회
+    en: 5th CDS Big Data Competition
+  org:
+    ko: 한국연구재단 주최 · CDS빅데이터 대학연합 주관
+    en: Hosted by the National Research Foundation of Korea · Organized by the CDS Big Data University Consortium
+  date: '2024-10-28'
+  # 상장에 과제명이 없어 관련 프로젝트를 특정하지 못했다. 사용자 확인 후 slug를 넣는다.
+  project: null
+  certificate:
+    alt:
+      ko: 제5회 CDS빅데이터 경진대회 장려상 상장. 2024년 10월 28일 백성은에게 수여. 생년월일은 가렸습니다.
+      en: Certificate of the Honorable Mention (Encouragement Award) at the 5th CDS Big Data Competition, presented to Seongeun Baek on October 28, 2024. Date of birth is hidden.
+  redactionNote:
+    ko: 생년월일을 가렸습니다.
+    en: Date of birth is hidden.
+
+- id: multicampus-grand-award
+  name:
+    ko: 최우수상
+    en: Top Excellence Award
+  contest:
+    ko: 멀티캠퍼스 K-Digital Training 기업 요구사항 기반 문제해결 프로젝트
+    en: Multicampus K-Digital Training, Industry Requirements-Based Problem-Solving Project
+  org:
+    ko: 멀티캠퍼스
+    en: Multicampus
+  date: '2024-03-12'
+  project: kickick-park
+  certificate:
+    alt:
+      ko: 멀티캠퍼스 기업 요구사항 기반 문제해결 프로젝트 최우수상 상장. 팀 킥킥파크, 2024년 3월 12일 수여. 다른 팀원 이름은 가렸습니다.
+      en: Certificate of the Top Excellence Award, Multicampus Industry Requirements-Based Problem-Solving Project, team KickKick Park, March 12, 2024. Other team members' names are hidden.
+  redactionNote:
+    ko: 다른 팀원의 이름을 가렸습니다.
+    en: Other team members' names are hidden.

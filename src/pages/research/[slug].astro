@@ -1,0 +1,7 @@
+---
+import type { GetStaticPaths } from 'astro';
+import ResearchPaperView from '../../views/ResearchPaperView.astro';
+import { paperStaticPaths } from '../../lib/publications';
+export const getStaticPaths = (() => paperStaticPaths()) satisfies GetStaticPaths;
+---
+<ResearchPaperView lang="ko" entry={Astro.props.entry} />

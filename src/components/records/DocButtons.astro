@@ -1,0 +1,32 @@
+---
+// The three résumé PDFs as cut-corner buttons (P2-19): used in the /records/ head and in #documents. D-7: each label
+// names its document ("국문 이력서 (2쪽)", "Academic CV"), the title repeats it with the file type, and ↓ marks a
+// download. File links are never language-prefixed.
+interface Props {
+  documents: { id: string; label: string; href: string }[];
+  /** id of the filled (primary) button, e.g. the page-language résumé in the /records/ head; none: all outlined. */
+  primary?: string;
+}
+
+const { documents, primary } = Astro.props;
+---
+<ul class="doc-btns" role="list">
+  {documents.map((doc) => (
+    <li data-document={doc.id}>
+      <a
+        class:list={['btn', 'cut', doc.id === primary ? 'btn--fill' : ['btn--line', 'cut--line'], 'doc-btns__btn']}
+        href={doc.href}
+        type="application/pdf"
+        title={`${doc.label} · PDF`}
+        download
+      ><span class="doc-btns__label">{doc.label}</span> <span class="doc-btns__kind" lang="en">PDF</span> <span aria-hidden="true">↓</span></a>
+    </li>
+  ))}
+</ul>
+
+<style>
+  .doc-btns { display: flex; flex-wrap: wrap; gap: 10px; }
+  .doc-btns__btn { gap: 6px; }
+  /* the button's own colour at full strength (accent-deep 6.1:1 on white, white 6.1:1 on accent-deep): no opacity */
+  .doc-btns__kind { font: 700 var(--fs-label)/1 var(--font-mono); letter-spacing: .08em; }
+</style>

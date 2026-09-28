@@ -1,0 +1,109 @@
+---
+// Research interests as indexed light-HUD rows (P1-9): a mono index, the title and text, and one real figure per
+// interest in a bracketed frame with a "FIG · …" strip — the kill-gap KDE (follow-up work), the CoG paper's Fig. 1
+// and the paper's AUC chart. The raw telemetry JSON is not used here (it would need the Riot notice on this page).
+import { Picture, getImage } from 'astro:assets';
+import SectionHead from '../hud/SectionHead.astro';
+import AucOverallChart from './AucOverallChart.astro';
+import killGap from '../../assets/research/cog-2026/kill-gap-kde.webp';
+import labelHorizon from '../../assets/research/cog-2026/label-horizon.webp';
+import type { researchPage } from '../../data/research-page';
+import { figureCopy, overallAuc } from '../../data/research/cog-2026';
+import type { Lang } from '../../i18n/ui';
+import { t } from '../../i18n/utils';
+import { INTEREST_FIGURE_SIZES, fitWidths, sourceSize } from '../../lib/images';
+
+interface Props {
+  lang: Lang;
+  interests: typeof researchPage.interests;
+}
+
+const { lang, interests } = Astro.props;
+const IMAGES = {
+  'kill-gap': { src: killGap, copy: figureCopy.killGap, label: 'KILL-GAP KDE' },
+  'label-horizon': { src: labelHorizon, copy: figureCopy.labelHorizon, label: 'ENGAGEMENT WINDOWS' },
+} as const;
+const fullLinks = Object.fromEntries(
+  await Promise.all(
+    Object.entries(IMAGES).map(async ([key, image]) => [key, (await getImage({ src: image.src, width: Math.min(1600, sourceSize(image.src).width), format: 'webp' })).src] as const),
+  ),
+) as Record<keyof typeof IMAGES, string>;
+const fullLabel = t(lang, 'action.fullSize');
+// Final fix 2 item 13: the first image figure is the largest thing in the first desktop screen of /research/ (its LCP at
+// 1440x900 and 2560x1440), so it loads eagerly; the rest stay lazy. No fetchpriority: on phones it is below the fold,
+// and the browser raises an in-view image's priority itself.
+const firstImageFigure = interests.find((item) => item.figure !== 'auc')?.figure;
+---
+<section id="interests" class="interests read read-sec" aria-labelledby="interests-title">
+  <div class="container">
+    <SectionHead id="interests-title" caption={t(lang, 'section.interests')} title={t(lang, 'research.interests')} />
+    <ol class="interests__rows lh-rows" role="list">
+      {interests.map((item, i) => (
+        <li class="interests__row lh-row" data-interest={item.id}>
+          <span class="lh-idx" aria-hidden="true">{String(i + 1).padStart(2, '0')}</span>
+          <div class="interests__text">
+            <h3 class="interests__title">{item.title[lang]}</h3>
+            <p class="interests__body">{item.body[lang]}</p>
+          </div>
+          {item.figure === 'auc' ? (
+            <div class="interests__fig interests__fig--chart bracket bracket--sm">
+              <p class="interests__strip" lang="en"><span class="interests__strip-tag">FIG</span> · AUC BY MODEL</p>
+              <AucOverallChart lang={lang} rows={overallAuc} caption={figureCopy.aucOverall.caption[lang]} alt={figureCopy.aucOverall.alt[lang]} idPrefix="interests-auc" />
+            </div>
+          ) : (
+            <figure class="interests__fig bracket bracket--sm">
+              <Picture
+                class="interests__img"
+                src={IMAGES[item.figure].src}
+                alt={IMAGES[item.figure].copy.alt[lang]}
+                formats={['avif', 'webp']}
+                fallbackFormat="webp"
+                widths={fitWidths([360, 540, 720], sourceSize(IMAGES[item.figure].src).width)}
+                sizes={INTEREST_FIGURE_SIZES}
+                loading={item.figure === firstImageFigure ? 'eager' : 'lazy'}
+              />
+              <figcaption class="interests__cap">
+                <span class="interests__strip" lang="en"><span class="interests__strip-tag">FIG</span> · {IMAGES[item.figure].label}</span>
+                <span class="interests__cap-text">{IMAGES[item.figure].copy.caption[lang]}</span>
+                <a class="interests__full" href={fullLinks[item.figure]} aria-label={`${fullLabel} · ${IMAGES[item.figure].label}`}>{fullLabel}</a>
+              </figcaption>
+            </figure>
+          )}
+        </li>
+      ))}
+    </ol>
+  </div>
+</section>
+
+<style>
+  .interests__rows { margin-top: 24px; }
+  .interests__row { row-gap: 16px; }
+  .interests__text { min-width: 0; }
+  .interests__title { font-size: var(--fs-sub); font-weight: 700; line-height: var(--lh-sub); color: var(--read-text); }
+  .interests__body { margin-top: 8px; max-width: var(--measure); font-size: var(--fs-body); line-height: var(--lh-body); color: var(--read-text); }
+  /* The figure: a white frame with accent-deep corner marks, under the text: the full row on phones (the dot plot needs
+     a 280px box to keep its text at 12px or more), the text column from 734px, its own column from 1068px. */
+  .interests__fig { grid-column: 1 / -1; min-width: 0; margin: 0; padding: 12px; background: var(--read-card); }
+  .interests__fig--chart { padding-inline: 0; }
+  .interests__fig--chart .interests__strip { padding-inline: 12px; }
+  .interests__fig :global(img) { display: block; width: 100%; height: auto; }
+  .interests__fig--chart :global(.chart__scroll) { border: 0; }
+  /* the compact dot plot drawn at most ~1.15× (labels ~15px) so this row matches the two image rows */
+  .interests__fig--chart :global(.chart__svg--compact) { max-width: 320px; }
+  .interests__strip { display: block; font: 600 var(--fs-label)/1.5 var(--font-mono); letter-spacing: .14em; color: var(--read-muted); }
+  .interests__fig--chart .interests__strip { margin-bottom: 8px; }
+  .interests__strip-tag { color: var(--read-text); }
+  .interests__cap { display: grid; gap: 4px; margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--read-line); }
+  .interests__cap-text { font-size: var(--fs-caption); line-height: var(--lh-caption); color: var(--read-muted); }
+  /* padding + negative margin: a 44px-tall tap target without a taller caption line (same technique as Figure.astro) */
+  .interests__full { justify-self: start; padding-block: 12px; margin-block: -12px; font-size: var(--fs-caption); font-weight: 600; }
+  @media (min-width: 734px) {
+    .interests__fig { grid-column: 2; max-width: 560px; }
+    .interests__fig--chart { padding-inline: 12px; }
+    .interests__fig--chart .interests__strip { padding-inline: 0; }
+  }
+  @media (min-width: 1068px) {
+    .interests__row { grid-template-columns: 4.5em minmax(0, 1fr) minmax(0, 400px); column-gap: 32px; align-items: start; }
+    .interests__fig { grid-column: 3; grid-row: 1; }
+  }
+</style>

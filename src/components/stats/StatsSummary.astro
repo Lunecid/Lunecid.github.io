@@ -1,0 +1,79 @@
+---
+import SectionHead from '../hud/SectionHead.astro';
+import StatsLiveTotal from '../../islands/StatsLiveTotal';
+import type { Lang } from '../../i18n/ui';
+import { formatDate, formatNumber, localizeHref, t } from '../../i18n/utils';
+import { goatcounterDashboardUrl } from '../../lib/analytics';
+import { usableStats, type StatsData } from '../../lib/generated';
+
+interface Props {
+  lang: Lang;
+  stats: StatsData | undefined;
+  code: string | null;
+}
+const { lang, stats, code } = Astro.props;
+const usable = code === null ? undefined : usableStats(stats);
+const days = usable?.range ? Math.round((Date.parse(usable.range.end) - Date.parse(usable.range.start)) / 86_400_000) : null;
+
+/** 'YYYY.MM.DD HH:MM KST' (ko) / 'Mon D, YYYY HH:MM KST' (en), in Asia/Seoul. */
+function asOf(iso: string): string {
+  const d = new Date(iso);
+  const day = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Seoul', year: 'numeric', month: '2-digit', day: '2-digit' }).format(d);
+  const time = new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Seoul', hour: '2-digit', minute: '2-digit', hour12: false }).format(d);
+  return `${formatDate(day, lang)} ${time} KST`;
+}
+---
+<section id="summary" class="stats read" aria-labelledby="stats-summary-title">
+  <div class="container">
+    <SectionHead id="stats-summary-title" caption={t(lang, 'section.visits')} title={t(lang, 'stats.visits')} />
+    {code === null ? (
+      /* P2-33: while GOATCOUNTER.code is null the page says plainly that nothing is collected yet. */
+      <div class="stats__offline bracket bracket--sm" data-stats-offline>
+        <p class="stats__offline-tag" lang="en">[ OFFLINE ]</p>
+        <p class="stats__note">{t(lang, 'stats.offline')} {t(lang, 'stats.notCollecting')}</p>
+        <p class="stats__links"><a href={localizeHref('/privacy/', lang)}>{t(lang, 'stats.privacyLink')}</a></p>
+      </div>
+    ) : (
+      <Fragment>
+        {usable ? (
+          <div class="stats__numbers" data-fetched-at={usable.fetchedAt} data-max-age-days={usable.maxAgeDays}>
+            <p class="stats__total">
+              <span class="stats__total-label">{days !== null ? t(lang, 'stats.range', { n: days }) : t(lang, 'stats.visits')}</span>
+              <strong class="stats__total-num tnum">{formatNumber(usable.total ?? 0, lang)}</strong>
+            </p>
+            <p class="stats__asof">{t(lang, 'stats.fetchedAt')} <time datetime={usable.fetchedAt}>{asOf(usable.fetchedAt)}</time></p>
+          </div>
+        ) : (
+          <p class="stats__note">{t(lang, 'stats.unavailable')}</p>
+        )}
+        {/* client:idle: the island SSR-renders nothing, and client:visible observes the island's children (none) so it would never hydrate */}
+        <StatsLiveTotal client:idle code={code} initialTotal={null} lang={lang} label={t(lang, 'stats.liveTotal')} />
+        <p class="stats__links"><a href={goatcounterDashboardUrl(code)}>{t(lang, 'stats.dashboard')}</a></p>
+        <p class="stats__source">{t(lang, 'stats.source')}</p>
+      </Fragment>
+    )}
+  </div>
+</section>
+
+<script>
+  import '../../scripts/stale-guard';
+</script>
+
+<style>
+  .stats { padding-block: var(--section-pad-y); }
+  .stats__note { margin-top: 12px; font-size: var(--fs-body); color: var(--read-text); }
+  .stats__offline { margin-top: 16px; max-width: var(--measure); padding: 16px 18px; background: var(--read-card); }
+  .stats__offline .stats__note { margin-top: 6px; }
+  .stats__offline-tag { font: 700 13px/1.4 var(--font-mono); letter-spacing: .08em; color: var(--read-muted); }
+  .stats__numbers { margin-top: 16px; display: grid; gap: 6px; }
+  .stats__total { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 14px; }
+  .stats__total-label { font: 600 14px/1.4 var(--font-mono); color: var(--read-muted); }
+  .stats__total-num { font: 800 var(--fs-display)/1.1 var(--font-mono); color: var(--read-text); }
+  .stats__asof { font-size: 14px; color: var(--read-muted); }
+  .stats :global(.stats__live) { margin-top: 14px; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; }
+  .stats :global(.stats__live-label) { font: 600 14px/1.4 var(--font-mono); color: var(--read-muted); }
+  .stats :global(.stats__live-num) { font: 800 var(--fs-sub)/1.2 var(--font-mono); color: var(--read-text); }
+  .stats__links { margin-top: 14px; }
+  .stats__links a { display: inline-flex; align-items: center; min-height: var(--tap); }
+  .stats__source { margin-top: 4px; font-size: 13px; color: var(--read-muted); }
+</style>

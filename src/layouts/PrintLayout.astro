@@ -1,0 +1,64 @@
+---
+import { Font } from 'astro:assets';
+import type { Lang } from '../i18n/ui';
+
+interface Props {
+  lang: Lang;
+  title: string;
+}
+const { lang, title } = Astro.props;
+---
+<!doctype html>
+<html lang={lang} data-page="print">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <Font cssVariable="--font-print" preload />
+    <title>{title}</title>
+  </head>
+  <body class="print__body">
+    <main class="print__page"><slot /></main>
+  </body>
+</html>
+
+<style is:global>
+  @page { size: A4; margin: 12mm 14mm; }
+  html { background: Canvas; color: CanvasText; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body.print__body {
+    margin: 0; font-family: var(--font-print); font-size: 10pt; font-weight: 400; line-height: 1.45;
+    letter-spacing: 0; word-break: keep-all; overflow-wrap: anywhere; font-variant-numeric: tabular-nums;
+  }
+  .print__page { max-width: 182mm; margin: 0 auto; }
+  @media screen { .print__page { padding: 12mm 14mm; } }
+  :where(.print) :is(h1, h2, p, ul) { margin: 0; } /* zero specificity: the .print__* rules below win */
+  .print a { color: inherit; text-decoration: none; }
+  /* One-page English résumé (verified: 1 A4 page with the Task 9 resume.yaml; 9.5pt/1.38 alone gave 2 pages).
+     Re-tuned in batch 3b when the CoG paper was added as a 4th project: 1.3 -> 1.27 line-height bought back the
+     line the extra project needed, alongside shorter résumé bullets in resume.yaml. */
+  .print--compact { font-size: 9pt; line-height: 1.27; }
+  .print--compact .print__head { padding-bottom: 4pt; }
+  .print--compact .print__name { font-size: 17pt; }
+  .print--compact :is(.print__tagline, .print__contact) { margin-top: 2pt; }
+  .print--compact .print__sec { margin-top: 5pt; }
+  .print--compact .print__h { margin-bottom: 2pt; font-size: 10.5pt; }
+  .print--compact .print__item { margin-bottom: 2pt; }
+  .print--compact .print__bullets { margin-top: 0; }
+  .print__head { padding-bottom: 6pt; border-bottom: 1.5pt solid CanvasText; }
+  .print__name { font-size: 20pt; font-weight: 700; line-height: 1.2; }
+  .print__headline { margin-top: 2pt; font-size: 11pt; font-weight: 600; }
+  .print__tagline { margin-top: 4pt; }
+  .print__contact { display: flex; flex-wrap: wrap; gap: 0 10pt; margin-top: 4pt; padding: 0; list-style: none; font-size: 9pt; color: color-mix(in srgb, CanvasText 72%, Canvas); }
+  .print__affil { margin-top: 2pt; font-size: 9pt; color: color-mix(in srgb, CanvasText 72%, Canvas); }
+  .print__sec { margin-top: 9pt; }
+  .print__h { margin-bottom: 3pt; padding-bottom: 2pt; font-size: 11pt; font-weight: 700; border-bottom: .75pt solid color-mix(in srgb, CanvasText 30%, Canvas); break-after: avoid; }
+  .print__list { padding: 0; list-style: none; }
+  .print__item { margin-bottom: 4pt; break-inside: avoid; }
+  .print__row { display: flex; justify-content: space-between; gap: 8pt; }
+  .print__date { flex: none; font-size: 9pt; white-space: nowrap; color: color-mix(in srgb, CanvasText 72%, Canvas); }
+  .print__meta { font-size: 9pt; color: color-mix(in srgb, CanvasText 72%, Canvas); }
+  .print__bullets { margin: 1pt 0 0; padding-left: 12pt; }
+  .print__abstract { margin-top: 2pt; font-size: 9pt; line-height: 1.4; }
+  .print__foot { margin-top: 10pt; font-size: 9pt; color: color-mix(in srgb, CanvasText 72%, Canvas); }
+</style>

@@ -1,0 +1,196 @@
+/* FavoriteGames island — BEM blocks fg, fg-acct (owner: Task 24a). */
+.fg {
+  position: relative; overflow: hidden; border: 1px solid var(--hud-frame); color: var(--hud-text);
+  container-type: inline-size;
+  --gap: calc((100vw - 100cqw) / 2);
+}
+.fg__tints { position: absolute; inset: 0; pointer-events: none; }
+.fg__tint { position: absolute; inset: 0; opacity: 0; transition: opacity .6s var(--ease-out); }
+.fg__tint[data-on="true"] { opacity: 1; }
+.fg__tint--remielle { background: radial-gradient(60% 70% at 72% 45%, var(--tint-remielle), transparent 70%); }
+.fg__tint--eula { background: radial-gradient(60% 70% at 72% 45%, var(--tint-eula), transparent 70%); }
+.fg__tint--mona { background: radial-gradient(60% 70% at 72% 45%, var(--tint-mona), transparent 70%); }
+
+.fg__layout { position: relative; display: grid; grid-template-areas: "top" "list" "stage" "credit"; gap: 16px; padding: 20px var(--gutter) 16px; }
+.fg__top { grid-area: top; }
+.fg__list { grid-area: list; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.fg__tab {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 2px; min-height: var(--tap);
+  padding: 10px 12px; text-align: left; cursor: pointer;
+  background: var(--hud-panel-75); border: 1px solid var(--hud-line); color: var(--hud-muted);
+  transition: border-color var(--dur-hover) linear, color var(--dur-hover) linear, transform var(--dur-press) var(--ease-out);
+}
+.fg__tab b { font-size: 15px; font-weight: 700; color: var(--hud-text); }
+.fg__tab small { font: 600 12px/1.4 var(--font-mono); letter-spacing: .1em; }
+.fg__tab small:lang(ko) { font-family: var(--font-sans); letter-spacing: 0; }
+.fg__tab:hover:not([aria-disabled="true"]) { border-color: var(--accent); }
+.fg__tab:active:not([aria-disabled="true"]) { transform: scale(.96); }
+.fg__tab[aria-selected="true"] { border-color: var(--accent); background: linear-gradient(90deg, var(--accent-wash-16), var(--hud-panel-75)); }
+.fg__tab[aria-selected="true"] b { color: var(--hud-strong); }
+.fg__tab[aria-selected="true"] small { color: var(--accent); }
+.fg__tab[aria-disabled="true"] { cursor: default; border-style: dashed; }
+.fg__tab[aria-disabled="true"] b { color: var(--hud-muted); }
+
+.fg__stage { grid-area: stage; position: relative; }
+/* Reserved height: no layout shift when the scene arms or swaps. With art it is the art's height; without art (D-1)
+   only about the copy's height, so no empty black block is left under it. */
+.fg--art .fg__stage { min-height: 760px; }
+.fg--no-art .fg__stage { min-height: 380px; }
+.fg__scene { display: grid; grid-template-areas: "chr" "copy" "acct"; gap: 16px; }
+.fg__streaks { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 2; }
+.fg__streak { position: absolute; right: 0; height: 2px; width: 80%; background: linear-gradient(90deg, transparent, var(--accent), transparent); }
+.fg__chr {
+  --overhang: 0px;
+  /* 100% of the clip wrapper (not 100cqw of .fg): at tablet the chr cell is only half the card. */
+  --W: 100%;
+  --oh: clamp(0px, calc(var(--gap) - 20px), var(--overhang));
+  --inset-t: 0px; --inset-r: 0px; --inset-l: 0px; --inset-b: 2px;
+  grid-area: chr; position: relative; height: clamp(300px, 90vw, 420px); margin-inline: calc(var(--gutter) * -1); z-index: 3;
+  pointer-events: none;
+  -webkit-mask-image: linear-gradient(0deg, transparent 0, var(--hud-bg) 16%);
+  mask-image: linear-gradient(0deg, transparent 0, var(--hud-bg) 16%);
+}
+/* Same Chrome mask-edge hairline as CharacterStage: unmasked 2px-inset clip; img keeps designed --W box. */
+.fg__chr-clip {
+  position: absolute; overflow: hidden;
+  top: var(--inset-t); right: var(--inset-r); bottom: var(--inset-b); left: var(--inset-l);
+}
+.fg__chr img {
+  position: absolute;
+  top: calc(-1 * var(--inset-t));
+  left: calc(-1 * var(--inset-l));
+  width: var(--W);
+  height: calc(100% + var(--inset-t) + var(--inset-b));
+  max-width: none;
+  object-fit: cover;
+}
+.fg__copy { grid-area: copy; position: relative; z-index: 5; }
+.fg__title { font-size: 34px; font-weight: 900; line-height: .95; letter-spacing: .01em; text-transform: uppercase; color: var(--hud-strong); }
+.fg__sub { margin-top: 8px; font-size: var(--fs-small); color: var(--hud-muted); }
+.fg__why { margin-top: 22px; font-size: 16px; line-height: 1.75; color: var(--hud-text); }
+.fg__meta { margin-top: 16px; display: flex; flex-wrap: wrap; gap: 8px; }
+.fg__meta li { padding: 4px 9px; border: 1px solid var(--hud-line); font: 700 12px/1.4 var(--font-mono); color: var(--hud-text); }
+/* no-art facts panel (D-1): the game's facts as bracketed HUD rows instead of chips */
+.fg__meta--panel { display: grid; gap: 0; padding: 6px 16px; background: var(--hud-panel-75); }
+.fg__meta--panel li { padding: 10px 0; border: 0; border-bottom: 1px dashed var(--hud-line-dash); font-size: 13px; }
+.fg__meta--panel li:last-child { border-bottom: 0; }
+.fg__meta--panel li:lang(ko) { font-family: var(--font-sans); letter-spacing: 0; } /* Hangul: no mono-width spaces (P1-10) */
+.fg__credit { grid-area: credit; font: 500 12px/1.5 var(--font-mono); color: var(--hud-muted); }
+.fg__credit-part { display: inline-block; } /* breaks between pieces (lib/credit.ts); inside one only if it outgrows the line */
+
+/* account card (spec §7 common card) */
+.fg-acct { grid-area: acct; position: relative; isolation: isolate; z-index: 6; padding: 16px 18px; }
+.fg-acct__bg {
+  position: absolute; inset: 0; z-index: -1; transform-origin: 0 50%; background: var(--hud-line);
+  clip-path: polygon(0 0, calc(100% - 20px) 0, 100% 20px, 100% 100%, 20px 100%, 0 calc(100% - 20px));
+}
+.fg-acct__bg::after {
+  content: ""; position: absolute; inset: 1px; background: var(--hud-panel);
+  clip-path: polygon(0 0, calc(100% - 19.41px) 0, 100% 19.41px, 100% 100%, 19.41px 100%, 0 calc(100% - 19.41px));
+}
+.fg-acct__hd { display: flex; justify-content: space-between; gap: 12px; font: 600 12px/1.4 var(--font-mono); letter-spacing: .1em; color: var(--hud-muted); }
+.fg-acct__nm { margin-top: 8px; font-size: 22px; font-weight: 900; color: var(--hud-strong); }
+.fg-acct__sub { margin-top: 2px; font: 600 12px/1.4 var(--font-mono); color: var(--hud-muted); }
+.fg-acct__row { display: flex; justify-content: space-between; align-items: baseline; padding: 8px 0; border-bottom: 1px dashed var(--hud-line-dash); font-size: 14px; color: var(--hud-muted); }
+.fg-acct__row dd { margin: 0; font: 800 18px/1.2 var(--font-mono); color: var(--hud-strong); font-variant-numeric: tabular-nums; }
+.fg-acct__track { position: relative; height: 6px; margin-top: 10px; background: var(--hud-track); overflow: hidden; }
+.fg-acct__fill { display: block; height: 100%; transform-origin: 0 50%; background: linear-gradient(90deg, var(--accent), var(--accent-light)); }
+.fg-acct__badges { margin-top: 12px; display: flex; flex-wrap: wrap; gap: 6px; }
+.fg-acct__badges li { padding: 3px 9px; font: 800 12px/1.4 var(--font-mono); color: var(--gold); border: 1px solid var(--gold-line); background: var(--gold-wash); }
+.fg-acct__src { margin-top: 10px; font-size: 12px; color: var(--hud-muted); }
+
+/* tablet: the tabs stay in a top row (the 190px list column starts at 1068px), so the copy gets the full width */
+@media (min-width: 734px) {
+  .fg__list { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
+  .fg__title { font-size: 40px; }
+  .fg--art .fg__stage { min-height: 520px; } /* the art's own 520px: no empty band under the copy (fix 2 item 8) */
+  .fg--art .fg__scene { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-areas: "copy chr" "acct chr"; }
+  .fg__chr { height: 100%; min-height: 520px; margin: 0; }
+  .fg--no-art .fg__stage { min-height: 260px; }
+  .fg--no-art .fg__copy {
+    display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); column-gap: 32px; align-items: start;
+    grid-template-areas: "title facts" "sub facts" "why facts";
+  }
+  .fg--no-art .fg__title { grid-area: title; }
+  .fg--no-art .fg__sub { grid-area: sub; }
+  .fg--no-art .fg__why { grid-area: why; }
+  .fg--no-art .fg__meta { grid-area: facts; margin-top: 4px; }
+}
+/* Tablet only: the chr cell sits mid-card, so fade left/right/top (and keep the bottom fade) instead of hard cuts. */
+@media (min-width: 734px) and (max-width: 1067.98px) {
+  .fg__chr {
+    --inset-t: 2px; --inset-r: 2px; --inset-b: 2px; --inset-l: 2px;
+    /* Keep the designed box = frame width (100% alone would resolve against the inset clip). */
+    --W: calc(100% + var(--inset-l) + var(--inset-r));
+    /* 14%/88% horizontal + bottom/top fades; 4px fully-transparent tips keep the 2px-inset clip edges clear. */
+    -webkit-mask-image:
+      linear-gradient(90deg, transparent 0, transparent 4px, var(--hud-bg) 14%, var(--hud-bg) 88%, transparent calc(100% - 4px), transparent 100%),
+      linear-gradient(0deg, transparent 0, var(--hud-bg) 16%, var(--hud-bg) calc(100% - 40px), transparent calc(100% - 4px), transparent 100%);
+    -webkit-mask-composite: source-in;
+    mask-image:
+      linear-gradient(90deg, transparent 0, transparent 4px, var(--hud-bg) 14%, var(--hud-bg) 88%, transparent calc(100% - 4px), transparent 100%),
+      linear-gradient(0deg, transparent 0, var(--hud-bg) 16%, var(--hud-bg) calc(100% - 40px), transparent calc(100% - 4px), transparent 100%);
+    mask-composite: intersect;
+  }
+}
+@media (min-width: 1068px) {
+  .fg__list { display: flex; flex-direction: column; }
+  .fg__title { font-size: 46px; }
+  .fg--art { height: 600px; }
+  .fg--art .fg__layout { display: block; height: 100%; padding: 0; }
+  .fg--art .fg__top { position: absolute; left: 32px; top: 24px; z-index: 6; }
+  .fg--art .fg__list { position: absolute; left: 32px; top: 64px; width: 190px; z-index: 6; gap: 8px; }
+  .fg--art .fg__stage, .fg--art .fg__scene { position: absolute; inset: 0; display: block; min-height: 0; }
+  .fg__streak { width: 600px; }
+  .fg--art .fg__copy { position: absolute; left: 252px; top: 70px; width: 380px; }
+  /* a game without art inside an art showcase: its copy takes the art's place instead of leaving it empty */
+  .fg--art .fg__scene[data-art="off"] .fg__copy { width: min(620px, calc(100% - 300px)); }
+  .fg__chr {
+    --overhang: 70px;
+    --W: min(760px, 58cqw);
+    --inset-t: 0px; --inset-r: 0px; --inset-l: 2px; --inset-b: 2px;
+    position: absolute; top: 0; bottom: 0; left: auto; height: auto; min-height: 0; margin: 0;
+    right: calc(-1 * var(--oh));
+    width: calc(var(--W) - var(--overhang) + var(--oh));
+    -webkit-mask-image:
+      linear-gradient(90deg, transparent 0, transparent calc(0.18 * var(--W)), var(--hud-bg) calc(0.42 * var(--W))),
+      linear-gradient(0deg, transparent 0, var(--hud-bg) 12%);
+    -webkit-mask-composite: source-in;
+    mask-image:
+      linear-gradient(90deg, transparent 0, transparent calc(0.18 * var(--W)), var(--hud-bg) calc(0.42 * var(--W))),
+      linear-gradient(0deg, transparent 0, var(--hud-bg) 12%);
+    mask-composite: intersect;
+  }
+  .fg--art .fg-acct { position: absolute; right: 36px; bottom: 34px; width: 330px; }
+  /* two or three games (D-13, fix 2 item 8): the tabs in a row above the copy, a 520px panel (the English copy
+     with its two rows of facts still ends ~50px above the credit) */
+  .fg--art.fg--tabs-row { height: 520px; }
+  .fg--art.fg--tabs-row .fg__list { flex-direction: row; top: 60px; width: auto; }
+  .fg--art.fg--tabs-row .fg__tab { width: 200px; }
+  .fg--art.fg--tabs-row .fg__copy { left: 32px; top: 146px; width: 480px; }
+  .fg--art.fg--tabs-row .fg__scene[data-art="off"] .fg__copy { width: min(620px, calc(100% - 64px)); }
+  .fg--art .fg__credit { position: absolute; left: 32px; bottom: 14px; z-index: 6; }
+  /* no art: the 190px list column beside a flowing stage (copy | facts panel), no fixed height */
+  .fg--no-art .fg__layout {
+    grid-template-columns: 190px minmax(0, 1fr); grid-template-areas: "top top" "list stage" "credit credit";
+    column-gap: 40px; row-gap: 20px; padding: 24px 32px 32px;
+  }
+  .fg--no-art .fg__list { align-self: start; }
+  .fg--no-art .fg__stage { min-height: 240px; }
+  .fg--no-art .fg__copy { column-gap: 48px; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); }
+}
+/* No JS (final fix 2 item 17): no tabs, no art, every game's text in the page flow; the art layout's fixed height and
+   absolute positions would clip or stack it. */
+html:not(.js) .fg--art { height: auto; }
+html:not(.js) .fg .fg__layout { display: grid; height: auto; }
+html:not(.js) .fg .fg__top,
+html:not(.js) .fg .fg__stage,
+html:not(.js) .fg .fg__credit { position: static; inset: auto; }
+html:not(.js) .fg .fg__stage { min-height: 0; }
+.fg .fg__stage .fg__copy--static { position: static; width: auto; max-width: 42em; }
+.fg__copy--static + .fg__copy--static { margin-top: 32px; padding-top: 24px; border-top: 1px solid var(--hud-divider); }
+@media (min-width: 1068px) {
+  html:not(.js) .fg--art .fg__layout { padding: 24px 32px 20px; }
+}
+:root[data-motion="reduce"] .fg__tint { transition-duration: .2s; }
+:root[data-motion="reduce"] .fg__tab:active { transform: none; }

@@ -1,0 +1,45 @@
+---
+// Links at the end of a case study (spec §3: every case study ends with its GitHub link): repository, report and slides in
+// the same tab, as cut-corner outline buttons in the centred reading column shared with the body (P1-7).
+// No links → a short "저장소 비공개 / Private repository" note without the #links id (contract §5.4).
+import SectionHead from '../hud/SectionHead.astro';
+import type { Lang } from '../../i18n/ui';
+import { t } from '../../i18n/utils';
+
+interface Props {
+  lang: Lang;
+  links: { github?: string; report?: string; slides?: string };
+}
+
+const { lang, links } = Astro.props;
+const items = [
+  links.github ? { href: links.github, label: t(lang, 'project.repo') } : null,
+  links.report ? { href: links.report, label: t(lang, 'project.report') } : null,
+  links.slides ? { href: links.slides, label: t(lang, 'project.slides') } : null,
+].filter((item): item is { href: string; label: string } => item !== null);
+---
+
+{
+  items.length > 0 ? (
+    <section id="links" class="plinks read read-section read-column" aria-labelledby="links-title">
+      <SectionHead id="links-title" caption={t(lang, 'section.links')} title={t(lang, 'project.links')} />
+      <ul class="plinks__list" role="list">
+        {items.map((item) => (
+          <li>
+            <a class="plinks__link btn btn--line cut cut--line" href={item.href}>{item.label} <span aria-hidden="true">↗</span></a>
+          </li>
+        ))}
+      </ul>
+    </section>
+  ) : (
+    <div class="plinks read read-section read-column">
+      <p class="plinks__private lh-tag">{t(lang, 'project.privateRepo')}</p>
+    </div>
+  )
+}
+
+<style>
+  .plinks { padding-block: 0 64px; }
+  .plinks__list { margin-top: 16px; display: flex; flex-wrap: wrap; gap: 10px; }
+  .plinks__private { font-size: 14px; }
+</style>

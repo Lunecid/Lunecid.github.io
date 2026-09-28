@@ -1,0 +1,222 @@
+---
+/**
+ * MAIN MENU (spec §5, mockup-port §4): a real <nav><ol><a>. The ▶ pointer is data-selected (not aria-current:
+ * none of these links is the current page). The side stage (Eula; Remielle while Eula is on the hero, final fix 2
+ * item 10) enters when visible, without streaks (§8 #20). Without side art (D-1) the rows take the full width with
+ * their captions aligned right (Behance pattern 3) instead of leaving the art's column empty. Item hrefs arrive
+ * localized.
+ */
+import type { Lang } from '../../i18n/ui';
+import { t } from '../../i18n/utils';
+import type { StageCharacter } from '../../islands/CharacterStage';
+import CharacterStage from '../../islands/CharacterStage';
+import SectionHead from './SectionHead.astro';
+
+interface Props {
+  lang: Lang;
+  items: { num: '01' | '02' | '03' | '04'; href: string; title: string; caption: string }[];
+  hint: string;
+  /** Side stage characters, first choice first; [] = no side art. */
+  side: StageCharacter[];
+}
+const { lang, items, hint, side } = Astro.props;
+---
+<section id="main-menu" class:list={['mm-sec', 'hud-grid', side.length > 0 ? 'mm-sec--art' : 'mm-sec--no-art']}>
+  <div class="container container--hud mm-sec__inner">
+    <SectionHead id="main-menu-title" caption={t(lang, 'section.mainMenu')} title={t(lang, 'section.mainMenu.title')} captionOnly />
+    <nav class="mm" aria-labelledby="main-menu-title" data-main-menu>
+      <ol class="mm__list" role="list">
+        {items.map((item, index) => (
+          <li class="mm__item" data-selected={index === 0 ? '' : undefined}>
+            <a class="mm__link" href={item.href}>
+              <span class="mm__ptr" aria-hidden="true">▶</span>
+              <span class="mm__num" aria-hidden="true">{item.num}</span>
+              <span class="mm__title">{item.title}</span>
+              <span class="mm__cap">{item.caption}</span>
+            </a>
+          </li>
+        ))}
+      </ol>
+      <p class="mm__hint" aria-hidden="true">{hint}</p>
+    </nav>
+    {side.length > 0 && <CharacterStage client:visible variant="side" trigger="visible" streaks={false} characters={side} initialId={side[0]?.id} />}
+  </div>
+</section>
+
+<script>
+  import { playSfx } from '../../lib/sound';
+
+  document.querySelectorAll<HTMLElement>('[data-main-menu]').forEach((nav) => {
+    const items = [...nav.querySelectorAll<HTMLLIElement>('.mm__item')];
+    const links = items.map((item) => item.querySelector('a')).filter((a): a is HTMLAnchorElement => a !== null);
+    let selected = 0;
+    const select = (index: number) => {
+      if (index === selected) return;
+      selected = index;
+      items.forEach((item, i) => item.toggleAttribute('data-selected', i === index));
+      void playSfx('move');
+    };
+    links.forEach((link, index) => {
+      link.addEventListener('focus', () => select(index));
+      link.addEventListener('pointerenter', () => {
+        select(index);
+        // Keep a single cursor (spec §5 "▶ 포인터"): if keyboard focus is already inside the menu,
+        // move it to the hovered link so the selection frame and the focus ring never disagree.
+        if (nav.contains(document.activeElement)) link.focus({ preventScroll: true });
+      });
+    });
+    nav.addEventListener('keydown', (event) => {
+      const index = links.indexOf(document.activeElement as HTMLAnchorElement);
+      if (index < 0) return;
+      const targets: Record<string, number> = { ArrowDown: index + 1, ArrowUp: index - 1, Home: 0, End: links.length - 1 };
+      const target = targets[event.key];
+      if (target === undefined) return;
+      event.preventDefault();
+      links[(target + links.length) % links.length]?.focus(); // Enter keeps the native link activation
+    });
+  });
+</script>
+
+<style>
+  .mm-sec {
+    position: relative;
+    overflow: hidden;
+    border-top: 1px solid var(--hud-divider);
+    padding-block: var(--section-pad-y);
+  }
+  /* The side stage is positioned in this HUD container (it widens with the XL steps), under the label and rows. */
+  .mm-sec__inner {
+    position: relative;
+    z-index: 2;
+  }
+  .mm-sec__inner > :global(.sec-head),
+  .mm {
+    position: relative;
+    z-index: 2;
+  }
+  .mm {
+    margin-top: 12px;
+  }
+  .mm__link {
+    position: relative;
+    isolation: isolate;
+    display: grid;
+    align-items: center;
+    grid-template-columns: 24px 40px minmax(0, 1fr);
+    grid-template-areas: "ptr num title" ". . cap";
+    min-height: 56px;
+    padding: 12px 16px;
+    font-family: var(--font-mono);
+    font-size: 18px;
+    color: var(--hud-muted);
+    text-decoration: none;
+    transition: color var(--dur-hover) linear;
+  }
+  /* Selection frame on two pseudo layers (same technique as .cut--line in hud.css) so the focus ring on
+     the link is never clipped and the cut top-right corner keeps a full 1px line, including the diagonal
+     (a plain `border` + `clip-path` combination has no stroke along the diagonal it cuts). */
+  .mm__link::before,
+  .mm__link::after {
+    content: "";
+    position: absolute;
+    z-index: -1;
+    background: transparent;
+    transition: background-color var(--dur-hover) linear;
+  }
+  .mm__link::before {
+    inset: 0;
+    clip-path: polygon(0 0, calc(100% - var(--cut-row)) 0, 100% var(--cut-row), 100% 100%, 0 100%);
+  }
+  .mm__link::after {
+    inset: 1px;
+    --mm-ci: calc(var(--cut-row) - .59px);
+    clip-path: polygon(0 0, calc(100% - var(--mm-ci)) 0, 100% var(--mm-ci), 100% 100%, 0 100%);
+  }
+  .mm__item[data-selected] .mm__link::before {
+    background: var(--hud-line-strong);
+  }
+  /* The inner layer is opaque: over a transparent end the outer 60%-lime layer showed through and the whole row
+     read as a solid olive bar with an illegible caption. */
+  .mm__item[data-selected] .mm__link::after {
+    background: linear-gradient(90deg, var(--accent-wash-12), transparent), var(--hud-bg);
+  }
+  .mm__ptr {
+    grid-area: ptr;
+    color: var(--accent);
+    opacity: 0;
+  }
+  .mm__item[data-selected] .mm__ptr {
+    opacity: 1;
+  }
+  .mm__num {
+    grid-area: num;
+    font-variant-numeric: tabular-nums;
+  }
+  .mm__item[data-selected] .mm__num {
+    color: var(--accent);
+  }
+  .mm__title {
+    grid-area: title;
+    color: var(--hud-text);
+    font-weight: 800;
+  }
+  .mm__title:lang(ko) {
+    font-family: var(--font-sans);
+  }
+  .mm__cap {
+    grid-area: cap;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+  .mm__cap:lang(ko) {
+    font-family: var(--font-sans);
+  }
+  /* Hangul letter-spacing stays 0 (Global Constraints); only the English hint is tracked out like v4 */
+  .mm__hint {
+    margin-top: 12px;
+    font: 500 var(--fs-caption)/1.5 var(--font-mono);
+    letter-spacing: 0;
+    color: var(--hud-muted);
+  }
+  .mm__hint:lang(en) {
+    letter-spacing: .1em;
+  }
+  @media (hover: none) {
+    .mm__hint {
+      display: none;
+    }
+  }
+  @media (min-width: 734px) {
+    .mm-sec--art .mm {
+      width: 58%;
+    }
+    .mm__link {
+      grid-template-columns: 28px 48px minmax(0, 1fr);
+    }
+    /* no art: one row per item across the full width, caption on the right (Behance pattern 3) */
+    .mm-sec--no-art .mm__link {
+      grid-template-columns: 28px 48px max-content minmax(0, 1fr);
+      grid-template-areas: "ptr num title cap";
+      column-gap: 0;
+    }
+    .mm-sec--no-art .mm__cap {
+      padding-left: 24px;
+      text-align: right;
+    }
+  }
+  @media (min-width: 1068px) {
+    .mm-sec--art .mm {
+      width: 62%;
+    }
+    .mm__link {
+      grid-template-columns: 28px 52px 150px minmax(0, 1fr);
+      grid-template-areas: "ptr num title cap";
+      font-size: 20px;
+      padding: 14px 18px;
+      min-height: 0;
+    }
+    .mm-sec--no-art .mm__link {
+      grid-template-columns: 28px 52px max-content minmax(0, 1fr);
+    }
+  }
+</style>

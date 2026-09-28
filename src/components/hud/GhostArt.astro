@@ -1,0 +1,59 @@
+---
+// Faint grey character watermark in the empty side margins of wide light bands (game version only).
+// CSS background lives only inside @media (min-width: 1600px), so narrower viewports never download it.
+// No CSS mask — plain opacity (masks draw Chrome edge hairlines). Optional: missing asset → render nothing.
+import { getImage } from 'astro:assets';
+import type { ImageMetadata } from 'astro';
+
+interface Props {
+  side: 'left' | 'right';
+}
+
+const { side } = Astro.props;
+
+const files = import.meta.glob<ImageMetadata>('../../assets/ghost/miku-v6.webp', {
+  eager: true,
+  import: 'default',
+});
+const src = Object.values(files)[0];
+if (!src) return;
+
+const webp = await getImage({ src, format: 'webp' });
+const avif = await getImage({ src, format: 'avif' });
+const webpUrl = webp.src;
+const avifUrl = avif.src;
+---
+
+<div class={`ghost-art ghost-art--${side}`} aria-hidden="true" data-ghost-art={side}></div>
+
+<style define:vars={{ ghostWebp: `url(${webpUrl})`, ghostAvif: `url(${avifUrl})` }}>
+  /* Hidden below the first XL step: no background-image → no network fetch. */
+  .ghost-art {
+    display: none;
+  }
+  @media (min-width: 1600px) {
+    .ghost-art {
+      display: block;
+      position: absolute;
+      bottom: 0;
+      /* Side margin = outer half of (100vw − container) plus the container's inner gutter, minus 8px clearance. */
+      width: calc((100vw - var(--container-hud)) / 2 + var(--gutter) - 8px);
+      height: 100%;
+      max-height: 100%;
+      pointer-events: none;
+      z-index: 0;
+      opacity: 0.07;
+      background-image: image-set(var(--ghostAvif) type('image/avif'), var(--ghostWebp) type('image/webp'));
+      background-repeat: no-repeat;
+      background-size: contain;
+      background-position: bottom center;
+    }
+    .ghost-art--left {
+      left: 0;
+    }
+    .ghost-art--right {
+      right: 0;
+      transform: scaleX(-1);
+    }
+  }
+</style>

@@ -1,0 +1,178 @@
+/* CharacterStage (mockup-port §3.3; spec §4: 0.6s entrance from 40%, 3 streaks, 0.25s exit, one play per entrance). */
+.char-stage {
+  position: absolute; inset: 0; z-index: 2; pointer-events: none;
+  /* 100cqw = stage width so --W / --gap resolve against the HUD container, not the clip wrapper. */
+  container-type: inline-size;
+  --gap: calc((100vw - 100cqw) / 2);
+}
+.char-stage__frame {
+  position: absolute; overflow: hidden; pointer-events: none; z-index: 2;
+  /* --W: designed frame width; --overhang: designed bleed; --oh: bleed that still clears the section edge by 20px. */
+  --overhang: 0px;
+  --W: 100cqw;
+  --oh: clamp(0px, calc(var(--gap) - 20px), var(--overhang));
+  --inset-t: 2px;
+  --inset-r: 2px;
+  --inset-b: 2px;
+  --inset-l: 2px;
+}
+/* Chrome paints a masked layer's outermost device row/column — and a layer cut by an ancestor overflow clip —
+   without its CSS mask. Keep the masked frame clear of ancestor clips via --oh; an unmasked clip wrapper insets
+   art ≥2px from every faded edge so those outer device pixels stay empty. The <img> keeps the designed box (--W). */
+.char-stage__clip {
+  position: absolute; overflow: hidden;
+  top: var(--inset-t); right: var(--inset-r); bottom: var(--inset-b); left: var(--inset-l);
+}
+.char-stage__img {
+  position: absolute;
+  top: calc(-1 * var(--inset-t));
+  left: calc(-1 * var(--inset-l));
+  width: var(--W);
+  height: calc(100% + var(--inset-t) + var(--inset-b));
+  max-width: none;
+  object-fit: cover;
+}
+
+/* entrance / exit (a keyed remount restarts the keyframes) */
+.char-stage:not([data-phase="idle"]) .char-stage__img { animation: char-enter var(--dur-enter) var(--ease-out) .05s both; }
+.char-stage[data-phase="exiting"] .char-stage__img { animation: char-exit var(--dur-exit) var(--ease-in) both; }
+:root.js .char-stage[data-phase="idle"] .char-stage__img { opacity: 0; transform: translateX(40%); }
+@keyframes char-enter { from { transform: translateX(40%); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes char-exit { from { transform: none; opacity: 1; } to { transform: translateX(18%); opacity: 0; } }
+
+/* light streaks (z-index 1: behind the art at 2 and the copy at 4) */
+.char-stage__streaks { position: absolute; inset: 0; z-index: 1; overflow: hidden; }
+.char-stage__streak {
+  position: absolute; right: 0; height: 2px; width: min(560px, 70%); opacity: 0;
+  background: linear-gradient(90deg, transparent, var(--accent-streak), transparent);
+}
+.char-stage:not([data-phase="idle"]) .char-stage__streak { animation: char-streak var(--dur-streak) var(--ease-out) both; }
+.char-stage:not([data-phase="idle"]) .char-stage__streak:nth-child(2) { animation-delay: .06s; }
+.char-stage:not([data-phase="idle"]) .char-stage__streak:nth-child(3) { animation-delay: .12s; }
+@keyframes char-streak { 0% { transform: translateX(60%); opacity: 0; } 30% { opacity: 1; } 100% { transform: translateX(-80%); opacity: 0; } }
+
+/* gates: the CRT intro and a not-yet-loaded hero image hold the first frame */
+:root[data-intro="playing"] .char-stage--hero .char-stage__img,
+:root[data-intro="playing"] .char-stage--hero .char-stage__streak,
+astro-island[data-loading] .char-stage__img,
+astro-island[data-loading] .char-stage__streak { animation-play-state: paused; }
+
+/* reduced motion (OS or footer toggle): fades only, no streaks */
+:root[data-motion="reduce"] .char-stage:not([data-phase="idle"]) .char-stage__img { animation: char-fade-in var(--dur-fade) ease-out both; }
+:root[data-motion="reduce"] .char-stage[data-phase="exiting"] .char-stage__img { animation: char-fade-out .15s ease-in both; }
+:root.js[data-motion="reduce"] .char-stage[data-phase="idle"] .char-stage__img { transform: none; }
+:root[data-motion="reduce"] .char-stage__streaks { display: none; }
+:root[data-motion="reduce"] .char-stage__streak { animation: none; }
+@keyframes char-fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes char-fade-out { from { opacity: 1; } to { opacity: 0; } }
+
+/* controls: swap group + replay (hero only) — opaque background so text never sits on visible art */
+.char-stage__controls { position: absolute; z-index: 5; display: flex; flex-wrap: wrap; gap: 6px; pointer-events: auto; }
+.char-stage__swap { display: flex; gap: 6px; }
+.char-stage__btn {
+  padding: 6px 11px; cursor: pointer;
+  font: 700 13px/1.3 var(--font-mono); color: var(--hud-muted);
+  background: var(--hud-bg); border: 1px solid var(--hud-line);
+  transition: color var(--dur-hover) linear, border-color var(--dur-hover) linear, transform var(--dur-press) var(--ease-out);
+}
+.char-stage__btn:hover { color: var(--hud-text); }
+.char-stage__btn:active { transform: scale(.96); }
+.char-stage__btn[aria-pressed="true"] { color: var(--accent); border-color: var(--accent); }
+.char-stage__replay { font-weight: 600; }
+
+/* HERO variant — mobile: an in-flow band under the copy */
+.char-stage--hero { position: relative; inset: auto; height: clamp(320px, 88vw, 440px); margin-top: 16px; }
+.char-stage--hero .char-stage__frame {
+  /* Bottom fade only: left/right run off-screen and stay opaque — no inset there. */
+  --inset-t: 0px; --inset-r: 0px; --inset-l: 0px; --inset-b: 2px;
+  --W: 100cqw;
+  inset: 0;
+  -webkit-mask-image: linear-gradient(0deg, transparent 0, #000 16%);
+  mask-image: linear-gradient(0deg, transparent 0, #000 16%);
+}
+/* Final fix 2 item 3: both gutters bound the row, so long (English) labels wrap inside it, right-aligned, instead of
+   growing the box to the screen's left edge. The row gap keeps each wrapped row's 44px hit area (.hit) clear of the
+   row above (13px buttons are ~31px tall, so each hit area overhangs by ~7px). */
+.char-stage--hero .char-stage__controls { top: 12px; right: var(--gutter); left: var(--gutter); justify-content: flex-end; row-gap: 14px; }
+.char-stage--hero .char-stage__swap { flex-wrap: wrap; justify-content: flex-end; row-gap: 14px; }
+.char-stage--hero .char-stage__streak { width: 80%; }
+@media (min-width: 734px) {
+  .char-stage--hero { position: absolute; inset: 0; height: auto; margin: 0; }
+  /* --credit-gap: the frame's bottom band that stays fully transparent, where the credit (up to three lines,
+     ≤ 81px from the bottom at 1068px in English) sits on its opaque background: no art runs under the credit, so its
+     background leaves no line across the art (final fix 2 item 1). */
+  .char-stage--hero .char-stage__frame {
+    --credit-gap: 88px;
+    --overhang: 32px;
+    --W: 58cqw;
+    /* Top inset + fade: Eula's arm/sword touch the source top edge (same reason as ≥1068). */
+    --inset-t: 2px; --inset-r: 2px; --inset-l: 2px; --inset-b: 2px;
+    top: 0; bottom: 0; left: auto;
+    right: calc(-1 * var(--oh));
+    width: calc(var(--W) - var(--overhang) + var(--oh));
+    /* Left stops in lengths of W; right fade 0.12·W plus a 4px fully-transparent tip (same reason as top:
+       the 2px-inset clip edge must stay clear of art — luma was 14–17 without the tip).
+       Top: same 56px opaque-end as ≥1068, plus a 4px fully-transparent tip so the 2px-inset clip edge
+       stays clear of Eula's ice (art-delta was 15 with a fade that ran all the way to y=0). */
+    -webkit-mask-image:
+      linear-gradient(90deg, transparent 0, transparent calc(0.16 * var(--W)), #000 calc(0.34 * var(--W)), #000 calc(100% - 0.12 * var(--W)), transparent calc(100% - 4px), transparent 100%),
+      linear-gradient(0deg, transparent 0, transparent var(--credit-gap), #000 calc(var(--credit-gap) + 110px), #000 calc(100% - 56px), transparent calc(100% - 4px), transparent 100%);
+    -webkit-mask-composite: source-in;
+    mask-image:
+      linear-gradient(90deg, transparent 0, transparent calc(0.16 * var(--W)), #000 calc(0.34 * var(--W)), #000 calc(100% - 0.12 * var(--W)), transparent calc(100% - 4px), transparent 100%),
+      linear-gradient(0deg, transparent 0, transparent var(--credit-gap), #000 calc(var(--credit-gap) + 110px), #000 calc(100% - 56px), transparent calc(100% - 4px), transparent 100%);
+    mask-composite: intersect;
+  }
+  .char-stage--hero .char-stage__controls { top: 16px; right: var(--gutter); left: auto; }
+}
+@media (min-width: 1068px) {
+  /* v4 stage: designed right -60, top 52, width 780, capped at 66% so the copy never sits on visible art. The copy
+     column is min(640px, 55%) wide since P2-16 (was 470px), so the art stays fully transparent over its first 32%
+     (the copy's longest lines end there at every desktop width, XL steps included) and is opaque from 50%.
+     Final fix 2 item 1: every edge of the frame fades out. --oh shrinks the bleed on narrow viewports so the section
+     never clips the masked frame; at wide widths (--oh = --overhang) the frame matches the old right:-60 / width:W. */
+  .char-stage--hero .char-stage__frame {
+    --overhang: 60px;
+    --W: min(780px, 66cqw);
+    --inset-t: 2px; --inset-r: 2px; --inset-l: 2px; --inset-b: 2px;
+    top: 52px; bottom: 0; left: auto;
+    right: calc(-1 * var(--oh));
+    width: calc(var(--W) - var(--overhang) + var(--oh));
+    -webkit-mask-image:
+      linear-gradient(90deg, transparent 0, transparent calc(0.32 * var(--W)), #000 calc(0.50 * var(--W)), #000 calc(100% - 0.18 * var(--W)), transparent 100%),
+      linear-gradient(0deg, transparent 0, transparent var(--credit-gap), #000 calc(var(--credit-gap) + 110px), #000 calc(100% - 56px), transparent 100%);
+    mask-image:
+      linear-gradient(90deg, transparent 0, transparent calc(0.32 * var(--W)), #000 calc(0.50 * var(--W)), #000 calc(100% - 0.18 * var(--W)), transparent 100%),
+      linear-gradient(0deg, transparent 0, transparent var(--credit-gap), #000 calc(var(--credit-gap) + 110px), #000 calc(100% - 56px), transparent 100%);
+  }
+  .char-stage--hero .char-stage__controls { top: 72px; right: 28px; }
+}
+/* D-2 XL steps: the stage grows with the HUD container (src/lib/characters.ts HERO_SIZES follows these widths) */
+@media (min-width: 1600px) { .char-stage--hero .char-stage__frame { --W: min(900px, 66cqw); } }
+@media (min-width: 1800px) { .char-stage--hero .char-stage__frame { --W: min(960px, 66cqw); } }
+
+/* SIDE variant (MAIN MENU Eula) — hidden on phones, so client:visible never hydrates it there. It sits in the
+   MAIN MENU's HUD container (not the full-bleed section), so on wide screens the art stays next to the menu;
+   the frame reaches over the section's vertical padding, so the art starts right under the section's divider as in
+   the approved mockup. Final fix 2 item 1: the right edge (open grid from ~1300px on) and the bottom (the next
+   section's divider) fade out instead of cutting the cape in a straight line, and a short top fade keeps the top row
+   of the source (Eula's arms and greatsword touch it) from drawing broken bright lines under the divider. */
+.char-stage--side { z-index: 1; }
+.char-stage--side .char-stage__frame {
+  --overhang: 40px;
+  --W: min(520px, 42cqw);
+  --inset-t: 2px; --inset-r: 2px; --inset-l: 2px; --inset-b: 2px;
+  top: calc(-1 * var(--section-pad-y)); bottom: calc(-1 * var(--section-pad-y)); left: auto;
+  right: calc(-1 * var(--oh));
+  width: calc(var(--W) - var(--overhang) + var(--oh));
+  -webkit-mask-image:
+    linear-gradient(90deg, transparent 0, #000 calc(0.30 * var(--W)), #000 calc(100% - 0.20 * var(--W)), transparent 100%),
+    linear-gradient(0deg, transparent 0, #000 22%, #000 calc(100% - 32px), transparent 100%);
+  -webkit-mask-composite: source-in;
+  mask-image:
+    linear-gradient(90deg, transparent 0, #000 calc(0.30 * var(--W)), #000 calc(100% - 0.20 * var(--W)), transparent 100%),
+    linear-gradient(0deg, transparent 0, #000 22%, #000 calc(100% - 32px), transparent 100%);
+  mask-composite: intersect;
+}
+@media (max-width: 733.98px) { .char-stage--side { display: none; } }
+@media (min-width: 1600px) { .char-stage--side .char-stage__frame { --W: min(600px, 42cqw); } }

@@ -1,0 +1,9 @@
+{
+  "recurse": true,
+  "checkCss": true,
+  "checkFragments": true,
+  "verbosity": "error",
+  "skip": [
+    "^https?://(?!127\\.0\\.0\\.1[:/])"
+  ]
+}

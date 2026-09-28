@@ -1,0 +1,51 @@
+---
+/**
+ * Dark header of every index page (research, projects, records, player log, stats, legal): the "[ ■ ] LABEL" caption
+ * over the page title (D-8: no [ NN ] numbers outside the nav).
+ * It owns the page's only <h1>. The default slot (optional) sits under the intro, e.g. the Academic CV link on /research/.
+ */
+import type { Lang } from '../../i18n/ui';
+import SectionLabel from './SectionLabel.astro';
+
+interface Props {
+  lang: Lang;
+  label: string;
+  title: string;
+  intro?: string;
+}
+const { label, title, intro } = Astro.props;
+---
+<section class="page-head hud-grid" aria-labelledby="page-head-title">
+  <div class="container container--hud page-head__inner">
+    <SectionLabel en={label} />
+    <h1 id="page-head-title" class="page-head__title">{title}</h1>
+    {intro && <p class="page-head__intro">{intro}</p>}
+    <slot />
+  </div>
+</section>
+
+<style>
+  .page-head {
+    padding-block: 48px 40px;
+    border-bottom: 1px solid var(--hud-divider);
+  }
+  .page-head__title {
+    margin-top: 12px;
+    font-size: var(--fs-display);
+    font-weight: 800;
+    line-height: var(--lh-display);
+    color: var(--hud-strong);
+  }
+  .page-head__intro {
+    margin-top: 14px;
+    max-width: var(--measure);
+    font-size: var(--fs-body);
+    line-height: var(--lh-body);
+    color: var(--hud-muted);
+  }
+  @media (min-width: 1068px) {
+    .page-head {
+      padding-block: 64px 48px;
+    }
+  }
+</style>

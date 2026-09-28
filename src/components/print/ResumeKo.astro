@@ -1,0 +1,160 @@
+---
+import type { ResumeModel } from '../../lib/resume-model';
+import { t } from '../../i18n/utils';
+
+interface Props {
+  model: ResumeModel;
+}
+const { model } = Astro.props;
+const L = model.lang;
+const h = model.header;
+---
+<article class="print">
+  <header class="print__head">
+    <h1 class="print__name">{h.name}</h1>
+    <p class="print__headline">{h.headline}</p>
+    <p class="print__tagline">{model.tagline}</p>
+    <ul class="print__contact">
+      <li><a href={`mailto:${h.email}`}>{h.email}</a></li>
+      <li><a href={`https://${h.github}`}>{h.github}</a></li>
+      <li><a href={`https://${h.site}/`}>{h.site}</a></li>
+      <li>{h.location}</li>
+    </ul>
+    <p class="print__affil">{h.affiliation}</p>
+  </header>
+
+  {model.researchInterests.length > 0 && (
+    <section class="print__sec">
+      <h2 class="print__h">{t(L, 'research.interests')}</h2>
+      <p>{model.researchInterests.join(' · ')}</p>
+    </section>
+  )}
+
+  {model.education.length > 0 && (
+    <section class="print__sec">
+      <h2 class="print__h">{t(L, 'records.education')}</h2>
+      <ul class="print__list">
+        {model.education.map((e) => (
+          <li class="print__item">
+            <p class="print__row"><strong>{e.school}</strong><span class="print__date">{e.period}</span></p>
+            <p>{e.degree} · {t(L, 'records.gpa')} {e.gpa}</p>
+            {e.lab && <p class="print__meta">{e.lab}</p>}
+            {e.thesis && <p class="print__meta">{e.thesis}</p>}
+          </li>
+        ))}
+      </ul>
+    </section>
+  )}
+
+  {model.publications.length > 0 && (
+    <section class="print__sec">
+      <h2 class="print__h">{t(L, 'records.publications')}</h2>
+      <ul class="print__list">
+        {model.publications.map((p) => (
+          <li class="print__item">
+            <p>{p.citation}</p>
+            <p class="print__meta">{p.note}{p.code && <Fragment> · <a href={p.code}>Code</a></Fragment>}</p>
+          </li>
+        ))}
+      </ul>
+    </section>
+  )}
+
+  {model.researchInProgress.length > 0 && (
+    <section class="print__sec">
+      <h2 class="print__h">{t(L, 'research.inProgress')}</h2>
+      <ul class="print__list">{model.researchInProgress.map((r) => <li class="print__item">{r}</li>)}</ul>
+    </section>
+  )}
+
+  {model.projects.length > 0 && (
+    <section class="print__sec">
+      <h2 class="print__h">{t(L, 'records.projects')}</h2>
+      <ul class="print__list">
+        {model.projects.map((p) => (
+          <li class="print__item">
+            <p class="print__row"><strong>{p.title}</strong><span class="print__date">{p.period}</span></p>
+            <p class="print__meta">{p.org} · {p.team}</p>
+            <ul class="print__bullets">{p.bullets.map((b) => <li>{b}</li>)}</ul>
+          </li>
+        ))}
+        {model.projectsNote && <li class="print__item">{model.projectsNote}</li>}
+      </ul>
+    </section>
+  )}
+
+  {model.awards.length > 0 && (
+    <section class="print__sec">
+      <h2 class="print__h">{t(L, 'records.awards')}</h2>
+      <ul class="print__list">
+        {model.awards.map((a) => (
+          <li class="print__item">
+            <p class="print__row"><span><strong>{a.name}</strong> · {a.contest}</span><span class="print__date">{a.date}</span></p>
+            <p class="print__meta">{a.org}</p>
+          </li>
+        ))}
+      </ul>
+    </section>
+  )}
+
+  {model.activities.length > 0 && (
+    <section class="print__sec">
+      <h2 class="print__h">{t(L, 'records.activities')}</h2>
+      <ul class="print__list">
+        {model.activities.map((a) => <li class="print__item"><p class="print__row"><span>{a.text}</span><span class="print__date">{a.date}</span></p></li>)}
+      </ul>
+    </section>
+  )}
+
+  {model.certifications.length > 0 && (
+    <section class="print__sec">
+      <h2 class="print__h">{t(L, 'records.certifications')}</h2>
+      <ul class="print__list">
+        {model.certifications.map((c) => (
+          <li class="print__item"><p class="print__row"><span><strong>{c.name}</strong> · {c.issuer}</span><span class="print__date">{c.date}</span></p></li>
+        ))}
+      </ul>
+    </section>
+  )}
+
+  {model.languages.length > 0 && (
+    <section class="print__sec">
+      <h2 class="print__h">{t(L, 'records.languages')}</h2>
+      <ul class="print__list">
+        {model.languages.map((l) => (
+          <li class="print__item">
+            <p class="print__row">
+              <span><strong>{l.name}</strong> {l.level}{l.expired && <Fragment> ({t(L, 'records.expired')})</Fragment>}</span>
+              {l.date && <span class="print__date">{l.date}</span>}
+            </p>
+            {l.validUntil && !l.expired && <p class="print__meta">{t(L, 'records.validUntil', { date: l.validUntil })}</p>}
+          </li>
+        ))}
+      </ul>
+    </section>
+  )}
+
+  {model.training.length > 0 && (
+    <section class="print__sec">
+      <h2 class="print__h">{t(L, 'records.training')}</h2>
+      <ul class="print__list">
+        {model.training.map((x) => (
+          <li class="print__item">
+            <p class="print__row"><strong>{x.name}</strong><span class="print__date">{x.period}</span></p>
+            <p class="print__meta">{x.org} · {x.hours}</p>
+          </li>
+        ))}
+      </ul>
+    </section>
+  )}
+
+  {model.skills.primary.length > 0 && (
+    <section class="print__sec">
+      <h2 class="print__h">{t(L, 'records.skills')}</h2>
+      <p><strong>{t(L, 'records.skillsPrimary')}</strong> {model.skills.primary.join(' · ')}</p>
+      {model.skills.familiar.length > 0 && <p><strong>{t(L, 'records.skillsFamiliar')}</strong> {model.skills.familiar.join(' · ')}</p>}
+    </section>
+  )}
+
+  <p class="print__foot">{t(L, 'jobfit.asOf')} {model.builtOn}</p>
+</article>

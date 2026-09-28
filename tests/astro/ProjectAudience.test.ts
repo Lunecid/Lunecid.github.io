@@ -1,0 +1,40 @@
+import { describe, expect, it } from 'vitest';
+import ProjectAudience from '../../src/components/projects/ProjectAudience.astro';
+import { readSource, renderAstro } from './helpers';
+
+const audience = { game: '게임 팀에게 주는 한 문장입니다.', research: '방법을 다시 적은 두 문장입니다. 두 번째 문장입니다.' };
+
+describe('ProjectAudience.astro (P1-8)', () => {
+  it('two labelled blocks: 게임 팀에게 | 연구 기여, in that order', async () => {
+    const ko = await renderAstro(ProjectAudience, { props: { lang: 'ko', audience } });
+    const labels = [...ko.matchAll(/<h2[^>]*class="audience__label"[^>]*>([^<]*)<\/h2>/g)].map((m) => m[1]);
+    expect(labels).toEqual(['게임 팀에게', '연구 기여']);
+    expect(ko).toMatch(/<section(?=[^>]*id="for-game-teams")(?=[^>]*aria-labelledby="for-game-teams-title")[^>]*>/);
+    expect(ko).toMatch(/<section(?=[^>]*id="research-contribution")(?=[^>]*aria-labelledby="research-contribution-title")[^>]*>/);
+    expect(ko.indexOf(audience.game)).toBeLessThan(ko.indexOf(audience.research));
+    expect(ko).toContain(audience.research);
+  });
+
+  it('English labels on /en/', async () => {
+    const en = await renderAstro(ProjectAudience, { props: { lang: 'en', audience: { game: 'For teams.', research: 'Method.' } } });
+    const labels = [...en.matchAll(/<h2[^>]*class="audience__label"[^>]*>([^<]*)<\/h2>/g)].map((m) => m[1]);
+    expect(labels).toEqual(['For game teams', 'Research contribution']);
+  });
+
+  it('renders only the parts present (e.g. research only), and nothing without parts', async () => {
+    const one = await renderAstro(ProjectAudience, { props: { lang: 'ko', audience: { research: '방법만 있습니다.' } } });
+    expect(one).not.toContain('for-game-teams');
+    expect(one).not.toContain('게임 팀에게');
+    expect(one).toMatch(/<section[^>]*id="research-contribution"/);
+    expect(one).toMatch(/class="audience__grid audience__grid--single"/);
+    const none = await renderAstro(ProjectAudience, { props: { lang: 'ko', audience: {} } });
+    expect(none.trim()).toBe('');
+  });
+
+  it('sits in the same centred text column as the case-study body (--measure: 38em / 36em)', () => {
+    const src = readSource('src/components/projects/ProjectAudience.astro');
+    // the shared .read-column (read.css), not a re-derived padding formula
+    expect(src).toContain('<div class="audience read read-column">');
+    expect(src).not.toMatch(/\.audience\s*\{[^}]*padding-inline/);
+  });
+});

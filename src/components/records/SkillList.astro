@@ -1,0 +1,61 @@
+---
+// Skills without proficiency bars (spec §9.1) as one two-column light-HUD table (P1-9): "skill | evidence chips",
+// primary and "also used" as row groups. Each chip links the evidence, labelled by the project title or the paper's
+// short title in the page language (kind 'code' → the paper's public code).
+import SectionHead from '../hud/SectionHead.astro';
+import type { SkillItem } from '../../lib/records';
+import type { Lang } from '../../i18n/ui';
+import { t } from '../../i18n/utils';
+
+interface Props {
+  lang: Lang;
+  primary: SkillItem[];
+  familiar: SkillItem[];
+}
+
+const { lang, primary, familiar } = Astro.props;
+const groups = [
+  { key: 'primary', title: t(lang, 'records.skillsPrimary'), items: primary },
+  { key: 'familiar', title: t(lang, 'records.skillsFamiliar'), items: familiar },
+].filter((group) => group.items.length > 0);
+const title = t(lang, 'records.skills');
+---
+<section id="skills" class="rec read-sec" aria-labelledby="skills-title">
+  <div class="container">
+    <SectionHead id="skills-title" caption={t(lang, 'section.skills')} title={title} />
+    <table class="skills__table lh-table">
+      <caption class="sr-only">{title}</caption>
+      <colgroup><col class="skills__col-name" /><col /></colgroup>
+      <thead>
+        <tr><th scope="col">{title}</th><th scope="col">{t(lang, 'records.evidence')}</th></tr>
+      </thead>
+      {groups.map((group) => (
+        <tbody class="skills__group" data-group={group.key}>
+          <tr><th colspan="2" scope="rowgroup" class="skills__group-title">{group.title}</th></tr>
+          {group.items.map((skill) => (
+            <tr class="skills__item">
+              <th scope="row" class="skills__name" lang="en">{skill.name}</th>
+              <td class="skills__evidence">
+                <ul class="skills__links lh-chips" role="list">
+                  {skill.evidence.map((e) => <li><a class="lh-chip" href={e.href}>{e.label}{e.href.startsWith('http') && <Fragment> <span aria-hidden="true">↗</span></Fragment>}</a></li>)}
+                </ul>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      ))}
+    </table>
+  </div>
+</section>
+
+<style>
+  .skills__table { margin-top: 24px; table-layout: fixed; }
+  .skills__col-name { width: 112px; }
+  .skills__group-title { padding-block: 18px 8px; font-size: var(--fs-label); font-weight: 800; color: var(--read-text); border-bottom-color: var(--read-line-strong); }
+  .skills__name { padding-top: 18px; font: 700 14px/1.4 var(--font-mono); color: var(--read-text); overflow-wrap: anywhere; }
+  .skills__evidence { padding-block: 10px; }
+  @media (min-width: 734px) {
+    .skills__col-name { width: 220px; }
+    .skills__name { font-size: 15px; }
+  }
+</style>

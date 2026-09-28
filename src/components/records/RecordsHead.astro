@@ -1,0 +1,134 @@
+---
+// The short head of /records/ (P2-19) instead of repeating the home profile: the ID photo beside the greeting (96–120px
+// on phones), name, status, a one-line intro (the tagline), the three PDFs as cut-corner buttons (D-7 labels), contact,
+// and an in-page bar to the sections recruiters look for (학력 · 수상 · 기술 · 지원 요건 대응 · PDF). No education list
+// here: QUEST LOG right below is the one education list on the page.
+import { Picture } from 'astro:assets';
+import photo from '../../assets/photo/photo-id.webp';
+import GhostArt from '../hud/GhostArt.astro';
+import SectionLabel from '../hud/SectionLabel.astro';
+import DocButtons from './DocButtons.astro';
+import type { Lang } from '../../i18n/ui';
+import { t } from '../../i18n/utils';
+import { fitWidths, sourceSize } from '../../lib/images';
+
+interface Props {
+  lang: Lang;
+  name: string;
+  /** Spec §9.1 role line (게임 데이터 분석가 · 연구자 / Game Data Analyst · Researcher). */
+  headline: string;
+  status: string;
+  tagline: string;
+  documents: { id: string; label: string; href: string }[];
+  contact: { email: string; github: string };
+  ids?: { scholar: string | null; orcid: string | null };
+}
+
+const { lang, name, headline, status, tagline, documents, contact, ids } = Astro.props;
+const researcherLinks = [
+  ids?.scholar ? { label: 'Google Scholar', href: ids.scholar } : null,
+  ids?.orcid ? { label: 'ORCID', href: ids.orcid } : null,
+].filter((link): link is { label: string; href: string } => link !== null);
+const jumps = [
+  { href: '#education', label: t(lang, 'records.education') },
+  { href: '#awards', label: t(lang, 'records.awards') },
+  { href: '#skills', label: t(lang, 'records.skills') },
+  { href: '#job-fit', label: t(lang, 'jobfit.title') },
+  { href: '#documents', label: 'PDF' },
+];
+---
+<section id="profile" class="rhead read" aria-labelledby="profile-title">
+  <GhostArt side="right" />
+  <div class="container">
+    <div class="rhead__grid">
+      <Picture
+        class="rhead__photo"
+        src={photo}
+        formats={['avif', 'webp']}
+        fallbackFormat="webp"
+        widths={fitWidths([120, 240, 354], sourceSize(photo).width)}
+        sizes="(min-width: 1068px) 176px, (min-width: 734px) 150px, 112px"
+        priority
+        alt={t(lang, 'card.photoAlt')}
+      />
+      <div class="rhead__intro">
+        <SectionLabel en={t(lang, 'section.profile')} />
+        <h2 id="profile-title" class="rhead__hello">{`${t(lang, 'section.hello')}!`}</h2>
+        <p class="rhead__name">{name}</p>
+        <p class="rhead__role">{headline}</p>
+        <p class="rhead__status">{status}</p>
+      </div>
+      <div class="rhead__more">
+        <p class="rhead__tagline">{tagline}</p>
+        <div class="rhead__docs"><DocButtons documents={documents} primary={lang === 'ko' ? 'resume-ko' : 'resume-en'} /></div>
+        <ul class="rhead__contact" role="list">
+          <li><a href={`mailto:${contact.email}`}>{contact.email}</a></li>
+          <li><a href={contact.github}>GitHub</a></li>
+          {researcherLinks.map((link) => <li><a href={link.href}>{link.label}</a></li>)}
+        </ul>
+      </div>
+    </div>
+    <nav class="rnav" aria-label={t(lang, 'records.jump')}>
+      <ol class="rnav__list" role="list">
+        {jumps.map((jump) => <li><a class="rnav__link" href={jump.href}>{jump.label}</a></li>)}
+      </ol>
+    </nav>
+  </div>
+</section>
+
+<style>
+  .rhead { position: relative; overflow: hidden; padding-block: 32px 0; }
+  .rhead > .container { position: relative; z-index: 1; }
+  .rhead__grid {
+    display: grid; grid-template-columns: 112px minmax(0, 1fr); grid-template-areas: "photo intro" "more more";
+    gap: 20px 18px; align-items: center;
+  }
+  /* P2-22: the re-cropped photo with a 1px hairline so its white background never melts into the band */
+  .rhead__grid :global(.rhead__photo) {
+    grid-area: photo; display: block; width: 112px; height: auto; aspect-ratio: 3 / 4; object-fit: cover;
+    border: 1px solid var(--read-line); background: var(--read-card);
+  }
+  /* Final fix 2 item 6: the grid item is the <picture> Astro wraps around the img (the class above lands on the img),
+     so it takes the photo area itself. It used to be auto-placed into the first row only, which stretched that row to
+     the photo's height and left a ~117px empty band between the status line and the tagline from 734px on. */
+  .rhead__grid > :global(picture) { grid-area: photo; }
+  .rhead__intro { grid-area: intro; min-width: 0; }
+  .rhead__hello { margin-top: 4px; font-size: 28px; font-weight: 900; line-height: 1.2; }
+  .rhead__name { margin-top: 6px; font-size: var(--fs-sub); font-weight: 800; line-height: var(--lh-sub); }
+  .rhead__role { margin-top: 4px; font-size: 15px; font-weight: 700; line-height: 1.5; color: var(--read-text); }
+  .rhead__status { margin-top: 4px; font-size: 14px; line-height: 1.6; color: var(--read-muted); }
+  .rhead__more { grid-area: more; min-width: 0; }
+  .rhead__tagline { max-width: var(--measure); font-size: var(--fs-body); font-weight: 700; line-height: var(--lh-body); }
+  .rhead__docs { margin-top: 16px; }
+  .rhead__contact { margin-top: 10px; display: flex; flex-wrap: wrap; gap: 0 18px; font-size: 15px; }
+  .rhead__contact a { display: inline-flex; align-items: center; min-height: var(--tap); }
+  /* In-page bar: square mono-caps links on a hairline, like a HUD tab row */
+  .rnav { margin-top: 24px; border-top: 1px solid var(--read-line-strong); border-bottom: 1px solid var(--read-line); }
+  .rnav__list { display: flex; flex-wrap: wrap; gap: 0 4px; }
+  .rnav__link {
+    display: inline-flex; align-items: center; justify-content: center; min-height: var(--tap); min-width: var(--tap); padding-inline: 10px;
+    font-size: 14px; font-weight: 700; color: var(--read-text); text-decoration: none;
+    transition: color var(--dur-hover) linear, background-color var(--dur-hover) linear;
+  }
+  /* Final fix 2 item 16 / round 2 item 3: every link keeps padding on both sides, so the shortest label ("학력") is a
+     44px target too and every text gap is the same; the first link reaches into the container's gutter instead (its
+     text stays on the section's left edge). The old one-sided padding made it 34px wide, and a min-width then widened
+     only its gap. */
+  .rnav__list li:first-child .rnav__link { margin-left: -10px; }
+  .rnav__link:hover { color: var(--accent-deep); text-decoration: underline; text-underline-offset: .2em; }
+  @media (min-width: 734px) {
+    .rhead { padding-top: 44px; }
+    /* Final fix 2 item 6: two content-sized rows, and the photo really spans both (the <picture> rule above). */
+    .rhead__grid {
+      grid-template-columns: 150px minmax(0, 1fr); grid-template-rows: auto auto; grid-template-areas: "photo intro" "photo more";
+      column-gap: 28px; align-items: start; align-content: start;
+    }
+    .rhead__grid :global(.rhead__photo) { width: 150px; }
+    .rhead__hello { font-size: 34px; }
+  }
+  @media (min-width: 1068px) {
+    .rhead__grid { grid-template-columns: 176px minmax(0, 1fr); column-gap: 36px; }
+    .rhead__grid :global(.rhead__photo) { width: 176px; }
+    .rhead__hello { font-size: 40px; }
+  }
+</style>

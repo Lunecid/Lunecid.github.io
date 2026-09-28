@@ -1,0 +1,114 @@
+/* src/islands/AchievementHost.css — achievement toast (P2-2, controller ruling 1). A dark HUD panel, never a
+   generic web-notification pill: --hud-panel fill, a 1px --gold-line cut corner (the .cut/.cut--line mechanic
+   shared with buttons), a mono "ACHIEVEMENT UNLOCKED" kicker in gold, and a gold ◆ mark.
+   Position: right:24px/bottom:24px on desktop/tablet (clear of page titles, which sit at the top); below 734px it
+   moves to the bottom, full-width less the gutters, with env(safe-area-inset-bottom) added for the home-bar inset.
+   Max two lines (the description clamps), close button 44×44, 0.3s in / 0.2s out — none under reduced motion.
+   Text contrast: --hud-text (#E8EAED) on --hud-panel (#15181F) is 16.1:1; --gold (#F5B301) on the same panel is
+   readable-large-text contrast, used only for the short mono kicker and the ◆ mark (spec §4: gold = achievements). */
+.ach-toast-region {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 60;
+  display: flex;
+  justify-content: flex-end;
+  width: min(360px, calc(100vw - 32px));
+  pointer-events: none;
+}
+.ach-toast {
+  --c: 16px;
+  --cut-line: var(--gold-line);
+  --cut-fill: var(--hud-panel);
+  pointer-events: auto;
+  position: relative;
+  width: 100%;
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 14px 44px 14px 16px;
+  color: var(--hud-text);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, .5);
+  color-scheme: dark;
+}
+.ach-toast[data-state='in'] {
+  animation: ach-in .3s var(--ease-out) both;
+}
+.ach-toast[data-state='out'] {
+  animation: ach-out .2s var(--ease-in) both;
+}
+/* Controller ruling 1: none under reduced motion (no fade replacement — the toast simply appears/disappears). */
+:root[data-motion='reduce'] .ach-toast[data-state='in'],
+:root[data-motion='reduce'] .ach-toast[data-state='out'] {
+  animation: none;
+}
+.ach-toast__mark {
+  flex: none;
+  margin-top: 2px;
+  color: var(--gold);
+  font-size: 15px;
+  line-height: 1;
+}
+.ach-toast__body {
+  min-width: 0;
+}
+.ach-toast__kicker {
+  display: block;
+  font: 700 var(--fs-label)/1.4 var(--font-mono);
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--gold);
+}
+.ach-toast__text {
+  margin-top: 4px;
+  font: 500 14px/1.4 var(--font-sans);
+  color: var(--hud-text);
+  overflow-wrap: anywhere;
+  /* Controller ruling 1: max two lines. */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.ach-toast__close {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: var(--tap);
+  height: var(--tap);
+  display: grid;
+  place-items: center;
+  border: 0;
+  background: transparent;
+  color: var(--hud-muted);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  transition: color var(--dur-hover) linear;
+}
+.ach-toast__close:hover {
+  color: var(--hud-text);
+}
+.ach-toast__close:focus-visible {
+  outline-color: var(--accent);
+}
+
+@keyframes ach-in {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes ach-out {
+  from { opacity: 1; transform: none; }
+  to { opacity: 0; transform: translateY(8px); }
+}
+
+/* Controller ruling 1: below 734px the toast sits at the bottom, clear of the safe area. */
+@media (max-width: 733.98px) {
+  .ach-toast-region {
+    left: 16px;
+    right: 16px;
+    bottom: calc(16px + env(safe-area-inset-bottom));
+    width: auto;
+  }
+}

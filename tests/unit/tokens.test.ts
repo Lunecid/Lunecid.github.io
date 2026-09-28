@@ -1,0 +1,204 @@
+import { readFileSync } from 'node:fs';
+import { describe, expect, it } from 'vitest';
+import { HUD_LABEL_LIME, NAV_HEIGHT_PX } from '../../src/config';
+
+type Rule = { media: string | null; selector: string; decls: Map<string, string> };
+
+const read = (rel: string) => readFileSync(new URL(`../../${rel}`, import.meta.url), 'utf8').replace(/\r\n/g, '\n');
+const squash = (v: string | undefined) => (v ?? '').replace(/\s+/g, '');
+
+/** Top-level and @media rules of a stylesheet with their declarations (last declaration wins). */
+function parseRules(css: string): Rule[] {
+  const src = css.replace(/\/\*[\s\S]*?\*\//g, '');
+  const rules: Rule[] = [];
+  const walk = (text: string, media: string | null) => {
+    let i = 0;
+    while (i < text.length) {
+      const open = text.indexOf('{', i);
+      if (open < 0) break;
+      const prelude = text.slice(i, open).trim();
+      let depth = 1;
+      let j = open + 1;
+      for (; j < text.length && depth > 0; j++) {
+        if (text[j] === '{') depth++;
+        if (text[j] === '}') depth--;
+      }
+      const body = text.slice(open + 1, j - 1);
+      if (prelude.startsWith('@media')) walk(body, prelude.replace(/\s+/g, ' '));
+      else {
+        const decls = new Map<string, string>();
+        for (const part of body.split(';')) {
+          const k = part.indexOf(':');
+          if (k > 0 && !part.includes('{')) decls.set(part.slice(0, k).trim(), part.slice(k + 1).trim());
+        }
+        rules.push({ media, selector: prelude.replace(/\s+/g, ' '), decls });
+      }
+      i = j;
+    }
+  };
+  walk(src, null);
+  return rules;
+}
+
+function rootDecls(media: string | null): Map<string, string> {
+  const rule = parseRules(read('src/styles/tokens.css')).find((r) => r.selector === ':root' && r.media === media);
+  expect(rule, `:root block for ${media ?? 'base'}`).toBeDefined();
+  return rule!.decls;
+}
+
+const BASE = null;
+const TABLET = '@media (min-width: 734px)';
+const DESKTOP = '@media (min-width: 1068px)';
+
+describe('design tokens (src/styles/tokens.css)', () => {
+  it('spec §4 colour tokens are exact', () => {
+    const d = rootDecls(BASE);
+    const spec: Record<string, string> = {
+      '--hud-bg': '#0B0D11',
+      '--hud-panel': '#15181F',
+      '--hud-text': '#E8EAED',
+      '--hud-muted': '#8B93A1',
+      '--accent': '#C8F03C',
+      '--accent-ink': '#0B0D11',
+      '--accent-deep': '#4F6B00',
+      '--gold': '#F5B301',
+      '--read-bg': '#F4F5F7',
+      '--read-card': '#FFFFFF',
+      '--read-text': '#1D1D1F',
+      '--read-muted': '#6E6E73',
+      '--grid-line': 'rgba(255,255,255,.035)',
+    };
+    expect(Object.keys(spec)).toHaveLength(13);
+    for (const [name, value] of Object.entries(spec)) expect(squash(d.get(name)), name).toBe(value);
+  });
+
+  it('hud-label follows HUD_LABEL_LIME (preflight Q13; default muted)', () => {
+    const d = rootDecls(BASE);
+    expect(d.get('--hud-label')).toBe(HUD_LABEL_LIME ? 'var(--accent)' : 'var(--hud-muted)');
+    expect(d.get('--read-label')).toBe(HUD_LABEL_LIME ? 'var(--accent-deep)' : 'var(--read-muted)');
+  });
+
+  it('character tints are only the three rgba values', () => {
+    const tints = parseRules(read('src/styles/tokens.css'))
+      .flatMap((r) => [...r.decls])
+      .filter(([k]) => k.startsWith('--tint-'))
+      .map(([k, v]) => [k, squash(v)]);
+    expect(Object.fromEntries(tints)).toEqual({
+      '--tint-remielle': 'rgba(255,79,139,.18)',
+      '--tint-eula': 'rgba(80,160,255,.16)',
+      '--tint-mona': 'rgba(122,108,240,.16)',
+    });
+    expect(tints).toHaveLength(3);
+  });
+
+  it('type scale per breakpoint', () => {
+    const scale: Record<string, [string, string, string]> = {
+      '--fs-name': ['40px', '60px', '76px'],
+      '--fs-display': ['32px', '48px', '56px'],
+      '--fs-h2': ['26px', '28px', '32px'],
+      '--fs-sub': ['19px', '21px', '24px'],
+    };
+    const [base, tablet, desktop] = [rootDecls(BASE), rootDecls(TABLET), rootDecls(DESKTOP)];
+    for (const [name, [b, t, dk]] of Object.entries(scale)) {
+      expect([base.get(name), tablet.get(name), desktop.get(name)], name).toEqual([b, t, dk]);
+    }
+    expect(base.get('--fs-body')).toBe('17px');
+    expect(tablet.has('--fs-body') || desktop.has('--fs-body')).toBe(false);
+    expect(base.get('--lh-body')).toBe('1.7');
+    const en = parseRules(read('src/styles/tokens.css')).find((r) => r.selector === ':lang(en)');
+    expect(en?.decls.get('--lh-body')).toBe('1.47');
+    expect(en?.decls.get('--lh-display')).toBe('1.07');
+    // P2-37: reading measure ≈38 Korean characters, 36em ≈ 66 characters on English pages.
+    expect(base.get('--measure')).toBe('38em');
+    expect(en?.decls.get('--measure')).toBe('36em');
+  });
+
+  it('D-2 XL steps: the HUD container is 1360px from 1600px and 1440px from 1800px; type and gutters step up; --container stays', () => {
+    expect(rootDecls(BASE).get('--container-hud')).toBe('var(--container)');
+    const px = (v: string | undefined): number => Number(/^(\d+)px$/.exec(v ?? '')?.[1]);
+    const desktop = rootDecls(DESKTOP);
+    const large = rootDecls('@media (min-width: 1600px)');
+    const xl = rootDecls('@media (min-width: 1800px)');
+    expect(large.get('--container-hud')).toBe('1360px');
+    expect(xl.get('--container-hud')).toBe('1440px');
+    // --container stays the 1180px base; every band's .container follows --container-hud (base.css, batch 5 item
+    // 11); prose keeps its em measure (--measure), untouched by the steps.
+    expect(large.has('--container') || xl.has('--container')).toBe(false);
+    expect(large.has('--measure') || xl.has('--measure')).toBe(false);
+    for (const name of ['--gutter', '--fs-name', '--fs-display', '--fs-h2', '--fs-sub']) {
+      expect(px(large.get(name)), `${name} at 1600px`).toBeGreaterThan(px(desktop.get(name)));
+      expect(px(xl.get(name)), `${name} at 1800px`).toBeGreaterThanOrEqual(px(large.get(name)));
+    }
+    expect(px(xl.get('--fs-name'))).toBeLessThanOrEqual(92); // "slightly": name ~88–92px, h2 ~36px
+    expect(px(xl.get('--fs-h2'))).toBeLessThanOrEqual(36);
+    expect(large.has('--fs-body') || xl.has('--fs-body')).toBe(false);
+  });
+
+  it('--fs-label and --fs-caption are 13–14px and --fs-min is 12px', () => {
+    const d = rootDecls(BASE);
+    for (const name of ['--fs-label', '--fs-caption']) {
+      const px = Number(/^(\d+(?:\.\d+)?)px$/.exec(d.get(name) ?? '')?.[1]);
+      expect(px >= 13 && px <= 14, `${name} = ${d.get(name)}`).toBe(true);
+    }
+    expect(d.get('--fs-min')).toBe('12px');
+  });
+
+  it('motion tokens match spec §4', () => {
+    const d = rootDecls(BASE);
+    expect(squash(d.get('--ease-out'))).toBe('cubic-bezier(.22,1,.36,1)');
+    expect(d.get('--dur-enter')).toBe('.6s');
+    expect(d.get('--dur-exit')).toBe('.25s');
+    expect(d.get('--dur-hover')).toBe('.1s');
+    expect(d.get('--dur-press')).toBe('.15s');
+    expect(d.get('--dur-fade')).toBe('.2s');
+    expect(d.get('--dur-streak')).toBe('.8s');
+  });
+
+  it('layout and font tokens: nav height, tap target, container, font stacks', () => {
+    const d = rootDecls(BASE);
+    expect(d.get('--nav-h')).toBe(`${NAV_HEIGHT_PX}px`);
+    expect(d.get('--tap')).toBe('44px');
+    expect(d.get('--container')).toBe('1180px');
+    // Batch 2: "SB Sans" is the build-time Pretendard subset, renamed ("Pretendard" is an OFL Reserved Font Name).
+    expect(d.get('--font-sans')).toMatch(/^"SB Sans",/);
+    expect(d.get('--font-sans')).not.toMatch(/Pretendard Variable/);
+    expect(d.get('--font-mono')).toMatch(/^"JetBrains Mono Variable",[\s\S]*"SB Sans"/);
+    expect(d.get('--font-paper-ko')).toBe('"SB Serif KR", var(--font-paper)');
+    expect(d.get('--font-card')).toBe('var(--font-anton, Impact, "Arial Narrow Bold", sans-serif)');
+  });
+
+  it('base.css sets keep-all, overflow-wrap anywhere and a scroll-margin under the sticky nav for everything outside it', () => {
+    const rules = parseRules(read('src/styles/base.css'));
+    const body = rules.find((r) => r.selector === 'body')?.decls;
+    expect(body?.get('word-break')).toBe('keep-all');
+    expect(body?.get('overflow-wrap')).toBe('anywhere');
+    expect(body?.get('letter-spacing')).toBe('0');
+    expect(body?.get('font-size')).toBe('var(--fs-body)');
+    // Final review fix 1 item 2 (WCAG 2.4.11) + fix round 2: a scroll-margin on everything outside the nav covers anchor
+    // jumps AND focus scrolling; no root scroll-padding (it also made focus inside the always-visible nav scroll the page).
+    const margins = rules.filter((r) => r.decls.has('scroll-margin-top'));
+    expect(margins.map((r) => r.selector.replace(/\s+/g, ' '))).toEqual(['body > :not(.hud-nav), body > :not(.hud-nav) *']);
+    expect(margins[0]?.decls.get('scroll-margin-top')).toBe('calc(var(--nav-h) + 16px)');
+    expect(rules.some((r) => r.decls.has('scroll-padding-top') || r.decls.has('scroll-padding'))).toBe(false);
+    expect(rules.find((r) => r.selector === ':root')?.decls.get('scroll-behavior')).toBe('auto');
+    const focus = rules.find((r) => r.selector === ':focus-visible')?.decls;
+    expect(focus?.get('outline')).toBe('2px solid var(--accent)');
+    expect(focus?.get('outline-offset')).toBe('3px');
+    expect(rules.find((r) => r.selector.startsWith('.read :focus-visible'))?.decls.get('outline-color')).toBe('var(--accent-deep)');
+  });
+
+  it('every §5.16 global class is defined in src/styles', () => {
+    const selectors = ['base', 'hud', 'read'].flatMap((f) => parseRules(read(`src/styles/${f}.css`)).map((r) => r.selector)).join('\n');
+    const classes = ['container', 'read', 'sr-only', 'skip-link', 'hit', 'hud-grid', 'cut', 'cut--line', 'bracket', 'bracket--sm', 'btn', 'btn--fill', 'btn--line', 'btn--sm', 'hud-label', 'hud-label__ko', 'hud-label__en', 'badge', 'badge--tier', 'badge--kw', 'hud-panel', 'sec', 'sec-more', 'prose', 'read-card', 'read-section', 'tnum',
+      // batch 5: the section head (D-8) and the light HUD set (P1-9)
+      'hud-label__mark', 'hud-label__sq', 'sec-head', 'sec-head__title', 'read-sec', 'read-column', 'lh-rows', 'lh-row', 'lh-idx', 'lh-table', 'lh-frame', 'lh-chips', 'lh-chip', 'lh-chip--mono', 'lh-tag'];
+    for (const c of classes) expect(selectors, `.${c}`).toMatch(new RegExp(`\\.${c}(?![\\w-])`));
+  });
+
+  it('base, hud and read use colour tokens only (no colour literals)', () => {
+    for (const f of ['base', 'hud', 'read']) {
+      const css = read(`src/styles/${f}.css`).replace(/\/\*[\s\S]*?\*\//g, '');
+      expect(css.match(/#[0-9a-fA-F]{3,8}\b|\brgba?\(|\bhsla?\(/g) ?? [], f).toEqual([]);
+    }
+  });
+});

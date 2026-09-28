@@ -1,0 +1,201 @@
+---
+/**
+ * Footer on every page (mockup-port §14.5, spec §4/§8/§11): /stats/ /privacy/ /credits/ links,
+ * "마지막 업데이트" = build date in Asia/Seoul, the "모션 끄기" toggle, and the rights-holder notices
+ * for what this page shows (always rendered in NOTICE_KEYS order).
+ */
+import type { Lang } from '../../i18n/ui';
+import { formatDate, localizeHref, t, type UiKey } from '../../i18n/utils';
+import { NOTICE_KEYS, type NoticeKey } from '../../types';
+
+interface Props {
+  lang: Lang;
+  notices: NoticeKey[];
+  builtAt: Date;
+}
+const { lang, notices, builtAt } = Astro.props;
+
+const parts = new Intl.DateTimeFormat('en-CA', {
+  timeZone: 'Asia/Seoul',
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+}).formatToParts(builtAt);
+const part = (type: 'year' | 'month' | 'day'): string => parts.find((p) => p.type === type)?.value ?? '';
+const builtIso = `${part('year')}-${part('month')}-${part('day')}`;
+
+// notice.* are verbatim English rights-holder texts; footer.fanContent is in the page language.
+const NOTICE_LINES: Record<NoticeKey, { key: UiKey; english: boolean }[]> = {
+  cognosphere: [{ key: 'notice.cognosphere', english: true }],
+  'zzz-fan-guide': [
+    { key: 'notice.zzzCopyright', english: true },
+    { key: 'notice.zzzLegalStatement', english: true },
+  ],
+  'fan-content': [{ key: 'footer.fanContent', english: false }],
+  riot: [{ key: 'notice.riot', english: true }],
+};
+const noticeLines = NOTICE_KEYS.filter((key) => notices.includes(key)).flatMap((key) => NOTICE_LINES[key]);
+
+const links = [
+  { href: localizeHref('/stats/', lang), label: t(lang, 'nav.stats') },
+  { href: localizeHref('/privacy/', lang), label: t(lang, 'nav.privacy') },
+  { href: localizeHref('/credits/', lang), label: t(lang, 'nav.credits') },
+];
+---
+<footer class="site-footer">
+  <div class="container container--hud site-footer__inner">
+    <p class="site-footer__copy">{t(lang, 'footer.copyright', { year: part('year') })}</p>
+    <nav class="site-footer__nav" aria-label={t(lang, 'footer.siteInfo')}>
+      <ul class="site-footer__links" role="list">
+        {links.map((link) => <li><a href={link.href}>{link.label}</a></li>)}
+      </ul>
+    </nav>
+    <p class="site-footer__updated">{t(lang, 'footer.lastUpdated')} <time datetime={builtIso}>{formatDate(builtIso, lang)}</time></p>
+    {/* Fix round 2 item 1: fix round 1's constant aria-label fixed the aria-pressed/name *agreement* problem but
+        broke WCAG 2.5.3 Label in Name the other way — the accessible name ("모션 줄이기"/"Reduce motion") never
+        matched the visible text, which still changed ("모션 끄기"/"모션 켜기"/"기기 설정으로 꺼짐"). The standard
+        pattern: the visible label is now itself constant (so it doubles as the accessible name — no aria-label
+        needed), state is conveyed by aria-pressed plus a separate aria-hidden HUD chip (ON/OFF, fixed English
+        like the achievement toast's "ACHIEVEMENT UNLOCKED" kicker — decorative, not a11y-load-bearing), and the
+        OS-forced-off explanation is a visible note *outside* the button.
+        Fix round 3 item 1: that note's id must NOT be wired in via a static aria-describedby here — a `hidden`
+        element that is the DIRECT target of aria-describedby still supplies its text in Chrome's actual AX tree
+        (the `hidden` attribute only stops a hidden element's content from being pulled in during traversal of an
+        ancestor's accessible-text computation; it does not stop the browser from using a hidden element that is
+        itself the referenced node). With a static reference here, every state — including the ordinary,
+        not-OS-forced default — announced "Off by device setting" as if it were always true. aria-describedby is
+        now added/removed in sync() below, present only while osForced is actually true. */}
+    <button
+      type="button"
+      class="site-footer__motion"
+      aria-pressed="false"
+      data-motion-toggle
+    >{t(lang, 'action.reduceMotion')} <span class="site-footer__motion-chip" lang="en" aria-hidden="true" data-motion-chip>OFF</span></button>
+    <p id="motion-os-note" class="site-footer__motion-note" data-motion-os-note hidden>{t(lang, 'action.motionOsOff')}</p>
+    {noticeLines.length > 0 && (
+      <div class="site-footer__notices">
+        {noticeLines.map((line) => (
+          <p class="site-footer__notice" lang={line.english ? 'en' : undefined}>{t(lang, line.key)}</p>
+        ))}
+      </div>
+    )}
+  </div>
+</footer>
+
+<script>
+  import { isMotionOffStored, osPrefersReduce, setMotionOff } from '../../lib/motion-pref';
+
+  // Fix round 2 item 1: the button's own text never changes now (WCAG 2.5.3) — only aria-pressed, the aria-hidden
+  // ON/OFF chip, and the OS-note's visibility track state. Fix round 3 item 1: aria-describedby is set/removed
+  // here too, present only while the OS itself already forces reduced motion (the only state the note describes)
+  // — never left pointing at the note in the ordinary, not-OS-forced states, where it isn't true.
+  document.querySelectorAll<HTMLButtonElement>('[data-motion-toggle]').forEach((button) => {
+    const chip = button.querySelector<HTMLElement>('[data-motion-chip]');
+    const note = document.getElementById('motion-os-note') as HTMLElement | null;
+    const sync = () => {
+      const osForced = osPrefersReduce();
+      const off = osForced || isMotionOffStored();
+      button.setAttribute('aria-pressed', String(off));
+      button.disabled = osForced;
+      if (chip) chip.textContent = off ? 'ON' : 'OFF';
+      if (note) note.hidden = !osForced;
+      if (osForced) button.setAttribute('aria-describedby', 'motion-os-note');
+      else button.removeAttribute('aria-describedby');
+    };
+    sync();
+    button.addEventListener('click', () => {
+      setMotionOff(button.getAttribute('aria-pressed') !== 'true');
+      sync();
+    });
+    if (typeof window.matchMedia === 'function') {
+      window.matchMedia('(prefers-reduced-motion: reduce)').addEventListener('change', sync);
+    }
+  });
+</script>
+
+<style>
+  .site-footer {
+    border-top: 1px solid var(--hud-divider);
+    padding-block: 18px 24px;
+    font: 500 var(--fs-caption)/1.6 var(--font-mono);
+    color: var(--hud-muted);
+  }
+  .site-footer__inner {
+    display: grid;
+    gap: 8px;
+  }
+  .site-footer__links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0 16px;
+  }
+  .site-footer a {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--tap);
+    color: var(--hud-text);
+  }
+  .site-footer__motion {
+    justify-self: start;
+    min-height: var(--tap);
+    padding: 0 12px;
+    background: none;
+    border: 1px solid var(--hud-line);
+    color: var(--hud-muted);
+    font: inherit;
+    cursor: pointer;
+    transition: color var(--dur-hover) linear, border-color var(--dur-hover) linear;
+  }
+  .site-footer__motion[aria-pressed="true"] {
+    color: var(--accent);
+    border-color: var(--accent);
+  }
+  /* P2-7: disabled (the OS setting already forces it) — pressed-styled but not interactive. */
+  .site-footer__motion:disabled {
+    cursor: not-allowed;
+    opacity: .7;
+  }
+  .site-footer__motion:lang(ko) {
+    font-family: var(--font-sans);
+  }
+  .site-footer__motion-chip {
+    display: inline-block;
+    margin-inline-start: 6px;
+    padding: 1px 5px;
+    font: 700 12px/1.4 var(--font-mono); /* site-wide floor: no rendered text below 12px */
+    letter-spacing: .04em;
+    border: 1px solid currentColor;
+    border-radius: 2px;
+    vertical-align: 1px;
+  }
+  .site-footer__motion-note {
+    font-family: var(--font-sans);
+    color: var(--hud-muted);
+  }
+  .site-footer__notices {
+    display: grid;
+    gap: 4px;
+  }
+  .site-footer__notice {
+    font-family: var(--font-sans);
+    line-height: 1.5;
+  }
+  @media (min-width: 1068px) {
+    .site-footer__inner {
+      grid-template-columns: auto 1fr auto auto;
+      align-items: center;
+      column-gap: 20px;
+    }
+    .site-footer__notices {
+      grid-column: 1 / -1;
+    }
+    /* Fix round 3 item 1: the note is 5th in source order, so default grid auto-placement would wrap it to a new
+       row starting at column 1 — the far left, under .site-footer__copy, nowhere near the button it describes.
+       Pin it under the motion button's own column instead. */
+    .site-footer__motion-note {
+      grid-column: 4;
+      grid-row: 2;
+      justify-self: start;
+    }
+  }
+</style>

@@ -1,0 +1,51 @@
+---
+import PageHeader from '../components/hud/PageHeader.astro';
+import DailyChart from '../components/stats/DailyChart.astro';
+import RankTable from '../components/stats/RankTable.astro';
+import StatsSummary from '../components/stats/StatsSummary.astro';
+import { GOATCOUNTER } from '../config';
+import { PAGE_META } from '../data/copy/pages';
+import type { Lang } from '../i18n/ui';
+import { t } from '../i18n/utils';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { generated, usableStats } from '../lib/generated';
+import { allRoutes } from '../lib/routes';
+import { cleanPages, cleanReferrers } from '../lib/stats-hygiene';
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const meta = PAGE_META.stats[lang];
+const stats = generated.stats();
+const usable = GOATCOUNTER.code === null ? undefined : usableStats(stats);
+// Final review fix 1 item 8: the fetch already cleans both lists; cleaning again here keeps a stats.json written by an
+// older script (or edited by hand) from publishing a path that is not a site route or a referrer that is not a hostname.
+const pages = usable ? cleanPages(usable.pages, allRoutes()) : [];
+const referrers = usable ? cleanReferrers(usable.referrers) : [];
+---
+<BaseLayout lang={lang} title={meta.title} description={meta.description} page="stats">
+  <PageHeader lang={lang} label="STATS" title={t(lang, 'stats.title')} />
+  <StatsSummary lang={lang} stats={stats} code={GOATCOUNTER.code} />
+  {usable && (
+    <Fragment>
+      <DailyChart lang={lang} daily={usable.daily} fetchedAt={usable.fetchedAt} maxAgeDays={usable.maxAgeDays} />
+      <RankTable
+        lang={lang}
+        id="top-pages"
+        title={t(lang, 'stats.topPages')}
+        rows={pages.map((p) => ({ label: p.path, count: p.count }))}
+        fetchedAt={usable.fetchedAt}
+        maxAgeDays={usable.maxAgeDays}
+      />
+      <RankTable
+        lang={lang}
+        id="referrers"
+        title={t(lang, 'stats.referrers')}
+        rows={referrers.map((r) => ({ label: r.name ?? t(lang, 'stats.direct'), count: r.count }))}
+        fetchedAt={usable.fetchedAt}
+        maxAgeDays={usable.maxAgeDays}
+      />
+    </Fragment>
+  )}
+</BaseLayout>

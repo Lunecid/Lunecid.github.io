@@ -1,0 +1,131 @@
+---
+// "안녕하세요!" profile block (Behance pattern 6), on the home page (#hello) and on /records/ (#profile).
+// Real ID photo only (spec §2, §12); skills are the primary list from resume.yaml (no SQL, spec §2 item 7).
+import { Picture } from 'astro:assets';
+import GhostArt from '../hud/GhostArt.astro';
+import SectionLabel from '../hud/SectionLabel.astro';
+import photo from '../../assets/photo/photo-id.webp';
+import type { Lang } from '../../i18n/ui';
+import { t } from '../../i18n/utils';
+import { fitWidths, sourceSize } from '../../lib/images';
+
+interface Props {
+  lang: Lang;
+  id?: string;
+  headingLevel?: 2 | 3;
+  about: string;
+  tagline?: string;
+  status?: string;
+  location: string;
+  education: string[];
+  skills: string[];
+  records: string[];
+  /** cvDocLabel names the PDF the CV link opens (D-7): the link's title and, visually hidden, part of its name. */
+  contact: { email: string; github: string; cvHref: string; cvDocLabel: string };
+  ids?: { scholar: string | null; orcid: string | null };
+  /** The photo is the page's LCP image (/records/, where this block opens the page): eager, fetchpriority high. */
+  priority?: boolean;
+}
+
+const { lang, id = 'hello', headingLevel = 2, about, tagline, status, location, education, skills, records, contact, ids, priority = false } = Astro.props;
+const Title = headingLevel === 3 ? 'h3' : 'h2';
+const Sub = headingLevel === 3 ? 'h4' : 'h3';
+const titleId = `${id}-title`;
+const researcherLinks = [
+  ids?.scholar ? { label: 'Google Scholar', href: ids.scholar } : null,
+  ids?.orcid ? { label: 'ORCID', href: ids.orcid } : null,
+].filter((link): link is { label: string; href: string } => link !== null);
+// Korean pages show "학력 EDUCATION"; English pages show the English word only (same rule as SectionLabel).
+const heads = {
+  education: { text: t(lang, 'records.education'), deco: 'EDUCATION' },
+  skills: { text: t(lang, 'records.skills'), deco: 'SKILLS' },
+  // "주요 기록", not "기록": on /records/ the page itself is called 기록 (P2-17).
+  records: { text: t(lang, 'hello.highlights'), deco: 'HIGHLIGHTS' },
+};
+---
+
+<section id={id} class="hello read" aria-labelledby={titleId}>
+  <GhostArt side="right" />
+  <div class="container hello__grid">
+    <Picture
+      class="hello__photo"
+      src={photo}
+      formats={['avif', 'webp']}
+      fallbackFormat="webp"
+      widths={fitWidths([230, 360], sourceSize(photo).width)}
+      sizes="(min-width: 1068px) 230px, 200px"
+      priority={priority}
+      alt={t(lang, 'card.photoAlt')}
+    />
+    <div class="hello__intro">
+      <SectionLabel en={t(lang, 'section.profile')} />
+      <Title id={titleId} class="hello__title">{`${t(lang, 'section.hello')}!`}</Title>
+      {tagline && <p class="hello__tagline">{tagline}</p>}
+      {status && <p class="hello__status">{status}</p>}
+      <p class="hello__bio">{about}</p>
+      <p class="hello__loc">{location}</p>
+      <ul class="hello__contact" role="list">
+        <li><a href={`mailto:${contact.email}`}>{contact.email}</a></li>
+        <li><a href={contact.github}>GitHub</a></li>
+        <li><a href={contact.cvHref} title={contact.cvDocLabel} download>CV (PDF) <span aria-hidden="true">↓</span><span class="sr-only"> — {contact.cvDocLabel}</span></a></li>
+        {
+          researcherLinks.map((link) => (
+            <li>
+              <a href={link.href}>{link.label}</a>
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+    <div class="hello__facts">
+      <Sub class="hello__h">{heads.education.text}{lang === 'ko' && <span lang="en">{heads.education.deco}</span>}</Sub>
+      <ul class="hello__list" role="list">
+        {education.map((line) => <li>{line}</li>)}
+      </ul>
+      <Sub class="hello__h">{heads.skills.text}{lang === 'ko' && <span lang="en">{heads.skills.deco}</span>}</Sub>
+      <ul class="hello__chips" role="list">
+        {skills.map((skill) => <li lang="en">{skill}</li>)}
+      </ul>
+      <Sub class="hello__h">{heads.records.text}{lang === 'ko' && <span lang="en">{heads.records.deco}</span>}</Sub>
+      <ul class="hello__list hello__list--records" role="list">
+        {
+          records.map((record) => (
+            <li>
+              <span aria-hidden="true">◆ </span>
+              {record}
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+  </div>
+</section>
+
+<style>
+  .hello { position: relative; overflow: hidden; padding-block: 48px; }
+  .hello__grid { position: relative; z-index: 1; display: grid; gap: 28px; }
+  .hello__grid :global(.hello__photo) { display: block; width: 200px; height: auto; aspect-ratio: 3 / 4; object-fit: cover; object-position: 50% 18%; border-radius: 18px; border: 1px solid var(--read-line); background: var(--read-card); }
+  .hello__title { margin-top: 6px; margin-bottom: 12px; font-size: 32px; font-weight: 900; line-height: 1.2; }
+  .hello__tagline { font-size: var(--fs-sub); font-weight: 700; line-height: var(--lh-sub); max-width: var(--measure); }
+  .hello__status { margin-top: 6px; font-size: 15px; line-height: 1.6; color: var(--read-muted); max-width: var(--measure); }
+  .hello__bio { margin-top: 12px; font-size: var(--fs-body); line-height: var(--lh-body); color: var(--read-text); max-width: var(--measure); }
+  .hello__loc { margin-top: 10px; font-size: 14px; color: var(--read-muted); }
+  .hello__contact { margin-top: 12px; display: flex; flex-wrap: wrap; gap: 0 16px; font-size: 15px; }
+  .hello__contact a { display: inline-flex; align-items: center; min-height: var(--tap); }
+  .hello__h { margin: 16px 0 8px; font-size: 13px; font-weight: 900; letter-spacing: 0; }
+  .hello__h span { margin-left: .4em; letter-spacing: .08em; color: var(--read-muted); }
+  .hello__h:first-child { margin-top: 0; }
+  .hello__chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .hello__chips li { padding: 5px 10px; border-radius: 8px; background: var(--chip-bg); color: var(--hud-strong); font: 700 13px/1.3 var(--font-mono); }
+  .hello__list { font-size: 15px; line-height: 1.9; }
+  @media (min-width: 734px) {
+    .hello__grid { grid-template-columns: 200px minmax(0, 1fr); }
+    .hello__grid > .hello__facts { grid-column: 1 / -1; }
+  }
+  @media (min-width: 1068px) {
+    .hello__grid { grid-template-columns: 230px minmax(0, 1fr) minmax(0, 1fr); gap: 34px; }
+    .hello__grid > .hello__facts { grid-column: auto; }
+    .hello__grid :global(.hello__photo) { width: 230px; }
+    .hello__title { font-size: 40px; }
+  }
+</style>

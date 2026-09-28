@@ -1,0 +1,130 @@
+# favorites.yaml — 플레이 로그의 FAVORITE GAMES 쇼케이스.
+# 규칙
+# - id는 데이터 키로만 쓴다. 페이지 주소·해시(#)·페이지 제목에 게임 상표를 쓰지 않는다(spec §3, NEXON 약관 8.4).
+#   쇼케이스에서 고른 게임은 URL에 반영하지 않는다.
+# - 캐릭터 이미지는 장식이므로 화면에서는 alt=""로 둔다. 저작권 표기는 notices(ui.ts의 notice.*)로 따로 보여 준다.
+# - 캐릭터 이미지는 HoYoverse 공식 홈페이지 원본을 사용자 허락을 받은 뒤 받아 src/assets/characters/<id>.png로 직접 호스팅한다(spec §8, §13). 핫링크 금지.
+# - tint는 쇼케이스 배경 색조에만 쓴다(spec §4: 캐릭터 고유색은 플레이 로그·쇼케이스에만).
+# - account는 v1에서 모두 null이다. 값이 없으면 계정 카드는 잠금 상태로 보인다.
+#   연동을 켜면 빌드 때 생성되는 src/data/generated/accounts/<integration.platform>.json을 읽는다(커밋하지 않음, spec §6·§7.1).
+# - locked: true 인 게임은 목록에 비활성 버튼으로만 보이고 선택할 수 없다.
+# - notices 값 → ui.ts 키: cognosphere → notice.cognosphere · zzz-fan-guide → notice.zzzCopyright + notice.zzzLegalStatement · fan-content → footer.fanContent
+
+games:
+  - id: zzz
+    locked: false
+    title:
+      ko: 젠레스 존 제로
+      en: Zenless Zone Zero
+    studio: HoYoverse
+    characters:
+      - id: remielle
+        name:
+          ko: 레미엘
+          en: Remielle
+        position: 58% 12%
+        tint: '#FF4F8B'
+    why:
+      ko: 도시 판타지 세계관과 빠른 액션 전투를 좋아합니다. 요즘 가장 오래 켜 두는 게임이고, 가장 좋아하는 에이전트는 레미엘입니다.
+      en: I like its urban fantasy setting and fast action combat. It is the game I spend the most time in these days, and my favorite agent is Remielle.
+    meta:
+      - label: { ko: 플레이, en: Playing since }
+        value: { ko: 2024 –, en: '2024' }
+      - label: { ko: 장르, en: Genre }
+        value: { ko: 액션 · 수집형, en: Action · Character collection }
+      - label: { ko: 최애, en: Favorite }
+        value: { ko: 레미엘, en: Remielle }
+    notices: [cognosphere, zzz-fan-guide, fan-content]
+    integration:
+      platform: enka-zzz
+      enabled: false
+    account: null
+
+  - id: genshin
+    locked: false
+    title:
+      ko: 원신
+      en: Genshin Impact
+    studio: HoYoverse
+    characters:
+      - id: eula
+        name:
+          ko: 유라
+          en: Eula
+        position: 52% 8%
+        tint: '#50A0FF'
+      - id: mona
+        name:
+          ko: 모나
+          en: Mona
+        position: 50% 10%
+        tint: '#7A6CF0'
+    why:
+      ko: 열린 세계를 탐험하는 재미와 원소를 조합하는 전투를 좋아합니다. 가장 좋아하는 캐릭터는 대검으로 싸우는 유라와 점성술사 모나입니다.
+      en: I enjoy exploring its open world and combining elements in combat. My favorite characters are Eula, who fights with a claymore, and Mona, an astrologist.
+    meta:
+      - label: { ko: 플레이, en: Playing since }
+        value: { ko: 2020 –, en: '2020' }
+      - label: { ko: 장르, en: Genre }
+        value: { ko: 오픈월드 RPG, en: Open-world RPG }
+      - label: { ko: 최애, en: Favorites }
+        value: { ko: 유라 · 모나, en: Eula · Mona }
+    notices: [cognosphere, fan-content]
+    integration:
+      platform: enka-genshin
+      enabled: false
+    account: null
+
+  - id: lol
+    locked: true
+    reason:
+      ko: 계정 연동 준비 중
+      en: Account link coming soon
+    title:
+      ko: 리그 오브 레전드
+      en: League of Legends
+    studio: Riot Games
+    characters: []
+    why: null
+    meta: []
+    notices: []
+    integration:
+      platform: riot
+      enabled: false
+    account: null
+
+  - id: dnf
+    locked: true
+    reason:
+      ko: 계정 연동 준비 중
+      en: Account link coming soon
+    title:
+      ko: 던전앤파이터
+      en: Dungeon & Fighter
+    studio: Neople
+    characters: []
+    why: null
+    meta: []
+    notices: []
+    integration:
+      platform: neople
+      enabled: false
+    account: null
+
+  - id: steam
+    locked: true
+    reason:
+      ko: 계정 연동 준비 중
+      en: Account link coming soon
+    title:
+      ko: Steam 라이브러리
+      en: Steam Library
+    studio: Valve
+    characters: []
+    why: null
+    meta: []
+    notices: []
+    integration:
+      platform: steam
+      enabled: false
+    account: null

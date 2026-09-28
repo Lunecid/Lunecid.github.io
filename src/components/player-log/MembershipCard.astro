@@ -1,0 +1,76 @@
+---
+import { Image } from 'astro:assets';
+import photo from '../../assets/photo/photo-id.webp';
+
+interface Props {
+  headingLevel?: 2 | 3;
+  title?: string;
+  subtitle?: string;
+  fields: { label: string; value: string }[];
+  sticker: string;
+  memberSince: string;
+  photoAlt: string;
+}
+const { headingLevel = 3, title = 'Player Data Lab', subtitle = 'Membership Card', fields, sticker, memberSince, photoAlt } = Astro.props;
+const Heading = headingLevel === 2 ? 'h2' : 'h3';
+---
+<article class="mcard" aria-label={`${title} ${subtitle}`}>
+  <Heading class="mcard__title" lang="en">{title}<small>{subtitle}</small></Heading>
+  <dl class="mcard__fields">
+    {fields.map((f) => <div class="mcard__field"><dt lang="en">{f.label}</dt><dd>{f.value}</dd></div>)}
+  </dl>
+  <div class="mcard__photo-wrap">
+    <div class="mcard__photo"><Image src={photo} alt={photoAlt} width={112} densities={[1, 2, 3]} loading="eager" /></div>
+    <p class="mcard__sticker" lang="en">{sticker}</p>
+  </div>
+  <p class="mcard__band"><span lang="en">{memberSince}</span><span class="mcard__barcode" aria-hidden="true"></span></p>
+</article>
+
+<style>
+  .mcard {
+    --mc-paper: #F2F0EA; --mc-ink: #111111; --mc-label: #66625A; --mc-pink: #FF3D6E;
+    --mc-band-ink: #111111; /* white on pink is 3.42:1 (fails AA); #111 is 5.53:1 */
+    --mc-bar: #FFFFFF; --mc-sticker: #FFD60A; --mc-photo-bg: #DDDDDD; --mc-edge: rgba(0, 0, 0, .08);
+    position: relative; width: 100%; max-width: 440px; min-height: 280px;
+    display: grid; grid-template-columns: minmax(0, 1fr) 134px; column-gap: 10px; grid-template-rows: auto 1fr auto;
+    background: var(--mc-paper); color: var(--mc-ink); color-scheme: light;
+    border: 1px solid var(--mc-edge); border-radius: 16px; overflow: hidden;
+  }
+  .mcard__title {
+    grid-column: 1; grid-row: 1; margin: 0; padding: 18px 0 0 22px;
+    font-family: var(--font-card); font-weight: 400; font-size: 31px; line-height: .95; letter-spacing: .01em; text-transform: uppercase;
+  }
+  .mcard__title small { display: block; margin-top: 6px; font-size: 13px; letter-spacing: .08em; }
+  .mcard__fields { grid-column: 1; grid-row: 2; display: grid; align-content: start; row-gap: 6px; margin: 0; padding: 9px 0 16px 22px; }
+  .mcard__field dt { font-size: 13px; line-height: 1.2; letter-spacing: .14em; color: var(--mc-label); } /* P2-24 */
+  .mcard__field dd { margin: 2px 0 0; font-size: 15px; line-height: 1.3; font-weight: 700; letter-spacing: 0; }
+  .mcard__photo-wrap { grid-column: 2; grid-row: 1 / 3; position: relative; width: 112px; margin-top: 20px; }
+  .mcard__photo { width: 112px; height: 146px; border: 2px solid var(--mc-ink); border-radius: 8px; overflow: hidden; background: var(--mc-photo-bg); }
+  .mcard__photo :global(img) { width: 100%; height: 100%; object-fit: cover; object-position: 50% 18%; }
+  .mcard__sticker {
+    position: absolute; right: 8px; top: 128px; margin: 0; transform: rotate(-9deg); white-space: nowrap;
+    padding: 4px 9px; font-family: var(--font-card); font-size: 13px; line-height: 1.2;
+    background: var(--mc-sticker); color: var(--mc-ink); border: 2px solid var(--mc-ink); border-radius: 4px;
+  }
+  .mcard__band {
+    grid-column: 1 / -1; grid-row: 3; height: 40px; margin: 0; padding: 0 22px;
+    display: flex; align-items: center; justify-content: space-between;
+    background: var(--mc-pink); color: var(--mc-band-ink); font-size: 12px; font-weight: 600; letter-spacing: .14em;
+  }
+  .mcard__barcode {
+    width: 120px; height: 22px;
+    background: repeating-linear-gradient(90deg, var(--mc-bar) 0 2px, transparent 2px 4px, var(--mc-bar) 4px 5px,
+      transparent 5px 8px, var(--mc-bar) 8px 11px, transparent 11px 12px);
+  }
+  @media (max-width: 733.98px) {
+    .mcard { grid-template-columns: minmax(0, 1fr) 104px; }
+    .mcard__title { font-size: 26px; padding-left: 18px; }
+    .mcard__fields { padding-left: 18px; }
+    .mcard__photo-wrap { width: 88px; }
+    .mcard__photo { width: 88px; height: 115px; }
+    /* on the photo's lower edge as on desktop (128 of 146px), not down on the pink band over the barcode (fix 2 item 8) */
+    .mcard__sticker { right: -4px; top: 98px; font-size: 12px; }
+    .mcard__band { padding: 0 18px; }
+    .mcard__barcode { width: 88px; }
+  }
+</style>

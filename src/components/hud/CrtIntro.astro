@@ -1,0 +1,113 @@
+---
+/*
+ * CRT intro overlay (spec §5: home only, once per session, ≤1 s over the finished hero, any input skips,
+ * one flash only, static faint scanlines, absent with reduced motion). BaseLayout renders it only when
+ * page === 'home'. Visibility and timing come from HEAD_INIT_SCRIPT (src/lib/head-init.ts), which sets
+ * <html data-intro="playing|fading"> before first paint; without JS the overlay never shows.
+ * Colours come from tokens only (color-mix for the translucent scanlines, glow and bar frame); no accent or
+ * gold, because the overlay is not clickable and gold is reserved for badges.
+ */
+---
+<div class="crt" aria-hidden="true">
+  <div class="crt__screen">
+    <p class="crt__caption" lang="en">PLAYER DATA LAB</p>
+    <p class="crt__start" lang="en">▶ START</p>
+    <div class="crt__bar"><i></i></div>
+  </div>
+  <div class="crt__flash"></div>
+</div>
+
+<style>
+  .crt {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    display: none;
+    /* Always inert (P2-4): the skip listener is bound on window in the capture phase (head-init.ts) and
+       fires regardless, so the overlay must never swallow a visitor's first click on real nav/CTA links. */
+    pointer-events: none;
+  }
+  :global(:root[data-intro]) .crt {
+    display: block;
+  }
+  :global(:root[data-intro='fading']) .crt {
+    opacity: 0;
+    transition: opacity var(--dur-exit) var(--ease-in, cubic-bezier(.4, 0, 1, 1));
+  }
+  :global(:root[data-motion='reduce']) .crt {
+    display: none;
+  }
+
+  .crt__screen {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-content: center;
+    justify-items: center;
+    gap: 14px;
+    background: radial-gradient(90% 90% at 50% 45%, var(--hud-panel), var(--hud-bg) 75%);
+    box-shadow: inset 0 0 12vmin var(--hud-bg);
+    transform-origin: 50% 50%;
+    animation: crt-on .18s var(--ease-out) both;
+  }
+  .crt__screen::after {
+    /* static scanlines ≈6% (appendix A: 4–8%) */
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: repeating-linear-gradient(to bottom, color-mix(in srgb, var(--hud-strong) 6%, transparent) 0 1px, transparent 1px 4px);
+  }
+  .crt__caption {
+    font: 800 clamp(28px, 5.2vw, 56px)/1 var(--font-mono);
+    letter-spacing: .06em;
+    color: var(--hud-strong);
+    text-shadow: 0 0 1.2vmin color-mix(in srgb, var(--hud-label) 35%, transparent);
+    animation: crt-show .12s .18s both;
+  }
+  .crt__start {
+    font: 700 clamp(14px, 2.3vw, 22px)/1 var(--font-mono);
+    color: var(--hud-muted);
+    animation: crt-show .12s .22s both;
+  }
+  .crt__bar {
+    width: min(360px, 64vw);
+    height: 12px;
+    padding: 2px;
+    border: 1px solid color-mix(in srgb, var(--hud-label) 60%, transparent); /* not --hud-line-strong: that token is lime (accent = clickable only) */
+    animation: crt-show .12s .22s both;
+  }
+  .crt__bar i {
+    display: block;
+    height: 100%;
+    transform-origin: 0 50%;
+    background: repeating-linear-gradient(90deg, var(--hud-label) 0 12px, transparent 12px 16px);
+    animation: crt-load .2s .22s var(--ease-out) both;
+  }
+  .crt__flash {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: var(--hud-strong);
+    opacity: 0;
+    animation: crt-flash .18s ease-out both;
+  }
+
+  @keyframes crt-on {
+    from { transform: scaleY(.006); }
+    to { transform: none; }
+  }
+  @keyframes crt-flash {
+    0% { opacity: 0; }
+    35% { opacity: .35; }
+    100% { opacity: 0; }
+  }
+  @keyframes crt-show {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  @keyframes crt-load {
+    from { transform: scaleX(0); }
+    to { transform: none; }
+  }
+</style>

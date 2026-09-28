@@ -1,0 +1,206 @@
+---
+// The paper page body (D-15): a white "first page" of an IEEE conference paper, set in a Times-like system
+// serif — running header (BibTeX booktitle) → title → author blocks (affiliation, never e-mail) →
+// "Abstract—" run-in → "Index Terms—" run-in → (ko) "국문 초록—" run-in → a first-page footnote with the
+// presentation, status and links → BibTeX. Run-in labels are real <h2>s inside labelled <section>s.
+// When the end of the sheet (after the BibTeX) scrolls into view, the finish-cog-story achievement fires
+// (the trigger keeps its pre-D-15 name so stored progress stays valid; the CoG paper is the only paper page).
+import BibtexBlock from './BibtexBlock.astro';
+import type { PaperPageData } from '../../lib/publications';
+import type { Lang } from '../../i18n/ui';
+import { t } from '../../i18n/utils';
+
+interface Props {
+  lang: Lang;
+  paper: PaperPageData;
+}
+
+const { lang, paper } = Astro.props;
+
+/** IEEE run-in labels of the English original (the same on both pages, so not in ui.ts). */
+const RUN_IN = { abstract: 'Abstract', indexTerms: 'Index Terms' } as const;
+
+const links = [
+  paper.code ? { label: t(lang, 'research.code'), href: paper.code, text: paper.code.replace(/^https?:\/\//, '') } : null,
+  paper.doi ? { label: t(lang, 'research.doi'), href: `https://doi.org/${paper.doi}`, text: paper.doi } : null,
+  paper.pdf ? { label: t(lang, 'research.pdf'), href: paper.pdf, text: paper.pdf.replace(/^https?:\/\//, '') } : null,
+].filter((link): link is { label: string; href: string; text: string } => link !== null);
+---
+<article class="paper" aria-labelledby="paper-title" data-paper={paper.id}>
+  <header class="paper__head">
+    <p class="paper__running" lang="en">{paper.venueLine}</p>
+    <h1 id="paper-title" class="paper__title" lang="en">{paper.title}</h1>
+    {paper.titleKo && (
+      <p class="paper__title-ko" lang="ko">{paper.titleKo} <span class="paper__title-ko-mark">({t(lang, 'paper.titleKo')})</span></p>
+    )}
+    <ul class="paper__authors" role="list" lang="en" aria-label={t(lang, 'paper.authors')}>
+      {paper.authors.map((author) => (
+        <li class="paper__author">
+          <span class="paper__author-name">{author.name}</span>
+          {author.affiliation.map((line) => <span class="paper__affil">{line}</span>)}
+        </li>
+      ))}
+    </ul>
+  </header>
+
+  <section id="abstract" class="paper__block paper__block--en" lang="en" aria-labelledby="abstract-label">
+    <h2 id="abstract-label" class="paper__runin">{RUN_IN.abstract}<span aria-hidden="true">—</span></h2><p class="paper__text">{paper.abstract}</p>
+  </section>
+
+  {paper.keywords.length > 0 && (
+    <section class="paper__block paper__block--en paper__block--terms" lang="en" aria-labelledby="index-terms-label">
+      <h2 id="index-terms-label" class="paper__runin">{RUN_IN.indexTerms}<span aria-hidden="true">—</span></h2><p class="paper__text">{paper.keywords.join(', ')}</p>
+    </section>
+  )}
+
+  {paper.abstractKo && (
+    <section class="paper__block paper__block--ko" lang="ko" aria-labelledby="abstract-ko-label">
+      <h2 id="abstract-ko-label" class="paper__runin">{t(lang, 'paper.abstractKo')}<span aria-hidden="true">—</span></h2><p class="paper__text">{paper.abstractKo}</p>
+    </section>
+  )}
+
+  <footer class="paper__foot">
+    {(paper.presentation || paper.statusNote) && (
+      <p class="paper__note">
+        {paper.presentation}
+        {paper.presentation && paper.statusNote && <br />}
+        {paper.statusNote}
+      </p>
+    )}
+    {links.length > 0 && (
+      <ul class="paper__links" role="list">
+        {links.map((link) => (
+          <li><span class="paper__link-label">{link.label}:</span> <a class="paper__link" href={link.href} lang="en" translate="no">{link.text}</a></li>
+        ))}
+      </ul>
+    )}
+    <BibtexBlock lang={lang} bibtex={paper.bibtex} />
+    <div class="paper__end" data-paper-end aria-hidden="true"></div>
+  </footer>
+</article>
+
+<script>
+  import { emitTrigger } from '../../lib/achievements';
+
+  function watchPaperEnd(): void {
+    const end = document.querySelector('[data-paper-end]');
+    if (!end || typeof IntersectionObserver !== 'function') return;
+    const observer = new IntersectionObserver((entries) => {
+      if (entries.some((entry) => entry.isIntersecting)) {
+        emitTrigger('finish-cog-story');
+        observer.disconnect();
+      }
+    });
+    observer.observe(end);
+  }
+
+  watchPaperEnd();
+</script>
+
+<style>
+  /* ── The sheet: ~46em wide, a ~66-character English measure inside generous page margins. ── */
+  .paper {
+    --paper-measure: 30em;
+    width: 100%;
+    max-width: 46em;
+    margin-inline: auto;
+    padding: 40px 16px 48px;
+    background: var(--paper-bg);
+    color: var(--paper-ink);
+    color-scheme: light;
+    font-family: var(--font-paper);
+    font-size: 17px;
+    font-weight: 400;
+    line-height: 1.5;
+  }
+  .paper > * { max-width: var(--paper-measure); margin-inline: auto; }
+  .paper a { color: var(--accent-deep); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: .15em; }
+  .paper :focus-visible { outline-color: var(--accent-deep); }
+
+  /* ── Header: running line, title, (ko) Korean title, author blocks ── */
+  .paper__head { text-align: center; }
+  .paper__running {
+    font-size: 14px;
+    line-height: 1.4;
+    font-variant-caps: small-caps;
+    letter-spacing: .05em;
+    color: var(--paper-muted);
+  }
+  /* IEEEtran sets the title in upright roman, not bold. */
+  .paper__title {
+    margin-top: 36px;
+    font-size: 24px;
+    font-weight: 400;
+    line-height: 1.25;
+    text-wrap: balance;
+    overflow-wrap: break-word;
+  }
+  .paper__title-ko {
+    margin-top: 12px;
+    font-size: 17px;
+    line-height: 1.5;
+    color: var(--paper-muted);
+    text-wrap: balance;
+    word-break: keep-all;
+  }
+  .paper__title-ko-mark { font-size: 14px; white-space: nowrap; }
+  .paper__authors {
+    margin-top: 28px;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 16px 56px;
+  }
+  .paper__author { display: flex; flex-direction: column; align-items: center; }
+  .paper__author-name { font-size: 15px; line-height: 1.4; }
+  /* \IEEEauthorblockA is italic. */
+  .paper__affil { font-size: 14px; line-height: 1.4; font-style: italic; color: var(--paper-muted); }
+
+  /* ── Run-in blocks: "Abstract—We study…" ── */
+  .paper__block { margin-top: 18px; }
+  .paper__head + .paper__block { margin-top: 44px; }
+  .paper__block--terms { margin-top: 10px; }
+  .paper__block--ko { margin-top: 28px; }
+  .paper__runin, .paper__text { display: inline; }
+  .paper__runin { font-size: inherit; line-height: inherit; font-weight: 700; font-style: italic; }
+  /* English: ragged right on phones (a ~40-character justified line opens wide gaps wherever the browser does
+     not hyphenate); justified from 640px, where the line already has the full measure (~69 characters). */
+  .paper__block--en { text-align: left; hyphens: auto; -webkit-hyphens: auto; word-break: normal; overflow-wrap: break-word; }
+  @media (min-width: 640px) {
+    .paper__block--en { text-align: justify; text-justify: inter-word; }
+  }
+  /* Korean text (the title gloss, the Korean abstract, the ko footnote): the Korean serif first. Its font rule
+     (Hangul only, ResearchPaperView) is on the Korean page alone, so Latin letters and digits inside stay in Times. */
+  .paper [lang="ko"], .paper__foot:lang(ko) { font-family: var(--font-paper-ko); }
+  /* Korean: no fake italics, ragged right, whole words. */
+  .paper__block--ko { text-align: start; word-break: keep-all; overflow-wrap: anywhere; line-height: 1.7; }
+  .paper__block--ko .paper__runin { font-style: normal; }
+
+  /* ── First-page footnote: short rule, presentation + status, links; then BibTeX ── */
+  .paper__foot { margin-top: 44px; }
+  .paper__foot::before {
+    content: "";
+    display: block;
+    width: 5em;
+    margin-bottom: 12px;
+    border-top: 1px solid var(--paper-rule);
+  }
+  .paper__note, .paper__links { font-size: 15px; line-height: 1.5; color: var(--paper-muted); }
+  .paper__note:lang(ko) { word-break: keep-all; }
+  .paper__links { margin-top: 6px; }
+  .paper__link { font-family: var(--font-mono); font-size: 13px; overflow-wrap: anywhere; word-break: break-all; }
+  .paper__foot :global(.bib) { margin-top: 28px; }
+  .paper__end { height: 1px; }
+
+  /* ── Wider screens: real page margins ── */
+  @media (min-width: 734px) {
+    .paper { --paper-measure: 31em; padding: 64px 48px 72px; }
+    .paper__title { margin-top: 44px; }
+  }
+
+  /* Print: the sheet alone, black on white (tokens.css turns the paper colours black in print). */
+  @media print {
+    .paper { max-width: none; padding: 0; }
+    .paper a { color: var(--paper-ink); }
+  }
+</style>

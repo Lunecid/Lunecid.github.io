@@ -1,0 +1,193 @@
+---
+// Job requirements fit (spec §9.2, P1-11, P2-18). One <table> in two layouts:
+// - below 734px every row is a card: requirement and status on the first line, then the posting frequency, the
+//   evidence as a list of 44px rows (full labels), then the next step;
+// - from 734px a real table, table-layout: fixed (18/9/31/10/32 %), short evidence labels on one line each with the
+//   full label as the title and the accessible name (the short one is part of it, WCAG 2.5.3).
+// The table keeps explicit ARIA roles because the card layout changes the rows' CSS display (table semantics then
+// stay for screen readers). Status is a text label (never colour alone) on a badge told apart at a glance: met =
+// filled accent-deep, partial = accent-deep outline, in progress = gold dashed, later / n-a = grey.
+// Evidence hrefs are Korean-based and localized here. No game-account data (NEXON terms 8.2). The next-step cell stays
+// empty when the row has no genuine skill step (plan: null, D-6); the source line names no company and links no
+// posting (D-6).
+import SectionHead from '../hud/SectionHead.astro';
+import type { JobfitData } from '../../content/schemas';
+import type { Lang } from '../../i18n/ui';
+import { formatDate, localizeHref, t, type UiKey } from '../../i18n/utils';
+import type { JobfitStatus } from '../../types';
+
+interface Props {
+  lang: Lang;
+  data: JobfitData;
+}
+
+const { lang, data } = Astro.props;
+const STATUS_KEY: Record<JobfitStatus, UiKey> = {
+  met: 'jobfit.status.met',
+  partial: 'jobfit.status.partial',
+  'in-progress': 'jobfit.status.in-progress',
+  later: 'jobfit.status.later',
+  'n-a': 'jobfit.status.n-a',
+};
+const COLUMNS: UiKey[] = ['jobfit.requirement', 'jobfit.frequency', 'jobfit.evidence', 'jobfit.status', 'jobfit.plan'];
+const rows = data.rows.map((row) => ({
+  id: row.id,
+  requirement: row.requirement[lang],
+  // one value per requirement part (jobfit.yaml joins them with ' · ')
+  frequency: row.frequency.split(' · '),
+  evidence: row.evidence.map((e) => ({ label: e.label[lang], short: e.short ? e.short[lang] : null, href: localizeHref(e.href, lang) })),
+  status: row.status,
+  statusLabel: t(lang, STATUS_KEY[row.status]),
+  plan: row.plan === null ? null : row.plan[lang],
+}));
+const title = t(lang, 'jobfit.title');
+---
+<section id="job-fit" class="jobfit read-sec" aria-labelledby="job-fit-title">
+  <div class="container">
+    <SectionHead id="job-fit-title" caption={t(lang, 'section.jobFit')} title={title} />
+    <p class="jobfit__intro">{data.intro[lang]}</p>
+    <p class="jobfit__asof">{t(lang, 'jobfit.asOf')} <time datetime={data.asOf}>{formatDate(data.asOf, lang)}</time></p>
+    <table class="jobfit__table" role="table">
+      <caption class="sr-only">{title}</caption>
+      <colgroup>
+        <col class="jobfit__col-req" /><col class="jobfit__col-freq" /><col class="jobfit__col-ev" /><col class="jobfit__col-status" /><col class="jobfit__col-plan" />
+      </colgroup>
+      <thead class="jobfit__head" role="rowgroup">
+        <tr role="row">{COLUMNS.map((key) => <th scope="col" role="columnheader">{t(lang, key)}</th>)}</tr>
+      </thead>
+      <tbody role="rowgroup">
+        {rows.map((row) => (
+          <tr class="jobfit__row" data-row={row.id} data-status={row.status} role="row">
+            <th scope="row" role="rowheader" class="jobfit__req">{row.requirement}</th>
+            <td class="jobfit__freq" role="cell"><span class="jobfit__label">{t(lang, 'jobfit.frequency')}</span><span class="jobfit__freq-value">{row.frequency.map((part, i) => <>{i > 0 && <span class="jobfit__freq-sep"> · </span>}<span class="jobfit__freq-part">{part}</span></>)}</span></td>
+            <td class="jobfit__ev-cell" role="cell">
+              {row.evidence.length > 0 ? (
+                <ul class="jobfit__evidence" role="list">
+                  {row.evidence.map((e) => {
+                    const external = e.href.startsWith('http');
+                    return (
+                      <li>
+                        {e.short ? (
+                          <a class="jobfit__ev" href={e.href} title={e.label}><span class="jobfit__ev-short" aria-hidden="true">{e.short}</span><span class="jobfit__ev-full">{e.label}</span>{external && <span class="jobfit__ev-arrow" aria-hidden="true">↗</span>}</a>
+                        ) : (
+                          <a class="jobfit__ev" href={e.href}>{e.label}{external && <span class="jobfit__ev-arrow" aria-hidden="true">↗</span>}</a>
+                        )}
+                      </li>
+                    );
+                  })}
+                </ul>
+              ) : (
+                <span class="jobfit__none">{t(lang, 'jobfit.noEvidence')}</span>
+              )}
+            </td>
+            <td class="jobfit__status-cell" role="cell"><span class={`jobfit__status jobfit__status--${row.status}`}>{row.statusLabel}</span></td>
+            <td class="jobfit__plan" role="cell">{row.plan && <Fragment><span class="jobfit__label">{t(lang, 'jobfit.plan')}</span>{row.plan}</Fragment>}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+    <p class="jobfit__note"><span class="jobfit__sources-title">{t(lang, 'jobfit.sources')}:</span> {data.sources.note[lang]}</p>
+  </div>
+</section>
+
+<style>
+  .jobfit__intro { margin-top: 16px; font-size: 16px; line-height: 1.7; max-width: var(--measure); }
+  .jobfit__intro:lang(en) { line-height: 1.5; }
+  .jobfit__asof { margin-top: 8px; font-size: 14px; color: var(--read-muted); }
+  .jobfit__asof time { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+  .jobfit__table { margin-top: 24px; width: 100%; border-collapse: collapse; font-size: 14px; line-height: 1.55; }
+  .jobfit__req { font-weight: 700; color: var(--read-text); text-align: start; }
+  .jobfit__freq-value { font-family: var(--font-mono); font-size: 13px; font-variant-numeric: tabular-nums; word-break: keep-all; overflow-wrap: normal; }
+  .jobfit__evidence { display: grid; }
+  .jobfit__ev { overflow-wrap: normal; word-break: keep-all; }
+  /* Fix round 2 item 4: this used to be a literal space text node between the label and the ↗ mark, which read
+     fine in normal inline flow but was silently dropped once .jobfit__ev became `display: flex` (fix round 1
+     item 2/P2-24 below) — a flex container discards a whitespace-only run between its flex items instead of
+     rendering it as visible space. A real margin survives either layout mode. */
+  .jobfit__ev-arrow { margin-inline-start: .25em; }
+  .jobfit__none { color: var(--read-muted); }
+  .jobfit__label { font-size: 13px; font-weight: 700; color: var(--read-muted); }
+
+  /* Status badges (P2-18): square tags, one look per state; AA text contrast on each fill. */
+  .jobfit__status {
+    display: inline-block; padding: 2px 6px; border: 1px solid transparent;
+    font-size: 13px; font-weight: 800; line-height: 1.5; white-space: nowrap;
+  }
+  .jobfit__status--met { background: var(--accent-deep); border-color: var(--accent-deep); color: var(--read-card); }
+  .jobfit__status--partial { background: var(--read-card); border-color: var(--accent-deep); color: var(--accent-deep); }
+  .jobfit__status--in-progress { background: var(--gold-wash); border: 1px dashed var(--gold); color: var(--gold-deep); }
+  .jobfit__status--later,
+  .jobfit__status--n-a { background: transparent; border-color: var(--read-line-strong); color: var(--read-muted); font-weight: 700; }
+
+  .jobfit__note { margin-top: 16px; font-size: 14px; line-height: 1.6; color: var(--read-muted); max-width: var(--measure); }
+  .jobfit__sources-title { font-weight: 700; color: var(--read-text); }
+
+  /* ── Below 734px: one card per row ── */
+  @media (max-width: 733.98px) {
+    .jobfit__table, .jobfit__table tbody { display: block; }
+    .jobfit__table colgroup { display: none; }
+    /* the column headers stay for screen readers (the rows keep their roles); the cards label their own parts */
+    .jobfit__head { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+    .jobfit__row {
+      display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "req status" "freq freq" "ev ev" "plan plan";
+      gap: 8px 12px; align-items: start; margin-top: 12px; padding: 14px 16px 12px; background: var(--read-card); border: 1px solid var(--read-line);
+    }
+    .jobfit__row > * { display: block; padding: 0; }
+    .jobfit__req { grid-area: req; font-size: 17px; line-height: 1.4; }
+    .jobfit__status-cell { grid-area: status; }
+    .jobfit__freq { grid-area: freq; }
+    .jobfit__freq .jobfit__label { margin-right: 8px; }
+    .jobfit__ev-cell { grid-area: ev; }
+    .jobfit__plan { grid-area: plan; }
+    .jobfit__plan .jobfit__label { display: block; }
+    .jobfit__plan:empty { display: none; }
+    /* evidence: one 44px row per link with hairlines, the full label */
+    .jobfit__evidence { border-top: 1px solid var(--read-line); }
+    .jobfit__evidence li { border-bottom: 1px solid var(--read-line); }
+    .jobfit__ev { display: flex; align-items: center; min-height: var(--tap); padding-block: 8px; font-weight: 600; }
+    .jobfit__ev-short { display: none; }
+    .jobfit__none { display: block; padding-block: 4px; }
+  }
+
+  /* ── From 734px: a real table, fixed columns ── */
+  @media (min-width: 734px) {
+    .jobfit__table { table-layout: fixed; border-top: 1px solid var(--read-line-strong); }
+    /* ~18/9/31/10/32 % (P2-18), with room for the longest badge ("In progress") on a tablet */
+    .jobfit__col-req { width: 17%; }
+    .jobfit__col-freq { width: 10%; }
+    .jobfit__col-ev { width: 28%; }
+    .jobfit__col-status { width: 16%; }
+    .jobfit__col-plan { width: 29%; }
+    .jobfit__table th, .jobfit__table td { padding: 12px 10px 12px 0; text-align: start; vertical-align: top; border-bottom: 1px solid var(--read-line); }
+    .jobfit__table td:last-child { padding-right: 0; }
+    .jobfit__head th {
+      padding-block: 8px; font-size: 13px; font-weight: 700; color: var(--read-muted); white-space: nowrap;
+      border-bottom: 1px solid var(--read-line-strong);
+    }
+    .jobfit__label { display: none; }
+    /* Final fix 2 item 7: two postings counts ("12/13 · 7/13" for "Python · 머신러닝") stack one per line, in the
+       requirement's order, instead of wrapping after the dot; the dot stays for screen readers only. */
+    .jobfit__freq-part { display: block; white-space: nowrap; }
+    .jobfit__freq-sep { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+    /* Final fix 2 item 7: the short evidence links flow in rows (a four-link row was ~190px tall as a column), and the
+       cell drops its top padding so the first 44px link's text sits on the requirement's first line (it was ~11px
+       lower). Each link keeps its 44px target (P2-24); the gap keeps neighbouring targets apart. */
+    .jobfit__table td.jobfit__ev-cell { padding-top: 0; }
+    .jobfit__none { display: flex; align-items: center; min-height: var(--tap); } /* "none yet" on the same first line */
+    .jobfit__evidence { display: flex; flex-wrap: wrap; gap: 0 16px; }
+    /* short labels on one line; the full label is the title and, visually hidden, the accessible name.
+       P2-24: a real 44px target (flex + min-height), not padding cancelled out by a negative margin — that
+       shrunk the row's own flow height without shrinking the rendered (hit-tested) box, so neighbouring links'
+       enlarged boxes overlapped and a tap could land on the wrong one. The evidence column is simply taller now. */
+    .jobfit__ev { display: flex; align-items: center; min-height: var(--tap); white-space: nowrap; font-size: 13px; }
+    .jobfit__ev-full { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  }
+  @media (min-width: 1068px) {
+    .jobfit__col-req { width: 18%; }
+    .jobfit__col-freq { width: 9%; }
+    .jobfit__col-ev { width: 30%; }
+    .jobfit__col-status { width: 12%; }
+    .jobfit__col-plan { width: 31%; }
+    .jobfit__table th, .jobfit__table td { padding-right: 16px; }
+  }
+</style>

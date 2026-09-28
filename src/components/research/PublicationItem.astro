@@ -1,0 +1,102 @@
+---
+// One al-folio style publication row (spec §5 연구 목록): thumbnail, English title (+ Korean gloss on ko pages),
+// authors with my name in bold, venue + ORAL badge (the only emphasized item), one-line summary, then the link row
+// and its [초록]/[BibTeX] disclosures, [PDF]/[DOI] links or the "to appear" note (spec §8), [Code ↗].
+// Final review fix 1 item 4: the link row and the two disclosures live in PaperLinks.astro, shared with the home
+// research highlight, so both places use the one P2-9 pattern (buttons on one row, panels below it, visible
+// without JS, collapsed before first paint with JS) and the one trigger script (disclosure-trigger.ts).
+import { Image } from 'astro:assets';
+import type { PaperCardData } from '../../lib/publications';
+import type { Lang } from '../../i18n/ui';
+import { t } from '../../i18n/utils';
+import PaperLinks from './PaperLinks.astro';
+
+interface Props {
+  lang: Lang;
+  paper: PaperCardData;
+  headingLevel?: 2 | 3 | 4;
+  compact?: boolean;
+}
+
+const { lang, paper, headingLevel = 3, compact = false } = Astro.props;
+const Heading = `h${headingLevel}` as 'h2' | 'h3' | 'h4';
+const gloss = lang === 'ko' ? paper.titleGloss : null;
+---
+<article class:list={['pub', { 'pub--compact': compact, 'pub--oral': paper.oral, 'bracket bracket--sm': paper.oral }]} data-paper={paper.id}>
+  {!compact && (
+    <div class="pub__media">
+      <Image src={paper.thumb} alt={paper.thumbAlt} widths={[240, 480, 720]} sizes="(min-width: 734px) 200px, 100vw" />
+    </div>
+  )}
+  <div class="pub__body">
+    <Heading class="pub__title" lang="en">{paper.href ? <a href={paper.href}>{paper.title}</a> : paper.title}</Heading>
+    {gloss && <p class="pub__gloss">{gloss} <span class="pub__gloss-mark">({t(lang, 'research.gloss')})</span></p>}
+    <p class="pub__authors" lang="en">
+      {paper.authors.map((author, i) => (
+        <Fragment>{i > 0 ? ', ' : ''}{author.me ? <strong>{author.name}</strong> : author.name}</Fragment>
+      ))}
+    </p>
+    <p class="pub__venue">
+      <span lang="en">{paper.venue}</span>
+      {paper.oral && <span class="pub__oral" lang="en">{t(lang, 'research.oral')}</span>}
+    </p>
+    <p class="pub__tldr">{paper.tldr}</p>
+    <PaperLinks lang={lang} paper={paper} />
+  </div>
+</article>
+
+<style>
+  .pub {
+    display: grid;
+    gap: 16px;
+    padding: 18px;
+    background: var(--read-card);
+    border: 1px solid var(--read-line);
+    color: var(--read-text);
+  }
+  /* light HUD (P1-9): square panels; the ORAL paper carries the accent-deep corner marks (.bracket.bracket--sm) */
+  .pub__media { min-width: 0; }
+  .pub__media :global(img) {
+    display: block;
+    width: 100%;
+    max-width: 320px;
+    height: auto;
+    aspect-ratio: 16 / 9;
+    object-fit: cover;
+    border: 1px solid var(--read-line);
+    background: var(--read-card);
+  }
+  .pub__body { min-width: 0; }
+  .pub__title { font-size: 18px; font-weight: 700; line-height: 1.4; }
+  .pub__title a { color: var(--read-text); text-decoration: none; transition: color var(--dur-hover) linear; }
+  .pub__title a:hover { color: var(--accent-deep); text-decoration: underline; }
+  .pub__gloss { margin-top: 4px; font-size: 14px; line-height: 1.5; color: var(--read-muted); }
+  .pub__gloss-mark { white-space: nowrap; }
+  .pub__authors { margin-top: 6px; font-size: 14px; line-height: 1.5; color: var(--read-muted); }
+  .pub__authors strong { font-weight: 700; color: var(--read-text); }
+  .pub__venue {
+    margin-top: 2px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    line-height: 1.5;
+    color: var(--read-muted);
+  }
+  .pub__oral {
+    display: inline-block;
+    padding: 1px 7px;
+    border: 1px solid var(--gold-line);
+    background: var(--gold-wash);
+    color: var(--gold-ink);
+    font: 800 13px/1.4 var(--font-mono);
+    letter-spacing: .04em;
+  }
+  .pub__tldr { margin-top: 10px; font-size: 16px; line-height: 1.7; max-width: var(--measure); }
+  .pub__tldr:lang(en) { line-height: 1.5; }
+  @media (min-width: 734px) {
+    .pub { grid-template-columns: 200px minmax(0, 1fr); gap: 20px; padding: 20px; }
+    .pub--compact { grid-template-columns: minmax(0, 1fr); }
+  }
+</style>

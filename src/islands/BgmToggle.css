@@ -1,0 +1,44 @@
+/* src/islands/BgmToggle.css — HUD nav BGM toggle (mockup-port §12). ≥44×44 hit area, state via aria-pressed only
+   (the accessible name stays "BGM"); accent marks it as clickable/pressed. */
+.bgm {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: var(--tap);
+  min-height: var(--tap);
+  padding: 0 10px;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: var(--fs-label); /* 13px HUD label (12px is only for exceptional micro-text) */
+  font-weight: 600;
+  line-height: 1;
+  color: var(--hud-muted);
+  transition: color var(--dur-hover) linear, transform var(--dur-press) var(--ease-out);
+}
+.bgm::before {
+  content: "";
+  position: absolute;
+  inset: 8px 0;
+  border: 1px solid var(--hud-line);
+  pointer-events: none;
+  transition: border-color var(--dur-hover) linear;
+}
+.bgm:hover {
+  color: var(--hud-text);
+}
+.bgm[aria-pressed='true'] {
+  color: var(--accent);
+}
+.bgm[aria-pressed='true']::before {
+  border-color: var(--accent);
+}
+.bgm:active {
+  transform: scale(.96);
+}
+.bgm__state {
+  min-width: 3ch;
+  text-align: left;
+}

@@ -1,0 +1,122 @@
+---
+// /records/ and /en/records/ (spec §3 기록, §5.14 order). resume.yaml is the single source shared with the
+// three PDFs, so GPA, dates and award names here equal the PDF text (Task 27 checks that).
+import { getCollection, getEntry } from 'astro:content';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PageHeader from '../components/hud/PageHeader.astro';
+import SectionHead from '../components/hud/SectionHead.astro';
+import RecordsHead from '../components/records/RecordsHead.astro';
+import EducationTimeline from '../components/records/EducationTimeline.astro';
+import PublicationItem from '../components/research/PublicationItem.astro';
+import ProjectSummaryList from '../components/records/ProjectSummaryList.astro';
+import AwardList from '../components/records/AwardList.astro';
+import CredentialList from '../components/records/CredentialList.astro';
+import SkillList from '../components/records/SkillList.astro';
+import JobFitTable from '../components/records/JobFitTable.astro';
+import DocumentList from '../components/records/DocumentList.astro';
+import CertificateModal from '../islands/CertificateModal';
+import type { Certificate } from '../islands/CertificateModal';
+import { buildCertificate } from '../lib/certificates';
+import { getProjects, projectSlug } from '../lib/projects';
+import { getPublications, toPaperCard } from '../lib/publications';
+import { awardItems, credentialItems, projectSummaryItems, skillGroups, todayIso } from '../lib/records';
+import { PAGE_META } from '../data/copy/pages';
+import { DOCUMENTS, SITE } from '../config';
+import type { Lang } from '../i18n/ui';
+import { t } from '../i18n/utils';
+import type { CertificateId } from '../types';
+
+interface Props {
+  lang: Lang;
+}
+
+const { lang } = Astro.props;
+
+const resumeEntry = await getEntry('resume', 'resume');
+const jobfitEntry = await getEntry('jobfit', 'jobfit');
+if (!resumeEntry || !jobfitEntry) throw new Error('records: src/data/resume.yaml and src/data/jobfit.yaml are required');
+const resume = resumeEntry.data;
+
+const awards = (await getCollection('awards')).map((entry) => entry.data);
+const projects = await getProjects(lang);
+const publications = await getPublications();
+
+const papers = resume.publications.map(({ ref }) => {
+  const entry = publications.find((publication) => publication.id === ref);
+  if (!entry) throw new Error(`records: unknown publication ref "${ref}"`);
+  return toPaperCard(entry, lang);
+});
+
+const certificates = (await Promise.all(awards.map((award) => buildCertificate(award, lang)))).filter(
+  (certificate): certificate is Certificate => certificate !== null,
+);
+const certHrefs: Partial<Record<CertificateId, string>> = Object.fromEntries(certificates.map((c) => [c.id, c.fullSrc]));
+
+const titles = {
+  projects: Object.fromEntries(projects.map((project) => [projectSlug(project), project.data.title])),
+  // Research evidence links to the paper page /research/<id>/, labelled with the publication's short title.
+  stories: Object.fromEntries(
+    publications.filter((entry) => entry.data.caseStudy).map((entry) => [entry.id, entry.data.shortTitle?.[lang] ?? entry.data.title]),
+  ),
+  // Code evidence (kind 'code'): the publication's public code link, e.g. "IEEE CoG 2026 논문 코드".
+  codes: Object.fromEntries(
+    publications.flatMap((entry) =>
+      entry.data.code ? [[entry.id, { href: entry.data.code, label: t(lang, 'records.paperCode', { venue: entry.data.venueShort }) }]] : [],
+    ),
+  ),
+};
+const credentials = credentialItems(resume, lang, todayIso());
+const skills = skillGroups(resume.skills, lang, titles);
+const documents = resume.documents.map((doc) => ({ id: doc.id, label: doc.label[lang], href: DOCUMENTS[doc.id] }));
+const meta = PAGE_META.records[lang];
+---
+<BaseLayout lang={lang} title={meta.title} description={meta.description} page="records" section="records" sectionIndex>
+  <PageHeader lang={lang} label="RECORDS" title={t(lang, 'records.title')} />
+  {/* P2-19: a short head (photo, name, status, one line, the three PDFs, an in-page bar), not the home profile again */}
+  <RecordsHead
+    lang={lang}
+    name={resume.profile.name[lang]}
+    headline={resume.profile.headline[lang]}
+    status={resume.profile.status[lang]}
+    tagline={resume.profile.tagline[lang]}
+    documents={documents}
+    contact={{ email: SITE.email, github: SITE.githubUrl }}
+    ids={resume.researchIds}
+  />
+  <div class="read">
+    <EducationTimeline lang={lang} items={resume.education} />
+    <section id="publications" class="rec read-sec" aria-labelledby="publications-title">
+      <div class="container">
+        <SectionHead id="publications-title" caption={t(lang, 'section.publications')} title={t(lang, 'records.publications')} />
+        <ol class="rec__pubs" role="list">
+          {papers.map((paper) => (
+            <li><PublicationItem lang={lang} paper={paper} headingLevel={3} compact /></li>
+          ))}
+        </ol>
+      </div>
+    </section>
+    <ProjectSummaryList lang={lang} items={projectSummaryItems(resume.projects, projects, lang)} />
+    <AwardList lang={lang} awards={awardItems(resume.awards, awards, lang, certHrefs)} />
+    <CredentialList
+      lang={lang}
+      groups={[
+        { id: 'activities', title: t(lang, 'records.activities'), items: credentials.activities },
+        { id: 'certifications', title: t(lang, 'records.certifications'), items: credentials.certifications },
+        { id: 'languages', title: t(lang, 'records.languages'), items: credentials.languages },
+        { id: 'training', title: t(lang, 'records.training'), items: credentials.training },
+      ]}
+    />
+    <SkillList lang={lang} primary={skills.primary} familiar={skills.familiar} />
+    <JobFitTable lang={lang} data={jobfitEntry.data} />
+    <DocumentList lang={lang} documents={documents} />
+  </div>
+  <CertificateModal
+    client:idle
+    certificates={certificates}
+    labels={{ dialog: t(lang, 'modal.certificate'), close: t(lang, 'action.close') }}
+  />
+</BaseLayout>
+
+<style>
+  .rec__pubs { margin-top: 24px; display: grid; gap: 16px; }
+</style>

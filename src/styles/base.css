@@ -1,0 +1,87 @@
+/* src/styles/base.css — reset, body, layout helpers, focus ring, anchors. Colours only through tokens.css. */
+*, *::before, *::after { box-sizing: border-box; }
+:root { scroll-behavior: auto; } /* no smooth-scroll hijack (spec §4) */
+html { color-scheme: dark; scrollbar-gutter: stable; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+html.is-scroll-locked { overflow: hidden; }
+body {
+  margin: 0;
+  min-height: 100svh;
+  /* Short pages (few lines of content) push the footer to the bottom of the viewport instead of leaving it
+     stranded mid-screen with empty background below it (P2-20). */
+  display: flex;
+  flex-direction: column;
+  background: var(--hud-bg);
+  color: var(--hud-text);
+  font-family: var(--font-sans);
+  font-size: var(--fs-body);
+  font-weight: 400;
+  line-height: var(--lh-body);
+  letter-spacing: 0;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+  font-synthesis-style: none; /* no fake Hangul italics */
+  -webkit-font-smoothing: antialiased;
+}
+#main {
+  flex: 1 0 auto;
+}
+/* Final fix 2 item 4: /stats/ is the one page shorter than a desktop screen (its light band holds a single notice
+   until GoatCounter is on), and the space #main gains there (above) showed as an empty dark strip between the band
+   and the footer: ~200px at 1440x900, over half the screen at 2560x1440. When that band ends the content, #main is
+   painted as it, so the band runs down to the footer. Paint only, no layout change; scoped to that band because on
+   every other page the content is taller than the screen and the dark bands rely on #main staying transparent. */
+#main:has(> .stats.read:nth-last-child(1 of :not(script, style, template))) {
+  background: var(--read-bg);
+}
+h1, h2, h3, h4, p, ol, ul, dl, dd, figure, blockquote { margin: 0; }
+ol, ul { padding: 0; list-style: none; } /* styled lists carry role="list" (Safari/VoiceOver) */
+img, svg, video { display: block; max-width: 100%; height: auto; }
+button { font: inherit; color: inherit; }
+a { color: inherit; }
+.tnum, time, .num { font-variant-numeric: tabular-nums; }
+
+/* Focus ring: 2px accent, offset 3px (accent-deep in light areas). Never put it on a clip-path'ed element. */
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.read :focus-visible, .read-section :focus-visible { outline-color: var(--accent-deep); }
+
+/* Deep links AND keyboard focus land below the 52px sticky nav (Review Focus 2; final review fix 1 item 2, WCAG 2.2
+   2.4.11 Focus Not Obscured). scroll-margin on every element outside the nav applies both to anchor jumps and to the
+   scrolling the browser does to bring a focused element into view (e.g. Shift+Tab to an element above the viewport).
+   Fix round 2: not a root scroll-padding — that also applied to the nav's own controls, so focusing or clicking one
+   (BGM, the brand, the phone menu toggle) scrolled the page up to "reveal" a bar that is always in view. The nav and
+   everything in it keep scroll-margin 0 (the rule never reaches .hud-nav). */
+body > :not(.hud-nav),
+body > :not(.hud-nav) * { scroll-margin-top: calc(var(--nav-h) + 16px); }
+
+.container { width: 100%; max-width: var(--container-hud); margin-inline: auto; padding-inline: var(--gutter); }
+/* Batch 5 (item 11): every band shares one container that widens with the XL steps (tokens.css --container-hud), so
+   the dark HUD bands and the light reading bands keep one left edge at every width. .container--hud stays as the
+   marker of the HUD regions (and pins the same width should the two ever be split again). */
+.container--hud { max-width: var(--container-hud); }
+
+/* Light reading areas (profile, case-study bodies, records, legal). */
+.read { background: var(--read-bg); color: var(--read-text); color-scheme: light; }
+.read a { color: var(--accent-deep); }
+
+.sr-only { position: absolute !important; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+.skip-link { position: absolute; left: 8px; top: -100px; z-index: 200; padding: 12px 16px; background: var(--accent); color: var(--accent-ink); font-weight: 800; }
+.skip-link:focus { top: 8px; }
+
+/* Extends the hit area to 44×44 without changing the visual (only where ::after is free). Final fix 2 item 16: also on
+   standalone text links (a title or a table cell of its own, never a link inside a sentence), which were ~20px tall;
+   those are inline-block so the overlay spans the whole link even when its text wraps. */
+.hit { position: relative; }
+a.hit { display: inline-block; }
+.hit::after { content: ""; position: absolute; left: 50%; top: 50%; width: max(100%, var(--tap)); height: max(100%, var(--tap)); transform: translate(-50%, -50%); }
+
+/* Final fix 2 item 17: controls that only JavaScript can run stay out of a no-JS page instead of showing and doing
+   nothing (html.js is set in <head> before first paint, src/lib/head-init.ts): the nav's BGM button, the footer's
+   motion toggle and the Player Log showcase tabs (FavoriteGames.css lays every game's text out instead). */
+html:not(.js) .bgm,
+html:not(.js) [data-motion-toggle],
+html:not(.js) .fg__list { display: none; }
+
+/* No JS + OS reduced motion: stop the first-paint keyframe entrances (JS users get the per-component fades). */
+@media (prefers-reduced-motion: reduce) {
+  html:not(.js) .char-stage__img, html:not(.js) .char-stage__streak, html:not(.js) .hero__copy > * { animation: none !important; }
+}

@@ -1,0 +1,333 @@
+---
+// Cleveland dot plot of held-out AUC on patch 15.16 (content-research §5 "auc-overall").
+// Rows keep the table order, a gap separates the tabular pair from the neural group, LightGBM is the only
+// highlighted dot, and a dashed rule marks chance (0.5). No bars: AUC has no zero baseline.
+//
+// Three SVGs are rendered and CSS container queries pick one by the width the chart actually gets (P0-1 fix;
+// batch 4 moved the switch from the viewport to the chart's own box, because the no-art home hero puts the chart
+// in a ~280-560px column on wide screens):
+// - "wide" (box >= 560px) keeps the original 560-unit layout (model name to the left of its dot) and never
+//   shrinks below 560px (it would scroll inside .chart__scroll if a box ever were narrower).
+// - "compact" (280-559px) is a 280-unit layout with the model name still to the left of its dot and three ticks.
+// - "narrow" (< 280px) is a 280-unit layout sized for the smallest supported viewport (320px, minus the 16px
+//   gutter on each side and the 1px card border = ~286px of room), so it needs no horizontal scroll: every
+//   row's dot and value sit inside the visible box. The model name moves above its row (there is no room to its
+//   left at this width) and the domain stays 0.50-0.70 as before.
+// Every layout sets its text at >= 13 viewBox units and is shown only in a box at least as wide as its viewBox,
+// so rendered SVG text stays >= 12px everywhere (Review Focus 1).
+// tone="hud" restyles the chart for a dark HUD panel (the frame around it draws the border).
+import type { Lang } from '../../i18n/ui';
+import { t } from '../../i18n/utils';
+import { CHANCE_AUC, type overallAuc } from '../../data/research/cog-2026';
+
+interface Props {
+  lang: Lang;
+  rows: typeof overallAuc;
+  caption: string;
+  alt: string;
+  tone?: 'read' | 'hud';
+  /** Prefix of the SVG title/desc ids: the chart can appear twice on one page (the no-art hero and the research
+      highlight on /), and ids must stay unique. */
+  idPrefix?: string;
+}
+
+const { lang, rows, caption, alt, tone = 'read', idPrefix = 'auc-overall' } = Astro.props;
+
+const MIN = CHANCE_AUC;
+const MAX = 0.7;
+const TICKS = [0.5, 0.55, 0.6, 0.65, 0.7];
+const COMPACT_TICKS = [0.5, 0.6, 0.7]; // 36 units per 0.05 would leave the "0.55" labels touching
+const round1 = (n: number): number => Math.round(n * 10) / 10;
+
+interface Layout {
+  w: number;
+  left: number;
+  right: number;
+  top: number;
+  row: number;
+  groupGap: number;
+}
+
+function place(layout: Layout): { rows: { id: string; model: string; highlight: boolean; cx: number; cy: number; label: string }[]; axisY: number; h: number; x: (v: number) => number } {
+  const x = (v: number): number => round1(layout.left + ((v - MIN) / (MAX - MIN)) * (layout.right - layout.left));
+  let cursor = layout.top;
+  let previousGroup: string | null = null;
+  const placed = rows.map((row) => {
+    if (previousGroup !== null && row.group !== previousGroup) cursor += layout.groupGap;
+    const cy = cursor + layout.row / 2;
+    cursor += layout.row;
+    previousGroup = row.group;
+    return { id: row.id, model: row.model, highlight: row.highlight === true, cx: x(row.auc), cy, label: row.auc.toFixed(3) };
+  });
+  const axisY = cursor + 4;
+  return { rows: placed, axisY, h: axisY + 32, x };
+}
+
+const wideLayout: Layout = { w: 560, left: 150, right: 490, top: 36, row: 30, groupGap: 14 };
+const compactLayout: Layout = { w: 280, left: 90, right: 222, top: 34, row: 28, groupGap: 12 };
+const narrowLayout: Layout = { w: 280, left: 20, right: 224, top: 34, row: 44, groupGap: 14 };
+const wide = place(wideLayout);
+const compact = place(compactLayout);
+const narrow = place(narrowLayout);
+const wideChanceX = wide.x(CHANCE_AUC);
+const compactChanceX = compact.x(CHANCE_AUC);
+const narrowChanceX = narrow.x(CHANCE_AUC);
+const titleIdWide = `${idPrefix}-title-wide`;
+const descIdWide = `${idPrefix}-desc-wide`;
+const titleIdCompact = `${idPrefix}-title-compact`;
+const descIdCompact = `${idPrefix}-desc-compact`;
+const titleIdNarrow = `${idPrefix}-title-narrow`;
+const descIdNarrow = `${idPrefix}-desc-narrow`;
+const tableCaptionId = `${idPrefix}-table-caption`;
+const summaryId = `${idPrefix}-table-summary`;
+const columns = lang === 'ko' ? ['모델', '입력 표현', 'AUC'] : ['Model', 'Input view', 'AUC'];
+---
+<figure class:list={['chart', 'chart--overall', { 'chart--hud': tone === 'hud' }]}>
+  <div class="chart__scroll chart__scroll--wide" tabindex="0" role="region" aria-labelledby={titleIdWide}>
+    <svg class="chart__svg" viewBox={`0 0 ${wideLayout.w} ${wide.h}`} role="img" aria-labelledby={titleIdWide} aria-describedby={descIdWide}>
+      <title id={titleIdWide}>{caption}</title>
+      <desc id={descIdWide}>{alt}</desc>
+      <line class="chart__axis-line" x1={wideLayout.left} x2={wideLayout.right} y1={wide.axisY} y2={wide.axisY} />
+      {TICKS.map((v) => (
+        <g class="chart__tick-group">
+          <line class="chart__tick-line" x1={wide.x(v)} x2={wide.x(v)} y1={wide.axisY} y2={wide.axisY + 5} />
+          <text class="chart__tick" data-tick={v.toFixed(2)} x={wide.x(v)} y={wide.axisY + 22} text-anchor="middle">{v.toFixed(2)}</text>
+        </g>
+      ))}
+      <line class="chart__chance" data-value={CHANCE_AUC} x1={wideChanceX} x2={wideChanceX} y1={wideLayout.top - 10} y2={wide.axisY} />
+      <text class="chart__chance-label" x={wideChanceX + 6} y={wideLayout.top - 14}>{t(lang, 'research.chance')}</text>
+      {wide.rows.map((row) => (
+        <g class="chart__row" data-model={row.id}>
+          <line class="chart__guide" x1={wideLayout.left} x2={wideLayout.right} y1={row.cy} y2={row.cy} />
+          <text class="chart__label" x={wideLayout.left - 12} y={row.cy + 5} text-anchor="end">{row.model}</text>
+          <circle class:list={['chart__dot', { 'chart__dot--hl': row.highlight }]} cx={row.cx} cy={row.cy} r={row.highlight ? 7 : 6} />
+          <text class="chart__value" x={row.cx + 12} y={row.cy + 5}>{row.label}</text>
+        </g>
+      ))}
+    </svg>
+  </div>
+  <div class="chart__scroll chart__scroll--compact" tabindex="0" role="region" aria-labelledby={titleIdCompact}>
+    <svg class="chart__svg chart__svg--compact" viewBox={`0 0 ${compactLayout.w} ${compact.h}`} role="img" aria-labelledby={titleIdCompact} aria-describedby={descIdCompact}>
+      <title id={titleIdCompact}>{caption}</title>
+      <desc id={descIdCompact}>{alt}</desc>
+      <line class="chart__axis-line" x1={compactLayout.left} x2={compactLayout.right} y1={compact.axisY} y2={compact.axisY} />
+      {COMPACT_TICKS.map((v) => (
+        <g class="chart__tick-group">
+          <line class="chart__tick-line" x1={compact.x(v)} x2={compact.x(v)} y1={compact.axisY} y2={compact.axisY + 5} />
+          <text class="chart__tick" data-tick={v.toFixed(2)} x={compact.x(v)} y={compact.axisY + 22} text-anchor="middle">{v.toFixed(2)}</text>
+        </g>
+      ))}
+      <line class="chart__chance" data-value={CHANCE_AUC} x1={compactChanceX} x2={compactChanceX} y1={compactLayout.top - 10} y2={compact.axisY} />
+      <text class="chart__chance-label" x={compactChanceX + 6} y={compactLayout.top - 14}>{t(lang, 'research.chance')}</text>
+      {compact.rows.map((row) => (
+        <g class="chart__row" data-model={row.id}>
+          <line class="chart__guide" x1={compactLayout.left} x2={compactLayout.right} y1={row.cy} y2={row.cy} />
+          <text class="chart__label" x={compactLayout.left - 10} y={row.cy + 5} text-anchor="end">{row.model}</text>
+          <circle class:list={['chart__dot', { 'chart__dot--hl': row.highlight }]} cx={row.cx} cy={row.cy} r={row.highlight ? 7 : 6} />
+          <text class="chart__value" x={row.cx + 11} y={row.cy + 5}>{row.label}</text>
+        </g>
+      ))}
+    </svg>
+  </div>
+  <div class="chart__scroll chart__scroll--narrow" tabindex="0" role="region" aria-labelledby={titleIdNarrow}>
+    <svg class="chart__svg chart__svg--narrow" viewBox={`0 0 ${narrowLayout.w} ${narrow.h}`} role="img" aria-labelledby={titleIdNarrow} aria-describedby={descIdNarrow}>
+      <title id={titleIdNarrow}>{caption}</title>
+      <desc id={descIdNarrow}>{alt}</desc>
+      <line class="chart__axis-line" x1={narrowLayout.left} x2={narrowLayout.right} y1={narrow.axisY} y2={narrow.axisY} />
+      {TICKS.map((v) => (
+        <g class="chart__tick-group">
+          <line class="chart__tick-line" x1={narrow.x(v)} x2={narrow.x(v)} y1={narrow.axisY} y2={narrow.axisY + 5} />
+          <text class="chart__tick" data-tick={v.toFixed(2)} x={narrow.x(v)} y={narrow.axisY + 22} text-anchor="middle">{v.toFixed(2)}</text>
+        </g>
+      ))}
+      <line class="chart__chance" data-value={CHANCE_AUC} x1={narrowChanceX} x2={narrowChanceX} y1={narrowLayout.top - 10} y2={narrow.axisY} />
+      <text class="chart__chance-label" x={narrowChanceX + 6} y={narrowLayout.top - 14}>{t(lang, 'research.chance')}</text>
+      {narrow.rows.map((row) => (
+        <g class="chart__row" data-model={row.id}>
+          <text class="chart__label" x={narrowLayout.left} y={row.cy - 12}>{row.model}</text>
+          <line class="chart__guide" x1={narrowLayout.left} x2={narrowLayout.right} y1={row.cy} y2={row.cy} />
+          <circle class:list={['chart__dot', { 'chart__dot--hl': row.highlight }]} cx={row.cx} cy={row.cy} r={row.highlight ? 7 : 6} />
+          <text class="chart__value" x={row.cx + 12} y={row.cy + 5}>{row.label}</text>
+        </g>
+      ))}
+    </svg>
+  </div>
+  <figcaption class="chart__caption">
+    <p class="chart__caption-text">{caption}</p>
+    <p class="chart__source">{t(lang, 'research.aucSource')}</p>
+  </figcaption>
+  {/* Final fix 2 item 23: the table view sits after the figcaption (still inside the figure), so the figure's name is
+      the caption and the source line only, not "… View as table AUC by model". */}
+  <details class="chart__table">
+    <summary class="chart__summary" id={summaryId}>{t(lang, 'action.viewAsTable')}</summary>
+    {/* Final review fix 1 item 5: numbers and model names never break; if the three columns are wider than a phone's
+        box, the table scrolls inside this box. Fix round 2 item 8: the script below makes the box a focusable region
+        only while it actually overflows — otherwise no extra tab stop. Final fix 2 item 23: the region is named by
+        the summary ("View as table"), so the table's own caption ("AUC by model") is heard once, as the table's. */}
+    <div class="chart__table-scroll" data-table-scroll data-label-id={summaryId}>
+      <table>
+        <caption id={tableCaptionId} class="sr-only">{t(lang, 'research.aucTable')}</caption>
+        <thead>
+          <tr>{columns.map((column) => <th scope="col">{column}</th>)}</tr>
+        </thead>
+        <tbody>
+          {rows.map((row) => (
+            <tr>
+              <th scope="row">{row.model}</th>
+              <td>{row.view[lang]}</td>
+              <td class="tnum">{row.auc.toFixed(3)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  </details>
+</figure>
+
+<script>
+  // Fix round 2 item 8: the table box is a focusable scroll region (tabindex 0, role region, named by the element its
+  // data-label-id names: the "view as table" summary since final fix 2 item 23) only while it overflows — a phone too
+  // narrow for the three columns. Where the table fits it stays a plain box: no extra tab stop and no second landmark
+  // repeating the chart's name. Re-checked whenever the box or the table changes size (the <details> opening,
+  // rotation, web fonts arriving). The case studies run the same logic from src/scripts/table-scroll.ts; it stays
+  // inline here because a module shared by both would cost the home page two extra script requests.
+  function sync(box: HTMLElement): void {
+    const overflows = box.scrollWidth > box.clientWidth + 1;
+    const labelId = box.dataset.labelId;
+    if (overflows) {
+      box.tabIndex = 0;
+      box.setAttribute('role', 'region');
+      if (labelId) box.setAttribute('aria-labelledby', labelId);
+    } else {
+      box.removeAttribute('tabindex');
+      box.removeAttribute('role');
+      box.removeAttribute('aria-labelledby');
+    }
+  }
+  const boxes = Array.from(document.querySelectorAll<HTMLElement>('[data-table-scroll]'));
+  const observer =
+    'ResizeObserver' in window
+      ? new ResizeObserver((entries) => {
+          for (const entry of entries) {
+            const box = (entry.target as HTMLElement).closest<HTMLElement>('[data-table-scroll]');
+            if (box) sync(box);
+          }
+        })
+      : null;
+  for (const box of boxes) {
+    sync(box);
+    observer?.observe(box);
+    const table = box.querySelector('table');
+    if (table) observer?.observe(table);
+    box.closest('details')?.addEventListener('toggle', () => sync(box));
+  }
+</script>
+
+<style>
+  /* The chart's own box picks the layout (container queries), so it fits any column it is placed in. */
+  .chart { margin: 0; min-width: 0; container-type: inline-size; }
+  .chart__scroll {
+    max-width: 100%;
+    overflow-x: auto;
+    background: var(--read-card);
+    border: 1px solid var(--read-line);
+  }
+  /* Narrow first: the narrow SVG (no horizontal scroll needed) is the default; the compact one takes over in a
+     box of 280px, the wide one (the original left-hand-label layout) in a box of 560px. */
+  .chart__scroll--wide,
+  .chart__scroll--compact { display: none; }
+  .chart__scroll--narrow { display: block; }
+  @container (min-width: 280px) {
+    .chart__scroll--compact { display: block; }
+    .chart__scroll--narrow { display: none; }
+  }
+  @container (min-width: 560px) {
+    .chart__scroll--wide { display: block; }
+    .chart__scroll--compact { display: none; }
+  }
+  .chart__svg { display: block; width: 100%; min-width: 560px; max-width: none; height: auto; }
+  .chart__svg--compact,
+  .chart__svg--narrow { min-width: 0; }
+  .chart__label { fill: var(--read-text); font: 600 13px var(--font-sans); }
+  .chart__value,
+  .chart__tick,
+  .chart__chance-label { font: 500 13px var(--font-mono); font-variant-numeric: tabular-nums; }
+  .chart__chance-label:lang(ko) { font-family: var(--font-sans); } /* Hangul in a mono label: sans (P1-10) */
+  .chart__value { fill: var(--read-text); }
+  .chart__tick,
+  .chart__chance-label { fill: var(--read-muted); }
+  .chart__axis-line,
+  .chart__tick-line { stroke: var(--read-line-strong); stroke-width: 1; }
+  .chart__guide { stroke: var(--read-line); stroke-width: 1; stroke-dasharray: 2 4; }
+  .chart__chance { stroke: var(--read-muted); stroke-width: 1.5; stroke-dasharray: 4 3; }
+  .chart__dot { fill: var(--read-muted); }
+  .chart__dot--hl { fill: var(--accent-deep); }
+  .chart__caption { margin-top: 10px; }
+  .chart__caption-text { font-size: 14px; line-height: 1.6; color: var(--read-muted); max-width: var(--measure); }
+  /* final review fix 1 item 16: where the numbers come from (the paper), under the caption */
+  .chart__source { margin-top: 2px; font-size: 13px; line-height: 1.5; color: var(--read-muted); }
+  .chart__table { margin-top: 8px; }
+  .chart__summary {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--tap);
+    padding: 0 12px;
+    border: 1px solid var(--read-line-strong);
+    font: 600 13px/1 var(--font-mono);
+    color: var(--read-text);
+    list-style: none;
+    cursor: pointer;
+  }
+  .chart__summary::-webkit-details-marker { display: none; }
+  .chart__summary:lang(ko) { font-family: var(--font-sans); letter-spacing: 0; }
+  /* Final review fix 1 item 5: the body's `overflow-wrap: anywhere` let the auto table layout squeeze a column to one
+     character, so on English phones "0.675" broke as "0.67 / 5" and "Transformer" as "Transforme / r". Cells now
+     wrap only at word boundaries, model names and AUC values never wrap, and if the columns are still wider than the
+     box the table scrolls inside its own region instead. */
+  .chart__table-scroll { margin-top: 8px; max-width: 100%; overflow-x: auto; }
+  .chart__table table { width: 100%; border-collapse: collapse; font-size: 14px; line-height: 1.5; }
+  .chart__table th,
+  .chart__table td { padding: 6px 8px; text-align: left; border-bottom: 1px solid var(--read-line); overflow-wrap: normal; }
+  .chart__table thead th { font-size: 13px; font-weight: 600; color: var(--read-muted); }
+  .chart__table tbody th,
+  .chart__table td:last-child { white-space: nowrap; }
+  .chart__table td:last-child { text-align: right; font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+
+  /* tone="hud": the chart on a dark HUD panel (the no-art home hero); the surrounding bracket frame draws the box.
+     LightGBM stays the one bright dot; accent is kept for clickable things (spec §4). */
+  .chart--hud .chart__scroll { background: transparent; border: 0; border-radius: 0; }
+  .chart--hud .chart__label { fill: var(--hud-text); }
+  .chart--hud .chart__value { fill: var(--hud-strong); }
+  .chart--hud .chart__tick,
+  .chart--hud .chart__chance-label { fill: var(--hud-muted); }
+  .chart--hud .chart__axis-line,
+  .chart--hud .chart__tick-line { stroke: var(--hud-muted); }
+  .chart--hud .chart__guide { stroke: var(--hud-divider); stroke-dasharray: none; }
+  .chart--hud .chart__chance { stroke: var(--hud-muted); }
+  .chart--hud .chart__dot { fill: var(--hud-muted); }
+  .chart--hud .chart__dot--hl { fill: var(--hud-strong); }
+  .chart--hud .chart__caption-text,
+  .chart--hud .chart__source { color: var(--hud-muted); }
+  .chart--hud .chart__summary { border-color: var(--hud-line); border-radius: 0; color: var(--hud-text); }
+  .chart--hud .chart__table th,
+  .chart--hud .chart__table td { border-bottom-color: var(--hud-divider); }
+  .chart--hud .chart__table thead th { color: var(--hud-muted); }
+
+  /* Final fix 2 item 18: in forced colours (Windows contrast themes) the card's background becomes the theme's Canvas
+     but SVG fills keep their author colours, which left grey and near-black labels on a black card. Every mark and label
+     takes a system colour instead: text and the result dots CanvasText, the paper's model (LightGBM) Highlight, rules
+     GrayText. */
+  @media (forced-colors: active) {
+    .chart__scroll { background: Canvas; border-color: CanvasText; }
+    .chart__label,
+    .chart__value,
+    .chart__tick,
+    .chart__chance-label { fill: CanvasText; }
+    .chart__axis-line,
+    .chart__tick-line,
+    .chart__guide,
+    .chart__chance { stroke: GrayText; }
+    .chart__dot { fill: CanvasText; }
+    .chart__dot--hl { fill: Highlight; }
+  }
+</style>

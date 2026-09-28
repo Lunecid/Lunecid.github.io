@@ -1,0 +1,230 @@
+---
+// One game-cartridge card (spec §5 "프로젝트 카트리지"): the whole card is one link (.cart__link::after),
+// ≤4 tags, sticker for awards/oral talks, lift on hover or keyboard focus (off with reduced motion).
+// Without href (a status 'card' project with no page, D-4) the card is plain text: no link, no lift, and the
+// one-line summary is shown on the card instead.
+// Label (P1-6): the project's real figure (for the CoG card the paper's AUC result, drawn by AucLabel, fix round 1);
+// a chart with text is drawn whole on a white plate (coverFit 'contain',
+// never cut mid-line); a project without a real figure gets a designed HUD plate built from its own metadata (ID,
+// period, first tag, scanlines) and never a made-up chart. A sticker never covers the figure: a contained figure
+// leaves the plate's top band for it, and English award words wrap to two lines within 9em (P2-23).
+// Also owns the global .cart-grid layout used on the home page and on /projects/.
+import { Picture } from 'astro:assets';
+import AucLabel from '../research/AucLabel.astro';
+import { CARD_FORMATS, CARD_WIDTHS, CARTRIDGE_SIZES, fitWidths, sourceSize } from '../../lib/images';
+import type { CartridgeProps } from '../../lib/projects';
+
+type Props = CartridgeProps & {
+  /** The page's LCP card (the first one on /projects/): eager, fetchpriority high. Everything else stays lazy. */
+  priority?: boolean;
+  /**
+   * Final fix 2 item 13: eager at low fetch priority, for a card that is the largest first-screen image only on some
+   * screens (the first home image card, the LCP at 2560x1440). Eager removes the lazy-load wait there; low priority
+   * keeps it behind the fonts and the hero art on phones, where it is far below the fold (eager at the default priority
+   * cost the home page 0.01 of mobile Lighthouse, 0.93 → 0.92).
+   */
+  eager?: boolean;
+};
+
+const { href, title, meta, summary, tagKeys, tags, cover, coverPosition = '50% 50%', coverFit = 'cover', plate, chart, sticker, wide = false, headingLevel = 3, priority = false, eager = false } = Astro.props;
+const Heading = headingLevel === 2 ? 'h2' : 'h3';
+const shownTags = tags.slice(0, 4);
+// AVIF + WebP on the ladder shared with the research highlight (same image → same URL → one fetch); WebP is
+// also the <img> fallback, so no PNG copies are built.
+const widths = cover ? fitWidths(CARD_WIDTHS, sourceSize(cover).width) : [];
+const sizes = wide ? CARTRIDGE_SIZES.wide : CARTRIDGE_SIZES.normal;
+---
+
+<article class:list={['cart', { 'cart--wide': wide, 'cart--static': !href }]} data-tags={tagKeys.join(' ')}>
+  <div class="cart__shell" aria-hidden="true"></div>
+  <div class:list={['cart__label', { 'cart__label--text': !cover && !chart }]}>
+    {
+      chart ? (
+        <div class:list={['cart__chart', { 'cart__chart--stickered': !!sticker }]}>
+          <AucLabel lang={chart.lang} />
+        </div>
+      ) : cover ? (
+        <Picture
+          class:list={['cart__img', { 'cart__img--contain': coverFit === 'contain', 'cart__img--stickered': !!sticker }]}
+          src={cover}
+          alt=""
+          formats={CARD_FORMATS}
+          fallbackFormat="webp"
+          widths={widths}
+          sizes={sizes}
+          priority={priority}
+          loading={!priority && eager ? 'eager' : undefined}
+          fetchpriority={!priority && eager ? 'low' : undefined}
+          style={`object-position: ${coverPosition}`}
+        />
+      ) : (
+        <div class="cart__plate" aria-hidden="true">
+          {plate && (
+            <Fragment>
+              <span class="cart__plate-id" lang="en">{plate.id}</span>
+              <span class="cart__plate-foot">
+                <span class="cart__plate-period">{plate.period}</span>
+                {plate.tag && (
+                  <span class="cart__plate-tag">
+                    <svg class="cart__plate-icon" viewBox="0 0 16 16" width="14" height="14" aria-hidden="true" focusable="false"><path d="M2 2h6.5L14 7.5 8.5 13 2 6.5z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" /><circle cx="5.2" cy="5.2" r="1.2" fill="currentColor" /></svg>
+                    {plate.tag}
+                  </span>
+                )}
+              </span>
+            </Fragment>
+          )}
+        </div>
+      )
+    }
+    <Heading class="cart__title">{href ? <a class="cart__link" href={href}>{title}</a> : title}</Heading>
+    <p class="cart__meta">{meta}</p>
+    {/* Final fix 2 round 2 item 2: the summary and tags share the label's fourth row (see .cart-grid below). */}
+    <div class="cart__foot">
+    {!href && summary && <p class="cart__summary">{summary}</p>}
+    {/* fix round 1 minor: a real aria-hidden span, not CSS ::after content (some browser/AT pairs do announce
+        generated content, reading a bare "middle dot" between every tag).
+        Fix round 2 item 9: the separator trails its OWN tag (every item but the last), not leads the next one —
+        this list wraps (flex-wrap), and a leading separator ends up as the first thing on the wrapped line
+        (a line starting with a stray "·") whenever the wrap happens to fall right before it. Trailing keeps the
+        dot attached to the line it is ending, exactly like the original CSS ::after this replaced did. */}
+    {
+      shownTags.length > 0 && (
+        <ul class="cart__tags" role="list">
+          {shownTags.map((tag, i) => <li>{tag}{i < shownTags.length - 1 && <span class="cart__tag-sep" aria-hidden="true">·</span>}</li>)}
+        </ul>
+      )
+    }
+    </div>
+  </div>
+  {
+    sticker && (
+      <p class:list={['cart__sticker', `cart__sticker--${sticker.kind}`]}>
+        <span lang={sticker.kind === 'oral' ? 'en' : undefined}>{sticker.text}</span>
+        {sticker.sr && <span class="sr-only">{` ${sticker.sr}`}</span>}
+      </p>
+    )
+  }
+</article>
+
+<style>
+  .cart { position: relative; isolation: isolate; padding: 22px 14px 34px; transition: transform .25s var(--ease-out); }
+  .cart[hidden] { display: none; }
+  .cart__shell {
+    position: absolute; inset: 0; z-index: -1;
+    background: #C9CED6; border-radius: 10px 10px 6px 6px; box-shadow: inset 0 -26px 0 #AEB4BE;
+    clip-path: polygon(0 0, calc(100% - 76px) 0, calc(100% - 68px) 10px, 100% 10px, 100% 100%, 0 100%);
+  }
+  .cart__shell::after {
+    content: ""; position: absolute; left: 26px; right: 26px; bottom: 8px; height: 12px;
+    background: repeating-linear-gradient(90deg, #8E949E 0 5px, transparent 5px 10px);
+  }
+  /* Final fix 2 round 2 item 2: the label is a subgrid of the card's four rows (figure, title, meta, summary + tags),
+     which are rows of the whole .cart-grid (below): in a row of cards every title, meta line and tag line starts at the
+     same height and every card ends at the same height. */
+  .cart__label { grid-row: 1 / -1; display: grid; grid-template-rows: subgrid; row-gap: 0; padding-bottom: 12px; border-radius: 6px; background: var(--hud-panel); overflow: hidden; }
+  .cart__label > :global(:first-child) { grid-row: 1; min-width: 0; }
+  .cart__title { grid-row: 2; }
+  .cart__meta { grid-row: 3; }
+  /* the tags close the label like a footer: in a row where another card has a summary they line up at the bottom */
+  .cart__foot { grid-row: 4; min-width: 0; display: flex; flex-direction: column; }
+  .cart__foot > .cart__tags { margin-top: auto; }
+  .cart__label :global(.cart__img) { display: block; width: 100%; aspect-ratio: 16 / 9; height: auto; object-fit: cover; background: var(--read-card); }
+  /* the CoG card's label (fix round 1): the paper's AUC result on a white plate, 16:9 on phones, a short strip from 734px;
+     with a sticker the chart starts under the same 28px band as a stickered figure */
+  .cart__chart { width: 100%; aspect-ratio: 16 / 9; padding: 6px 4px; background: var(--read-card); }
+  .cart__chart--stickered { padding-top: 28px; }
+  /* a chart with text, whole on a white plate */
+  .cart__label :global(.cart__img--contain) { object-fit: contain; padding: 6px 8px; }
+  /* with a sticker the figure starts under a top band the sticker sits on, so it never covers the figure (P1-6, P2-23):
+     the label's dark panel over a photo or map, the white plate over a contained chart */
+  .cart__label :global(.cart__img--stickered) { padding-top: 28px; background: var(--hud-panel); }
+  .cart__label :global(.cart__img--contain.cart__img--stickered) { background: var(--read-card); }
+  /* HUD plate for a project without a real figure: its ID, period and first tag over scanlines (no chart) */
+  .cart__plate {
+    /* no figure, so no 16:9 box to fill: a compact plate (DIAGNOSIS P1-6: three empty 16:9 boxes filled a phone screen) */
+    position: relative; width: 100%; min-height: 104px; display: flex; flex-direction: column; justify-content: space-between; gap: 10px;
+    padding: 14px 14px 12px 16px; overflow: hidden; border-bottom: 1px solid var(--hud-line);
+    background:
+      repeating-linear-gradient(0deg, var(--grid-line) 0 1px, transparent 1px 3px),
+      linear-gradient(135deg, var(--accent-wash) 0%, var(--hud-panel) 60%);
+  }
+  .cart__plate::before, .cart__plate::after {
+    content: ""; position: absolute; width: var(--bracket-sm); height: var(--bracket-sm); border: 2px solid var(--accent); opacity: .7;
+  }
+  .cart__plate::before { left: 6px; top: 6px; border-right: 0; border-bottom: 0; }
+  .cart__plate::after { right: 6px; bottom: 6px; border-left: 0; border-top: 0; }
+  .cart__plate-id { font: 700 16px/1.3 var(--font-mono); letter-spacing: .04em; color: var(--hud-strong); overflow-wrap: anywhere; }
+  .cart__plate-foot { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 12px; }
+  .cart__plate-period { font: 500 13px/1.4 var(--font-mono); color: var(--hud-muted); font-variant-numeric: tabular-nums; }
+  .cart__plate-period:lang(en) { letter-spacing: .02em; }
+  .cart__plate-tag { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 700; color: var(--hud-text); }
+  .cart__plate-icon { flex: none; color: var(--accent); }
+  .cart__title { padding: 8px 10px 0; font-size: 16px; font-weight: 700; line-height: 1.3; color: var(--hud-text); }
+  .cart__label--text .cart__title { font-size: 18px; }
+  .cart__link { color: inherit; text-decoration: none; }
+  .cart__link::after { content: ""; position: absolute; inset: 0; z-index: 1; }
+  .cart__link:focus-visible { outline: none; }
+  .cart__link:focus-visible::after { outline: 2px solid var(--accent); outline-offset: 3px; }
+  /* P2-24: captions below 1068px are ≥ 13px (var(--fs-label)); 12px stays only for the plate's own micro-labels. */
+  .cart__meta { padding: 3px 10px 0; font-size: var(--fs-label); line-height: 1.5; color: var(--hud-muted); }
+  .cart__summary { padding: 6px 10px 0; font-size: 13px; line-height: 1.55; color: var(--hud-text); }
+  /* P2-8: plain mono text with a middot separator, not a bordered box — a card's tags are not filter buttons. */
+  .cart__tags { display: flex; flex-wrap: wrap; row-gap: 4px; padding: 8px 10px 0; }
+  .cart__tags li { font: 600 var(--fs-label)/1.4 var(--font-mono); color: var(--hud-muted); }
+  .cart__tags li:lang(ko) { font-family: var(--font-sans); letter-spacing: 0; }
+  .cart__tag-sep { padding-inline: 6px; color: var(--hud-line-strong); }
+  .cart__sticker {
+    position: absolute; right: -4px; top: 18px; z-index: 2; pointer-events: none; transform: rotate(8deg);
+    padding: 3px 8px; font: 800 12px/1.3 var(--font-mono); background: var(--gold); color: var(--gold-ink);
+  }
+  .cart__sticker--award:lang(ko) { font-family: var(--font-sans); } /* 최우수상: Hangul in the sans face (P1-10) */
+  /* P2-23: the exact English award words ("Top Excellence Award") wrap to two lines within 9em instead of a 160px strip
+     that covered the figure and left the card */
+  .cart__sticker--award:lang(en) { box-sizing: content-box; max-width: 9em; white-space: normal; text-align: center; top: 6px; right: 6px; }
+  /* The figure row is as tall as the tallest figure of the row of cards (a 16:9 figure at the card's width, or the wide
+     card's chart); the other figures stretch to it (the <picture> fills its row, the img fills the <picture>). */
+  .cart__label > :global(picture) { display: flex; flex-direction: column; }
+  .cart__label :global(.cart__img) { flex: 1 0 auto; min-height: 0; }
+  @media (min-width: 734px) {
+    .cart__chart { aspect-ratio: auto; height: auto; min-height: 200px; }
+  }
+  @media (min-width: 1068px) {
+    .cart__chart { min-height: 92px; }
+    .cart--wide .cart__chart { min-height: 160px; }
+    .cart__plate { min-height: 92px; padding: 12px 12px 10px 14px; }
+    .cart__plate-id { font-size: 13px; }
+    .cart__title { font-size: 14px; }
+    .cart__label--text .cart__title { font-size: 16px; }
+  }
+  @media (hover: hover) {
+    .cart:not(.cart--static):hover { transform: translateY(-16px); }
+  }
+  .cart:not(.cart--static):focus-within { transform: translateY(-16px); }
+  /* reduced motion: no lift (the transform never changes, so nothing animates) */
+  :global(:root[data-motion="reduce"]) .cart:hover,
+  :global(:root[data-motion="reduce"]) .cart:focus-within { transform: none; }
+  :global(:root[data-motion="reduce"]) .cart:not(.cart--static):hover .cart__shell { background: #D5D9E0; }
+</style>
+
+<style is:global>
+  /* Final fix 2 item 5 and round 2 item 2: a row of cards is a shelf of cartridges. Each card spans four rows of this
+     grid (figure, title, meta, summary + tags) as a subgrid, and its label is a subgrid of those rows, so across a row
+     of cards the figures share one height, the titles, meta lines and tags start at one height and the cards end at
+     one height (P1-5's align-items: start had left the bottoms 20-85px apart; stretching the figures alone staggered
+     the titles). The space between rows of cards is each card's margin (row-gap 0: a gap would also open inside the
+     cards); the grid's negative margin takes the last row's back. */
+  .cart-grid { display: grid; grid-template-columns: minmax(0, 1fr); column-gap: 26px; row-gap: 0; padding-top: 18px; margin-bottom: -26px; }
+  .cart-grid > .cart { grid-row: span 4; display: grid; grid-template-rows: subgrid; row-gap: 0; margin-bottom: 26px; }
+  @media (min-width: 734px) {
+    .cart-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .cart-grid > .cart--wide { grid-column: span 2; }
+  }
+  /* After the wide first card, a last card that is an even child takes two columns instead of leaving an empty cell
+     next to it: the whole row at two columns (tablet), the last two cells at four columns (CoG + five projects). */
+  @media (min-width: 734px) {
+    .cart-grid > .cart--wide:first-child ~ .cart:last-child:nth-child(even) { grid-column: span 2; }
+  }
+  @media (min-width: 1068px) {
+    .cart-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  }
+</style>

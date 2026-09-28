@@ -1,0 +1,9 @@
+---
+// src/pages/en/projects/[slug].astro (ko: src/pages/projects/[slug].astro with 'ko' in both places)
+import type { GetStaticPaths } from 'astro';
+import ProjectView from '../../../views/ProjectView.astro';
+import { projectStaticPaths } from '../../../lib/projects';
+export const getStaticPaths = (() => projectStaticPaths('en')) satisfies GetStaticPaths;
+---
+
+<ProjectView lang="en" entry={Astro.props.entry} />

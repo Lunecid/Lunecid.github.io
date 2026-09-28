@@ -1,0 +1,184 @@
+---
+// BibTeX of one paper in a monospace box with a copy button (paper page, D-15).
+// - Lines wrap with a hanging indent instead of scrolling: nothing to scroll sideways on a phone and nothing
+//   clipped in print. Each source line is one block <span>, so a manual selection still copies line breaks.
+// - The button exists only with JS (html.js is set before first paint, so it never shifts the layout in). Its
+//   three labels share one grid cell, so the button keeps the width of the longest label in every state.
+// - The result is announced through a polite status region; on failure the BibTeX is left selected.
+import type { Lang } from '../../i18n/ui';
+import { t } from '../../i18n/utils';
+
+interface Props {
+  lang: Lang;
+  bibtex: string;
+  id?: string;
+  /**
+   * false when embedded inside another element's own disclosure (e.g. PublicationItem's "BibTeX" toggle button
+   * already names it, fix round 1 item 7): skips the <h2>/<section aria-labelledby> so the heading order stays
+   * correct (no h2 nested under an h3/h4) and no extra "region" landmark appears per publication. Default true —
+   * the paper page's own standalone block (D-15) keeps its heading and landmark.
+   * Fix round 2 item 6: this used to also give the copy button a fixed aria-label ("BibTeX 복사"/"Copy BibTeX")
+   * when embedded, to compensate for having no heading to name it from — but the button's own visible text
+   * cycles idle/done/fail ("복사"/"복사됨"/"복사 실패"), which that fixed string only ever matched for the idle
+   * state (WCAG 2.5.3 Label in Name). Dropped: with no aria-label at all, the accessible name is computed from
+   * whichever span is currently visible (visibility:hidden siblings are excluded from name computation), exactly
+   * like the headed variant already does correctly — always in sync with the state by construction.
+   * Fix round 3 item 4: that left the embedded button's name as a bare "복사"/"Copy"/etc with no "BibTeX" context
+   * at all (the headed variant keeps its aria-describedby={titleId} pointing at the "BibTeX" heading; embedded has
+   * no heading to point to). Each state's own visible span now also carries a sr-only " BibTeX" suffix, so the
+   * name is e.g. "복사 BibTeX"/"Copy BibTeX" in the idle state — starting with the visible text (2.5.3 still
+   * holds) while restoring the context, and staying in sync with state since the suffix lives inside the same
+   * per-state span the visibility toggle already governs.
+   */
+  heading?: boolean;
+  /** true to draw square corners (P1-9 light-HUD convention) instead of the paper page's own rounded look, for
+   * when this block sits inside a HUD reading band rather than the printed-paper page. Default false. */
+  square?: boolean;
+}
+
+const { lang, bibtex, id = 'bibtex', heading = true, square = false } = Astro.props;
+const lines = bibtex.trimEnd().split('\n');
+const titleId = `${id}-title`;
+const Wrapper = heading ? 'section' : 'div';
+---
+<Wrapper id={id} class:list={['bib', { 'bib--square': square }]} aria-labelledby={heading ? titleId : undefined} data-bib>
+  <div class="bib__head">
+    {heading && <h2 id={titleId} class="bib__title" lang="en">BibTeX</h2>}
+    <button
+      type="button"
+      class="bib__copy"
+      data-bib-copy
+      data-state="idle"
+      aria-describedby={heading ? titleId : undefined}
+    >
+      <span data-label="idle">{t(lang, 'action.copy')}{!heading && <span class="sr-only" lang="en"> BibTeX</span>}</span>
+      <span data-label="done">{t(lang, 'action.copied')}{!heading && <span class="sr-only" lang="en"> BibTeX</span>}</span>
+      <span data-label="fail">{t(lang, 'action.copyFailed')}{!heading && <span class="sr-only" lang="en"> BibTeX</span>}</span>
+    </button>
+  </div>
+  <pre class="bib__code" lang="en" translate="no"><code>{lines.map((line) => <span class="bib__line">{line}</span>)}</code></pre>
+  <p class="sr-only" role="status" data-bib-status data-done={t(lang, 'paper.bibtexCopied')} data-fail={t(lang, 'paper.bibtexCopyFailed')}></p>
+</Wrapper>
+
+<script>
+  /** Selects the whole BibTeX box so it can be copied by hand (the Clipboard API is missing or refused). */
+  function selectContents(el: HTMLElement): void {
+    const selection = window.getSelection();
+    if (!selection) return;
+    const range = document.createRange();
+    range.selectNodeContents(el);
+    selection.removeAllRanges();
+    selection.addRange(range);
+  }
+
+  /** Clipboard API (secure contexts: the https site and the local preview); on failure the box is left selected. */
+  async function copyText(text: string, box: HTMLElement): Promise<boolean> {
+    try {
+      await navigator.clipboard.writeText(text);
+      return true;
+    } catch {
+      selectContents(box);
+      return false;
+    }
+  }
+
+  function initBibtexBlocks(): void {
+    for (const block of document.querySelectorAll<HTMLElement>('[data-bib]')) {
+      const button = block.querySelector<HTMLButtonElement>('[data-bib-copy]');
+      const box = block.querySelector<HTMLElement>('.bib__code');
+      const status = block.querySelector<HTMLElement>('[data-bib-status]');
+      if (!button || !box || !status) continue;
+      let reset: number | undefined;
+      button.addEventListener('click', async () => {
+        const text = [...box.querySelectorAll('.bib__line')].map((line) => line.textContent ?? '').join('\n');
+        const ok = await copyText(text, box);
+        button.dataset.state = ok ? 'done' : 'fail';
+        // Empty first, then fill: the same message is announced again on a second click.
+        status.textContent = '';
+        window.setTimeout(() => {
+          status.textContent = (ok ? status.dataset.done : status.dataset.fail) ?? '';
+        }, 60);
+        window.clearTimeout(reset);
+        reset = window.setTimeout(() => {
+          button.dataset.state = 'idle';
+        }, 2500);
+      });
+    }
+  }
+
+  initBibtexBlocks();
+</script>
+
+<style>
+  .bib__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  /* IEEE section-heading voice: small caps, same serif as the sheet. */
+  .bib__title {
+    font-family: var(--font-paper);
+    font-size: 15px;
+    font-weight: 400;
+    line-height: 1.4;
+    font-variant-caps: small-caps;
+    letter-spacing: .06em;
+    color: var(--paper-ink);
+  }
+  .bib__copy {
+    display: none;
+    grid-template-areas: "label";
+    align-items: center;
+    justify-items: center;
+    min-height: var(--tap);
+    min-width: var(--tap);
+    padding: 0 14px;
+    border: 1px solid var(--paper-code-line);
+    border-radius: 4px;
+    background: var(--paper-bg);
+    color: var(--paper-ink);
+    font: 600 13px/1 var(--font-mono);
+    cursor: pointer;
+    transition: border-color var(--dur-hover) linear, color var(--dur-hover) linear;
+  }
+  :global(html.js) .bib__copy { display: inline-grid; }
+  .bib__copy:hover { border-color: var(--accent-deep); color: var(--accent-deep); }
+  .bib__copy:focus-visible { outline: 2px solid var(--accent-deep); outline-offset: 3px; }
+  .bib__copy:lang(ko) { font-family: var(--font-sans); }
+  .bib__copy > span { grid-area: label; visibility: hidden; }
+  .bib__copy[data-state="idle"] > [data-label="idle"],
+  .bib__copy[data-state="done"] > [data-label="done"],
+  .bib__copy[data-state="fail"] > [data-label="fail"] { visibility: visible; }
+  .bib__copy[data-state="done"] { border-color: var(--accent-deep); color: var(--accent-deep); }
+
+  .bib__code {
+    --hang: 4ch;
+    margin: 10px 0 0;
+    padding: 14px 16px;
+    background: var(--paper-code-bg);
+    border: 1px solid var(--paper-code-line);
+    border-radius: 4px;
+    color: var(--paper-ink);
+    font: 500 13px/1.6 var(--font-mono);
+    white-space: pre-wrap;
+    word-break: normal;
+    overflow-wrap: anywhere;
+    text-align: start;
+    hyphens: none;
+  }
+  .bib__code code { font: inherit; }
+  /* P1-9: square corners when embedded in a light-HUD reading band, instead of the printed-paper page's rounding. */
+  .bib--square .bib__copy,
+  .bib--square .bib__code { border-radius: 0; }
+  /* Hanging indent: a wrapped field continues under its value, not under the field name. */
+  .bib__line { display: block; padding-left: var(--hang); text-indent: calc(-1 * var(--hang)); }
+  .bib__line:empty::before { content: " "; }
+  @media (min-width: 734px) {
+    .bib__code { --hang: 15ch; padding: 16px 20px; }
+  }
+  @media print {
+    .bib__copy { display: none !important; }
+    .bib__code { background: none; border-color: var(--paper-rule); }
+  }
+</style>

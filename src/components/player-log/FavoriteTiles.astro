@@ -1,0 +1,63 @@
+---
+import { Image } from 'astro:assets';
+import type { Lang } from '../../i18n/ui';
+import { t } from '../../i18n/utils';
+import { TILE_SIZES, TILE_WIDTHS } from '../../lib/characters';
+import type { FavoriteTile } from '../../lib/favorites';
+
+interface Props {
+  lang: Lang;
+  tiles: FavoriteTile[];
+}
+const { lang, tiles } = Astro.props;
+---
+{/* The tiles sit in the first screen of /player-log/ at every width (the phone LCP element), so they load eagerly and
+    the first one first (final fix 2 item 13). The caption's " · FAVORITE" tag is shown only where it fits on the
+    game's line (item 8): a narrow phone tile shows the game alone instead of breaking after a dangling dot. */}
+{tiles.length > 0 && (
+  <ul class="fav-tiles" role="list" aria-label={t(lang, 'favorites.tiles')}>
+    {tiles.map((tile, i) => {
+      const [game, ...tag] = tile.caption.split(' · ');
+      return (
+        <li class="fav-tile">
+          <Image
+            src={tile.image}
+            alt=""
+            aria-hidden="true"
+            widths={TILE_WIDTHS}
+            sizes={TILE_SIZES}
+            loading="eager"
+            fetchpriority={i === 0 ? 'high' : 'auto'}
+            style={`object-position: ${tile.objectPosition}`}
+          />
+          <p class="fav-tile__cap"><span class="fav-tile__kicker" lang="en">{game}{tag.length > 0 && <span class="fav-tile__tag"> · {tag.join(' · ')}</span>}</span><strong>{tile.name}</strong></p>
+        </li>
+      );
+    })}
+  </ul>
+)}
+
+<style>
+  .fav-tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin: 0; padding: 0; list-style: none; }
+  @media (min-width: 734px) { .fav-tiles { display: flex; gap: 14px; } }
+  .fav-tile { position: relative; aspect-ratio: 176 / 280; border: 1px solid var(--hud-line); overflow: hidden; background: var(--hud-panel); }
+  @media (min-width: 734px) { .fav-tile { width: 176px; height: 280px; aspect-ratio: auto; } }
+  /* D-2 XL steps: the tiles share the wider row (up to 250px each) instead of leaving its right end empty */
+  @media (min-width: 1600px) { .fav-tile { flex: 1 1 0; width: auto; max-width: 250px; } }
+  .fav-tile :global(img) { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; pointer-events: none; }
+  .fav-tile__cap { position: absolute; left: 0; right: 0; bottom: 0; margin: 0; padding: 10px 14px 12px; background: var(--hud-bg); }
+  .fav-tile__cap::before { content: ""; position: absolute; left: 0; right: 0; bottom: 100%; height: 36px; background: linear-gradient(transparent, var(--hud-bg)); pointer-events: none; }
+  .fav-tile__kicker { display: block; white-space: nowrap; font: 600 12px/1.4 var(--font-mono); letter-spacing: .14em; color: var(--hud-label); }
+  .fav-tile__cap strong { display: block; margin-top: 2px; font-size: 20px; color: var(--hud-strong); }
+  @media (max-width: 733.98px) {
+    .fav-tile__cap { padding: 8px; }
+    .fav-tile__kicker { letter-spacing: .06em; }
+    .fav-tile__tag { display: none; }
+    .fav-tile__cap strong { font-size: 16px; }
+  }
+  /* 176px tiles: "GENSHIN · FAVORITE" (18 mono characters) fits the 152px line at .08em tracking */
+  @media (min-width: 734px) and (max-width: 1599.98px) {
+    .fav-tile__cap { padding-inline: 12px; }
+    .fav-tile__kicker { letter-spacing: .08em; }
+  }
+</style>

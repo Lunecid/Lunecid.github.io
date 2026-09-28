@@ -1,0 +1,125 @@
+---
+// Home (spec §3): hero → MAIN MENU → cartridges → research highlight → patch notes → hello profile.
+// All copy hrefs are Korean-based and localized here; resume.yaml is the single source of
+// name, tagline, status, about and education (site = PDFs).
+import { getCollection, getEntry } from 'astro:content';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Hero from '../components/hud/Hero.astro';
+import MainMenu from '../components/hud/MainMenu.astro';
+import CartridgeSection from '../components/home/CartridgeSection.astro';
+import ResearchHighlight from '../components/home/ResearchHighlight.astro';
+import PatchNotes from '../components/home/PatchNotes.astro';
+import HelloProfile from '../components/home/HelloProfile.astro';
+import type { Lang } from '../i18n/ui';
+import { localizeHref, t } from '../i18n/utils';
+import { educationLine } from '../lib/records';
+import { CV_HREF, SITE } from '../config';
+import { tagLabel } from '../content/tags';
+import { PAGE_META } from '../data/copy/pages';
+import { heroCopy, mainMenuCopy, splitTagline } from '../data/copy/hero';
+import { cogCartridgeTagKeys, homeCopy } from '../data/copy/home';
+import { HERO_SIZES, characterCredit, characters, getStageCharacters } from '../lib/characters';
+import { getProjects, toCartridge, type CartridgeProps } from '../lib/projects';
+import { getPublications, toPaperCard } from '../lib/publications';
+import { toPatchNotes } from '../lib/news';
+import { personJsonLd } from '../lib/seo';
+
+interface Props {
+  lang: Lang;
+}
+
+const { lang } = Astro.props;
+
+const resume = await getEntry('resume', 'resume');
+if (!resume) throw new Error('HomeView: the "resume" collection is empty (src/data/resume.yaml did not load)');
+const { profile } = resume.data;
+const meta = PAGE_META.home[lang];
+const hero = heroCopy[lang];
+const menu = mainMenuCopy[lang];
+const home = homeCopy[lang];
+
+// Character art is optional (Task 2): every call below returns [] / null / [] when it is missing.
+const heroChars = await getStageCharacters(['remielle', 'eula'], 'hero', lang);
+const leadChar = heroChars[0];
+// Final fix 2 item 10: the MAIN MENU side art never shows the hero's character. It prefers Eula and switches to
+// Remielle while the visitor has Eula on the hero (CharacterStage HERO_PICK_EVENT). With only one character's art
+// the side would repeat the hero, so it takes the no-art MAIN MENU layout instead.
+const sideCandidates = await getStageCharacters(['eula', 'remielle'], 'side', lang);
+const sideChars = sideCandidates.some((c) => c.id !== leadChar?.id) ? sideCandidates : [];
+const notices = characters.notices(['remielle', 'eula']);
+const credit = characterCredit(['remielle', 'eula'], lang);
+
+const cogCartridge: CartridgeProps = {
+  href: localizeHref('/research/cog-2026-engagement/', lang),
+  title: home.cogCartridge.title,
+  meta: home.cogCartridge.meta,
+  tagKeys: [...cogCartridgeTagKeys],
+  tags: cogCartridgeTagKeys.map((key) => tagLabel(key, lang)),
+  // P1-6 / fix round 1: the label is the paper's own result, the AUC chart (AucLabel.astro), not an image.
+  chart: { kind: 'auc-overall', lang },
+  sticker: { text: home.cogCartridge.sticker.text, sr: home.cogCartridge.sticker.sr, kind: 'oral' },
+  wide: true,
+};
+// D-3: CoG (two columns) + the two featured projects fill one row of four columns.
+const featured = (await getProjects(lang))
+  .filter((entry) => entry.data.featured)
+  .slice(0, 2)
+  .map((entry) => toCartridge(entry, lang));
+
+const publications = await getPublications();
+const highlighted = publications.find((entry) => entry.data.highlight) ?? publications[0];
+if (!highlighted) throw new Error('HomeView: no publication entry for the research highlight');
+const paper = toPaperCard(highlighted, lang);
+
+const notes = toPatchNotes(await getCollection('news'), lang, 4);
+
+const education = resume.data.education.map((e) => educationLine(e, lang));
+const location = lang === 'ko' ? `${profile.location.ko} · ${profile.location.en}` : profile.location.en;
+---
+
+<BaseLayout lang={lang} title={meta.title} description={meta.description} page="home" notices={notices} jsonLd={personJsonLd(lang, resume.data.researchIds)}>
+  {leadChar && <link slot="head" rel="preload" as="image" imagesrcset={leadChar.image.srcSet} imagesizes={HERO_SIZES} fetchpriority="high" />}
+  <Hero
+    lang={lang}
+    chars={heroChars}
+    name={profile.name[lang]}
+    roman={hero.roman}
+    label={hero.label}
+    slogan={splitTagline(profile.tagline[lang])}
+    meta={hero.meta}
+    status={profile.status[lang]}
+    ctas={{ primary: { label: hero.ctas.primary.label, href: localizeHref(hero.ctas.primary.href, lang) } }}
+    contact={{
+      email: SITE.email,
+      github: SITE.githubUrl,
+      cvHref: CV_HREF[lang],
+      cvLabel: hero.contact.cvLabel,
+      cvDocLabel: t(lang, 'nav.cvResume'),
+      jobFitHref: localizeHref(hero.contact.jobFitHref, lang),
+      jobFitLabel: hero.contact.jobFitLabel,
+    }}
+    artifact={{ ...hero.artifact, href: localizeHref(hero.artifact.href, lang) }}
+    credit={credit}
+    swap={hero.swap}
+    playerCard={hero.playerCard}
+  />
+  <MainMenu
+    lang={lang}
+    items={menu.items.map((item) => ({ ...item, href: localizeHref(item.href, lang) }))}
+    hint={menu.hint}
+    side={sideChars}
+  />
+  <CartridgeSection lang={lang} cartridges={[cogCartridge, ...featured]} moreHref={localizeHref('/projects/', lang)} moreLabel={home.moreProjects} />
+  <ResearchHighlight lang={lang} paper={paper} nowPlaying={home.researchNowPlaying} />
+  <PatchNotes lang={lang} notes={notes} />
+  <HelloProfile
+    lang={lang}
+    about={profile.about[lang]}
+    location={location}
+    education={education}
+    skills={resume.data.skills.primary.map((skill) => skill.name)}
+    records={home.helloRecords}
+    contact={{ email: SITE.email, github: SITE.githubUrl, cvHref: CV_HREF[lang], cvDocLabel: t(lang, 'nav.cvResume') }}
+    ids={resume.data.researchIds}
+  />
+</BaseLayout>

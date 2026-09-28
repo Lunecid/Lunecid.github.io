@@ -1,0 +1,58 @@
+---
+// /projects/ (spec §3): SELECT YOUR PROJECT grid (CoG wide card first, then the five projects by order),
+// a tag filter, and the GitHub section when build-time GitHub data is usable.
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PageHeader from '../components/hud/PageHeader.astro';
+import TagFilter from '../components/projects/TagFilter.astro';
+import ProjectCartridge from '../components/projects/ProjectCartridge.astro';
+import GitHubSection from '../components/github/GitHubSection.astro';
+import type { Lang } from '../i18n/ui';
+import { localizeHref, t } from '../i18n/utils';
+import { TAG_KEYS, tagLabel, type TagKey } from '../content/tags';
+import { PAGE_META } from '../data/copy/pages';
+import { cogCartridgeTagKeys, homeCopy } from '../data/copy/home';
+import { getProjects, toCartridge, type CartridgeProps } from '../lib/projects';
+import { generated, usableGitHub } from '../lib/generated';
+
+interface Props {
+  lang: Lang;
+}
+
+const { lang } = Astro.props;
+const meta = PAGE_META.projects[lang];
+const cog = homeCopy[lang].cogCartridge;
+const cogCartridge: CartridgeProps = {
+  href: localizeHref('/research/cog-2026-engagement/', lang),
+  title: cog.title,
+  meta: cog.meta,
+  tagKeys: [...cogCartridgeTagKeys],
+  tags: cogCartridgeTagKeys.map((key) => tagLabel(key, lang)),
+  // P1-6 / fix round 1: the label is the paper's own result, the AUC chart (AucLabel.astro), not an image.
+  chart: { kind: 'auc-overall', lang },
+  sticker: { text: cog.sticker.text, sr: cog.sticker.sr, kind: 'oral' },
+  wide: true,
+};
+const cards: CartridgeProps[] = [cogCartridge, ...(await getProjects(lang)).map((entry) => toCartridge(entry, lang))];
+// P2-8 (controller ruling 5): a tag with fewer than 2 projects (often just one card, or one with no tags at all
+// besides it) adds filter-button noise without doing useful filtering, so it is hidden entirely.
+const tagCounts = new Map<TagKey, number>();
+for (const card of cards) for (const key of card.tagKeys) tagCounts.set(key, (tagCounts.get(key) ?? 0) + 1);
+const filterKeys = TAG_KEYS.filter((key) => (tagCounts.get(key) ?? 0) >= 2);
+// The page's LCP image is the first card that has one (the CoG card draws its label inline since fix round 1).
+const firstImage = cards.findIndex((card) => card.cover !== undefined);
+const github = usableGitHub(generated.github());
+---
+
+<BaseLayout lang={lang} title={meta.title} description={meta.description} page="projects" section="projects" sectionIndex={true}>
+  <PageHeader lang={lang} label="SELECT YOUR PROJECT" title={t(lang, 'projects.title')} intro={meta.description} />
+  <section id="project-list" class="sec hud-grid" aria-labelledby="project-list-title">
+    <div class="container container--hud">
+      <h2 id="project-list-title" class="sr-only">{t(lang, 'projects.listLabel')}</h2>
+      <TagFilter lang={lang} keys={filterKeys} controls="project-grid" />
+      <div id="project-grid" class="cart-grid">
+        {cards.map((card, i) => <ProjectCartridge {...card} priority={i === firstImage} />)}
+      </div>
+    </div>
+  </section>
+  <GitHubSection lang={lang} data={github} />
+</BaseLayout>

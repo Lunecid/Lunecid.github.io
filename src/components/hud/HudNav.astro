@@ -1,0 +1,383 @@
+---
+/**
+ * Sticky HUD nav (mockup-port §2, spec §3/§5): [SB] brand, 01–04 section links, BGM, language, CV, mobile "메뉴" button.
+ * Without JavaScript the mobile menu is shown in the page flow (only html.js hides it until opened).
+ */
+import type { Lang } from '../../i18n/ui';
+import { languages } from '../../i18n/ui';
+import { localizeHref, otherLang, t } from '../../i18n/utils';
+import type { NavSection } from '../../types';
+import { MEDIA } from '../../config';
+import BgmToggle from '../../islands/BgmToggle';
+
+interface Props {
+  lang: Lang;
+  current?: NavSection;
+  exact?: boolean;
+  altLangHref: string | null;
+  cvHref: string;
+  /** Which PDF the CV button opens, e.g. "이력서 (PDF)" or "Academic CV (PDF)" (D-7): tooltip and accessible name. */
+  cvLabel: string;
+  bgmAvailable: boolean;
+}
+const { lang, current, exact = false, altLangHref, cvHref, cvLabel, bgmAvailable } = Astro.props;
+const other = otherLang(lang);
+const items: { key: NavSection; num: string; label: string; href: string }[] = [
+  { key: 'research', num: '01', label: t(lang, 'nav.research'), href: localizeHref('/research/', lang) },
+  { key: 'projects', num: '02', label: t(lang, 'nav.projects'), href: localizeHref('/projects/', lang) },
+  { key: 'records', num: '03', label: t(lang, 'nav.records'), href: localizeHref('/records/', lang) },
+  { key: 'player-log', num: '04', label: t(lang, 'nav.playerLog'), href: localizeHref('/player-log/', lang) },
+];
+const currentValue = exact ? 'page' : 'true';
+---
+<header class="hud-nav" data-open="false" data-hud-nav>
+  <div class="hud-nav__bar">
+    <a class="hud-nav__brand" href={localizeHref('/', lang)}>
+      <span class="hud-nav__logo" aria-hidden="true">[SB]</span>
+      <span class="hud-nav__id" lang="en">SEONGEUN_BAEK<span class="hud-nav__role"> // GAME DATA ANALYST</span></span>
+      <span class="sr-only">{t(lang, 'nav.brandSr')}</span>
+    </a>
+
+    <nav id="hud-menu" class="hud-nav__panel" aria-label={t(lang, 'nav.label')}>
+      <ul class="hud-nav__list" role="list">
+        {items.map((item) => (
+          <li>
+            <a href={item.href} aria-current={current === item.key ? currentValue : undefined}>
+              <span class="hud-nav__num" aria-hidden="true">{item.num}</span> {item.label}
+            </a>
+          </li>
+        ))}
+      </ul>
+      {altLangHref !== null && (
+        <p class="hud-nav__lang hud-nav__lang--panel">
+          <a href={altLangHref} hreflang={other} lang={other}>{languages[other]}</a>
+        </p>
+      )}
+    </nav>
+
+    <div class="hud-nav__tools">
+      {bgmAvailable && <BgmToggle client:idle src={MEDIA.bgm} />}
+      {altLangHref !== null && (
+        <p class="hud-nav__lang hud-nav__lang--bar">
+          <span class="hud-nav__lang-cur">{lang.toUpperCase()}</span>
+          <span aria-hidden="true"> / </span>
+          <a href={altLangHref} hreflang={other} lang={other}>{other.toUpperCase()}<span class="sr-only"> {languages[other]}</span></a>
+        </p>
+      )}
+      <a class="hud-nav__cv" href={cvHref} title={cvLabel} download>
+        <span class="hud-nav__chip cut cut--line">{t(lang, 'nav.cv')} <span aria-hidden="true">↓</span></span>
+        <span class="sr-only"> — {cvLabel}</span>
+      </a>
+      <button
+        class="hud-nav__toggle"
+        type="button"
+        aria-expanded="false"
+        aria-controls="hud-menu"
+        data-nav-toggle
+        data-label-closed={t(lang, 'nav.menu')}
+        data-label-open={t(lang, 'nav.closeMenu')}
+      >{t(lang, 'nav.menu')}</button>
+    </div>
+  </div>
+  {/* P2-3 (controller ruling 2): a scrim behind the open panel so it never blends into the dark hero below it. */}
+  <div class="hud-nav__scrim" data-nav-scrim aria-hidden="true"></div>
+</header>
+
+<script>
+  import { lockScroll, unlockScroll } from '../../lib/scroll-lock';
+
+  const FOCUSABLE = 'a[href], button:not([disabled])';
+
+  document.querySelectorAll<HTMLElement>('[data-hud-nav]').forEach((nav) => {
+    const button = nav.querySelector<HTMLButtonElement>('[data-nav-toggle]');
+    const scrim = nav.querySelector<HTMLElement>('[data-nav-scrim]');
+    const panel = nav.querySelector<HTMLElement>('#hud-menu');
+    const bar = nav.querySelector<HTMLElement>('.hud-nav__bar');
+    if (!button || !panel) return;
+    // P2-3 (controller ruling 2): the open state is visible in the button's own text ("닫기 ×"/"Close ×") plus an
+    // accent outline (CSS, keyed on [data-open="true"]), a scrim behind the panel, and the body scroll locked
+    // while open — restored on close. Escape closes and returns focus to the button. Fix round 1 item 3: focus is
+    // also trapped inside [toggle, ...panel links] while open, so Tab/Shift+Tab never leave the open menu for the
+    // still-visible BGM/CV controls in the bar.
+    // Fix round 2 item 2: Escape used to be handled by a keydown listener on `nav` itself, which only ever sees
+    // events whose target is inside nav's subtree. If focus ends up on <body> (e.g. after a click that blurs the
+    // previously focused element without moving focus into the panel), a keydown there bubbles through
+    // <html>/document, never through nav, so Escape silently did nothing. Bind Escape on `document` instead, only
+    // while the menu is open (added here, removed on every close) so it can never fire for a closed menu.
+    const onDocumentEscape = (event: KeyboardEvent): void => {
+      if (event.key !== 'Escape') return;
+      setOpen(false); // setOpen is assigned just below; this closure only ever runs later, once open.
+      button.focus();
+    };
+    const setOpen = (open: boolean) => {
+      nav.dataset.open = String(open);
+      button.setAttribute('aria-expanded', String(open));
+      const label = open ? (button.dataset.labelOpen ?? button.textContent ?? '') : (button.dataset.labelClosed ?? button.textContent ?? '');
+      button.textContent = label;
+      // Fix round 1 minor: the open-state label carries a visual "×" ("닫기 ×"/"Close ×"); a screen reader would
+      // otherwise announce it (e.g. "multiplication sign"), so the accessible name drops it via aria-label
+      // instead of relying on the text content.
+      button.setAttribute('aria-label', label.replace(' ×', ''));
+      // Fix round 1 minor: lock by name (src/lib/scroll-lock.ts), not a direct class toggle — a resize-to-desktop
+      // auto-close (below) must never strip the lock out from under an open certificate <dialog>.
+      if (open) {
+        lockScroll('nav');
+        document.addEventListener('keydown', onDocumentEscape);
+      } else {
+        unlockScroll('nav');
+        document.removeEventListener('keydown', onDocumentEscape);
+      }
+      // Fix round 1 item 5 (320px): the bar can wrap to a second line when the open-state label is wide enough
+      // ("Close ×" at 320px, with BGM+CV also in the bar) — the scrim's CSS `top: var(--nav-h)` assumes a single
+      // line, so it would then cover whatever wrapped onto the second line (the toggle itself, or CV). Position
+      // it from the bar's own actual rendered height instead of that fixed token.
+      if (open && scrim && bar) scrim.style.top = `${bar.getBoundingClientRect().bottom}px`;
+    };
+    button.addEventListener('click', () => setOpen(button.getAttribute('aria-expanded') !== 'true'));
+    scrim?.addEventListener('click', () => {
+      setOpen(false);
+      button.focus();
+    });
+    nav.addEventListener('keydown', (event) => {
+      // Escape is handled by the document-level onDocumentEscape listener above (bound only while open), so it
+      // works regardless of where focus is; this listener only needs the Tab trap, which only matters once focus
+      // is already on one of the trapped elements.
+      if (nav.dataset.open !== 'true') return;
+      if (event.key !== 'Tab') return;
+      const trapped = [button, ...Array.from(panel.querySelectorAll<HTMLElement>(FOCUSABLE))];
+      const at = trapped.indexOf(document.activeElement as HTMLElement);
+      if (at === -1) return; // focus is somewhere else in the bar (e.g. BGM/CV) — leave native Tab alone
+      event.preventDefault();
+      const next = at + (event.shiftKey ? -1 : 1);
+      trapped[(next + trapped.length) % trapped.length]?.focus();
+    });
+    document.addEventListener('click', (event) => {
+      if (nav.dataset.open === 'true' && event.target instanceof Node && !nav.contains(event.target)) setOpen(false);
+    });
+    nav.querySelectorAll<HTMLAnchorElement>('#hud-menu a').forEach((link) => link.addEventListener('click', () => setOpen(false)));
+    if (typeof window.matchMedia === 'function') {
+      window.matchMedia('(min-width: 734px)').addEventListener('change', (query) => {
+        if (query.matches) setOpen(false);
+      });
+    }
+    // A page restored from bfcache (browser back/forward) can reappear with the menu still open and the scroll
+    // lock still applied from before navigation; force it closed so the lock is never stuck.
+    window.addEventListener('pageshow', (event) => {
+      if (event.persisted) setOpen(false);
+    });
+  });
+
+  // P2-6 (controller ruling 3): the language switch keeps location.hash (anchor ids are shared across languages),
+  // so a hash-scrolled page (e.g. /records/#job-fit) stays scrolled to the same section after switching language.
+  // Fix round 1 item 4: read the hash at click time and keep it live on hashchange (an in-page nav link to
+  // #job-fit changes location.hash without a reload), not once at load — the base href is cached per link so a
+  // later hash never appends onto an already-hash-bearing href.
+  function syncLangHrefs(): void {
+    document.querySelectorAll<HTMLAnchorElement>('[data-hud-nav] .hud-nav__lang a[hreflang]').forEach((link) => {
+      // setAttribute, not link.href = …: the href IDL property reads back a resolved absolute URL, and
+      // reassigning through it would turn the (relative) attribute into an absolute one.
+      const base = (link.dataset.baseHref ??= link.getAttribute('href') ?? '');
+      link.setAttribute('href', base + location.hash);
+    });
+  }
+  syncLangHrefs();
+  window.addEventListener('hashchange', syncLangHrefs);
+</script>
+
+<style>
+  .hud-nav {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background: var(--hud-nav-bg);
+    /* The nav bar's own background is translucent (spec token); without this, scrolled-under body text
+       reads straight through it (P2-1). A blur keeps the intended see-through look but stops it being legible. */
+    backdrop-filter: blur(12px) saturate(140%);
+    -webkit-backdrop-filter: blur(12px) saturate(140%);
+    border-bottom: 1px solid var(--hud-line);
+  }
+  .hud-nav__bar {
+    position: relative;
+    max-width: var(--container-hud);
+    min-height: var(--nav-h);
+    margin-inline: auto;
+    padding-inline: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    font: 500 13px/1 var(--font-mono);
+  }
+  .hud-nav__brand {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: var(--tap);
+    min-width: var(--tap); /* P2-24: below 1068px only "[SB]" shows, so the link needs its own 44px width */
+    color: var(--hud-text);
+    text-decoration: none;
+  }
+  .hud-nav__logo {
+    color: var(--accent);
+    font-weight: 700;
+  }
+  .hud-nav__id,
+  .hud-nav__role {
+    display: none;
+  }
+  .hud-nav__list {
+    display: flex;
+    gap: 22px;
+  }
+  .hud-nav__list a {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: var(--tap);
+    padding-inline: 2px;
+    color: var(--hud-muted);
+    text-decoration: none;
+    transition: color var(--dur-hover) linear;
+  }
+  .hud-nav__list a:hover {
+    color: var(--hud-text);
+  }
+  .hud-nav__list a[aria-current] {
+    color: var(--accent);
+  }
+  .hud-nav__num {
+    font-variant-numeric: tabular-nums;
+  }
+  .hud-nav__tools {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .hud-nav__lang {
+    color: var(--hud-muted);
+  }
+  .hud-nav__lang a {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: var(--tap);
+    min-width: var(--tap); /* P2-24: "EN"/"KO" alone was ~24px wide on tablet */
+    padding-inline: 4px;
+    color: var(--hud-text);
+  }
+  .hud-nav__cv {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--tap);
+    color: var(--accent);
+    text-decoration: none;
+  }
+  .hud-nav__chip {
+    --c: var(--cut-chip);
+    --cut-fill: var(--hud-bg);
+    display: inline-block;
+    padding: 5px 10px;
+    font-weight: 600;
+  }
+  .hud-nav__toggle {
+    min-height: var(--tap);
+    min-width: var(--tap);
+    padding: 0 12px;
+    background: none;
+    cursor: pointer;
+    border: 1px solid var(--hud-line);
+    color: var(--hud-text);
+    font: 600 13px/1 var(--font-sans);
+  }
+  /* P2-3 (controller ruling 2): the open state reads at a glance, not only through aria-expanded. */
+  .hud-nav__toggle[aria-expanded="true"] {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+  .hud-nav__scrim {
+    display: none;
+  }
+
+  /* mobile: the bar holds [SB], BGM, CV and 메뉴. Without JS the panel sits in the flow under the bar. */
+  @media (max-width: 733.98px) {
+    .hud-nav__bar {
+      flex-wrap: wrap;
+    }
+    .hud-nav__panel {
+      order: 3;
+      flex: 1 0 100%;
+      padding: 4px 0 12px;
+    }
+    :global(html.js) .hud-nav__panel {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 100%;
+      z-index: 2;
+      display: none;
+      padding: 8px 16px 16px;
+      background: var(--hud-bg);
+      border-bottom: 1px solid var(--hud-line);
+    }
+    .hud-nav[data-open="true"] .hud-nav__panel {
+      display: block;
+    }
+    /* P2-3: a scrim behind the panel, from the nav bar down to the bottom of the viewport, so the panel never
+       blends into the dark hero behind it. The panel itself (opaque, z-index above) fully covers its own height. */
+    :global(html.js) .hud-nav[data-open="true"] .hud-nav__scrim {
+      display: block;
+      position: fixed;
+      left: 0;
+      right: 0;
+      top: var(--nav-h);
+      bottom: 0;
+      z-index: 1;
+      background: rgba(0, 0, 0, .55);
+    }
+    .hud-nav__list {
+      flex-direction: column;
+      gap: 0;
+    }
+    .hud-nav__list a {
+      width: 100%;
+      min-height: 48px;
+      font-size: 16px;
+    }
+    .hud-nav__lang--bar {
+      display: none;
+    }
+    .hud-nav__tools {
+      gap: 6px;
+    }
+    :global(html:not(.js)) .hud-nav {
+      position: relative;
+    }
+    :global(html:not(.js)) .hud-nav__toggle {
+      display: none;
+    }
+  }
+  /* tablet: [SB] only. With SEONGEUN_BAEK added, the English bar (4 mono links + BGM + KO/EN + CV)
+     is ≈ 820px wide and would scroll sideways at 768px (Review Focus 1). */
+  @media (min-width: 734px) {
+    .hud-nav__toggle,
+    .hud-nav__lang--panel {
+      display: none;
+    }
+    .hud-nav__list {
+      gap: 16px;
+    }
+  }
+  @media (min-width: 1068px) {
+    .hud-nav__bar {
+      padding-inline: 28px;
+    }
+    .hud-nav__id,
+    .hud-nav__role {
+      display: inline;
+    }
+    .hud-nav__list {
+      gap: 22px;
+    }
+  }
+</style>

@@ -1,0 +1,70 @@
+---
+// ACHIEVEMENTS: the awards (namecard-awards `.aw`, mockup-port §7) as light-HUD rows (P1-9): a square medal tag,
+// name, contest, organiser · date, the redaction note when something is hidden (none for an award shown as issued,
+// P2-19), and square link chips: "상장 보기" (a plain link to the 1280w WebP without JS; CertificateModal intercepts
+// plain clicks) and the related project when awards.yaml names one.
+import SectionHead from '../hud/SectionHead.astro';
+import type { AwardItem } from '../../lib/records';
+import type { Lang } from '../../i18n/ui';
+import { t } from '../../i18n/utils';
+
+interface Props {
+  lang: Lang;
+  awards: AwardItem[];
+}
+
+const { lang, awards } = Astro.props;
+---
+<section id="awards" class="rec read-sec" aria-labelledby="awards-title">
+  <div class="container">
+    <SectionHead id="awards-title" caption={t(lang, 'section.achievements')} title={t(lang, 'records.awards')} />
+    <ul class="award__list lh-rows" role="list">
+      {awards.map((award) => (
+        <li class="award" data-award={award.id}>
+          <span class={`award__medal award__medal--${award.medal.tier}`}>{award.medal.label}</span>
+          <div class="award__body">
+            <h3 class="award__title">{award.title}</h3>
+            <p class="award__contest">{award.contest}</p>
+            <p class="award__org">{award.org} · <time datetime={award.dateIso}>{award.date}</time></p>
+            {award.redactionNote && <p class="award__note">{award.redactionNote}</p>}
+          </div>
+          {(award.certHref || award.projectHref) && (
+            <ul class="award__links lh-chips" role="list">
+              {/* P2-14/D-7: ↗ means "leaves the site"; a certificate button opens an in-page modal, so it gets no symbol. */}
+              {award.certHref && (
+                <li><a class="award__cert lh-chip" href={award.certHref} data-cert-id={award.id} aria-haspopup="dialog">{t(lang, 'action.viewCertificate')}</a></li>
+              )}
+              {award.projectHref && <li><a class="award__project lh-chip" href={award.projectHref}>{t(lang, 'action.viewProject')}</a></li>}
+            </ul>
+          )}
+        </li>
+      ))}
+    </ul>
+  </div>
+</section>
+
+<style>
+  .award__list { margin-top: 24px; }
+  .award {
+    display: grid;
+    grid-template-columns: 84px minmax(0, 1fr);
+    gap: 10px 16px;
+    align-items: start;
+    padding-block: 16px;
+    border-bottom: 1px solid var(--read-line);
+  }
+  /* A square tier tag: gold for the top awards (gold = achievements and tier badges, spec §4), grey otherwise. */
+  .award__medal { padding: 5px 6px; text-align: center; font-size: 13px; font-weight: 800; line-height: 1.3; }
+  .award__medal--gold { background: var(--gold); color: var(--gold-ink); }
+  .award__medal--silver { background: var(--read-card); color: var(--read-muted); border: 1px solid var(--read-line-strong); }
+  .award__body { min-width: 0; }
+  .award__title { font-size: 17px; font-weight: 700; line-height: 1.45; color: var(--read-text); }
+  .award__contest { margin-top: 2px; font-size: 15px; line-height: 1.5; }
+  .award__org,
+  .award__note { margin-top: 2px; font-size: 14px; line-height: 1.5; color: var(--read-muted); }
+  .award__links { grid-column: 2; }
+  @media (min-width: 734px) {
+    .award { grid-template-columns: 100px minmax(0, 1fr) auto; align-items: center; column-gap: 24px; padding-block: 20px; }
+    .award__links { grid-column: 3; justify-content: flex-end; }
+  }
+</style>

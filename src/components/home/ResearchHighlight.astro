@@ -1,0 +1,98 @@
+---
+// Home "[ ■ ] RESEARCH / 연구 하이라이트": the paper (al-folio fields, spec §5 연구 목록) and the paper's own result, the
+// AUC dot plot, in one bracketed light-HUD panel (P1-9) instead of the unreadable 160px diagram thumbnail; then the
+// NOW PLAYING aside. Emphasis (ORAL) is used for the CoG paper only.
+import SectionHead from '../hud/SectionHead.astro';
+import AucOverallChart from '../research/AucOverallChart.astro';
+import PaperLinks from '../research/PaperLinks.astro';
+import { figureCopy, overallAuc } from '../../data/research/cog-2026';
+import type { Lang } from '../../i18n/ui';
+import { t } from '../../i18n/utils';
+import type { PaperCardData } from '../../lib/publications';
+
+interface Props {
+  lang: Lang;
+  paper: PaperCardData;
+  nowPlaying: string;
+}
+
+const { lang, paper, nowPlaying } = Astro.props;
+---
+
+<section id="research-highlight" class="rh read read-sec" aria-labelledby="rh-title">
+  <div class="container">
+    <SectionHead id="rh-title" caption={t(lang, 'section.research')} title={t(lang, 'hero.researchHighlight')} />
+    <article class="paper lh-frame bracket bracket--sm">
+      <div class="paper__body">
+        <p class="paper__venue">
+          <span lang="en">{paper.venue}</span>
+          {paper.oral && <span class="paper__oral" lang="en">{t(lang, 'research.oral')}</span>}
+        </p>
+        <h3 class="paper__title" lang="en">
+          {paper.href ? <a href={paper.href}>{paper.title}</a> : paper.title}
+        </h3>
+        {
+          paper.titleGloss && (
+            <p class="paper__gloss">
+              {paper.titleGloss} <span class="paper__gloss-mark">({t(lang, 'research.gloss')})</span>
+            </p>
+          )
+        }
+        <p class="paper__authors" lang="en">
+          {paper.authors.map((author, i) => (
+            <>{i > 0 && ', '}{author.me ? <strong>{author.name}</strong> : author.name}</>
+          ))}
+        </p>
+        <p class="paper__tldr">{paper.tldr}</p>
+        {/* Final review fix 1 item 4: the same link row and disclosures as /research/ (PaperLinks, P2-9): the
+            buttons stay on one row and the abstract/BibTeX panels open below it; without JS both read inline. */}
+        <PaperLinks lang={lang} paper={paper} idBase="rh" />
+      </div>
+      <div class="paper__fig">
+        <p class="paper__strip" lang="en"><span class="paper__strip-tag">FIG</span> · CoG 2026 · AUC BY MODEL</p>
+        <AucOverallChart lang={lang} rows={overallAuc} caption={figureCopy.aucOverall.caption[lang]} alt={figureCopy.aucOverall.alt[lang]} idPrefix="rh-auc" />
+      </div>
+    </article>
+    <div class="now bracket bracket--sm">
+      <p class="hud-label" lang="en">[ NOW PLAYING ]</p>
+      <p class="now__text">{nowPlaying}</p>
+    </div>
+  </div>
+</section>
+
+<style>
+  /* minmax(0, 1fr) + .paper__body { min-width: 0 }: an opened BibTeX box wraps inside the panel instead of widening the page (Review Focus 1) */
+  .paper { margin-top: 24px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 20px; }
+  .paper__body { min-width: 0; }
+  .paper__venue { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: 14px; color: var(--read-muted); }
+  .paper__oral { padding: 1px 7px; font: 800 13px/1.4 var(--font-mono); color: var(--gold-ink); background: var(--gold-wash); border: 1px solid var(--gold-line); }
+  .paper__title { margin-top: 6px; font-size: var(--fs-sub); font-weight: 700; line-height: var(--lh-sub); }
+  .paper__title a { color: var(--read-text); text-decoration: none; transition: color var(--dur-hover) linear; }
+  .paper__title a:hover { color: var(--accent-deep); text-decoration: underline; }
+  .paper__gloss { margin-top: 6px; font-size: 15px; color: var(--read-muted); }
+  .paper__gloss-mark { white-space: nowrap; }
+  .paper__authors { margin-top: 6px; font-size: 14px; color: var(--read-muted); }
+  .paper__authors strong { color: var(--read-text); }
+  .paper__tldr { margin-top: 12px; max-width: var(--measure); }
+  /* The paper's own result (the no-art hero uses the same chart in the HUD tone): the chart picks its layout by its
+     own width, so the column is 560px (the wide layout, 13px text) where the page has room for it. */
+  .paper__fig { min-width: 0; padding-top: 18px; border-top: 1px solid var(--read-line); }
+  .paper__fig :global(.chart__scroll) { border: 0; }
+  .paper__strip { margin-bottom: 8px; font: 600 var(--fs-label)/1.5 var(--font-mono); letter-spacing: .14em; color: var(--read-muted); }
+  .paper__strip-tag { color: var(--read-text); }
+  .now { margin-top: 20px; padding: 14px 16px; background: var(--read-card); }
+  /* phones: the chart takes the panel's full inner width (the dot plot needs a 280px box for 12px text at 320px) */
+  @media (max-width: 733.98px) {
+    .paper__fig { margin-inline: -16px; }
+    .paper__strip, .paper__fig :global(.chart__caption), .paper__fig :global(.chart__table) { padding-inline: 16px; }
+  }
+  .now__text { margin-top: 6px; font-size: 15px; }
+  @media (min-width: 1068px) {
+    .paper { grid-template-columns: minmax(0, 1fr) minmax(0, 420px); column-gap: 28px; }
+    .paper__fig { padding-top: 0; padding-left: 28px; border-top: 0; border-left: 1px solid var(--read-line); }
+    .paper__fig :global(.chart__svg--compact) { max-width: 360px; }
+  }
+  @media (min-width: 1280px) {
+    .paper { grid-template-columns: minmax(0, 1fr) 589px; }
+  }
+</style>

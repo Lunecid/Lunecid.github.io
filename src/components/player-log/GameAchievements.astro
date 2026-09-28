@@ -1,0 +1,46 @@
+---
+// Game achievements on the Player Log. D-13: rendered only once an account feed exists (src/data/generated/accounts/,
+// passed in as `accounts`); with no feed the whole section, id included, is absent.
+import SectionHead from '../hud/SectionHead.astro';
+import type { Lang } from '../../i18n/ui';
+import { t } from '../../i18n/utils';
+import type { AccountFeed } from '../../lib/generated';
+
+interface Props {
+  lang: Lang;
+  platforms: { label: string }[];
+  accounts: Readonly<Record<string, AccountFeed>>;
+}
+const { lang, platforms, accounts } = Astro.props;
+const hasFeed = Object.keys(accounts).length > 0;
+---
+{hasFeed && (
+<section id="game-achievements" class="game-ach read read-sec" aria-labelledby="game-ach-title">
+  <div class="container">
+    <SectionHead id="game-ach-title" caption={t(lang, 'section.gameAchievements')} title={t(lang, 'playerLog.gameAchievements')} />
+    <ul class="game-ach__list" role="list">
+      {platforms.map((p) => (
+        <li class="game-ach__item">
+          <span class="game-ach__name" lang="en">{p.label}</span>
+          <span class="game-ach__lock"><span aria-hidden="true">🔒 </span>{t(lang, 'favorites.locked')}</span>
+        </li>
+      ))}
+    </ul>
+    <p class="game-ach__note">{t(lang, 'playerLog.gameAchievementsLocked')}</p>
+  </div>
+</section>
+)}
+
+<style>
+  .game-ach { padding-block: var(--section-pad-y); }
+  .game-ach__list { margin-top: 16px; display: grid; gap: 8px; padding: 0; list-style: none; }
+  @media (min-width: 734px) { .game-ach__list { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (min-width: 1068px) { .game-ach__list { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+  .game-ach__item {
+    display: flex; justify-content: space-between; align-items: center; gap: 12px; min-height: var(--tap);
+    padding: 10px 14px; background: var(--read-card); border: 1px dashed var(--read-line-strong);
+  }
+  .game-ach__name { font-weight: 700; color: var(--read-text); }
+  .game-ach__lock { flex: none; font: 600 var(--fs-label)/1.4 var(--font-mono); letter-spacing: .1em; color: var(--read-muted); } /* P2-24 */
+  .game-ach__note { margin-top: 14px; font-size: 15px; color: var(--read-muted); }
+</style>

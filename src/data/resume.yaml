@@ -1,0 +1,325 @@
+# resume.yaml — /records/ 페이지와 이력서 PDF 3종(국문 이력서·영문 Resume 1쪽·Academic CV)의 단일 원본.
+# 규칙
+# - 한·영 필드는 { ko, en } 순서로 둔다. 날짜는 모두 따옴표로 감싼 문자열('YYYY-MM' 또는 'YYYY-MM-DD')이다.
+# - pdf: { ko, en, academic } 은 각 PDF에 이 항목을 넣을지 정한다. /records/ 페이지는 pdf 값과 상관없이 모두 보여 준다.
+# - records: false 인 항목은 /records/ 페이지에 보이지 않는다(생략하면 true). PDF 전용 항목에만 쓴다.
+# - 전화번호·생년월일·학번·국가연구자번호·자격 번호·주소·병역·다른 팀원 이름은 이 파일에 넣지 않는다(spec §9.1).
+# - 제출용 PDF(전화번호 포함)는 이 저장소 밖에서 따로 만든다.
+
+profile:
+  name:
+    ko: 백성은
+    en: Seongeun Baek
+  headline:
+    ko: 게임 데이터 분석가 · 연구자
+    en: Game Data Analyst · Researcher
+  tagline:
+    ko: 플레이어를 예측하는 데서 멈추지 않고, 이해하는 데이터를 만듭니다.
+    en: 'Beyond predicting players: building data that explains them.'
+  status:
+    ko: 2027년 2월 석사 졸업 예정 · 게임 데이터 분석가 채용과 박사과정 진학을 함께 준비하고 있습니다.
+    en: M.S. expected February 2027 · Pursuing game data analyst roles and Ph.D. programs in parallel.
+  about:
+    ko: >-
+      부산대학교 데이터사이언스전문대학원 석사과정에서 게임 데이터를 연구하고 있습니다.
+      리그 오브 레전드의 공개 경기 기록(Riot API)으로 교전 결과를 예측한 연구를 IEEE CoG 2026에서 구두 발표했습니다.
+      공공데이터 경진대회와 팀 프로젝트에서는 공간 데이터 분석과 예측 모델을 맡았습니다.
+    en: >-
+      I am an M.S. student at the Graduate School of Data Science, Pusan National University, working on game data.
+      I presented a study that predicts the outcome of kill-conditioned engagements in League of Legends from public match records (Riot API) as an oral paper at IEEE CoG 2026.
+      In public-data competitions and team projects, I worked on spatial data analysis and predictive models.
+  affiliation:
+    ko: 부산대학교 데이터사이언스전문대학원 데이터사이언스연구실(DataLab)
+    en: Data Science Lab (DataLab), Graduate School of Data Science, Pusan National University
+  advisor:
+    ko: 권준호 교수
+    en: Prof. Joonho Kwon
+  location:
+    ko: 부산
+    en: Busan, South Korea
+  email: todtjddms104204@pusan.ac.kr
+  github: Lunecid
+  site: https://lunecid.github.io
+  # 연구 관심사 = 연구 페이지의 세 관심사 제목(src/data/research-page.ts interests[].title, P1-19). 기술 목록이 아니다.
+  researchInterests:
+    pdf: { ko: false, en: false, academic: true }
+    items:
+      - { ko: 로그로 읽는 플레이어 행동, en: Player behavior from logs }
+      - { ko: 시간과 공간 속의 팀 플레이, en: Team play in space and time }
+      - { ko: 읽을 수 있는 결과, en: Results people can read }
+
+# 이력서 PDF 파일. CV 버튼과 기록 페이지의 PDF 목록이 이 값을 쓴다.
+# 라벨은 어떤 언어·쪽수의 문서인지 분명히 밝힌다(batch 3b P2-32: "Résumé (1 page)"는 국문 이력서와 헷갈렸다).
+documents:
+  - id: resume-ko
+    label: { ko: 국문 이력서 (2쪽), en: Korean résumé (2 pages) }
+    href: /cv/seongeun-baek-resume-ko.pdf
+  - id: resume-en
+    label: { ko: 영문 이력서 (1쪽), en: English résumé (1 page) }
+    href: /cv/seongeun-baek-resume-en.pdf
+  - id: cv-academic
+    label: { ko: Academic CV, en: Academic CV }
+    href: /cv/seongeun-baek-cv-academic.pdf
+
+education:
+  - id: ms-pnu
+    school:
+      ko: 부산대학교 데이터사이언스전문대학원
+      en: Graduate School of Data Science, Pusan National University
+    degree:
+      ko: 데이터사이언스학과 석사과정
+      en: M.S. in Data Science
+    start: '2025-03'
+    end: '2027-02'
+    expected: true
+    gpa: { value: '4.0', scale: '4.5' }
+    lab:
+      ko: 데이터사이언스연구실(DataLab) · 지도교수 권준호
+      en: Data Science Lab (DataLab) · Advisor Prof. Joonho Kwon
+      href: https://datalab.pusan.ac.kr/datalab/index.do
+    thesis:
+      ko: 석사 학위논문(준비 중) — 리그 오브 레전드 교전의 전략적 가치
+      en: M.S. thesis (in preparation) — the strategic value of League of Legends engagements
+      pdf: { ko: false, en: false, academic: true }
+    pdf: { ko: true, en: true, academic: true }
+  - id: bs-pnu
+    school:
+      ko: 부산대학교
+      en: Pusan National University
+    degree:
+      ko: 나노메카트로닉스공학과 학사
+      en: B.S. in Nanomechatronics Engineering
+    start: '2017-02'
+    end: '2025-02'
+    expected: false
+    gpa: { value: '3.18', scale: '4.5' }
+    pdf: { ko: true, en: true, academic: true }
+
+# 논문 본문 정보(제목·저자·학회·초록·BibTeX)는 publications 컬렉션에 있다. 여기서는 참조와 PDF 포함 여부만 둔다.
+publications:
+  - ref: cog-2026-engagement
+    pdf: { ko: true, en: true, academic: true }
+
+# 진행 중인 연구(Academic CV 전용). 투고 전이므로 '준비 중'으로만 적는다.
+researchInProgress:
+  - id: cog-journal-extension
+    text:
+      ko: CoG 2026 논문의 저널 확장판(준비 중)
+      en: Journal extension of the CoG 2026 paper (in preparation)
+    pdf: { ko: false, en: false, academic: true }
+  - id: pubg-spatiotemporal
+    text:
+      ko: PUBG 시공간 그래프 기반 생존 분석(진행 중)
+      en: Spatiotemporal graph survival modeling in PUBG (in progress)
+    pdf: { ko: false, en: false, academic: true }
+
+# 이력서 PDF의 첫 프로젝트: CoG 논문(P1-20). projects 컬렉션이 아니라 publications를 가리키므로 별도 필드로 둔다
+# (이 프로젝트 목록은 /records/ 프로젝트 요약도 함께 읽으므로 그 구조는 그대로 둔다 — src/lib/records.ts).
+# Academic CV는 이미 publications/researchInProgress로 초록·발표를 자세히 보여 주므로 여기서는 뺀다(academic: false).
+# team·period는 논문 자체 필드가 아니라 이력서 표시용이며, 사실은 논문(공저 2인)과 지도교수 협업 구조(D-15 이전 삭제된
+# 사례 연구 본문의 details.기간, git show ae864ff^:src/content/research/ko/cog-2026-engagement.md)에서 가져왔다.
+publicationProject:
+  pub: cog-2026-engagement
+  pdf: { ko: true, en: true, academic: false }
+  team:
+    ko: 제1저자 · 지도교수 공동연구
+    en: First author · co-authored with advisor
+  period: { start: '2026-02', end: '2026-09' }
+  resume:
+    ko:
+      - Riot API 공개 경기 기록에서 한국 서버 마스터 이상 20만 6,442경기를 수집해, 연속된 세 패치에 걸친 약 100만 개의 교전 데이터를 구성함.
+      - 패치 단위 시간순 홀드아웃 평가에서 LightGBM이 AUC 0.675로 신경망 기준선(AUC 0.569–0.581)을 앞섬.
+      - 제1저자로 IEEE CoG 2026(스페인 마드리드)에서 구두 발표함.
+    en:
+      - Built a pipeline from 206,442 Korean Master+ matches (Riot API) into ~1M labeled engagements across three patches.
+      - "Chronological patch-holdout evaluation: LightGBM AUC 0.675 vs. neural baselines 0.569–0.581."
+      - First author; gave an oral presentation at IEEE CoG 2026 in Madrid, Spain.
+
+# 프로젝트 세부(기간·팀·역할·요약)는 projects 컬렉션에서 가져온다. 여기서는 순서와 PDF 포함 여부만 정한다.
+# resume: PDF 전용 이력서체 불릿(batch 3b). 웹 문구(summary/role)는 배치 3a부터 합니다체라서, PDF는 이 필드로
+# 명사형/"~함" 종결의 이력서체를 따로 쓴다(없으면 summary·role로 대체). 사실은 web 카피·프로젝트 상세와 같다.
+projects:
+  - ref: school-zone-blindspots
+    pdf: { ko: true, en: true, academic: true }
+    resume:
+      ko:
+        - 부산 도로망 전체의 어린이 보행자 사고 위험을 예측해, 위험도는 높지만 보호구역으로 지정되지 않은 곳을 찾음.
+        - 문제 정의와 분석 방향을 주도하고 QGIS 공간 매핑, XGBoost와 공간 교차검증을 설계함. 재현율 0.87, 최우수상(부산광역시장상) 수상.
+      en:
+        - Predicted child-pedestrian accident risk across the Busan road network and located high-risk roads outside designated school zones.
+        - Led the problem framing, built the QGIS spatial pipeline, and designed the XGBoost model with spatial cross-validation. Recall 0.87; awarded the Top Excellence Award (Mayor of Busan Award).
+  - ref: kickick-park
+    pdf: { ko: true, en: true, academic: false }
+    # fix round 1 (controller): the first bullet used to credit the owner's web service with judging parking from
+    # the photo. The page says the public repo's web service adds a fixed score per uploaded photo, and the
+    # judgment model (YOLOv5/v8, Mask R-CNN) was trained separately in Colab by the team (teamTools, D-9) — so the
+    # first bullet now states the team's project as the page states it; the owner's own part stays in bullet two.
+    resume:
+      ko:
+        - 5인 팀이 반납 사진 기반 주차 판정 모델과 사진 업로드·누적 점수 랭킹 웹 서비스를 기획함.
+        - 입지 분석의 자치구별 데이터를 Tableau로 시각화하고 Django로 웹사이트를 구축함. 최우수상 수상.
+      en:
+        - A 5-person team built a return-photo parking-judgment model and a photo-upload ranking web service.
+        - Visualized Seoul district (gu) data for the location analysis in Tableau and built the Django website. Awarded the Top Excellence Award.
+  - ref: youth-startup-location
+    pdf: { ko: true, en: true, academic: true }
+    resume:
+      ko:
+        - 4인 팀이 부산 행정동 상권을 네 유형으로 나누고 음식점 매출을 예측해, 조건보다 매출 여유가 남은 동네를 찾음.
+        - 생활인구·소비매출·음식점 데이터의 탐색과 데이터 엔지니어링을 맡음.
+      en:
+        - A four-person team segmented Busan districts into four commercial types and predicted restaurant sales.
+        - Explored the floating-population, consumer-spending and restaurant data and did the data engineering.
+  # kbo-attendance, seoul-apartment-automl: status 'card' (D-4), too thin for their own bullets. Excluded from every
+  # PDF here (pdf all false) and merged into projectsNote below instead (batch 3b P1-20). Still listed for
+  # /records/'s project summary, which reads this array regardless of these pdf flags (records.ts, D-4 note there).
+  - ref: kbo-attendance
+    pdf: { ko: false, en: false, academic: false }
+  - ref: seoul-apartment-automl
+    pdf: { ko: false, en: false, academic: false }
+
+# Korean résumé only: one merged line for kbo-attendance + seoul-apartment-automl (batch 3b P1-20, "make room" for
+# the 2-page limit). Crawling is named once, matching kbo-attendance's own role field so it is not repeated (P2-32).
+# fix round 1 (controller): kbo-attendance tested whether team performance and attendance are related (a
+# statistical test) — it did not predict attendance. Wording now follows the card's own summary/role instead of
+# "예측". The seoul-apartment-automl half was checked the same way: its card genuinely is a sale-price prediction
+# (summary: "매매가 예측 모델을 고르고"), so "예측" stays correct there.
+projectsNote:
+  ko: 이 밖에 KBO 구단 성적과 관중 수의 관계를 검정한 수업 프로젝트(크롤링·전처리 담당)와 AutoML 기반 서울 아파트 매매가 예측 부트캠프 프로젝트(모델링·Tableau 시각화 담당)를 수행함.
+  pdf: { ko: true, en: false, academic: false }
+
+# 수상 세부는 awards.yaml에 있다.
+awards:
+  - ref: busan-mayor-award
+    pdf: { ko: true, en: true, academic: true }
+  - ref: cds-encouragement-award
+    pdf: { ko: true, en: true, academic: true }
+  - ref: multicampus-grand-award
+    pdf: { ko: true, en: true, academic: true }
+
+activities:
+  # 본선에는 진출하지 못했다(소유자 답변, 2026-09-28).
+  - id: lg-aimers-7
+    text:
+      ko: LG Aimers 7기 해커톤 참가
+      en: LG Aimers (7th cohort) hackathon — participant
+    date: '2025'
+    pdf: { ko: true, en: false, academic: false }
+
+# 자격 번호는 싣지 않는다.
+certifications:
+  - id: adsp
+    name:
+      ko: 데이터분석 준전문가(ADsP)
+      en: Advanced Data Analytics Semi-Professional (ADsP)
+    issuer:
+      ko: 한국데이터산업진흥원
+      en: Korea Data Agency
+    date: '2024-09-06'
+    pdf: { ko: true, en: true, academic: false }
+  - id: cds-bigdata-2
+    name:
+      ko: CDS빅데이터 자격인증 2급
+      en: CDS Big Data Certification, Level 2
+    issuer:
+      ko: ㈜에스에스엠아이
+      en: SSMI Co., Ltd.
+    date: '2024-10-28'
+    pdf: { ko: true, en: true, academic: false }
+  # SQL 자격은 취득 후 여기에 추가한다(spec §2 '나중에' 7번). 그 전에는 항목을 만들지 않는다.
+
+languages:
+  - id: korean
+    # en renders as "{name} {level}" (ResumeEn/CvAcademic): "Korean" + "(native)" -> "Korean (native)" (batch 3b
+    # P2-32; the old "Native" rendered as the ambiguous "Korean Native").
+    name: { ko: 한국어, en: Korean }
+    level: { ko: 모국어, en: '(native)' }
+    records: false
+    pdf: { ko: false, en: true, academic: true }
+  - id: toeic
+    name: { ko: TOEIC, en: TOEIC }
+    level: { ko: '775점', en: '775' }
+    date: '2024-12-15'
+    validUntil: '2026-12-15'
+    # 유효기간이 지나면 빌드 시 '만료' 표시를 붙인다. 재응시하면 이 항목을 새 점수로 바꾼다.
+    onExpire: mark
+    pdf: { ko: true, en: true, academic: true }
+
+training:
+  - id: multicampus-bootcamp
+    name:
+      ko: 멀티잇 데이터 분석&엔지니어 취업캠프(Python)
+      en: Multi-IT Data Analysis & Engineering Bootcamp (Python)
+    org:
+      ko: 멀티캠퍼스 · K-Digital Training
+      en: Multicampus · K-Digital Training
+    start: '2023-09'
+    end: '2024-03'
+    hours: 956
+    pdf: { ko: true, en: true, academic: false }
+  - id: oxml-2025
+    name:
+      ko: OxML 2025 — MLx Representation Learning & Generative AI
+      en: OxML 2025 — MLx Representation Learning & Generative AI
+    org:
+      ko: 옥스퍼드 머신러닝 서머스쿨(온라인 참가)
+      en: Oxford Machine Learning Summer School (online, certificate of participation)
+    start: '2025-08'
+    end: '2025-08'
+    hours: 25
+    pdf: { ko: true, en: false, academic: true }
+  - id: research-ethics-2025
+    name:
+      ko: 참여연구원 연구윤리 교육(이공계)
+      en: Research Ethics for Participating Researchers (Science & Engineering)
+    org:
+      ko: 국가과학기술인력개발원
+      en: Korea Institute of Human Resources Development in Science and Technology (KIRD)
+    start: '2025-10'
+    end: '2025-10'
+    hours: 2
+    # batch 3b P2-32: a 2-hour line reads as padding on the industry résumé; keep it only on the Academic CV.
+    pdf: { ko: false, en: false, academic: true }
+
+# 스킬은 숙련도 막대 없이 '주력'과 '사용해 본 기술'로만 나누고, 기술마다 근거를 붙인다.
+# evidence.kind: project → /projects/<id>/ (상세 페이지가 있는 프로젝트만), research → /research/<id>/,
+#   code → 논문의 공개 코드(publications의 code, v1.0-cog2026 태그). 논문 페이지는 초록만 보여 주므로(D-15)
+#   Python·pandas·PyTorch는 그 기술을 쓰는 태그의 코드로 연결한다(requirements.txt의 torch, 코드의 import torch·pandas).
+# 근거는 본인이 그 기술을 쓴 작업이고, 링크한 곳이 지금 보여 주는 내용으로 확인할 수 있어야 한다(D-9).
+# 팀원이 맡은 도구(킥킥파크의 YOLOv8·PyTorch, 청년 창업 입지의 LightGBM·XGBoost·QGIS·Streamlit)는 본인 기술로 올리지 않는다.
+skills:
+  pdf: { ko: true, en: true, academic: true }
+  primary:
+    - name: Python
+      evidence:
+        - { kind: code, id: cog-2026-engagement }
+        - { kind: project, id: school-zone-blindspots }
+        - { kind: project, id: youth-startup-location }
+    - name: pandas
+      evidence:
+        - { kind: code, id: cog-2026-engagement }
+    - name: LightGBM · XGBoost
+      evidence:
+        - { kind: research, id: cog-2026-engagement }
+        - { kind: project, id: school-zone-blindspots }
+    - name: PyTorch
+      evidence:
+        - { kind: code, id: cog-2026-engagement }
+    - name: QGIS
+      evidence:
+        - { kind: project, id: school-zone-blindspots }
+    - name: Tableau
+      evidence:
+        - { kind: project, id: kickick-park }
+  familiar:
+    - name: Django
+      evidence:
+        - { kind: project, id: kickick-park }
+    - name: MySQL
+      evidence:
+        - { kind: project, id: kickick-park }
+
+# 만든 뒤 URL을 넣는다(spec §2 '나중에' 6번). null이면 아이콘을 숨긴다.
+researchIds:
+  scholar: null
+  orcid: null

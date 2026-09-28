@@ -1,0 +1,129 @@
+---
+// The CoG cartridge label (fix round 1): the paper's own result, drawn from the same data as AucOverallChart
+// (src/data/research/cog-2026.ts overallAuc) and sized for a cartridge label. Three rows on the 0.50–0.70 AUC axis —
+// LightGBM (the one highlighted dot), MLP on the same input, and the six neural baselines as their min–max range —
+// with a dashed rule at chance (0.5). The caption and full alt text are the chart's own (figureCopy.aucOverall), in
+// the SVG's title and desc.
+// Two SVGs, picked by the label's shape: "card" (300 × 132) for the 16:9 label on phones, "strip" (480 × 112) for the
+// wide, short label from 734px. Each keeps its text at 12px or more in the smallest box it is shown in (320px phone:
+// 15.5 × 0.84 = 13px; 1068px, where the wide card is narrowest: 14 × 0.89 = 12.5px).
+import type { Lang } from '../../i18n/ui';
+import { CHANCE_AUC, figureCopy, overallAuc } from '../../data/research/cog-2026';
+
+interface Props {
+  lang: Lang;
+  /** Prefix of the SVG title/desc ids (the label appears once per page). */
+  idPrefix?: string;
+}
+
+const { lang, idPrefix = 'auc-label' } = Astro.props;
+const MAX = 0.7;
+const lightgbm = overallAuc.find((row) => row.highlight);
+const mlp = overallAuc.find((row) => row.id === 'mlp');
+const neural = overallAuc.filter((row) => row.group === 'neural').map((row) => row.auc);
+if (!lightgbm || !mlp || neural.length === 0) throw new Error('AucLabel: overallAuc lacks LightGBM, MLP or the neural baselines');
+const lo = Math.min(...neural);
+const hi = Math.max(...neural);
+const neuralLabel = lang === 'ko' ? `신경망 ${neural.length}종` : `${neural.length} neural`;
+const caption = figureCopy.aucOverall.caption[lang];
+const alt = figureCopy.aucOverall.alt[lang];
+
+interface Layout {
+  w: number;
+  h: number;
+  left: number;
+  right: number;
+  labelX: number;
+  rows: [number, number, number];
+  axisY: number;
+  font: number;
+  r: number;
+  ticks: number[];
+}
+const card: Layout = { w: 300, h: 132, left: 100, right: 250, labelX: 92, rows: [22, 52, 82], axisY: 100, font: 15.5, r: 6.5, ticks: [0.5, 0.6, 0.7] };
+const strip: Layout = { w: 480, h: 112, left: 150, right: 390, labelX: 140, rows: [20, 44, 68], axisY: 86, font: 14, r: 5.5, ticks: [0.5, 0.55, 0.6, 0.65, 0.7] };
+const round1 = (n: number): number => Math.round(n * 10) / 10;
+const place = (l: Layout) => {
+  const x = (v: number): number => round1(l.left + ((v - CHANCE_AUC) / (MAX - CHANCE_AUC)) * (l.right - l.left));
+  const gap = l.font * 0.7;
+  return {
+    l,
+    x,
+    rows: [
+      { key: 'lightgbm', label: lightgbm.model, y: l.rows[0], from: x(lightgbm.auc), to: x(lightgbm.auc), value: lightgbm.auc.toFixed(3), hl: true },
+      { key: 'mlp', label: mlp.model, y: l.rows[1], from: x(mlp.auc), to: x(mlp.auc), value: mlp.auc.toFixed(3), hl: false },
+      { key: 'neural', label: neuralLabel, y: l.rows[2], from: x(lo), to: x(hi), value: `${lo.toFixed(3)}–${hi.toFixed(3)}`, hl: false },
+    ],
+    gap,
+  };
+};
+const layouts = [
+  { name: 'card', ...place(card) },
+  { name: 'strip', ...place(strip) },
+];
+---
+<div class="auc-label" data-auc-label>
+  {layouts.map(({ name, l, x, rows, gap }) => (
+    <svg class={`auc-label__svg auc-label__svg--${name}`} viewBox={`0 0 ${l.w} ${l.h}`} preserveAspectRatio="xMidYMid meet" role="img" aria-labelledby={`${idPrefix}-${name}-title`} aria-describedby={`${idPrefix}-${name}-desc`} style={`--f: ${l.font}px`}>
+      <title id={`${idPrefix}-${name}-title`}>{caption}</title>
+      <desc id={`${idPrefix}-${name}-desc`}>{alt}</desc>
+      <line class="auc-label__axis" x1={l.left} x2={l.right} y1={l.axisY} y2={l.axisY} />
+      {l.ticks.map((v) => (
+        <text class="auc-label__tick" x={x(v)} y={l.axisY + l.font + 6} text-anchor="middle">{v.toFixed(2)}</text>
+      ))}
+      <line class="auc-label__chance" x1={x(CHANCE_AUC)} x2={x(CHANCE_AUC)} y1={l.rows[0] - l.font} y2={l.axisY} />
+      {rows.map((row) => (
+        <g data-row={row.key}>
+          <line class="auc-label__guide" x1={l.left} x2={l.right} y1={row.y} y2={row.y} />
+          <text class="auc-label__name" x={l.labelX} y={row.y + l.font * 0.35} text-anchor="end">{row.label}</text>
+          {row.from === row.to ? (
+            <circle class:list={['auc-label__dot', { 'auc-label__dot--hl': row.hl }]} cx={row.from} cy={row.y} r={row.hl ? l.r + 1 : l.r} />
+          ) : (
+            <Fragment>
+              <line class="auc-label__range" x1={row.from} x2={row.to} y1={row.y} y2={row.y} />
+              <line class="auc-label__cap" x1={row.from} x2={row.from} y1={row.y - l.r} y2={row.y + l.r} />
+              <line class="auc-label__cap" x1={row.to} x2={row.to} y1={row.y - l.r} y2={row.y + l.r} />
+            </Fragment>
+          )}
+          <text class="auc-label__value" x={round1(row.to + gap + (row.from === row.to ? l.r : 0))} y={row.y + l.font * 0.35}>{row.value}</text>
+        </g>
+      ))}
+    </svg>
+  ))}
+</div>
+
+<style>
+  .auc-label { width: 100%; height: 100%; }
+  .auc-label__svg { display: block; width: 100%; height: 100%; max-width: none; }
+  .auc-label__svg--strip { display: none; }
+  @media (min-width: 734px) {
+    .auc-label__svg--card { display: none; }
+    .auc-label__svg--strip { display: block; }
+  }
+  .auc-label__name { fill: var(--read-text); font: 700 var(--f) var(--font-sans); }
+  .auc-label__value,
+  .auc-label__tick { font: 500 var(--f) var(--font-mono); font-variant-numeric: tabular-nums; }
+  .auc-label__value { fill: var(--read-text); }
+  .auc-label__tick { fill: var(--read-muted); }
+  .auc-label__axis { stroke: var(--read-line-strong); stroke-width: 1; }
+  .auc-label__guide { stroke: var(--read-line); stroke-width: 1; stroke-dasharray: 2 4; }
+  .auc-label__chance { stroke: var(--read-muted); stroke-width: 1.5; stroke-dasharray: 4 3; }
+  .auc-label__dot { fill: var(--read-muted); }
+  .auc-label__dot--hl { fill: var(--accent-deep); }
+  .auc-label__range { stroke: var(--read-muted); stroke-width: 4; }
+  .auc-label__cap { stroke: var(--read-muted); stroke-width: 2; }
+  /* Final fix 2 item 18: forced colours (Windows contrast themes) repaint the label's white plate as Canvas but not
+     SVG fills, so every label and mark takes a system colour (LightGBM, the paper's model, stays apart as Highlight). */
+  @media (forced-colors: active) {
+    .auc-label__name,
+    .auc-label__value,
+    .auc-label__tick { fill: CanvasText; }
+    .auc-label__axis,
+    .auc-label__guide,
+    .auc-label__chance { stroke: GrayText; }
+    .auc-label__dot { fill: CanvasText; }
+    .auc-label__dot--hl { fill: Highlight; }
+    .auc-label__range,
+    .auc-label__cap { stroke: CanvasText; }
+  }
+</style>

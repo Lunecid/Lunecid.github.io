@@ -1,0 +1,51 @@
+---
+/**
+ * Player Log first row (#membership): the ZZZ-style membership card beside the favourite-character tiles. When the
+ * art for a tile is missing (D-1) the site-achievement progress panel takes the free space: alone when there are no
+ * tiles, under the tiles when only some exist. With all three tiles the row is card + tiles, as in the mockup.
+ */
+import MembershipCard from './MembershipCard.astro';
+import FavoriteTiles from './FavoriteTiles.astro';
+import AchievementMeter from './AchievementMeter.astro';
+import type { Lang } from '../../i18n/ui';
+import { t } from '../../i18n/utils';
+import type { AchievementDef } from '../../lib/achievements';
+import type { FavoriteTile } from '../../lib/favorites';
+
+interface Props {
+  lang: Lang;
+  membership: { fields: { label: string; value: string }[]; sticker: string; memberSince: string };
+  tiles: FavoriteTile[];
+  /** Every favourite character (the tile count a full row has). */
+  tileSlots: number;
+  achievements: AchievementDef[];
+}
+const { lang, membership, tiles, tileSlots, achievements } = Astro.props;
+const showMeter = tiles.length < tileSlots;
+---
+<section id="membership" class:list={['pl-intro', 'hud-grid', { 'pl-intro--meter': showMeter }]} aria-label={t(lang, 'section.membershipCard.title')}>
+  <div class="container container--hud pl-intro__grid">
+    <MembershipCard
+      headingLevel={2}
+      fields={membership.fields}
+      sticker={membership.sticker}
+      memberSince={membership.memberSince}
+      photoAlt={t(lang, 'card.photoAlt')}
+    />
+    <div class="pl-intro__side">
+      <FavoriteTiles lang={lang} tiles={tiles} />
+      {showMeter && <AchievementMeter lang={lang} defs={achievements} />}
+    </div>
+  </div>
+</section>
+
+<style>
+  .pl-intro { padding-block: var(--section-pad-y); }
+  .pl-intro__grid { display: grid; gap: 24px; }
+  .pl-intro__side { display: grid; gap: 24px; min-width: 0; }
+  @media (min-width: 1068px) {
+    .pl-intro__grid { grid-template-columns: minmax(0, 440px) 1fr; gap: 36px; align-items: center; }
+    /* the progress panel matches the card's height instead of floating in the middle of an empty column */
+    .pl-intro--meter .pl-intro__side { align-self: stretch; }
+  }
+</style>

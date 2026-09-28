@@ -1,0 +1,50 @@
+---
+// Ongoing research (content-research §3 `researchPage.ongoing`) as indexed light-HUD rows (P1-9): a mono index, a
+// square status tag, the title and one line. Items with href null stay unlinked (PUBG_Lab is not linked until the
+// owner marks the repository ready).
+import SectionHead from '../hud/SectionHead.astro';
+import type { researchPage } from '../../data/research-page';
+import type { Lang } from '../../i18n/ui';
+import { localizeHref, t } from '../../i18n/utils';
+
+interface Props {
+  lang: Lang;
+  items: typeof researchPage.ongoing;
+}
+
+const { lang, items } = Astro.props;
+const rows = items.map((item) => ({
+  id: item.id,
+  status: item.status[lang],
+  title: item.title[lang],
+  body: item.body[lang],
+  href: item.href === null ? null : localizeHref(item.href, lang),
+}));
+---
+<section id="in-progress" class="progress-list read read-sec" aria-labelledby="in-progress-title">
+  <div class="container">
+    <SectionHead id="in-progress-title" caption={t(lang, 'section.inProgress')} title={t(lang, 'research.inProgress')} />
+    <ol class="progress-list__items lh-rows" role="list">
+      {rows.map((row, i) => (
+        <li class="progress-list__item lh-row" data-item={row.id}>
+          <span class="lh-idx" aria-hidden="true">{String(i + 1).padStart(2, '0')}</span>
+          <div class="progress-list__text">
+            <p class="progress-list__status lh-tag">{row.status}</p>
+            <h3 class="progress-list__name">{row.href ? <a class="hit" href={row.href}>{row.title}</a> : row.title}</h3>
+            <p class="progress-list__body">{row.body}</p>
+          </div>
+        </li>
+      ))}
+    </ol>
+  </div>
+</section>
+
+<style>
+  .progress-list__items { margin-top: 24px; }
+  .progress-list__text { min-width: 0; }
+  .progress-list__status { white-space: normal; } /* "In preparation · expected Feb 2027" wraps on a 320px phone */
+  .progress-list__name { margin-top: 8px; font-size: 18px; font-weight: 700; line-height: 1.4; color: var(--read-text); }
+  .progress-list__name a { text-underline-offset: 3px; }
+  .progress-list__body { margin-top: 6px; font-size: 16px; line-height: 1.7; max-width: var(--measure); }
+  .progress-list__body:lang(en) { line-height: 1.5; }
+</style>

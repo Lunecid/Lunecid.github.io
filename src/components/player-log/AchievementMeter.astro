@@ -1,0 +1,110 @@
+---
+/**
+ * Site-achievement progress as a HUD panel (D-1): on the Player Log's first row it stands beside the membership card
+ * when the favourite-character tiles are missing, so the row is never half empty. It reads the same browser storage
+ * as the full list (#site-achievements) and follows unlocks live; the SSR text is the 0-unlocked state.
+ */
+import SectionLabel from '../hud/SectionLabel.astro';
+import { ui, type Lang } from '../../i18n/ui';
+import { t } from '../../i18n/utils';
+import type { AchievementDef } from '../../lib/achievements';
+
+interface Props {
+  lang: Lang;
+  defs: AchievementDef[];
+}
+const { lang, defs } = Astro.props;
+// Raw template ('{n} / {total} 달성'): the client script fills it; t() renders the SSR value only.
+const progressTemplate = ui[lang]['achievement.progress'];
+---
+<div class="ach-meter bracket" data-ach-meter data-ids={defs.map((d) => d.id).join(' ')}>
+  <SectionLabel en={t(lang, 'section.siteAchievements')} />
+  <p class="ach-meter__count tnum" data-ach-meter-count data-template={progressTemplate}>{t(lang, 'achievement.progress', { n: 0, total: defs.length })}</p>
+  <div class="ach-meter__track" aria-hidden="true"><i class="ach-meter__fill"></i></div>
+  <ol class="ach-meter__slots" role="list" aria-hidden="true">
+    {defs.map((d) => <li class="ach-meter__slot" data-ach-slot={d.id} data-unlocked="false">★</li>)}
+  </ol>
+  <p class="ach-meter__note">{t(lang, 'achievement.storageNote')}</p>
+  <p><a class="sec-more" href="#site-achievements">{t(lang, 'achievement.viewAll')} <span aria-hidden="true">↓</span></a></p>
+</div>
+
+<script>
+  import { readUnlocked, UNLOCK_EVENT } from '../../lib/achievements';
+
+  document.querySelectorAll<HTMLElement>('[data-ach-meter]').forEach((root) => {
+    const ids = (root.dataset.ids ?? '').split(' ').filter(Boolean);
+    const count = root.querySelector<HTMLElement>('[data-ach-meter-count]');
+    const template = count?.dataset.template ?? '';
+    const slots = Array.from(root.querySelectorAll<HTMLElement>('[data-ach-slot]'));
+    // readUnlocked() already tolerates throwing storage (in-memory fallback).
+    const sync = () => {
+      const unlocked = readUnlocked();
+      const n = ids.filter((id) => id in unlocked).length;
+      if (count && template) count.textContent = template.replace('{n}', String(n)).replace('{total}', String(ids.length));
+      root.style.setProperty('--ach-p', String(ids.length ? n / ids.length : 0));
+      for (const slot of slots) slot.dataset.unlocked = String((slot.dataset.achSlot ?? '') in unlocked);
+    };
+    sync();
+    window.addEventListener(UNLOCK_EVENT, sync);
+  });
+</script>
+
+<style>
+  .ach-meter {
+    --ach-p: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 20px 22px 12px;
+    background: var(--hud-panel-92);
+  }
+  .ach-meter__count {
+    font: 800 clamp(28px, 3vw, 40px)/1.1 var(--font-mono);
+    color: var(--hud-strong);
+  }
+  .ach-meter__count:lang(ko) {
+    letter-spacing: 0;
+  }
+  .ach-meter__track {
+    height: 6px;
+    background: var(--hud-track);
+    overflow: hidden;
+  }
+  .ach-meter__fill {
+    display: block;
+    height: 100%;
+    transform: scaleX(var(--ach-p));
+    transform-origin: 0 50%;
+    background: linear-gradient(90deg, var(--accent), var(--accent-light));
+    transition: transform var(--dur-enter) var(--ease-out);
+  }
+  /* one row at any width: the slots shrink from 34px instead of wrapping a lone star onto a second line */
+  .ach-meter__slots {
+    display: flex;
+    gap: 6px;
+  }
+  .ach-meter__slot {
+    display: grid;
+    place-items: center;
+    flex: 0 1 34px;
+    min-width: 0;
+    aspect-ratio: 1;
+    border: 1px solid var(--hud-line);
+    background: var(--hud-bg);
+    color: var(--hud-muted);
+    font-size: 15px;
+  }
+  .ach-meter__slot[data-unlocked="true"] {
+    border-color: var(--gold-line);
+    background: var(--gold);
+    color: var(--gold-ink);
+  }
+  .ach-meter__note {
+    font-size: 14px;
+    line-height: 1.5;
+    color: var(--hud-muted);
+  }
+  :global(:root[data-motion="reduce"]) .ach-meter__fill {
+    transition: none;
+  }
+</style>

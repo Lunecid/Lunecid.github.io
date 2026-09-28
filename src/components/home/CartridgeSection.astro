@@ -1,0 +1,36 @@
+---
+// Home "[ ■ ] SELECT YOUR PROJECT / 프로젝트 고르기": CoG wide card + 2 featured projects, one row (spec §3, §5, D-3).
+import SectionHead from '../hud/SectionHead.astro';
+import ProjectCartridge from '../projects/ProjectCartridge.astro';
+import type { Lang } from '../../i18n/ui';
+import { t } from '../../i18n/utils';
+import type { CartridgeProps } from '../../lib/projects';
+
+interface Props {
+  lang: Lang;
+  cartridges: CartridgeProps[];
+  moreHref: string;
+  moreLabel: string;
+}
+
+const { lang, cartridges, moreHref, moreLabel } = Astro.props;
+// Final fix 2 item 13: on a 2560x1440 screen the first image card is the home page's LCP element, so it loads eagerly
+// (the CoG card before it draws its label inline, no image).
+const firstImage = cartridges.findIndex((cartridge) => cartridge.cover !== undefined);
+---
+
+<section id="featured-projects" class="cart-sec sec hud-grid" aria-labelledby="featured-projects-title">
+  <div class="container container--hud">
+    <SectionHead id="featured-projects-title" caption={t(lang, 'section.selectProject')} title={t(lang, 'section.selectProject.title')} captionOnly />
+    <div class="cart-grid">
+      {cartridges.map((cartridge, i) => <ProjectCartridge {...cartridge} eager={i === firstImage} />)}
+    </div>
+    <p class="cart-sec__more">
+      <a class="sec-more" href={moreHref}>{moreLabel} <span aria-hidden="true">›</span></a>
+    </p>
+  </div>
+</section>
+
+<style>
+  .cart-sec__more { margin-top: 28px; }
+</style>

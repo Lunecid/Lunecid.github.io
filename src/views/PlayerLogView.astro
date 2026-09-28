@@ -1,0 +1,81 @@
+---
+import { Font } from 'astro:assets';
+import { getCollection } from 'astro:content';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PageHeader from '../components/hud/PageHeader.astro';
+import GameAchievements from '../components/player-log/GameAchievements.astro';
+import MembershipRow from '../components/player-log/MembershipRow.astro';
+import SiteAchievementList from '../components/player-log/SiteAchievementList.astro';
+import { PAGE_META } from '../data/copy/pages';
+import { playerLogCopy } from '../data/copy/player-log';
+import type { Lang } from '../i18n/ui';
+import { t } from '../i18n/utils';
+import FavoriteGames from '../islands/FavoriteGames';
+import { characterCredit, characters } from '../lib/characters';
+import { buildFavoriteGames, buildFavoriteTiles } from '../lib/favorites';
+import { generated } from '../lib/generated';
+import { availableAchievements } from '../lib/achievements';
+import { soundAvailability } from '../lib/public-assets';
+import { ACHIEVEMENT_TRIGGERS, GAME_IDS } from '../types';
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const meta = PAGE_META['player-log'][lang];
+const copy = playerLogCopy[lang];
+
+// Collections do not promise insertion order: sort by the shared id lists (same order as the YAML files).
+const games = (await getCollection('favorites')).map((e) => e.data).sort((a, b) => GAME_IDS.indexOf(a.id) - GAME_IDS.indexOf(b.id));
+const defs = (await getCollection('achievements'))
+  .map((e) => e.data)
+  .sort((a, b) => ACHIEVEMENT_TRIGGERS.indexOf(a.trigger) - ACHIEVEMENT_TRIGGERS.indexOf(b.trigger));
+
+// D-13: until an account feed exists, the locked games (LoL, Dungeon & Fighter, Steam) stay out of the showcase,
+// and GameAchievements renders nothing. The bgm-on achievement is listed only when the BGM file exists.
+const showcase = await buildFavoriteGames(games.filter((g) => !g.locked), lang);
+const tiles = buildFavoriteTiles(games, lang);
+const accounts = generated.accounts();
+const siteAchievements = availableAchievements(defs, soundAvailability());
+const notices = characters.notices(['remielle', 'eula', 'mona']);
+const credit = characterCredit(['remielle', 'eula', 'mona'], lang);
+const labels = {
+  tablist: t(lang, 'favorites.tablist'),
+  fetchedAt: t(lang, 'favorites.fetchedAt'),
+  source: t(lang, 'favorites.source'),
+  progress: t(lang, 'favorites.progress'),
+};
+---
+<BaseLayout lang={lang} title={meta.title} description={meta.description} page="player-log" section="player-log" sectionIndex notices={notices}>
+  <Font cssVariable="--font-anton" slot="head" />
+  <PageHeader lang={lang} label="PLAYER LOG" title={t(lang, 'playerLog.title')} intro={t(lang, 'playerLog.intro')} />
+  <MembershipRow
+    lang={lang}
+    membership={copy.membership}
+    tiles={tiles}
+    tileSlots={games.reduce((n, g) => n + g.characters.length, 0)}
+    achievements={siteAchievements}
+  />
+  {/* section#favorite-games (contract §5.14); unnamed wrapper, the island renders its own labelled section.fg inside */}
+  <section id="favorite-games" class="pl-showcase">
+    <div class="pl-showcase__inner">
+      <FavoriteGames
+        client:visible
+        lang={lang}
+        heading={{ caption: t(lang, 'section.favoriteGames'), title: t(lang, 'section.favoriteGames.title') }}
+        games={showcase}
+        accounts={accounts}
+        credit={credit}
+        labels={labels}
+      />
+    </div>
+  </section>
+  <GameAchievements lang={lang} platforms={copy.gamePlatforms} accounts={accounts} />
+  <SiteAchievementList lang={lang} defs={siteAchievements} />
+</BaseLayout>
+
+<style>
+  .pl-showcase { padding-block: 0 var(--section-pad-y); background: var(--hud-bg); }
+  .pl-showcase__inner { max-width: var(--container-hud); margin-inline: auto; }
+  @media (min-width: 734px) { .pl-showcase__inner { padding-inline: var(--gutter); } }
+</style>

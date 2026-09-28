@@ -1,0 +1,98 @@
+/* src/styles/read.css — light reading areas: Markdown typography (.prose), cards and sections. */
+
+/* ── Light section (same colours as .read, plus section padding) ── */
+.read-section { padding-block: var(--section-pad-y); background: var(--read-bg); color: var(--read-text); color-scheme: light; }
+.read-section a { color: var(--accent-deep); }
+
+/* ── Card on a light area: square, hairline (no rounded cards on the reading bands, P1-9) ── */
+.read-card { padding: 16px; background: var(--read-card); color: var(--read-text); border: 1px solid var(--read-line); }
+@media (min-width: 734px) { .read-card { padding: 20px; } }
+
+/* ── Light HUD (batch 5, P1-9) ─────────────────────────────────────────────────────────────────────────────
+   The reading bands speak the HUD language instead of falling back to rounded cards: square corners, --bracket-sm
+   corner marks like [ NOW PLAYING ] (.bracket.bracket--sm turns accent-deep on light bands), a mono index column,
+   and hairlines between rows instead of boxes around them. */
+.read-sec { padding-block: var(--section-pad-y); border-top: 1px solid var(--read-line); }
+.read-sec__body { margin-top: 20px; }
+
+/* Rows: a hairline list with a mono index column. <ol class="lh-rows"><li class="lh-row"><span class="lh-idx">01</span> */
+.lh-rows { border-top: 1px solid var(--read-line-strong); }
+.lh-row { display: grid; grid-template-columns: 2.5em minmax(0, 1fr); column-gap: 12px; padding-block: 16px; border-bottom: 1px solid var(--read-line); }
+.lh-idx { font: 600 var(--fs-label)/1.7 var(--font-mono); letter-spacing: .06em; color: var(--read-muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+@media (min-width: 734px) {
+  .lh-row { grid-template-columns: 4.5em minmax(0, 1fr); column-gap: 16px; padding-block: 20px; }
+}
+
+/* Tables: a mono caption row over hairline rows; no outer box. */
+.lh-table { width: 100%; border-collapse: collapse; font-size: var(--fs-small); line-height: 1.55; }
+.lh-table th, .lh-table td { padding: 12px 16px 12px 0; text-align: start; vertical-align: top; border-bottom: 1px solid var(--read-line); }
+.lh-table th:last-child, .lh-table td:last-child { padding-right: 0; }
+.lh-table thead th {
+  padding-block: 8px; font: 600 var(--fs-label)/1.5 var(--font-mono); letter-spacing: .08em; color: var(--read-muted);
+  border-bottom: 1px solid var(--read-line-strong); white-space: nowrap;
+}
+.lh-table thead th:lang(ko) { font-family: var(--font-sans); letter-spacing: 0; }
+.lh-table tbody th { font-weight: 700; color: var(--read-text); }
+
+/* Frame: a square white panel with corner marks (pair with .bracket.bracket--sm). */
+.lh-frame { padding: 16px; background: var(--read-card); }
+@media (min-width: 734px) { .lh-frame { padding: 20px 22px; } }
+
+/* Chips: square, one hairline. Link chips are accent-deep and keep a 44px hit area (P2-24) inside an 8px gap. */
+.lh-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.lh-chip {
+  position: relative; display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 4px 10px;
+  border: 1px solid var(--read-line-strong); background: var(--read-card); color: var(--read-text);
+  font: 600 14px/1.35 var(--font-sans); text-decoration: none; overflow-wrap: normal;
+}
+.lh-chip--mono { font-family: var(--font-mono); font-size: 13px; }
+a.lh-chip { color: var(--accent-deep); transition: border-color var(--dur-hover) linear, background-color var(--dur-hover) linear; }
+a.lh-chip:hover { border-color: var(--accent-deep); background: var(--read-bg); }
+a.lh-chip::after { content: ""; position: absolute; left: 0; right: 0; top: 50%; height: max(100%, var(--tap)); transform: translateY(-50%); }
+/* Small tag (status, kind): square, mono caps. */
+.lh-tag {
+  display: inline-block; padding: 1px 7px; border: 1px solid var(--read-line-strong);
+  font: 600 var(--fs-label)/1.5 var(--font-mono); letter-spacing: .06em; color: var(--read-muted); white-space: nowrap;
+}
+.lh-tag:lang(ko) { font-family: var(--font-sans); letter-spacing: 0; }
+.lh-tag[hidden], .lh-chip[hidden] { display: none; } /* the display above would override [hidden] */
+
+/* ── Markdown body. Line length ≈38 Korean / 66 English characters (spec §4, P2-37): --measure (tokens.css). ── */
+.prose { max-width: var(--measure); font-size: var(--fs-body); line-height: var(--lh-body); color: var(--read-text); }
+/* On a full-width light band (article.prose.read) the band spans the page and the text column stays centred.
+   Site-wide rule (batch 5, item 11): section chrome (labels, headings, tables, rows) sits on the container's left
+   edge; long-form prose is this centred reading column, and its figures, audience blocks and links share it. */
+.prose.read, .read-column { max-width: none; padding-inline: max(var(--gutter), calc(50% - var(--measure) / 2)); }
+.prose.read { padding-block: var(--section-pad-y); }
+
+.prose > * + * { margin-top: 1em; }
+.prose h2 { margin-top: 2em; font-size: var(--fs-h2); font-weight: 800; line-height: var(--lh-h2); }
+.prose h3 { margin-top: 1.6em; font-size: var(--fs-sub); font-weight: 700; line-height: var(--lh-sub); }
+.prose h2 + *, .prose h3 + * { margin-top: .6em; }
+.prose ul, .prose ol { padding-left: 1.4em; }
+.prose ul { list-style: disc; }
+.prose ol { list-style: decimal; }
+.prose li + li { margin-top: .35em; }
+.prose li::marker { color: var(--read-muted); }
+.prose a { color: var(--accent-deep); text-decoration: underline; text-underline-offset: .18em; }
+.prose strong { font-weight: 700; }
+.prose blockquote { padding: 4px 0 4px 16px; border-left: 3px solid var(--read-line-strong); color: var(--read-muted); }
+.prose code { padding: .1em .35em; border: 1px solid var(--read-line); background: var(--read-card); font-family: var(--font-mono); font-size: .9em; }
+.prose pre { overflow-x: auto; padding: 14px 16px; background: var(--hud-panel); color: var(--hud-text); font: 500 14px/1.6 var(--font-mono); }
+.prose pre code { padding: 0; border: 0; background: none; font-size: inherit; }
+/* Tables fill the text column. Final fix 2 item 19: cells break only at spaces and hyphens (hyphens: auto hyphenates
+   English where the browser has the dictionary, lang="en" pages), never mid-word: the body's overflow-wrap: anywhere
+   let a fixed-layout column split "differentiation" as "differentiati|on" at 320px. Columns now size to their
+   content; a table that is still wider than the column scrolls sideways inside its own .prose-table box
+   (figures.ts boxTables), which src/scripts/table-scroll.ts makes keyboard-reachable only while it overflows
+   (Review Focus 1: no page scroll, no unreachable scroll region). */
+.prose .prose-table { max-width: 100%; overflow-x: auto; }
+.prose table { width: 100%; border-collapse: collapse; font-size: var(--fs-small); line-height: 1.5; }
+.prose th, .prose td { padding: 8px 12px; border-bottom: 1px solid var(--read-line); text-align: start; vertical-align: top; overflow-wrap: break-word; hyphens: auto; }
+@media (max-width: 733px) { .prose th, .prose td { padding-inline: 6px; } }
+.prose th { font-weight: 700; }
+.prose figure img { border: 1px solid var(--read-line); background: var(--read-card); }
+.prose figcaption { margin-top: 8px; font-size: var(--fs-caption); font-weight: 500; line-height: var(--lh-caption); color: var(--read-muted); }
+.prose hr { margin-block: 2em; border: 0; border-top: 1px solid var(--read-line); }
+.prose .footnote { font-size: var(--fs-small); color: var(--read-muted); }
+.prose .footnotes, .prose [data-footnotes] { margin-top: 2.5em; padding-top: 1em; border-top: 1px solid var(--read-line); font-size: var(--fs-small); color: var(--read-muted); }

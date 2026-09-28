@@ -1,0 +1,523 @@
+---
+/**
+ * Home hero (spec §3, mockup-port §3.5, Behance pattern 1 "title card").
+ * Copy is complete at first paint. The right-hand slot holds the character stage when art exists; without art
+ * (D-1) it holds a real work artifact instead: the CoG AUC chart in a HUD bracket frame (no credit either way
+ * unless art is shown). All hrefs arrive already localized (HomeView applies localizeHref).
+ */
+import type { Lang } from '../../i18n/ui';
+import { t } from '../../i18n/utils';
+import type { StageCharacter } from '../../islands/CharacterStage';
+import CharacterStage from '../../islands/CharacterStage';
+import AucOverallChart from '../research/AucOverallChart.astro';
+import { figureCopy, overallAuc } from '../../data/research/cog-2026';
+import { creditParts } from '../../lib/credit';
+import PlayerCard from './PlayerCard.astro';
+
+interface Props {
+  lang: Lang;
+  chars: StageCharacter[];
+  name: string;
+  /** Romanized name above the H1 on Korean pages; null on English pages, where it would repeat the H1 (fix 2 item 11). */
+  roman: string | null;
+  label: string;
+  slogan: [string, string];
+  meta: string;
+  status: string;
+  ctas: { primary: { label: string; href: string } };
+  /** cvLabel is the button text; cvDocLabel names the PDF it opens (D-7: tooltip and accessible name). */
+  contact: { email: string; github: string; cvHref: string; cvLabel: string; cvDocLabel: string; jobFitHref: string; jobFitLabel: string };
+  artifact: { label: string; linkLabel: string; href: string };
+  credit: string | null;
+  swap: { groupLabel: string; replayLabel: string };
+  playerCard: { label: string; classLine: string; badges: string[]; photoAlt: string };
+}
+const { lang, chars, name, roman, label, slogan, meta, status, ctas, contact, artifact, credit, swap, playerCard } = Astro.props;
+const hasArt = chars.length > 0;
+---
+<section class:list={['hero', 'hud-grid', hasArt ? 'hero--art' : 'hero--no-art']} aria-labelledby="hero-name">
+  <div class="hero__inner">
+    {roman && (
+      <div class="hero__titlecard" lang="en">
+        <span class="hero__roman">{roman}</span>
+      </div>
+    )}
+
+    <div class="hero__copy">
+      <p class="hero__label" lang="en">{label}</p>
+      <h1 id="hero-name" class="hero__name">{name}</h1>
+      <p class="hero__slogan">{slogan[0]}{slogan[1] && <><br class="hero__br" /> {slogan[1]}</>}</p>
+      <p class="hero__meta">{meta}</p>
+      <p class="hero__status"><span class="hero__status-label" lang="en">{t(lang, 'hero.status')}</span><span class="hero__status-value">{status}</span></p>
+      <div class="hero__ctas">
+        <a class="btn btn--fill cut" href={ctas.primary.href}>{ctas.primary.label} <span aria-hidden="true">→</span></a>
+        <a class="btn btn--line cut cut--line hero__cv" href={contact.cvHref} title={contact.cvDocLabel} download>{contact.cvLabel} <span aria-hidden="true">↓</span><span class="sr-only"> — {contact.cvDocLabel}</span></a>
+      </div>
+      <ul class="hero__links" role="list">
+        <li><a class="hero__jobfit" href={contact.jobFitHref}>{contact.jobFitLabel} <span aria-hidden="true">→</span></a></li>
+        <li>
+          <a class="hero__chip" href={`mailto:${contact.email}`}>
+            <span class="hero__chip-face cut cut--line">
+              <svg class="hero__icon" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M1.5 3.5h13v9h-13z M1.5 3.5 8 8.5l6.5-5" /></svg>{contact.email}
+            </span>
+          </a>
+        </li>
+        <li>
+          <a class="hero__chip" href={contact.github}>
+            <span class="hero__chip-face cut cut--line" lang="en">
+              <svg class="hero__icon" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M4.5 2.5v11 M4.5 9.5c0-2.5 7-1.5 7-4.5 M4.5 13.5a1.5 1.5 0 1 0 0-.01 M4.5 2.5a1.5 1.5 0 1 0 0-.01 M11.5 5a1.5 1.5 0 1 0 0-.01" /></svg>{t(lang, 'action.github')} <span aria-hidden="true">↗</span>
+            </span>
+          </a>
+        </li>
+      </ul>
+    </div>
+
+    {hasArt ? (
+      <>
+        <CharacterStage
+          client:visible
+          variant="hero"
+          trigger="load"
+          priority
+          streaks
+          characters={chars}
+          initialId={chars[0]?.id}
+          controls={swap}
+        />
+        <script is:inline>
+          /* Hold the entrance at frame 0 until the hero art has loaded (≤1.5s); runs before hydration. */
+          (() => {
+            const island = document.currentScript && document.currentScript.previousElementSibling;
+            const img = island && island.querySelector('.char-stage__img');
+            if (!img || img.complete) return;
+            island.dataset.loading = '';
+            const go = () => { delete island.dataset.loading; };
+            img.addEventListener('load', go, { once: true });
+            img.addEventListener('error', go, { once: true });
+            setTimeout(go, 1500);
+          })();
+        </script>
+        {/* Right after the stage (fix 2 item 9): on phones the credit sits under the art it credits, not after the
+            player card. Pieces break only between them (creditParts). */}
+        {credit && (
+          <p class="hero__credit">
+            {creditParts(credit).map((part, i) => (
+              <>{i > 0 && ' '}<span class="hero__credit-part">{part}</span></>
+            ))}
+          </p>
+        )}
+      </>
+    ) : (
+      <div class="hero__artifact bracket">
+        <p class="hero__artifact-label" lang="en">{artifact.label}</p>
+        <AucOverallChart lang={lang} rows={overallAuc} caption={figureCopy.aucOverall.caption[lang]} alt={figureCopy.aucOverall.alt[lang]} tone="hud" />
+        <p class="hero__artifact-more"><a class="sec-more" href={artifact.href}>{artifact.linkLabel} <span aria-hidden="true">›</span></a></p>
+      </div>
+    )}
+
+    <div class="hero__pcard">
+      <PlayerCard lang={lang} label={playerCard.label} classLine={playerCard.classLine} badges={playerCard.badges} photoAlt={playerCard.photoAlt} />
+    </div>
+  </div>
+</section>
+
+<script>
+  /* v4 replay()/pick() restart the whole hero: rerun the copy rise on user-triggered plays only. */
+  const copy = document.querySelector<HTMLElement>('.hero__copy');
+  window.addEventListener('sb:stage-enter', (event) => {
+    const detail = (event as CustomEvent<{ variant: 'hero' | 'side'; play: number }>).detail;
+    if (!copy || detail.variant !== 'hero' || detail.play === 0) return;
+    copy.classList.add('is-reset');
+    void copy.offsetWidth;
+    copy.classList.add('is-replayed');
+    copy.classList.remove('is-reset');
+  });
+</script>
+
+<style>
+  .hero {
+    position: relative;
+    overflow: hidden;
+  }
+  .hero__inner {
+    position: relative;
+    max-width: var(--container-hud);
+    margin-inline: auto;
+    display: flex;
+    flex-direction: column;
+  }
+  .hero__titlecard {
+    position: relative;
+    z-index: 4;
+    /* Final review fix 1 item 3: decorative text only. From 734 to 1067px it spans the whole row above the stage
+       (its own stacking context at z-index 2) and used to swallow every click and tap on the swap/replay buttons. */
+    pointer-events: none;
+    padding: 20px var(--gutter) 0;
+    font: 500 var(--fs-caption)/1.5 var(--font-mono);
+    letter-spacing: .3em;
+    color: var(--hud-muted);
+  }
+  .hero__copy {
+    position: relative;
+    z-index: 4;
+    padding: 20px var(--gutter) 0;
+  }
+  .hero__label {
+    font: 600 var(--fs-label)/1.5 var(--font-mono);
+    letter-spacing: .2em;
+    color: var(--hud-label);
+  }
+  .hero__name {
+    margin-top: 10px;
+    font-size: var(--fs-name);
+    font-weight: 900;
+    line-height: var(--lh-display);
+    color: var(--hud-strong);
+  }
+  .hero__slogan {
+    margin-top: 16px;
+    font-size: var(--fs-sub);
+    font-weight: 700;
+    line-height: var(--lh-sub);
+    color: var(--hud-strong);
+    text-wrap: balance;
+  }
+  .hero__br {
+    display: none;
+  }
+  .hero__meta {
+    margin-top: 10px;
+    font-size: var(--fs-small);
+    line-height: 1.5;
+    color: var(--hud-muted);
+  }
+  /* label | value: a wrapped second line stays under the value, not under "STATUS" (P2-16) */
+  .hero__status {
+    margin-top: 4px;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    column-gap: 8px;
+    align-items: baseline;
+    font-size: var(--fs-small);
+    line-height: 1.5;
+    color: var(--hud-text);
+  }
+  .hero__status-label {
+    font: 700 var(--fs-caption)/1.5 var(--font-mono);
+    letter-spacing: .1em;
+    color: var(--hud-label);
+  }
+  .hero__ctas {
+    margin-top: 22px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  /* job-fit text link first, then the contact chips (HUD cut-corner chips; the anchors keep a 44px hit area) */
+  .hero__links {
+    margin-top: 8px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0 12px;
+  }
+  .hero__jobfit {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: var(--tap);
+    margin-right: 4px;
+    font: 700 15px/1.3 var(--font-sans);
+    color: var(--accent);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    text-decoration-color: var(--hud-line-strong);
+    transition: text-decoration-color var(--dur-hover) linear;
+  }
+  .hero__jobfit:hover {
+    text-decoration-color: var(--accent);
+  }
+  .hero__chip {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--tap);
+    color: var(--hud-text);
+    text-decoration: none;
+  }
+  .hero__chip-face {
+    --c: var(--cut-chip);
+    --cut-line: var(--hud-line);
+    --cut-fill: var(--hud-panel);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 12px;
+    font: 600 13px/1.4 var(--font-mono);
+    letter-spacing: .02em;
+  }
+  .hero__chip:hover .hero__chip-face {
+    --cut-line: var(--accent);
+  }
+  .hero__icon {
+    flex: none;
+    width: 14px;
+    height: 14px;
+    fill: none;
+    stroke: var(--accent);
+    stroke-width: 1.3;
+    stroke-linejoin: round;
+    stroke-linecap: round;
+  }
+  .hero__pcard {
+    position: relative;
+    z-index: 4;
+    padding: 16px var(--gutter) 0;
+  }
+  .hero__credit {
+    position: relative;
+    z-index: 5;
+    padding: 12px var(--gutter) 16px;
+    font: 500 var(--fs-caption)/1.5 var(--font-mono);
+    color: var(--hud-muted);
+  }
+  /* Final fix 2 item 9: a line breaks between pieces (lib/credit.ts); a piece wraps inside only when it is wider than
+     the whole line (a 320px phone). */
+  .hero__credit-part {
+    display: inline-block;
+  }
+
+  /* no-art artifact (D-1): the CoG AUC chart in a HUD bracket frame */
+  .hero__artifact {
+    position: relative;
+    z-index: 4;
+    margin: 28px var(--gutter) 0;
+    padding: 12px 8px 6px; /* 8px: at 320px the chart box stays ≥ its 280-unit viewBox × .93, text ≥ 12px */
+    background: var(--hud-panel-92);
+  }
+  .hero__artifact-label {
+    margin-bottom: 10px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--hud-divider);
+    font: 600 var(--fs-min)/1.5 var(--font-mono);
+    letter-spacing: .14em;
+    color: var(--hud-label);
+  }
+  .hero__artifact-more {
+    margin-top: 2px;
+  }
+  /* On XL screens the compact chart would scale its 13-unit text past 20px; cap it near the copy's own type size. */
+  .hero__artifact :global(.chart__svg--compact) {
+    max-width: 400px;
+    margin-inline: auto;
+  }
+  .hero--no-art .hero__inner {
+    padding-bottom: 32px;
+  }
+
+  /* copy rise (v4: 22px, staggered), 0.6s per spec §4; static under the CRT intro and in reduced motion */
+  .hero__copy > * {
+    animation: hero-rise var(--dur-enter) var(--ease-out) both;
+  }
+  .hero__copy > :nth-child(2) {
+    animation-delay: .08s;
+  }
+  .hero__copy > :nth-child(3) {
+    animation-delay: .12s;
+  }
+  .hero__copy > :nth-child(4) {
+    animation-delay: .18s;
+  }
+  .hero__copy > :nth-child(5) {
+    animation-delay: .24s;
+  }
+  .hero__copy > :nth-child(n + 6) {
+    animation-delay: .3s;
+  }
+  @keyframes hero-rise {
+    from {
+      transform: translateY(22px);
+      opacity: 0;
+    }
+    to {
+      transform: none;
+      opacity: 1;
+    }
+  }
+  :global(:root[data-intro-played]) .hero__copy:not(.is-replayed) > * {
+    animation: none;
+  }
+  .hero__copy.is-reset > * {
+    animation: none !important;
+  }
+  :global(:root[data-motion="reduce"]) .hero__copy > * {
+    animation: hero-fade var(--dur-fade) ease-out both;
+    animation-delay: 0s;
+  }
+  @keyframes hero-fade {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  /* tablet: two columns (copy left, art right) only when a stage exists; the title card spans the full row.
+     Without art the artifact sits between the copy and the player card in one column. */
+  @media (min-width: 734px) {
+    .hero__br {
+      display: inline;
+    }
+    .hero__titlecard {
+      padding-top: 32px;
+    }
+    .hero__copy {
+      padding-top: 24px;
+    }
+    .hero__label {
+      letter-spacing: .3em;
+    }
+    .hero__pcard {
+      padding-top: 24px;
+    }
+    .hero__artifact {
+      width: min(100% - 2 * var(--gutter), 640px);
+      margin-top: 32px;
+      padding: 16px 20px 8px;
+    }
+    .hero--no-art .hero__inner {
+      padding-bottom: 44px;
+    }
+    .hero__credit {
+      grid-column: 1 / -1;
+      justify-self: end;
+      margin: 12px var(--gutter) 16px;
+      padding: 4px 8px;
+      background: var(--hud-bg);
+    }
+  }
+  /* tablet only (the desktop layout below is a flex column): with a stage, copy left and art (absolute) right */
+  @media (min-width: 734px) and (max-width: 1067.98px) {
+    .hero--art .hero__inner {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, .9fr);
+      grid-template-rows: auto auto 1fr auto;
+      min-height: 560px;
+    }
+    .hero--art .hero__titlecard {
+      grid-column: 1 / -1;
+    }
+    .hero--art .hero__copy {
+      grid-column: 1;
+      grid-row: 2;
+    }
+    .hero--art .hero__pcard {
+      grid-column: 1;
+      grid-row: 3;
+      align-self: end;
+    }
+    /* the credit follows the stage in the source (phone order); here it keeps the last row */
+    .hero--art .hero__credit {
+      grid-row: 4;
+    }
+  }
+
+  /* desktop (D8): at least 640px tall so the status line and contact links fit above the player card;
+     the hero grows instead of letting the copy and the card overlap */
+  @media (min-width: 1068px) {
+    .hero {
+      min-height: 640px;
+    }
+    .hero__inner {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      min-height: 640px;
+      padding-bottom: 56px;
+    }
+    .hero__titlecard {
+      position: absolute;
+      top: 20px;
+      left: var(--gutter);
+      right: 28px;
+      padding: 0;
+    }
+    /* P2-16: wide enough that "Seongeun Baek" stays on one line in English */
+    .hero__copy {
+      width: min(640px, 55%);
+      margin-left: var(--gutter);
+      padding: 72px 0 0;
+    }
+    .hero__pcard {
+      align-self: flex-start;
+      margin-top: 28px;
+      margin-left: var(--gutter); /* same left edge as the copy column (P1-1) */
+      padding: 32px 0 0;
+    }
+    /* In the stage's fully transparent bottom band (CharacterStage.css), right-aligned, at most two lines. */
+    .hero__credit {
+      position: absolute;
+      right: 28px;
+      bottom: 14px;
+      max-width: 50%;
+      margin: 0;
+      text-align: right;
+    }
+    /* no art: copy | artifact, the player card under the copy */
+    .hero--no-art .hero__inner {
+      display: grid;
+      grid-template-columns: min(640px, calc((100% + 2 * var(--gutter)) * .55)) minmax(0, 1fr);
+      grid-template-rows: auto 1fr;
+      column-gap: clamp(40px, 4vw, 72px);
+      align-items: start;
+      padding: 0 var(--gutter) 56px;
+    }
+    .hero--no-art .hero__copy {
+      grid-column: 1;
+      grid-row: 1;
+      width: auto;
+      margin-left: 0;
+    }
+    .hero--no-art .hero__pcard {
+      grid-column: 1;
+      grid-row: 2;
+      margin-left: 0;
+    }
+    .hero--no-art .hero__artifact {
+      grid-column: 2;
+      grid-row: 1 / span 2;
+      align-self: center;
+      justify-self: end;
+      width: 100%;
+      max-width: 540px;
+      margin: 72px 0 0;
+      padding-inline: 16px; /* the chart box keeps ≥ 280px at 1068px (compact layout, not the tall narrow one) */
+    }
+  }
+
+  /* D-2 XL steps: the copy column grows with the HUD container and the display type */
+  @media (min-width: 1600px) {
+    .hero,
+    .hero__inner {
+      min-height: 700px;
+    }
+    .hero__copy {
+      width: min(700px, 52%);
+    }
+    .hero--no-art .hero__inner {
+      grid-template-columns: min(700px, calc((100% + 2 * var(--gutter)) * .52)) minmax(0, 1fr);
+    }
+  }
+  @media (min-width: 1800px) {
+    .hero,
+    .hero__inner {
+      min-height: 740px;
+    }
+    .hero__copy {
+      width: min(760px, 52%);
+    }
+    .hero--no-art .hero__inner {
+      grid-template-columns: min(760px, calc((100% + 2 * var(--gutter)) * .52)) minmax(0, 1fr);
+    }
+  }
+</style>

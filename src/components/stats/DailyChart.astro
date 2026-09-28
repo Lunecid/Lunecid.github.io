@@ -1,0 +1,70 @@
+---
+import SectionHead from '../hud/SectionHead.astro';
+import type { Lang } from '../../i18n/ui';
+import { formatDate, formatNumber, t } from '../../i18n/utils';
+
+interface Props {
+  lang: Lang;
+  daily: { day: string; count: number }[];
+  fetchedAt: string;
+  maxAgeDays: number;
+}
+const { lang, daily, fetchedAt, maxAgeDays } = Astro.props;
+const DATE_HEADER = { ko: '날짜', en: 'Date' } as const;
+const W = 600;
+const H = 160;
+const GAP = 2;
+const step = daily.length > 0 ? W / daily.length : W;
+const max = Math.max(1, ...daily.map((d) => d.count));
+const bars = daily.map((d, i) => {
+  const h = Math.round((d.count / max) * (H - 4));
+  return { day: d.day.slice(0, 10), count: d.count, x: Number((i * step).toFixed(2)), w: Number(Math.max(1, step - GAP).toFixed(2)), y: H - h, h };
+});
+const first = bars[0]?.day ?? '';
+const last = bars[bars.length - 1]?.day ?? '';
+---
+{bars.length > 0 && (
+  <section id="daily" class="stats read" aria-labelledby="stats-daily-title" data-fetched-at={fetchedAt} data-max-age-days={maxAgeDays}>
+    <div class="container">
+      <SectionHead id="stats-daily-title" caption={t(lang, 'section.dailyVisits')} title={t(lang, 'stats.daily')} />
+      <div class="stats__chart-scroll" tabindex="0" role="region" aria-labelledby="stats-daily-title">
+        <svg class="stats__chart" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" role="img" aria-labelledby="stats-daily-svg-title">
+          <title id="stats-daily-svg-title">{`${t(lang, 'stats.daily')}: ${formatDate(first, lang)} – ${formatDate(last, lang)}`}</title>
+          {bars.map((b) => (
+            <rect class="stats__bar" x={b.x} y={b.y} width={b.w} height={b.h}><title>{`${formatDate(b.day, lang)} · ${formatNumber(b.count, lang)}`}</title></rect>
+          ))}
+        </svg>
+      </div>
+      <p class="stats__axis"><span>{formatDate(first, lang)}</span><span>{formatDate(last, lang)}</span></p>
+      <details class="stats__details">
+        <summary id="stats-daily-table-label">{t(lang, 'action.viewAsTable')}</summary>
+        <div class="stats__table-scroll" tabindex="0" role="region" aria-labelledby="stats-daily-title stats-daily-table-label">
+          <table class="stats__table">
+            <thead><tr><th scope="col">{DATE_HEADER[lang]}</th><th scope="col">{t(lang, 'stats.visits')}</th></tr></thead>
+            <tbody>
+              {bars.map((b) => <tr><td><time datetime={b.day}>{formatDate(b.day, lang)}</time></td><td class="tnum">{formatNumber(b.count, lang)}</td></tr>)}
+            </tbody>
+          </table>
+        </div>
+      </details>
+    </div>
+  </section>
+)}
+
+<script>
+  import '../../scripts/stale-guard';
+</script>
+
+<style>
+  .stats { padding-block: 0 var(--section-pad-y); }
+  .stats__chart-scroll { margin-top: 16px; overflow-x: auto; }
+  .stats__chart { display: block; width: 100%; height: 160px; }
+  .stats__bar { fill: var(--read-muted); }
+  .stats__axis { display: flex; justify-content: space-between; margin-top: 6px; font: 500 13px/1.4 var(--font-mono); color: var(--read-muted); }
+  .stats__details { margin-top: 12px; }
+  .stats__details summary { display: inline-flex; align-items: center; min-height: var(--tap); cursor: pointer; color: var(--accent-deep); }
+  .stats__table-scroll { overflow-x: auto; }
+  .stats__table { width: 100%; border-collapse: collapse; font-size: 15px; }
+  .stats__table th, .stats__table td { padding: 6px 10px; text-align: left; border-bottom: 1px solid var(--read-line); }
+  .stats__table td:last-child, .stats__table th:last-child { text-align: right; }
+</style>

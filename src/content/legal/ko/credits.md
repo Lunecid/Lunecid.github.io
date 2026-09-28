@@ -1,0 +1,78 @@
+---
+title: 출처·고지
+lang: ko
+updated: '2026-09-26'
+---
+
+이 사이트에 쓴 이미지, 데이터, 음악, 글꼴의 출처와 권리 고지입니다. 게임 관련 이미지는 팬 콘텐츠로 사용하며, 각 게임사와 공식 제휴 관계가 없습니다.
+
+## 캐릭터 이미지
+
+레미엘(젠레스 존 제로), 유라·모나(원신)의 공식 일러스트는 HoYoverse 공식 홈페이지에 공개된 원본을 비상업적 개인 용도로 이 사이트에 직접 올려 쓰고 있습니다. 이미지의 권리는 권리자에게 있습니다.
+
+이 사이트는 하츠네 미쿠의 변형물(흑백·투명도 처리)을 포함합니다. Hatsune Miku, © Crypton Future Media, Inc. 2007, licensed under a CC BY-NC: https://creativecommons.org/licenses/by-nc/3.0/
+
+원신 법률 FAQ(HoYoLAB, 2021-01-20)에 따른 고지:
+
+> © All rights reserved by COGNOSPHERE. Other properties belong to their respective owners.
+
+젠레스 존 제로 2차 창작 가이드 v1.0(HoYoLAB, 2024-06-20)에 따른 고지:
+
+> © All rights reserved by miHoYo
+>
+> Other properties and any right, title, and interest thereof and therein (intellectual property rights included) not derived from Zenless Zone Zero belong to their respective owners.
+
+- 원신 법률 FAQ: https://www.hoyolab.com/article/143107
+- 젠레스 존 제로 2차 창작 가이드: https://www.hoyolab.com/article/30075725
+
+## 게임 데이터
+
+현재 버전은 게임 계정 데이터를 불러오지 않습니다. 아래 고지는 해당 연동을 켤 때 이 페이지와 플레이 로그에 함께 표시합니다.
+
+| 플랫폼 | 고지 | 상태 |
+|---|---|---|
+| 네오플 | 네오플 오픈 API 서비스를 이용한 데이터입니다. | 연동 시 표시 |
+| 라이엇 게임즈 | Seongeun Baek's portfolio isn't endorsed by Riot Games and doesn't reflect the views or opinions of Riot Games or anyone officially involved in producing or managing Riot Games properties. Riot Games, and all associated properties are trademarks or registered trademarks of Riot Games, Inc. | 연동 시 표시 |
+| Valve(Steam) | Powered by Steam. Steam 데이터는 Steam Web API에서 받아 있는 그대로(as is) 보여 주며 정확성을 보증하지 않습니다. 이 사이트는 Valve와 제휴하거나 Valve의 보증을 받지 않았습니다. Valve, Steam, the Valve logo and the Steam logo are registered trademarks of Valve Corporation. | 연동 시 표시 |
+| Enka.Network | 원신·젠레스 존 제로 계정 정보는 Enka.Network(<https://enka.network>)에서 받습니다. | 연동 시 표시 |
+
+## 연구 데이터
+
+CoG 2026 논문은 Riot Games API로 모은 공개 경기 데이터를 사용했습니다. 논문 PDF는 IEEE Xplore에 DOI가 나온 뒤 IEEE 저작권 문구를 붙인 저자 최종본으로 올립니다.
+
+## 배경음악
+
+- 배경음악: “Everything You Ever Dreamed.” — HoliznaCC0, 앨범 *Lo-fi And Chill*, Free Music Archive. [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/)
+  https://freemusicarchive.org/music/holiznacc0/lo-fi-and-chill/everything-you-ever-dreamed/
+
+CC0 자료는 출처 표기 의무가 없지만 만든 분을 밝혀 둡니다.
+
+## 글꼴
+
+| 글꼴 | 만든 이 | 라이선스 |
+|---|---|---|
+| [Pretendard](https://github.com/orioncactus/pretendard) | 길형진 | SIL Open Font License 1.1 |
+| [JetBrains Mono](https://github.com/JetBrains/JetBrainsMono) | The JetBrains Mono Project Authors | SIL Open Font License 1.1 |
+| [Anton](https://github.com/googlefonts/AntonFont) | The Anton Project Authors | SIL Open Font License 1.1 |
+| [Noto Serif KR](https://github.com/notofonts/noto-cjk) | Adobe, Google | SIL Open Font License 1.1 |
+
+본문 글꼴 “SB Sans”는 이 사이트를 위해 Pretendard(SIL Open Font License 1.1)에서 사이트에 쓰는 글자만 추려 만든 서브셋입니다. “Pretendard”는 예약 글꼴 이름(Reserved Font Name)이라 서브셋에는 다른 이름을 붙였고, 원본의 저작권·라이선스 고지는 글꼴 파일 안에 그대로 두었습니다. 논문 페이지의 한글에 쓰는 Noto Serif KR도 같은 방식으로 그 페이지에 필요한 글자만 추려 씁니다.
+
+## 사진·그림·상장
+
+- 프로필 사진은 본인 사진입니다. 위치 정보 등 메타데이터를 지운 사본을 씁니다.
+- 연구와 프로젝트 그림은 본인이 만들었거나 본인이 참여한 팀이 만든 결과물입니다. 공공데이터를 쓴 그림은 각 사례 연구에 데이터 출처를 적었습니다.
+- 팀 프로젝트는 다른 팀원의 이름을 싣지 않고 팀 인원과 제 역할만 적었습니다.
+- 상장 이미지는 본인이 받은 상장이며, 생년월일과 다른 팀원 이름을 가린 판본입니다.
+
+## 만든 도구
+
+[Astro](https://astro.build), [React](https://react.dev), [Motion](https://motion.dev) — 모두 MIT 라이선스.
+
+## 이 사이트
+
+사이트의 글, 사진, 디자인의 저작권은 백성은에게 있습니다. 사이트 소스 코드는 GitHub 저장소 [Lunecid/Lunecid.github.io](https://github.com/Lunecid/Lunecid.github.io)에서 볼 수 있습니다.
+
+권리 관련 문의: todtjddms104204@pusan.ac.kr
+
+최종 수정일: 2026년 9월 26일
