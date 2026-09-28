@@ -1267,6 +1267,8 @@ test('item 18: in forced colours (dark and light themes) the AUC chart and label
 
 test('item 19: prose tables break English words only at spaces at 320px, and never widen the page', async ({ page }) => {
   await open(page, '/en/projects/youth-startup-location/', 320, 640);
+  const cellHyphens = await page.locator('.prose td').first().evaluate((el) => getComputedStyle(el).hyphens);
+  expect(cellHyphens, 'prose td must not use hyphens: auto (Linux Chromium would split syllables)').toBe('manual');
   const split = await page.evaluate(() => {
     const found: string[] = [];
     for (const cell of Array.from(document.querySelectorAll('.prose td, .prose th'))) {

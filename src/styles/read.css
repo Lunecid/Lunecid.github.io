@@ -80,15 +80,16 @@ a.lh-chip::after { content: ""; position: absolute; left: 0; right: 0; top: 50%;
 .prose code { padding: .1em .35em; border: 1px solid var(--read-line); background: var(--read-card); font-family: var(--font-mono); font-size: .9em; }
 .prose pre { overflow-x: auto; padding: 14px 16px; background: var(--hud-panel); color: var(--hud-text); font: 500 14px/1.6 var(--font-mono); }
 .prose pre code { padding: 0; border: 0; background: none; font-size: inherit; }
-/* Tables fill the text column. Final fix 2 item 19: cells break only at spaces and hyphens (hyphens: auto hyphenates
-   English where the browser has the dictionary, lang="en" pages), never mid-word: the body's overflow-wrap: anywhere
-   let a fixed-layout column split "differentiation" as "differentiati|on" at 320px. Columns now size to their
-   content; a table that is still wider than the column scrolls sideways inside its own .prose-table box
-   (figures.ts boxTables), which src/scripts/table-scroll.ts makes keyboard-reachable only while it overflows
+/* Tables fill the text column. Final fix 2 item 19: cells break only at spaces and hard hyphens — automatic
+   hyphenation is off (hyphens: manual) because browsers with a dictionary (e.g. Linux Chromium) would squeeze
+   columns to syllables. Never mid-word: the body's overflow-wrap: anywhere let a fixed-layout column split
+   "differentiation" as "differentiati|on" at 320px. Columns now size to their content; a table that is still
+   wider than the column scrolls sideways inside its own .prose-table box (figures.ts boxTables), which
+   src/scripts/table-scroll.ts makes keyboard-reachable only while it overflows
    (Review Focus 1: no page scroll, no unreachable scroll region). */
 .prose .prose-table { max-width: 100%; overflow-x: auto; }
 .prose table { width: 100%; border-collapse: collapse; font-size: var(--fs-small); line-height: 1.5; }
-.prose th, .prose td { padding: 8px 12px; border-bottom: 1px solid var(--read-line); text-align: start; vertical-align: top; overflow-wrap: break-word; hyphens: auto; }
+.prose th, .prose td { padding: 8px 12px; border-bottom: 1px solid var(--read-line); text-align: start; vertical-align: top; overflow-wrap: break-word; hyphens: manual; }
 @media (max-width: 733px) { .prose th, .prose td { padding-inline: 6px; } }
 .prose th { font-weight: 700; }
 .prose figure img { border: 1px solid var(--read-line); background: var(--read-card); }
