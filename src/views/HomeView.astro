@@ -14,25 +14,30 @@ import { localizeHref, t } from '../i18n/utils';
 import { educationLine } from '../lib/records';
 import { CV_HREF, SITE } from '../config';
 import { tagLabel } from '../content/tags';
-import { PAGE_META } from '../data/copy/pages';
 import { heroCopy, mainMenuCopy, splitTagline } from '../data/copy/hero';
 import { cogCartridgeTagKeys, homeCopy } from '../data/copy/home';
 import { HERO_SIZES, characterCredit, characters, getStageCharacters } from '../lib/characters';
-import { getNews, getProjects, getPublications, getResume } from '../lib/portfolio';
+import { getFactSource, getNews, getProjects, getPublications, getResume } from '../lib/portfolio';
 import { toCartridge, type CartridgeProps } from '../lib/projects';
 import { toPaperCard } from '../lib/publications';
 import { toPatchNotes } from '../lib/news';
-import { personJsonLd } from '../lib/seo';
+import { canonicalUrl, personJsonLd } from '../lib/seo';
+import type { VariantId } from '../variants/ids';
+import { getVariant, pageMetaFor, resolveIdentity } from '../variants';
 
 interface Props {
   lang: Lang;
+  variant: VariantId;
 }
 
-const { lang } = Astro.props;
+const { lang, variant } = Astro.props;
+const v = getVariant(variant);
+const facts = await getFactSource();
 
 const resumeData = await getResume();
 const { profile } = resumeData;
-const meta = PAGE_META.home[lang];
+const identity = resolveIdentity(v, lang, facts);
+const meta = pageMetaFor('home', lang, variant, facts);
 const hero = heroCopy[lang];
 const menu = mainMenuCopy[lang];
 const home = homeCopy[lang];
@@ -76,7 +81,7 @@ const education = resumeData.education.map((e) => educationLine(e, lang));
 const location = lang === 'ko' ? `${profile.location.ko} · ${profile.location.en}` : profile.location.en;
 ---
 
-<BaseLayout lang={lang} title={meta.title} description={meta.description} page="home" notices={notices} jsonLd={personJsonLd(lang, resumeData.researchIds)}>
+<BaseLayout lang={lang} title={meta.title} description={meta.description} page="home" notices={notices} jsonLd={personJsonLd(lang, { jobTitle: identity.headline, url: canonicalUrl(localizeHref('/', lang)) }, resumeData.researchIds)}>
   {leadChar && leadChar.image.avifSrcSet && (
     <link
       slot="head"
@@ -97,9 +102,9 @@ const location = lang === 'ko' ? `${profile.location.ko} · ${profile.location.e
     name={profile.name[lang]}
     roman={hero.roman}
     label={hero.label}
-    slogan={splitTagline(profile.tagline[lang])}
+    slogan={splitTagline(identity.tagline)}
     meta={hero.meta}
-    status={profile.status[lang]}
+    status={identity.status}
     ctas={{ primary: { label: hero.ctas.primary.label, href: localizeHref(hero.ctas.primary.href, lang) } }}
     contact={{
       email: SITE.email,
@@ -113,7 +118,7 @@ const location = lang === 'ko' ? `${profile.location.ko} · ${profile.location.e
     artifact={{ ...hero.artifact, href: localizeHref(hero.artifact.href, lang) }}
     credit={credit}
     swap={hero.swap}
-    playerCard={hero.playerCard}
+    playerCard={{ ...hero.playerCard, classLine: lang === 'ko' ? identity.headline : resolveIdentity(v, 'en', facts).headline.toUpperCase() }}
   />
   <MainMenu
     lang={lang}
@@ -126,7 +131,7 @@ const location = lang === 'ko' ? `${profile.location.ko} · ${profile.location.e
   <PatchNotes lang={lang} notes={notes} />
   <HelloProfile
     lang={lang}
-    about={profile.about[lang]}
+    about={identity.about}
     location={location}
     education={education}
     skills={resumeData.skills.primary.map((skill) => skill.name)}

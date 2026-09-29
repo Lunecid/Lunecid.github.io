@@ -3,6 +3,7 @@ import type { Lang } from '../../i18n/ui';
 import type { Localized } from '../../i18n/utils';
 
 export type PageKey =
+  | 'chooser'
   | 'home'
   | 'research'
   | 'research-story'
@@ -13,6 +14,8 @@ export type PageKey =
   | 'privacy'
   | 'credits'
   | 'not-found';
+
+export type CommonPageKey = Exclude<PageKey, 'home' | 'records'>;
 
 /** /stats/ meta for both states: 'offline' while GOATCOUNTER.code is null (nothing collected), else 'collecting'. */
 export const STATS_META: Record<'offline' | 'collecting', Localized<{ title: string; description: string }>> = {
@@ -47,16 +50,11 @@ export function statsMetaFor(code: string | null): Localized<{ title: string; de
  * Exact <title> and meta description per page. Neither titles nor descriptions (which are also og:description and
  * the OG card subtitle) contain game trademarks such as Riot (tests/unit/page-meta.test.ts); body text may.
  */
-export const PAGE_META: Record<PageKey, Localized<{ title: string; description: string }>> = {
-  home: {
-    ko: {
-      title: '백성은 · 게임 데이터 분석가·연구자',
-      description: '게임 데이터 분석가·연구자 백성은의 포트폴리오. 연구, 프로젝트, 이력서, 플레이 로그.',
-    },
-    en: {
-      title: 'Seongeun Baek · Game Data Analyst & Researcher',
-      description: 'Portfolio of Seongeun Baek, game data analyst and researcher. Research, projects, résumé, and player log.',
-    },
+export const PAGE_META: Record<CommonPageKey, Localized<{ title: string; description: string }>> = {
+  // CA-19: the chooser (spec §6). The description is the owner-approved B-13 sentence.
+  chooser: {
+    ko: { title: '백성은 · 포트폴리오', description: '데이터로 사람의 행동을 읽는 분석가입니다. 보고 싶은 포트폴리오를 고르세요.' },
+    en: { title: 'Seongeun Baek · Portfolio', description: 'I read human behaviour from data. Choose the portfolio you want to see.' },
   },
   research: {
     ko: {
@@ -86,16 +84,6 @@ export const PAGE_META: Record<PageKey, Localized<{ title: string; description: 
     en: {
       title: 'Projects · Seongeun Baek',
       description: 'Data analysis case studies from game log research and public-data competitions, with the question, data, method, results and my role in each.',
-    },
-  },
-  records: {
-    ko: {
-      title: '기록·이력서 · 백성은',
-      description: '학력, 수상, 자격, 기술, 게임사 데이터 분석가 지원 요건 대응표와 이력서 PDF.',
-    },
-    en: {
-      title: 'Records & CV · Seongeun Baek',
-      description: 'Education, awards, certifications, skills, a job-requirements fit table, and résumé PDFs.',
     },
   },
   'player-log': {

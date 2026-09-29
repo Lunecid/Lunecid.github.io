@@ -9,18 +9,22 @@ import GitHubSection from '../components/github/GitHubSection.astro';
 import type { Lang } from '../i18n/ui';
 import { localizeHref, t } from '../i18n/utils';
 import { TAG_KEYS, tagLabel, type TagKey } from '../content/tags';
-import { PAGE_META } from '../data/copy/pages';
 import { cogCartridgeTagKeys, homeCopy } from '../data/copy/home';
-import { getProjects } from '../lib/portfolio';
+import { getFactSource, getProjects } from '../lib/portfolio';
 import { toCartridge, type CartridgeProps } from '../lib/projects';
 import { generated, usableGitHub } from '../lib/generated';
+import type { VariantId } from '../variants/ids';
+import { getVariant, pageMetaFor } from '../variants';
 
 interface Props {
   lang: Lang;
+  variant: VariantId;
 }
 
-const { lang } = Astro.props;
-const meta = PAGE_META.projects[lang];
+const { lang, variant } = Astro.props;
+const v = getVariant(variant);
+const facts = await getFactSource();
+const meta = pageMetaFor('projects', lang, variant, facts);
 const cog = homeCopy[lang].cogCartridge;
 const cogCartridge: CartridgeProps = {
   href: localizeHref('/research/cog-2026-engagement/', lang),

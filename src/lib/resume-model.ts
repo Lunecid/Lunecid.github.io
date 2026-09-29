@@ -59,6 +59,7 @@ export interface ResumeInputs {
   doc: DocumentId;
   today: string;
   academicExtras: { abstract: boolean; presentations: boolean };
+  identity: { headline: string; tagline: string };
 }
 
 type Flags = { ko: boolean; en: boolean; academic: boolean };
@@ -138,14 +139,14 @@ export function buildResumeModel(input: ResumeInputs): ResumeModel {
     builtOn: formatDate(today, lang),
     header: {
       name: p.name[lang],
-      headline: p.headline[lang],
+      headline: input.identity.headline,
       email: p.email,
       github: `github.com/${p.github}`,
       site: p.site.replace(/^https?:\/\//, '').replace(/\/$/, ''),
       location: p.location[lang],
       affiliation: p.affiliation[lang],
     },
-    tagline: p.tagline[lang],
+    tagline: input.identity.tagline,
     researchInterests: p.researchInterests.pdf[flag] ? p.researchInterests.items.map((i) => i[lang]) : [],
     education: flagged(resume.education).map((e) => ({
       school: e.school[lang],

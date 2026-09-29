@@ -3,10 +3,12 @@ import photo from '../assets/photo/photo-id.webp';
 import riskHeatmap from '../assets/projects/school-zone-blindspots/risk-heatmap.webp';
 import type { Lang } from '../i18n/ui';
 import { formatPeriod, LOCALES, splitEntryId } from '../i18n/utils';
-import { PAGE_META, type PageKey } from '../data/copy/pages';
+import type { PageKey } from '../data/copy/pages';
+import { pageMetaFor } from '../variants';
 import type { OgArtifact, OgInput } from './og';
+import type { FactSource } from './facts';
 import { bibtexField } from './publications';
-import { getPaperPages, getProjects } from './portfolio';
+import { getFactSource, getPaperPages, getProjects } from './portfolio';
 import { allRoutes } from './routes';
 import { containsTrademark, ogSlugFor } from './seo';
 
@@ -20,6 +22,7 @@ export interface OgSources {
    * project's figure (/projects/: the school-zone risk heatmap; the CoG card's label is an inline chart since fix round 1).
    */
   artifacts?: { photo?: OgArtifact; paper?: OgArtifact; projects?: OgArtifact };
+  facts: FactSource;
 }
 
 const NAME_SUFFIX: Record<Lang, string> = { ko: ' · 백성은', en: ' · Seongeun Baek' };
@@ -59,7 +62,8 @@ export function buildOgMap(src: OgSources): Record<string, OgInput> {
     let og: OgInput;
     const fixed = FIXED[koPath];
     if (fixed) {
-      const meta = PAGE_META[fixed.key][lang];
+      // P1-7a: version pages (home, records, …) read the game version's meta until P1-11 adds the version axis.
+      const meta = pageMetaFor(fixed.key, lang, fixed.key === 'stats' || fixed.key === 'privacy' || fixed.key === 'credits' ? null : 'game', src.facts);
       og = { eyebrow: fixed.eyebrow, title: meta.title, subtitle: meta.description, ...withArtifact(src.artifacts?.[fixed.artifact]) };
     } else {
       const match = /^\/(projects|research)\/([a-z0-9-]+)\/$/.exec(koPath);
@@ -71,7 +75,7 @@ export function buildOgMap(src: OgSources): Record<string, OgInput> {
         og = { eyebrow: 'PROJECT', title: project.title, subtitle: project.summary, ...withArtifact(project.artifact) };
       } else {
         if (!src.papers.some((p) => p.lang === lang && p.slug === slug)) throw new Error(`og: no paper entry ${lang}/${slug}`);
-        const meta = PAGE_META['research-story'][lang];
+        const meta = pageMetaFor('research-story', lang, 'game', src.facts);
         og = { eyebrow: 'RESEARCH', title: withoutName(meta.title, lang), subtitle: meta.description, ...withArtifact(src.artifacts?.paper) };
       }
     }
@@ -114,6 +118,7 @@ export async function getOgPages(): Promise<Record<string, OgInput>> {
       return { lang, slug, title: entry.data.title, summary: entry.data.summary, artifact };
     }),
     papers: papers.flatMap((entry) => LOCALES.map((lang) => ({ lang, slug: entry.id }))),
+    facts: await getFactSource(),
     artifacts: {
       photo: { kind: 'photo', path: sourceFile(photo) },
       projects: { kind: 'figure', path: sourceFile(riskHeatmap), label: 'RISK HEATMAP' },

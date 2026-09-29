@@ -1,11 +1,11 @@
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
 import type { Page } from '@playwright/test';
-import { load } from 'js-yaml';
 import { test, expect, NAV_HEIGHT } from './helpers';
 import { ANCHORS } from '../../src/lib/routes';
 import { t } from '../../src/i18n/utils';
 import type { Lang } from '../../src/i18n/ui';
+import { resolveIdentity } from '../../src/variants';
+import { gameVariant } from '../../src/variants/game';
+import { loadFactSource } from '../helpers/fact-source';
 
 const LANGS: Lang[] = ['ko', 'en'];
 
@@ -87,14 +87,12 @@ test.describe('hero job-fit CTA lands on the job-fit heading', () => {
 });
 
 test.describe('/records/ and /en/records/ show the tagline', () => {
-  const resume = load(readFileSync(join(process.cwd(), 'src', 'data', 'resume.yaml'), 'utf8')) as {
-    profile: { tagline: Record<Lang, string> };
-  };
+  const facts = loadFactSource();
   for (const lang of LANGS) {
     test(lang, async ({ page }) => {
       const response = await page.goto(lang === 'en' ? '/en/records/' : '/records/');
       expect(response?.status()).toBe(200);
-      await expect(page.locator('#profile')).toContainText(resume.profile.tagline[lang]);
+      await expect(page.locator('#profile')).toContainText(resolveIdentity(gameVariant, lang, facts).tagline);
     });
   }
 });

@@ -129,7 +129,7 @@ describe('BaseLayout.astro', () => {
   });
 
   it('JSON-LD only when the jsonLd prop is given', async () => {
-    const home = await render({ page: 'home', section: undefined, jsonLd: personJsonLd('ko') }, '/');
+    const home = await render({ page: 'home', section: undefined, jsonLd: personJsonLd('ko', { jobTitle: '게임 데이터 분석가 · 연구자', url: 'https://lunecid.github.io/' }) }, '/');
     const body = home.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/)?.[1] ?? 'null';
     expect(JSON.parse(body)).toMatchObject({ '@type': 'Person', name: '백성은', alternateName: 'Seongeun Baek' });
     const plain = await render();

@@ -17,7 +17,6 @@ export type Lang = keyof typeof languages;
 export const ui = {
   ko: {
     // 사이트
-    'site.title': '백성은 · 게임 데이터 분석가·연구자',
     'site.description': '게임 데이터 분석가·연구자 백성은의 포트폴리오. 연구, 프로젝트, 이력서, 플레이 로그.',
     'site.skipToContent': '본문으로 건너뛰기',
 
@@ -314,7 +313,6 @@ export const ui = {
   },
   en: {
     // Site
-    'site.title': 'Seongeun Baek · Game Data Analyst & Researcher',
     'site.description': 'Portfolio of Seongeun Baek, game data analyst and researcher. Research, projects, résumé, and player log.',
     'site.skipToContent': 'Skip to content',
 

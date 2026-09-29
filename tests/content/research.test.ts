@@ -2,7 +2,6 @@ import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { basename } from 'node:path';
 import { z } from 'astro/zod';
 import { describe, expect, it } from 'vitest';
-import { SITE } from '../../src/config';
 import { newsSchema, publicationSchema, resumeSchema } from '../../src/content/schemas';
 import { parseYamlDocument } from '../../src/content/yaml-loader';
 import { homeCopy } from '../../src/data/copy/home';
@@ -140,7 +139,8 @@ describe('research page copy', () => {
     expect(ongoing.has('counseling-nlp')).toBe(false);
     expect(JSON.stringify(researchPage.ongoing)).not.toMatch(/집계한 결과만|aggregate results only/);
     for (const [id, href] of ongoing) if (href !== null) expect(isKnownInternalHref(href, 'game'), id).toBe(true);
-    expect(researchPage.forLabs.email).toBe(SITE.email);
+    expect(researchPage).not.toHaveProperty('forLabs');
+    expect(readFileSync('src/views/ResearchView.astro', 'utf8')).toMatch(/mailto:\$\{SITE\.email\}/);
     // contract §5.17: the PUBG repository is not linked anywhere, not even in a comment
     expect(readFileSync('src/data/research-page.ts', 'utf8')).not.toMatch(/github\.com\/Lunecid\/PUBG_Lab/);
   });

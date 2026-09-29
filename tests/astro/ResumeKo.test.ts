@@ -5,9 +5,12 @@ import { describe, expect, it } from 'vitest';
 import ResumeKo from '../../src/components/print/ResumeKo.astro';
 import { awardSchema, projectSchema, publicationSchema, resumeSchema } from '../../src/content/schemas';
 import { parseYamlDocument, parseYamlList } from '../../src/content/yaml-loader';
-import { ACADEMIC_EXTRAS, buildResumeModel } from '../../src/lib/resume-model';
+import { ACADEMIC_EXTRAS, DOC_LANG, buildResumeModel } from '../../src/lib/resume-model';
 import { listMarkdown, readFrontmatter } from '../content/helpers';
 import { renderAstro } from './helpers';
+import { resolveIdentity } from '../../src/variants';
+import { gameVariant } from '../../src/variants/game';
+import { loadFactSource } from '../helpers/fact-source';
 
 const root = process.cwd();
 const model = buildResumeModel({
@@ -20,6 +23,7 @@ const model = buildResumeModel({
   doc: 'resume-ko',
   today: '2026-09-26',
   academicExtras: ACADEMIC_EXTRAS,
+  identity: (() => { const i = resolveIdentity(gameVariant, DOC_LANG['resume-ko'], loadFactSource()); return { headline: i.headline, tagline: i.tagline }; })(),
 });
 const esc = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 /** Text as Astro renders it (the English tagline's apostrophe becomes &#39;). */

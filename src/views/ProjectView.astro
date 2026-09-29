@@ -16,17 +16,22 @@ import type { Lang } from '../i18n/ui';
 import { ui } from '../i18n/ui';
 import { t } from '../i18n/utils';
 import { projectPageMeta } from '../data/copy/pages';
-import { getAwards } from '../lib/portfolio';
+import { getAwards, getFactSource } from '../lib/portfolio';
 import { projectDetailRows } from '../lib/projects';
 import { buildCertificate } from '../lib/certificates';
 import { coverFigureIndex, placeFigures } from '../lib/figures';
+import type { VariantId } from '../variants/ids';
+import { getVariant } from '../variants';
 
 interface Props {
   lang: Lang;
+  variant: VariantId; // used from P1-9 on
   entry: CollectionEntry<'projects'>;
 }
 
-const { lang, entry } = Astro.props;
+const { lang, variant, entry } = Astro.props;
+const v = getVariant(variant);
+const facts = await getFactSource();
 const { data } = entry;
 const body = entry.rendered?.html;
 if (body === undefined) throw new Error(`ProjectView: ${entry.id} has no rendered body`);

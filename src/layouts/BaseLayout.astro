@@ -19,6 +19,7 @@ import HudNav from '../components/hud/HudNav.astro';
 import SiteFooter from '../components/hud/SiteFooter.astro';
 import CrtIntro from '../components/hud/CrtIntro.astro';
 import AchievementHost from '../islands/AchievementHost';
+import { gameVariant } from '../variants/game';
 
 interface Props {
   lang: Lang;
@@ -80,7 +81,7 @@ const achievementLabels = {
     {!noindex && <link rel="canonical" href={canonical} />}
     {altHref !== null && alternateLinks(pathname).map((alt) => <link rel="alternate" hreflang={alt.hreflang} href={alt.href} />)}
     <meta property="og:type" content="website" />
-    <meta property="og:site_name" content={t(lang, 'site.title')} />
+    <meta property="og:site_name" content={gameVariant.identity.siteTitle[lang]} />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
     {!noindex && <meta property="og:url" content={canonical} />}

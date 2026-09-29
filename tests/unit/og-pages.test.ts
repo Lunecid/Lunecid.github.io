@@ -6,6 +6,8 @@ import { allRoutes, PROJECT_PAGE_SLUGS, STORY_SLUGS } from '../../src/lib/routes
 import { containsTrademark, ogSlugFor, TRADEMARK_TERMS } from '../../src/lib/seo';
 import { PAGE_META } from '../../src/data/copy/pages';
 import type { Lang } from '../../src/i18n/ui';
+import { gameVariant } from '../../src/variants/game';
+import { loadFactSource } from '../helpers/fact-source';
 
 const LANGS: Lang[] = ['ko', 'en'];
 
@@ -15,6 +17,7 @@ function fixtureSources(): OgSources {
       PROJECT_PAGE_SLUGS.map((slug) => ({ lang, slug, title: `Project ${slug}`, summary: `Summary of ${slug}` })),
     ),
     papers: LANGS.flatMap((lang) => STORY_SLUGS.map((slug) => ({ lang, slug }))),
+    facts: loadFactSource(),
   };
 }
 
@@ -41,6 +44,7 @@ function realSources(): OgSources {
         return { lang, slug };
       }),
     ),
+    facts: loadFactSource(),
   };
 }
 
@@ -86,8 +90,8 @@ describe('buildOgMap', () => {
   it('fixed pages use the PAGE_META title and the description as subtitle', () => {
     const map = buildOgMap(fixtureSources());
     expect(map['research']).toEqual({ eyebrow: 'RESEARCH', title: PAGE_META.research.ko.title, subtitle: PAGE_META.research.ko.description });
-    expect(map['en/records'].title).toBe(PAGE_META.records.en.title);
-    expect(map['en/home'].title).toBe(PAGE_META.home.en.title);
+    expect(map['en/records'].title).toBe(gameVariant.pageMeta.records.en.title);
+    expect(map['en/home'].title).toBe(gameVariant.pageMeta.home.en.title);
     expect(map['projects'].eyebrow).toBe('PROJECT');
   });
 

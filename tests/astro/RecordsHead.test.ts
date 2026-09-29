@@ -7,16 +7,20 @@ import { resumeSchema } from '../../src/content/schemas';
 import { parseYamlDocument } from '../../src/content/yaml-loader';
 import type { Lang } from '../../src/i18n/ui';
 import { readSource, renderAstro } from './helpers';
+import { resolveIdentity } from '../../src/variants';
+import { gameVariant } from '../../src/variants/game';
+import { loadFactSource } from '../helpers/fact-source';
 
 const resume = resumeSchema.parse(parseYamlDocument(readFileSync(resolve(process.cwd(), 'src/data/resume.yaml'), 'utf8'), 'resume'));
+const identity = (lang: Lang) => resolveIdentity(gameVariant, lang, loadFactSource());
 const render = (lang: Lang) =>
   renderAstro(RecordsHead, {
     props: {
       lang,
       name: resume.profile.name[lang],
-      headline: resume.profile.headline[lang],
-      status: resume.profile.status[lang],
-      tagline: resume.profile.tagline[lang],
+      headline: identity(lang).headline,
+      status: identity(lang).status,
+      tagline: identity(lang).tagline,
       documents: resume.documents.map((d) => ({ id: d.id, label: d.label[lang], href: DOCUMENTS[d.id] })),
       contact: { email: SITE.email, github: SITE.githubUrl, dacon: SITE.daconUrl },
       ids: resume.researchIds,
@@ -30,9 +34,9 @@ describe('RecordsHead.astro (P2-19: a short head, not the home profile again)', 
     expect(ko).toMatch(/<img(?=[^>]*class="rhead__photo")(?=[^>]*fetchpriority="high")[^>]*>/);
     expect(ko).toMatch(/<h2 id="profile-title"[^>]*>안녕하세요!<\/h2>/);
     expect(ko).toContain(resume.profile.name.ko);
-    expect(ko).toMatch(new RegExp(`<p class="rhead__role"[^>]*>${resume.profile.headline.ko.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}<\\/p>`));
-    expect(ko).toContain(resume.profile.status.ko);
-    expect(ko).toContain(resume.profile.tagline.ko);
+    expect(ko).toMatch(new RegExp(`<p class="rhead__role"[^>]*>${identity('ko').headline.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}<\\/p>`));
+    expect(ko).toContain(identity('ko').status);
+    expect(ko).toContain(identity('ko').tagline);
     expect(ko).toContain(`mailto:${SITE.email}`);
     expect(ko).toContain(`href="${SITE.githubUrl}"`);
     expect(ko).toContain(`href="${SITE.daconUrl}"`);

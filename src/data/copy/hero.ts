@@ -16,7 +16,8 @@ export interface HeroCopy {
   /** The no-art hero (D-1): the CoG AUC chart in a HUD frame, with a link to the paper page. */
   artifact: { label: string; linkLabel: string; href: string };
   swap: { groupLabel: string; replayLabel: string };
-  playerCard: { label: string; classLine: string; badges: string[]; photoAlt: string };
+  /** The class line is the version headline: as written in Korean, in upper case in English (HomeView, contract §1.6). */
+  playerCard: { label: string; badges: string[]; photoAlt: string };
 }
 
 export const heroCopy: Localized<HeroCopy> = {
@@ -30,7 +31,6 @@ export const heroCopy: Localized<HeroCopy> = {
     swap: { groupLabel: '첫 화면 캐릭터 선택', replayLabel: '등장 다시 보기' },
     playerCard: {
       label: '플레이어 카드',
-      classLine: '게임 데이터 분석가 · 연구자',
       badges: ['IEEE CoG 2026 ORAL', '최우수상 ×2'],
       photoAlt: t('ko', 'card.photoAlt'),
     },
@@ -45,7 +45,6 @@ export const heroCopy: Localized<HeroCopy> = {
     swap: { groupLabel: 'Choose the hero character', replayLabel: 'Replay entrance' },
     playerCard: {
       label: 'Player card',
-      classLine: 'GAME DATA ANALYST · RESEARCHER',
       badges: ['IEEE CoG 2026 ORAL', 'Top Excellence Award ×2'],
       photoAlt: t('en', 'card.photoAlt'),
     },

@@ -6,8 +6,7 @@ import PageHeader from '../components/hud/PageHeader.astro';
 import GameAchievements from '../components/player-log/GameAchievements.astro';
 import MembershipRow from '../components/player-log/MembershipRow.astro';
 import SiteAchievementList from '../components/player-log/SiteAchievementList.astro';
-import { PAGE_META } from '../data/copy/pages';
-import { playerLogCopy } from '../data/copy/player-log';
+import { membershipCard, playerLogCopy } from '../data/copy/player-log';
 import type { Lang } from '../i18n/ui';
 import { t } from '../i18n/utils';
 import FavoriteGames from '../islands/FavoriteGames';
@@ -17,12 +16,16 @@ import { generated } from '../lib/generated';
 import { availableAchievements } from '../lib/achievements';
 import { soundAvailability } from '../lib/public-assets';
 import { ACHIEVEMENT_TRIGGERS, GAME_IDS } from '../types';
+import { getFactSource } from '../lib/portfolio';
+import { getVariant, pageMetaFor, resolveIdentity } from '../variants';
 
 interface Props {
   lang: Lang;
 }
 const { lang } = Astro.props;
-const meta = PAGE_META['player-log'][lang];
+const facts = await getFactSource();
+const identity = resolveIdentity(getVariant('game'), lang, facts);
+const meta = pageMetaFor('player-log', lang, 'game', facts);
 const copy = playerLogCopy[lang];
 
 // Collections do not promise insertion order: sort by the shared id lists (same order as the YAML files).
@@ -51,7 +54,7 @@ const labels = {
   <PageHeader lang={lang} label="PLAYER LOG" title={t(lang, 'playerLog.title')} intro={t(lang, 'playerLog.intro')} />
   <MembershipRow
     lang={lang}
-    membership={copy.membership}
+    membership={membershipCard(copy.membership, identity.headline)}
     tiles={tiles}
     tileSlots={games.reduce((n, g) => n + g.characters.length, 0)}
     achievements={siteAchievements}

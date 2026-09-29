@@ -1,6 +1,6 @@
 import { SITE } from '../config';
 import type { Lang } from '../i18n/ui';
-import { localizeHref, otherLang, switchLocalePath } from '../i18n/utils';
+import { otherLang, switchLocalePath } from '../i18n/utils';
 
 /** '/' → 'home'; '/en/' → 'en/home'; '/projects/x/' → 'projects/x'; '/en/records/' → 'en/records'; '/404/' or '/404.html' → 'home'. */
 export function ogSlugFor(pathname: string): string {
@@ -29,16 +29,16 @@ export function alternateLinks(pathname: string): { hreflang: 'ko' | 'en' | 'x-d
 
 const PERSON = {
   name: { ko: '백성은', en: 'Seongeun Baek' },
-  jobTitle: { ko: '게임 데이터 분석가 · 연구자', en: 'Game Data Analyst · Researcher' },
   affiliation: {
     ko: '부산대학교 데이터사이언스전문대학원 데이터사이언스연구실(DataLab)',
     en: 'Data Science Lab (DataLab), Graduate School of Data Science, Pusan National University',
   },
 } as const;
 
-/** schema.org Person for the home page (spec §12: same name everywhere; sameAs = GitHub + DACON + research ids that exist). */
+/** schema.org Person (spec §12): name everywhere; sameAs = GitHub + DACON + research ids that exist; jobTitle and url from the page (version headline or B-11 neutral title, A-25). */
 export function personJsonLd(
   lang: Lang,
+  page: { jobTitle: string; url: string },
   researchIds?: { scholar: string | null; orcid: string | null },
 ): Record<string, unknown> {
   const sameAs = [SITE.githubUrl, SITE.daconUrl, researchIds?.scholar ?? null, researchIds?.orcid ?? null].filter(
@@ -49,9 +49,9 @@ export function personJsonLd(
     '@type': 'Person',
     name: PERSON.name[lang],
     alternateName: PERSON.name[otherLang(lang)],
-    url: canonicalUrl(localizeHref('/', lang)),
+    url: page.url,
     email: SITE.email,
-    jobTitle: PERSON.jobTitle[lang],
+    jobTitle: page.jobTitle,
     affiliation: { '@type': 'Organization', name: PERSON.affiliation[lang], url: SITE.labUrl },
     sameAs,
   };

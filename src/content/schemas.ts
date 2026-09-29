@@ -150,7 +150,7 @@ const resumeBullets = z.object({ ko: z.array(z.string().min(1)).min(1).max(3), e
 export const resumeSchema = z.object({
   id: z.literal('resume'),
   profile: z.object({
-    name: localized, headline: localized, tagline: localized, status: localized, about: localized,
+    name: localized,
     affiliation: localized, advisor: localized, location: localized,
     email: z.literal('todtjddms104204@pusan.ac.kr'),
     github: z.literal('Lunecid'),

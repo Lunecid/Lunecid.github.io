@@ -20,22 +20,26 @@ import { getAwards, getFactSource, getJobfit, getProjects, getPublications, getR
 import { projectSlug } from '../lib/projects';
 import { toPaperCard } from '../lib/publications';
 import { awardItems, credentialItems, projectSummaryItems, skillGroups, todayIso, type AwardCertMeta } from '../lib/records';
-import { PAGE_META } from '../data/copy/pages';
 import { DOCUMENTS, SITE } from '../config';
 import type { Lang } from '../i18n/ui';
 import { ui } from '../i18n/ui';
 import { t } from '../i18n/utils';
 import type { CertificateId } from '../types';
+import type { VariantId } from '../variants/ids';
+import { getVariant, pageMetaFor, resolveIdentity } from '../variants';
 
 interface Props {
   lang: Lang;
+  variant: VariantId;
 }
 
-const { lang } = Astro.props;
+const { lang, variant } = Astro.props;
+const v = getVariant(variant);
+const facts = await getFactSource();
+const identity = resolveIdentity(v, lang, facts);
 
 const resume = await getResume();
-const jobfit = await getJobfit('game');
-const facts = await getFactSource();
+const jobfit = await getJobfit(v.jobfit);
 
 const awards = await getAwards();
 const projects = await getProjects(lang);
@@ -73,7 +77,7 @@ const titles = {
 const credentials = credentialItems(resume, lang, todayIso());
 const skills = skillGroups(resume.skills, lang, titles);
 const documents = resume.documents.map((doc) => ({ id: doc.id, label: doc.label[lang], href: DOCUMENTS[doc.id] }));
-const meta = PAGE_META.records[lang];
+const meta = pageMetaFor('records', lang, variant, facts);
 ---
 <BaseLayout lang={lang} title={meta.title} description={meta.description} page="records" section="records" sectionIndex>
   <PageHeader lang={lang} label="RECORDS" title={t(lang, 'records.title')} />
@@ -81,9 +85,9 @@ const meta = PAGE_META.records[lang];
   <RecordsHead
     lang={lang}
     name={resume.profile.name[lang]}
-    headline={resume.profile.headline[lang]}
-    status={resume.profile.status[lang]}
-    tagline={resume.profile.tagline[lang]}
+    headline={identity.headline}
+    status={identity.status}
+    tagline={identity.tagline}
     documents={documents}
     contact={{ email: SITE.email, github: SITE.githubUrl, dacon: SITE.daconUrl }}
     ids={resume.researchIds}

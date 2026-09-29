@@ -61,8 +61,7 @@ const validPublication = {
 const validResume = {
   id: 'resume',
   profile: {
-    name: L('백성은', 'Seongeun Baek'), headline: L('게임 데이터 분석가', 'Game Data Analyst'), tagline: L('한 줄', 'One line'),
-    status: L('상태', 'Status'), about: L('소개', 'About'), affiliation: L('소속', 'Affiliation'), advisor: L('권준호 교수', 'Prof. Joonho Kwon'),
+    name: L('백성은', 'Seongeun Baek'), affiliation: L('소속', 'Affiliation'), advisor: L('권준호 교수', 'Prof. Joonho Kwon'),
     location: L('부산', 'Busan, South Korea'),
     email: 'todtjddms104204@pusan.ac.kr',
     github: 'Lunecid',
@@ -223,6 +222,7 @@ describe('resumeSchema', () => {
     expect(resumeSchema.safeParse({ ...validResume, documents: validResume.documents.slice(0, 2) }).success).toBe(false);
     const wrongHref = validResume.documents.map((d) => (d.id === 'resume-en' ? { ...d, href: '/files/resume.pdf' } : d));
     expect(resumeSchema.safeParse({ ...validResume, documents: wrongHref }).success).toBe(false);
+    expect(resumeSchema.parse({ ...validResume, profile: { ...validResume.profile, tagline: L('x', 'y') } }).profile).not.toHaveProperty('tagline');
   });
 
   it('resumeSchema accepts an activity end month only with a YYYY-MM date', () => {

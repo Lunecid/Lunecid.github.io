@@ -9,24 +9,28 @@ import InProgressList from '../components/research/InProgressList.astro';
 import PublicationItem from '../components/research/PublicationItem.astro';
 import ImageViewer from '../islands/ImageViewer';
 import { researchPage } from '../data/research-page';
-import { PAGE_META } from '../data/copy/pages';
-import { getPerson, getPublications } from '../lib/portfolio';
+import { getFactSource, getPerson, getPublications } from '../lib/portfolio';
 import { toPaperCard } from '../lib/publications';
 import type { Lang } from '../i18n/ui';
 import { ui } from '../i18n/ui';
 import { t } from '../i18n/utils';
-import { ACADEMIC_CV_HREF } from '../config';
+import { ACADEMIC_CV_HREF, SITE } from '../config';
+import type { VariantId } from '../variants/ids';
+import { getVariant, pageMetaFor, resolveIdentity } from '../variants';
 
 interface Props {
   lang: Lang;
+  variant: VariantId;
 }
 
-const { lang } = Astro.props;
-const meta = PAGE_META.research[lang];
+const { lang, variant } = Astro.props;
+const v = getVariant(variant);
+const facts = await getFactSource();
+const meta = pageMetaFor('research', lang, variant, facts);
+const labNote = resolveIdentity(v, lang, facts).labNote;
 const papers = (await getPublications()).map((entry) => toPaperCard(entry, lang));
 const years = [...new Set(papers.map((paper) => paper.year))].sort((a, b) => b - a);
 const ids = (await getPerson()).researchIds;
-const forLabs = researchPage.forLabs;
 ---
 <BaseLayout lang={lang} title={meta.title} description={meta.description} page="research" section="research" sectionIndex>
   <PageHeader lang={lang} label="RESEARCH" title={t(lang, 'research.title')} intro={researchPage.intro[lang]}>
@@ -55,10 +59,10 @@ const forLabs = researchPage.forLabs;
     <div class="container">
       {/* light HUD panel with corner marks, like [ NOW PLAYING ] (P1-9) */}
       <div class="for-labs__card lh-frame bracket bracket--sm">
-        <SectionHead id="for-labs-title" caption={t(lang, 'section.forLabs')} title={forLabs.title[lang]} />
-        <p class="for-labs__body">{forLabs.body[lang]}</p>
+        <SectionHead id="for-labs-title" caption={t(lang, 'section.forLabs')} title={labNote.title} />
+        <p class="for-labs__body">{labNote.body}</p>
         <ul class="for-labs__links lh-chips" role="list">
-          <li><a class="lh-chip lh-chip--mono" href={`mailto:${forLabs.email}`}>{forLabs.email}</a></li>
+          <li><a class="lh-chip lh-chip--mono" href={`mailto:${SITE.email}`}>{SITE.email}</a></li>
           <li><a class="lh-chip" href={ACADEMIC_CV_HREF} title={t(lang, 'nav.cvAcademic')} download>{t(lang, 'nav.cvAcademic')} <span aria-hidden="true">↓</span></a></li>
           {ids.scholar && <li><a class="lh-chip" href={ids.scholar}>Google Scholar</a></li>}
           {ids.orcid && <li><a class="lh-chip" href={ids.orcid}>ORCID</a></li>}

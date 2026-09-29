@@ -10,24 +10,7 @@ profile:
   name:
     ko: 백성은
     en: Seongeun Baek
-  headline:
-    ko: 게임 데이터 분석가 · 연구자
-    en: Game Data Analyst · Researcher
-  tagline:
-    ko: 플레이어를 예측하는 데서 멈추지 않고, 이해하는 데이터를 만듭니다.
-    en: 'Beyond predicting players: building data that explains them.'
-  status:
-    ko: 2027년 2월 석사 졸업 예정 · 게임 데이터 분석가 채용과 박사과정 진학을 함께 준비하고 있습니다.
-    en: M.S. expected February 2027 · Pursuing game data analyst roles and Ph.D. programs in parallel.
-  about:
-    ko: >-
-      부산대학교 데이터사이언스전문대학원 석사과정에서 게임 데이터를 연구하고 있습니다.
-      리그 오브 레전드의 공개 경기 기록(Riot API)으로 교전 결과를 예측한 연구를 IEEE CoG 2026에서 구두 발표했습니다.
-      공공데이터 경진대회와 팀 프로젝트에서는 공간 데이터 분석과 예측 모델을 맡았습니다.
-    en: >-
-      I am an M.S. student at the Graduate School of Data Science, Pusan National University, working on game data.
-      I presented a study that predicts the outcome of kill-conditioned engagements in League of Legends from public match records (Riot API) as an oral paper at IEEE CoG 2026.
-      In public-data competitions and team projects, I worked on spatial data analysis and predictive models.
+  # headline·tagline·status·about은 버전 문구다: src/variants/{game,data}.ts identity (R-3).
   affiliation:
     ko: 부산대학교 데이터사이언스전문대학원 데이터사이언스연구실(DataLab)
     en: Data Science Lab (DataLab), Graduate School of Data Science, Pusan National University

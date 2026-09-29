@@ -1,40 +1,53 @@
 import { describe, expect, it } from 'vitest';
-import { PAGE_META, STATS_META, projectPageMeta, statsMetaFor, type PageKey } from '../../src/data/copy/pages';
+import { PAGE_META, STATS_META, projectPageMeta, statsMetaFor, type CommonPageKey } from '../../src/data/copy/pages';
 import { GOATCOUNTER } from '../../src/config';
 import { containsTrademark } from '../../src/lib/seo';
 import { ui } from '../../src/i18n/ui';
 import { PROJECT_PAGE_SLUGS } from '../../src/lib/routes';
 import { readFrontmatter } from '../content/helpers';
+import type { Localized } from '../../src/i18n/utils';
+import { dataVariant } from '../../src/variants/data';
+import { gameVariant } from '../../src/variants/game';
 
-const KEYS: PageKey[] = [
-  'home', 'research', 'research-story', 'projects', 'records', 'player-log', 'stats', 'privacy', 'credits', 'not-found',
-];
+const KEYS: CommonPageKey[] = ['chooser', 'research', 'research-story', 'projects', 'player-log', 'stats', 'privacy', 'credits', 'not-found'];
 const LANGS = ['ko', 'en'] as const;
+type MetaText = Localized<{ title: string; description: string }>;
+/** P1-7a: home and records moved to the versions; every per-key check also runs over the version meta. */
+const dataProjects = dataVariant.pageMeta.projects;
+if (!dataProjects) throw new Error('dataVariant.pageMeta.projects is missing');
+const VARIANT_META: [string, MetaText][] = [
+  ['game.home', gameVariant.pageMeta.home],
+  ['game.records', gameVariant.pageMeta.records],
+  ['data.home', dataVariant.pageMeta.home],
+  ['data.records', dataVariant.pageMeta.records],
+  ['data.projects', dataProjects],
+];
+const ALL_META: [string, MetaText][] = [...KEYS.map((key): [string, MetaText] => [key, PAGE_META[key]]), ...VARIANT_META];
 
 describe('PAGE_META', () => {
   it('every PageKey has ko/en title and description', () => {
     expect(Object.keys(PAGE_META).sort()).toEqual([...KEYS].sort());
-    for (const key of KEYS) {
+    for (const [key, meta] of ALL_META) {
       for (const lang of LANGS) {
-        expect(PAGE_META[key][lang].title.trim().length, `${key}.${lang}.title`).toBeGreaterThan(0);
-        expect(PAGE_META[key][lang].description.trim().length, `${key}.${lang}.description`).toBeGreaterThan(0);
+        expect(meta[lang].title.trim().length, `${key}.${lang}.title`).toBeGreaterThan(0);
+        expect(meta[lang].description.trim().length, `${key}.${lang}.description`).toBeGreaterThan(0);
       }
     }
-    expect(PAGE_META.home.ko.title).toBe('백성은 · 게임 데이터 분석가·연구자');
-    expect(PAGE_META.home.en.title).toBe('Seongeun Baek · Game Data Analyst & Researcher');
+    expect(gameVariant.pageMeta.home.ko.title).toBe('백성은 · 게임 데이터 분석가·연구자');
+    expect(gameVariant.pageMeta.home.en.title).toBe('Seongeun Baek · Game Data Analyst & Researcher');
     expect(PAGE_META['research-story'].ko.title).toBe('교전 결과 예측 논문 · 백성은');
   });
 
   it('no title contains a trademark', () => {
-    for (const key of KEYS) {
-      for (const lang of LANGS) expect(containsTrademark(PAGE_META[key][lang].title), `${key}.${lang}`).toBe(false);
+    for (const [key, meta] of ALL_META) {
+      for (const lang of LANGS) expect(containsTrademark(meta[lang].title), `${key}.${lang}`).toBe(false);
     }
   });
 
   it('no meta description (also og:description and the OG card subtitle) contains a trademark', () => {
     // Every description a page can emit: PAGE_META (both /stats/ states) and the project pages' summaries.
     const descriptions: [string, string][] = [];
-    for (const key of KEYS) for (const lang of LANGS) descriptions.push([`${key}.${lang}`, PAGE_META[key][lang].description]);
+    for (const [key, meta] of ALL_META) for (const lang of LANGS) descriptions.push([`${key}.${lang}`, meta[lang].description]);
     for (const state of ['offline', 'collecting'] as const) {
       for (const lang of LANGS) descriptions.push([`stats.${state}.${lang}`, STATS_META[state][lang].description]);
     }
@@ -51,8 +64,8 @@ describe('PAGE_META', () => {
   });
 
   it('descriptions are at most 160 characters', () => {
-    for (const key of KEYS) {
-      for (const lang of LANGS) expect(PAGE_META[key][lang].description.length, `${key}.${lang}`).toBeLessThanOrEqual(160);
+    for (const [key, meta] of ALL_META) {
+      for (const lang of LANGS) expect(meta[lang].description.length, `${key}.${lang}`).toBeLessThanOrEqual(160);
     }
   });
 

@@ -1,16 +1,28 @@
 ---
-import { getAwards, getProjects, getPublications, getResume } from '../../lib/portfolio';
+import { getAwards, getFactSource, getProjects, getPublications, getResume } from '../../lib/portfolio';
 import CvAcademic from '../../components/print/CvAcademic.astro';
 import { splitEntryId } from '../../i18n/utils';
 import PrintLayout from '../../layouts/PrintLayout.astro';
 import { todayIso } from '../../lib/records';
-import { ACADEMIC_EXTRAS, buildResumeModel } from '../../lib/resume-model';
+import { ACADEMIC_EXTRAS, DOC_LANG, buildResumeModel } from '../../lib/resume-model';
+import { getVariant, resolveIdentity } from '../../variants';
 
+const docId = 'cv-academic';
+const gameIdentity = resolveIdentity(getVariant('game'), DOC_LANG[docId], await getFactSource());
 const resume = await getResume();
 const projects = [...(await getProjects('ko')), ...(await getProjects('en'))].map((e) => ({ ...splitEntryId(e.id), data: e.data }));
 const publications = (await getPublications()).map((e) => ({ id: e.id, data: e.data }));
 const awards = await getAwards();
-const model = buildResumeModel({ resume, projects, publications, awards, doc: 'cv-academic', today: todayIso(), academicExtras: ACADEMIC_EXTRAS });
+const model = buildResumeModel({
+  resume,
+  projects,
+  publications,
+  awards,
+  doc: docId,
+  today: todayIso(),
+  academicExtras: ACADEMIC_EXTRAS,
+  identity: { headline: gameIdentity.headline, tagline: gameIdentity.tagline },
+});
 ---
 <PrintLayout lang={model.lang} title="Seongeun Baek — Academic CV">
   <CvAcademic model={model} />

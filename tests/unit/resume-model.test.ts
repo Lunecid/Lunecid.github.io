@@ -8,6 +8,9 @@ import { parseYamlDocument, parseYamlList } from '../../src/content/yaml-loader'
 import { formatPeriod } from '../../src/i18n/utils';
 import { ACADEMIC_EXTRAS, DOC_FLAG, DOC_LANG, buildResumeModel, type ResumeInputs } from '../../src/lib/resume-model';
 import { listMarkdown, readFrontmatter } from '../content/helpers';
+import { resolveIdentity } from '../../src/variants';
+import { gameVariant } from '../../src/variants/game';
+import { loadFactSource } from '../helpers/fact-source';
 
 const root = process.cwd();
 const resume = resumeSchema.parse(parseYamlDocument(readFileSync(join(root, 'src/data/resume.yaml'), 'utf8'), 'resume'));
@@ -23,7 +26,17 @@ const publications = listMarkdown(join(root, 'src/content/publications')).map((f
 const DOCS: DocumentId[] = ['resume-ko', 'resume-en', 'cv-academic'];
 
 function inputs(doc: DocumentId, over: Partial<ResumeInputs> = {}): ResumeInputs {
-  return { resume, projects, publications, awards, doc, today: '2026-09-26', academicExtras: ACADEMIC_EXTRAS, ...over };
+  return {
+    resume,
+    projects,
+    publications,
+    awards,
+    doc,
+    today: '2026-09-26',
+    academicExtras: ACADEMIC_EXTRAS,
+    identity: (() => { const i = resolveIdentity(gameVariant, DOC_LANG[doc], loadFactSource()); return { headline: i.headline, tagline: i.tagline }; })(),
+    ...over,
+  };
 }
 
 describe('buildResumeModel', () => {
@@ -129,7 +142,7 @@ describe('buildResumeModel', () => {
   it('tagline in all three docs', () => {
     for (const doc of DOCS) {
       const m = buildResumeModel(inputs(doc));
-      expect(m.tagline).toBe(resume.profile.tagline[DOC_LANG[doc]]);
+      expect(m.tagline).toBe(resolveIdentity(gameVariant, DOC_LANG[doc], loadFactSource()).tagline);
       expect(m.tagline.length).toBeGreaterThan(10);
     }
   });

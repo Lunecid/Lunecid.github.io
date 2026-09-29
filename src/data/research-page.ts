@@ -2,6 +2,7 @@
 // The three interest titles are also the Academic CV research interests (resume.yaml profile.researchInterests,
 // P1-19; tests/content/records.test.ts keeps the two lists equal).
 // `ongoing` lists work that is still in progress only.
+// The #for-labs block text is version copy: identity.labNote in src/variants/{game,data}.ts (R-3); the e-mail is SITE.email.
 
 export const researchPage = {
   intro: {
@@ -73,13 +74,4 @@ export const researchPage = {
       href: null,
     },
   ],
-
-  forLabs: {
-    title: { ko: '게임 연구실 교수님께', en: 'For game research labs' },
-    body: {
-      ko: '공개 게임 데이터로 재현할 수 있는 벤치마크를 만들고, 무엇을 예측할 수 있고 무엇은 할 수 없는지까지 재는 연구를 이어 가고 싶습니다. 대규모 경기 로그의 수집과 정제, 시간 순서를 지킨 평가, 결과의 한계를 글로 정리하는 일을 직접 해 왔고, 그 결과를 IEEE CoG 2026에서 구두 발표했습니다. 2027년 2월 석사 졸업 예정이며 박사과정 진학을 준비하고 있습니다. 연구 주제나 면담에 관해서는 이메일로 연락해 주세요.',
-      en: 'I want to keep building reproducible benchmarks from public game data and measuring what can be predicted and what cannot. I have done the large-scale match log collection and cleaning, the time-ordered evaluation, and the write-up of limitations myself, and gave an oral presentation of the results at IEEE CoG 2026. I expect to finish my master’s in February 2027 and am preparing to apply to Ph.D. programs. Please email me about research topics or a meeting.',
-    },
-    email: 'todtjddms104204@pusan.ac.kr',
-  },
 } as const;

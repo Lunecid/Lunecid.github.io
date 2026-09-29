@@ -8,4 +8,4 @@ export const getStaticPaths = (async () =>
   (await getProjects('en')).filter((e) => hasProjectPage(e.data)).map((entry) => ({ params: { slug: projectSlug(entry) }, props: { entry } }))) satisfies GetStaticPaths;
 ---
 
-<ProjectView lang="en" entry={Astro.props.entry} />
+<ProjectView lang="en" variant="game" entry={Astro.props.entry} />

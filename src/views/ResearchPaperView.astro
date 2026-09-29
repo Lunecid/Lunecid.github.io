@@ -5,24 +5,29 @@
 import type { CollectionEntry } from 'astro:content';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import PaperSheet from '../components/research/PaperSheet.astro';
-import { PAGE_META } from '../data/copy/pages';
 import { fontFaceCss } from '../lib/fonts';
 import { toPaperPage } from '../lib/publications';
 import { RIOT_NOTICE_ON_PAGES } from '../config';
 import type { Lang } from '../i18n/ui';
 import type { NoticeKey } from '../types';
+import type { VariantId } from '../variants/ids';
+import { getVariant, pageMetaFor } from '../variants';
+import { getFactSource } from '../lib/portfolio';
 
 interface Props {
   lang: Lang;
+  variant: VariantId;
   entry: CollectionEntry<'publications'>;
 }
 
 /** Preflight Q19: Riot notice on this page when RIOT_NOTICE_ON_PAGES is true; otherwise credits only. */
 const PAPER_NOTICES: NoticeKey[] = RIOT_NOTICE_ON_PAGES ? ['riot'] : [];
 
-const { lang, entry } = Astro.props;
+const { lang, variant, entry } = Astro.props;
+const v = getVariant(variant);
+const facts = await getFactSource();
 const paper = toPaperPage(entry, lang);
-const meta = PAGE_META['research-story'][lang];
+const meta = pageMetaFor('research-story', lang, variant, facts);
 // The Korean serif (Korean title gloss, 국문 초록, footnote) is set up on the Korean page only; the build subsets
 // it to exactly the Hangul inside this page's sheet (scripts/fonts/build.mjs).
 const koreanSerif = paper.titleKo !== null || paper.abstractKo !== null ? fontFaceCss(['serifKo']) : null;

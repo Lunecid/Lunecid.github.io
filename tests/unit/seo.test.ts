@@ -42,7 +42,7 @@ describe('seo helpers', () => {
   });
 
   it('personJsonLd names Seongeun Baek with GitHub and DACON in sameAs and adds only non-null researchIds', () => {
-    const ko = personJsonLd('ko');
+    const ko = personJsonLd('ko', { jobTitle: '게임 데이터 분석가 · 연구자', url: 'https://lunecid.github.io/' });
     expect(ko).toMatchObject({
       '@context': 'https://schema.org',
       '@type': 'Person',
@@ -52,7 +52,8 @@ describe('seo helpers', () => {
       email: SITE.email,
       sameAs: [SITE.githubUrl, SITE.daconUrl],
     });
-    const en = personJsonLd('en', { scholar: 'https://scholar.google.com/citations?user=abc', orcid: null });
+    expect(ko.jobTitle).toBe('게임 데이터 분석가 · 연구자');
+    const en = personJsonLd('en', { jobTitle: 'Game Data Analyst · Researcher', url: 'https://lunecid.github.io/en/' }, { scholar: 'https://scholar.google.com/citations?user=abc', orcid: null });
     expect(en.name).toBe('Seongeun Baek');
     expect(en.alternateName).toBe('백성은');
     expect(en.url).toBe('https://lunecid.github.io/en/');

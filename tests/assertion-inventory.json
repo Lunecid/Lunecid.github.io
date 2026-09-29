@@ -49,8 +49,8 @@
   "tests/content/legal.test.ts": 59,
   "tests/content/projects.test.ts": 150,
   "tests/content/records.test.ts": 133,
-  "tests/content/research.test.ts": 59,
-  "tests/content/schemas.test.ts": 91,
+  "tests/content/research.test.ts": 60,
+  "tests/content/schemas.test.ts": 92,
   "tests/e2e/anchors.spec.ts": 11,
   "tests/e2e/art-variants.spec.ts": 65,
   "tests/e2e/content-honesty.spec.ts": 39,
@@ -137,10 +137,11 @@
   "tests/unit/resume-model.test.ts": 76,
   "tests/unit/robots.test.ts": 6,
   "tests/unit/routes.test.ts": 110,
-  "tests/unit/seo.test.ts": 27,
+  "tests/unit/seo.test.ts": 28,
   "tests/unit/stats-hygiene.test.ts": 26,
   "tests/unit/style-rules.test.ts": 31,
   "tests/unit/tokens.test.ts": 55,
   "tests/unit/toolchain.test.ts": 76,
+  "tests/unit/variants.test.ts": 57,
   "tests/unit/yaml-loader.test.ts": 33
 }

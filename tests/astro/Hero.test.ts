@@ -15,6 +15,8 @@ import { readSource, renderAstro } from './helpers';
 const KO_TAGLINE = '플레이어를 예측하는 데서 멈추지 않고, 이해하는 데이터를 만듭니다.';
 const EN_TAGLINE = 'Beyond predicting players: building data that explains them.';
 const STATUS = '2027년 2월 석사 졸업 예정 · 게임 데이터 분석가 채용과 박사과정 진학을 함께 준비하고 있습니다.';
+/** P1-7a: the class line is the version headline (HomeView passes it; en in upper case). */
+const CLASS_LINE = { ko: '게임 데이터 분석가 · 연구자', en: 'GAME DATA ANALYST · RESEARCHER' } as const;
 
 const REMIELLE: StageCharacter = {
   id: 'remielle',
@@ -31,6 +33,7 @@ const REMIELLE: StageCharacter = {
 
 function props(overrides: Record<string, unknown> = {}): Record<string, unknown> {
   const copy = heroCopy.ko;
+  const classLine = CLASS_LINE[overrides.lang === 'en' ? 'en' : 'ko'];
   return {
     lang: 'ko',
     chars: [],
@@ -53,7 +56,7 @@ function props(overrides: Record<string, unknown> = {}): Record<string, unknown>
     artifact: copy.artifact,
     credit: null,
     swap: copy.swap,
-    playerCard: copy.playerCard,
+    playerCard: { ...copy.playerCard, classLine },
     ...overrides,
   };
 }

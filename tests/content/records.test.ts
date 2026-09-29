@@ -12,6 +12,8 @@ import { findDates, readFrontmatter } from './helpers';
 import { researchPage } from '../../src/data/research-page';
 import { resolveLocalizedDeep } from '../../src/lib/facts';
 import { loadFactSource } from '../helpers/fact-source';
+import { resolveIdentity } from '../../src/variants';
+import { gameVariant } from '../../src/variants/game';
 
 const ROOT = process.cwd();
 const DATA = join(ROOT, 'src', 'data');
@@ -135,8 +137,8 @@ describe('records data files', () => {
     expect(data.profile.name).toEqual({ ko: '백성은', en: 'Seongeun Baek' });
     expect(data.profile.email).toBe(SITE.email);
     expect(data.profile.github).toBe('Lunecid');
-    expect(data.profile.tagline.ko).toBe('플레이어를 예측하는 데서 멈추지 않고, 이해하는 데이터를 만듭니다.');
-    expect(data.profile.status.ko).toContain('2027년 2월 석사 졸업 예정');
+    expect(resolveIdentity(gameVariant, 'ko', loadFactSource()).tagline).toBe('플레이어를 예측하는 데서 멈추지 않고, 이해하는 데이터를 만듭니다.');
+    expect(resolveIdentity(gameVariant, 'ko', loadFactSource()).status).toContain('2027년 2월 석사 졸업 예정');
     expect(data.profile.location).toEqual({ ko: '부산', en: 'Busan, South Korea' });
     const ms = data.education.find((e) => e.id === 'ms-pnu');
     const bs = data.education.find((e) => e.id === 'bs-pnu');
@@ -380,7 +382,7 @@ describe('records data files', () => {
     const busan = awards().find((a) => a.id === 'busan-mayor-award');
     expect(busan?.name.en).toBe('Top Excellence Award (Mayor of Busan Award)');
     expect(busan?.contest.ko).toContain('2025 Big Data 활용 대회');
-    expect(resume().profile.about.en).toContain('kill-conditioned engagements');
+    expect(resolveIdentity(gameVariant, 'en', loadFactSource()).about).toContain('kill-conditioned engagements');
   });
 
   it('P2-28: one form per term in the site copy (석사 학위논문, Ph.D., public match records (Riot API), lab full name first)', () => {
@@ -396,8 +398,8 @@ describe('records data files', () => {
     expect(pub).toContain('ko: "교전 직전 30초의 공개 경기 기록(Riot API)만으로');
     expect(pub).toContain('public match records (Riot API)');
     const data = resume();
-    expect(data.profile.about.ko).toContain('공개 경기 기록(Riot API)');
-    expect(data.profile.about.en).toContain('public match records (Riot API)');
+    expect(resolveIdentity(gameVariant, 'ko', loadFactSource()).about).toContain('공개 경기 기록(Riot API)');
+    expect(resolveIdentity(gameVariant, 'en', loadFactSource()).about).toContain('public match records (Riot API)');
     // /records/ names the lab first in the education timeline: full name, then the short "DataLab".
     const ms = data.education.find((e) => e.id === 'ms-pnu');
     expect(ms?.lab?.ko.startsWith('데이터사이언스연구실(DataLab)')).toBe(true);
