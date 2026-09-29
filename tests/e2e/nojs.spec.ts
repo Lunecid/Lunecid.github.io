@@ -94,4 +94,16 @@ test('site is usable without JavaScript at 375px', async ({ page, request }) => 
     await expect(stage).not.toHaveAttribute('aria-labelledby', /.+/);
     await expect(page.getByRole('tabpanel')).toHaveCount(0);
   });
+
+  await test.step('/game/player-log/: site achievements show no hints, progress or storage note, only the no-JS line; no heading named ??? (P-02)', async () => {
+    await page.goto('/game/player-log/');
+    const list = page.locator('#site-achievements');
+    for (const sel of ['.site-ach__hint', '.site-ach__desc--hint', '.site-ach__progress', '.site-ach__note']) {
+      for (const el of await list.locator(sel).all()) await expect(el, sel).toBeHidden();
+    }
+    await expect(list.locator('.site-ach__nojs')).toBeVisible();
+    await expect(list.locator('.site-ach__nojs')).toHaveText('JavaScript를 켜면 업적이 기록됩니다.');
+    await expect(page.getByRole('heading', { name: '???', exact: true })).toHaveCount(0);
+    await expect(list.getByRole('heading', { name: '숨은 업적, 달성하면 제목이 공개됩니다', exact: true })).toHaveCount(1);
+  });
 });

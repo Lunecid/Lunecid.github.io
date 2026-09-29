@@ -169,8 +169,8 @@ describe('toolchain', () => {
     const types = await import('../../src/types');
     expect(types.CHARACTER_IDS).toEqual(['remielle', 'eula', 'mona']);
     expect(types.NAV_SECTIONS).toEqual(['research', 'projects', 'records', 'player-log']);
-    expect(types.ACHIEVEMENT_TRIGGERS).toHaveLength(8);
-    expect(new Set(types.ACHIEVEMENT_TRIGGERS).size).toBe(8);
+    expect(new Set(types.ACHIEVEMENT_TRIGGERS).size).toBe(types.ACHIEVEMENT_TRIGGERS.length);
+    expect(types.ACHIEVEMENT_TRIGGERS).not.toContain('visit-404');
     expect(types.NOTICE_KEYS).toContain('riot');
     expect(types.CERTIFICATE_IDS).toEqual(['busan-mayor-award', 'cds-encouragement-award', 'multicampus-grand-award']);
     expect(types.GAME_IDS).toEqual(['zzz', 'genshin', 'lol', 'dnf', 'steam']);

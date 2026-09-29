@@ -408,12 +408,13 @@ describe('records data files', () => {
     expect(ms?.thesis?.ko.startsWith('석사 학위논문')).toBe(true);
   });
 
-  it('achievements: 8 unique ids and triggers, all in ACHIEVEMENT_TRIGGERS', () => {
+  it('achievements: unique ids and triggers, all in ACHIEVEMENT_TRIGGERS (A-8: no 404 achievement)', () => {
     const list = achievements();
-    expect(list).toHaveLength(8);
-    expect(new Set(list.map((a) => a.id)).size).toBe(8);
+    expect(list).toHaveLength(ACHIEVEMENT_TRIGGERS.length);
+    expect(new Set(list.map((a) => a.id)).size).toBe(list.length);
     expect(list.map((a) => a.trigger).sort()).toEqual([...ACHIEVEMENT_TRIGGERS].sort());
-    expect(list.filter((a) => a.hidden).map((a) => a.id).sort()).toEqual(['game-over', 'konami']);
+    expect(list.filter((a) => a.hidden).map((a) => a.id).sort()).toEqual(['konami']);
+    expect(list.map((a) => a.id)).not.toContain('game-over');
   });
 
   it('P1-19: the Academic CV research interests are the three research-page interest titles (interests, not skills)', () => {
@@ -430,7 +431,7 @@ describe('records data files', () => {
     // the bar shows the current language first: 'KO / EN' on Korean pages, 'EN / KO' on English pages
     expect(byId['bilingual']?.hint.ko).toContain('KO / EN');
     expect(byId['bilingual']?.hint.en).toContain('EN / KO');
-    expect(byId['konami']?.hint.ko).toBe('고전 게임의 비밀 커맨드가 여기서도 통합니다.');
+    expect(byId['konami']?.hint.ko).toBe('고전 게임의 비밀 커맨드를 키보드로 입력해 보세요.'); // P-02 (F-077): names the keyboard
   });
 
   it('favorites order is zzz, genshin, lol, dnf, steam, locked games have reasons, accounts are null', () => {

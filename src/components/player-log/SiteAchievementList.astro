@@ -25,8 +25,9 @@ const progressTemplate = ui[lang]['achievement.progress'];
         <li class="site-ach__item" data-ach-id={d.id} data-unlocked="false">
           <span class="site-ach__icon" aria-hidden="true">★</span>
           <div class="site-ach__body">
-            <h3 class="site-ach__title" data-ach-slot="title">{d.hidden ? t(lang, 'achievement.hiddenTitle') : d.title[lang]}</h3>
-            <p class="site-ach__desc" data-ach-slot="desc">{runs(d.hidden ? d.hint[lang] : d.description[lang]).map((r) => (r.ko ? <span lang="ko">{r.text}</span> : r.text))}</p>
+            {/* P-02 (F-087): a hidden title reads as the sr-only sentence, not as a heading named '???'; reveal() replaces both spans. */}
+            <h3 class="site-ach__title" data-ach-slot="title">{d.hidden ? <Fragment><span aria-hidden="true">{t(lang, 'achievement.hiddenTitle')}</span><span class="sr-only">{t(lang, 'achievement.hiddenTitleSr')}</span></Fragment> : d.title[lang]}</h3>
+            <p class:list={['site-ach__desc', { 'site-ach__desc--hint': d.hidden }]} data-ach-slot="desc">{runs(d.hidden ? d.hint[lang] : d.description[lang]).map((r) => (r.ko ? <span lang="ko">{r.text}</span> : r.text))}</p>
             {!d.hidden && <p class="site-ach__hint">{runs(d.hint[lang]).map((r) => (r.ko ? <span lang="ko">{r.text}</span> : r.text))}</p>}
             {d.hidden && <template data-ach-real><span data-ach-title>{d.title[lang]}</span><span data-ach-desc>{d.description[lang]}</span></template>}
           </div>
@@ -38,12 +39,14 @@ const progressTemplate = ui[lang]['achievement.progress'];
         </li>
       ))}
     </ol>
-    <p class="site-ach__note">{t(lang, 'achievement.storageNote')}</p>
+    {/* P-02 (F-091): without JS nothing is recorded, so base.css hides the progress, hints and note and shows this line instead. */}
+    <p class="site-ach__nojs">{t(lang, 'achievement.noJs')}</p>
+    <p class="site-ach__note" data-ach-note data-blocked-text={t(lang, 'achievement.storageBlocked')}>{t(lang, 'achievement.storageNote')}</p>
   </div>
 </section>
 
 <script>
-  import { readUnlocked, UNLOCK_EVENT } from '../../lib/achievements';
+  import { isStorageBlocked, readUnlocked, STORAGE_BLOCKED_EVENT, UNLOCK_EVENT } from '../../lib/achievements';
 
   const root = document.querySelector<HTMLElement>('[data-site-ach]');
   if (root) {
@@ -80,14 +83,23 @@ const progressTemplate = ui[lang]['achievement.progress'];
       if (progress && template) progress.textContent = template.replace('{n}', String(n)).replace('{total}', String(items.length));
     };
 
+    // P-02 (F-091): once a write to the shared store threw, say that progress lasts only on this page.
+    const note = root.querySelector<HTMLElement>('[data-ach-note]');
+    const showBlocked = () => {
+      const text = note?.dataset.blockedText;
+      if (note && text && isStorageBlocked()) note.textContent = text;
+    };
+
     sync();
+    showBlocked();
     window.addEventListener(UNLOCK_EVENT, sync);
+    window.addEventListener(STORAGE_BLOCKED_EVENT, showBlocked);
   }
 </script>
 
 <style>
   .site-ach__progress { margin-top: 16px; font: 700 15px/1.4 var(--font-mono); color: var(--read-text); }
-  .site-ach__progress:lang(ko) { font-family: var(--font-sans); } /* "0 / 8 달성" */
+  .site-ach__progress:lang(ko) { font-family: var(--font-sans); } /* "0 / 7 달성" */
   /* Shared list packing: align-content:start so state tags stay 24px (F-055); game lists reuse the same idea. */
   .site-ach__list { margin-top: 16px; padding: 0; list-style: none; border-top: 1px solid var(--read-line-strong); }
   @media (min-width: 734px) {
@@ -112,5 +124,5 @@ const progressTemplate = ui[lang]['achievement.progress'];
   .site-ach__state-tag:not([hidden]) { height: 24px; box-sizing: border-box; display: inline-flex; align-items: center; }
   .site-ach__state-tag[hidden] { display: none; }
   .site-ach__state-tag--on { color: var(--gold-ink); background: var(--gold); border-color: var(--gold); }
-  .site-ach__note { margin-top: 14px; font-size: 14px; color: var(--read-muted); }
+  .site-ach__note, .site-ach__nojs { margin-top: 14px; font-size: 14px; color: var(--read-muted); }
 </style>

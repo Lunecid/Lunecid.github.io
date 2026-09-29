@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import SiteAchievementList from '../../src/components/player-log/SiteAchievementList.astro';
 import { achievementSchema } from '../../src/content/schemas';
 import { parseYamlList } from '../../src/content/yaml-loader';
+import { ui } from '../../src/i18n/ui';
 import { renderAstro } from './helpers';
 
 const defs = parseYamlList(readFileSync(join(process.cwd(), 'src/data/achievements.yaml'), 'utf8')).map((a) => achievementSchema.parse(a));
@@ -11,30 +12,31 @@ const item = (html: string, id: string) => html.match(new RegExp(`<li[^>]*data-a
 const withoutTemplate = (s: string) => s.replace(/<template[\s\S]*?<\/template>/g, '');
 
 describe('SiteAchievementList', () => {
-  it('8 items; hidden ones show ??? and keep real text in a template; progress counter and storage note', async () => {
+  it('one item per achievement; hidden ones show ??? and keep real text in a template; progress counter and storage note', async () => {
     const html = await renderAstro(SiteAchievementList, { props: { lang: 'ko', defs } });
     expect(html).toMatch(/<section[^>]*id="site-achievements"/);
-    expect(html.match(/data-ach-id="/g)).toHaveLength(8);
+    expect(html.match(/data-ach-id="/g)).toHaveLength(defs.length);
 
     const konami = item(html, 'konami');
-    expect(withoutTemplate(konami)).toContain('???');
-    expect(withoutTemplate(konami)).toContain('고전 게임의 비밀 커맨드가 여기서도 통합니다.'); // P2-34
+    expect(withoutTemplate(konami)).toContain(ui.ko['achievement.hiddenTitleSr']);
+    expect(withoutTemplate(konami)).toContain('고전 게임의 비밀 커맨드를 키보드로 입력해 보세요.'); // P2-34, P-02 (F-077)
     expect(withoutTemplate(konami)).not.toContain('↑↑↓↓←→←→BA');
+    // P-02 (F-091): a hidden row's description is its hint, so base.css hides it without JS like .site-ach__hint
+    expect(withoutTemplate(konami)).toMatch(/class="[^"]*\bsite-ach__desc--hint\b/);
     expect(konami).toMatch(/<template[^>]*data-ach-real[^>]*>[\s\S]*↑↑↓↓←→←→BA[\s\S]*코나미 커맨드를 입력했습니다\.[\s\S]*<\/template>/);
 
-    const gameOver = item(html, 'game-over');
-    expect(withoutTemplate(gameOver)).not.toContain('없는 페이지에 도착했습니다.');
-    expect(gameOver).toMatch(/<template[\s\S]*없는 페이지에 도착했습니다\.[\s\S]*<\/template>/);
+    expect(withoutTemplate(konami)).not.toContain('코나미 커맨드를 입력했습니다.');
+    expect(item(html, 'game-over')).toBe('');
 
     const reader = item(html, 'abstract-reader');
     expect(reader).toContain('초록 펼치기');
     expect(reader).toContain('논문 초록을 펼쳐 읽었습니다.');
     expect(reader).not.toContain('<template');
 
-    expect(html).toMatch(/data-ach-progress[^>]*>0 \/ 8 달성</);
+    expect(html).toMatch(new RegExp(`data-ach-progress[^>]*>0 \\/ ${defs.length} 달성<`));
     expect(html).toContain('data-template="{n} / {total} 달성"');
     expect(html).toContain('달성 기록은 이 브라우저에만 저장됩니다.');
-    expect(html.match(/data-ach-state="locked"/g)).toHaveLength(8);
+    expect(html.match(/data-ach-state="locked"/g)).toHaveLength(defs.length);
     expect(html).toMatch(/<script[^>]*type="module"/);
   });
 
@@ -64,7 +66,7 @@ describe('SiteAchievementList', () => {
   it('English page uses English copy', async () => {
     const html = await renderAstro(SiteAchievementList, { props: { lang: 'en', defs } });
     expect(html).toContain('Abstract Opened');
-    expect(html).toMatch(/data-ach-progress[^>]*>0 \/ 8 unlocked</);
+    expect(html).toMatch(new RegExp(`data-ach-progress[^>]*>0 \\/ ${defs.length} unlocked<`));
     expect(html).toContain('Progress is saved only in this browser.');
   });
 });

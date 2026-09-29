@@ -61,9 +61,9 @@ describe('achievements runtime', () => {
 
   it('drainTriggers empties the queue', () => {
     emitTrigger('konami');
-    emitTrigger('visit-404');
+    emitTrigger('open-abstract');
     const queue = window.__sbTriggers;
-    expect(drainTriggers()).toEqual(['konami', 'visit-404']);
+    expect(drainTriggers()).toEqual(['konami', 'open-abstract']);
     expect(drainTriggers()).toEqual([]);
     expect(queue).toEqual([]); // emptied in place, so an early reference sees it too
   });
@@ -114,7 +114,7 @@ describe('achievements runtime', () => {
   it('idsForTrigger maps triggers to ids', () => {
     expect(idsForTrigger(DEFS, 'open-abstract')).toEqual(['abstract-reader']);
     expect(idsForTrigger(DEFS, 'konami')).toEqual(['konami']);
-    expect(idsForTrigger(DEFS, 'visit-404')).toEqual([]);
+    expect(idsForTrigger(DEFS, 'bgm-on')).toEqual([]);
   });
 
   it('toNavSection accepts the 4 sections and maps anything else to null', () => {

@@ -50,6 +50,7 @@ describe('PAGE_META', () => {
     expect(gameVariant.pageMeta.home.ko.title).toBe('백성은 · 게임 데이터 분석가·연구자');
     expect(gameVariant.pageMeta.home.en.title).toBe('Seongeun Baek · Game Data Analyst & Researcher');
     expect(PAGE_META['research-story'].ko.title).toBe('교전 결과 예측 논문 · 백성은');
+    expect(PAGE_META['not-found']).toEqual({ ko: { title: '페이지를 찾을 수 없습니다 · 백성은', description: '페이지를 찾을 수 없습니다. Page not found.' }, en: { title: 'Page not found · Seongeun Baek', description: 'Page not found. 페이지를 찾을 수 없습니다.' } });
   });
 
   it('no title contains a trademark', () => {

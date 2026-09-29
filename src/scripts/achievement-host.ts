@@ -6,8 +6,7 @@
 // controller ruling 1), auto-dismiss after TOAST_MS, paused while hovered or focused. CSS animations only.
 // N10: Esc + overlapping focusin dismiss; hold until intro-done + ~950ms (immediate under reduce); title only.
 // The host root carries its strings: data-lang, data-close-label, aria-label (the region name) and data-defs (the
-// reachable achievements as JSON, built from src/data/achievements.yaml). EN_404_SCRIPT (src/lib/en-404.ts) patches
-// the first three to English on an /en/ 404 before this deferred module runs.
+// reachable achievements as JSON, built from src/data/achievements.yaml). The neutral 404 (P1-16) has no host.
 import type { Lang } from '../i18n/ui';
 import {
   TRIGGER_EVENT,

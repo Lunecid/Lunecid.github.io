@@ -1,4 +1,4 @@
-# achievements.yaml — 사이트 업적 8개(spec §5: 6–10개, 콘텐츠와 연결된 것만).
+# achievements.yaml — 사이트 업적 7개(spec §5: 6–10개, 콘텐츠와 연결된 것만).
 # 규칙
 # - 반복 작업형 업적·경험치(XP)·점수·리더보드는 만들지 않는다. 업적 때문에 콘텐츠를 잠그지 않는다.
 # - 달성 상태는 방문자 브라우저의 localStorage에만 저장한다(오류가 나면 무시). 서버로 보내지 않는다.
@@ -11,7 +11,6 @@
 #     switch-language     한국어·영어 페이지를 모두 방문
 #     bgm-on              배경음악 버튼을 켬
 #     konami              ↑ ↑ ↓ ↓ ← → ← → B A 입력(입력 칸에 포커스가 있을 때는 무시)
-#     visit-404           404 페이지 방문
 #   view-player-log 트리거는 visit-all-sections에 포함되므로 쓰지 않는다.
 
 - id: abstract-reader
@@ -90,8 +89,8 @@
     ko: 배경음악을 켰습니다. 곡은 HoliznaCC0의 “Everything You Ever Dreamed.”입니다.
     en: Turned on the background music, “Everything You Ever Dreamed.” by HoliznaCC0.
   hint:
-    ko: 상단의 소리 버튼을 눌러 보세요.
-    en: Try the sound button at the top.
+    ko: 상단의 [♪ BGM] 버튼을 눌러 보세요.
+    en: Try [♪ BGM] at the top.
 
 - id: konami
   trigger: konami
@@ -103,18 +102,5 @@
     ko: 코나미 커맨드를 입력했습니다.
     en: Entered the Konami Code.
   hint:
-    ko: 고전 게임의 비밀 커맨드가 여기서도 통합니다.
-    en: A classic cheat code works here.
-
-- id: game-over
-  trigger: visit-404
-  hidden: true
-  title:
-    ko: GAME OVER
-    en: GAME OVER
-  description:
-    ko: 없는 페이지에 도착했습니다.
-    en: Reached a page that does not exist.
-  hint:
-    ko: 길을 한 번 잃어 보세요.
-    en: Try getting lost once.
+    ko: 고전 게임의 비밀 커맨드를 키보드로 입력해 보세요.
+    en: Type a classic cheat code on the keyboard.

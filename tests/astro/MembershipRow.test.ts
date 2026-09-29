@@ -62,7 +62,7 @@ describe('AchievementMeter', () => {
     const html = await renderAstro(AchievementMeter, { props: { lang: 'ko', defs } });
     expect(html).toMatch(/<div class="ach-meter bracket"[^>]*data-ach-meter/);
     expect(html).toContain(`data-ids="${defs.map((d) => d.id).join(' ')}"`);
-    expect(html).toMatch(/data-ach-meter-count[^>]*>0 \/ 8 달성</);
+    expect(html).toMatch(new RegExp(`data-ach-meter-count[^>]*>0 \\/ ${defs.length} 달성<`));
     expect(html).toContain('data-template="{n} / {total} 달성"');
     expect(html.match(/data-ach-slot="/g)).toHaveLength(defs.length);
     expect(html).toMatch(/<ol class="ach-meter__slots" role="list" aria-hidden="true"/);
@@ -70,7 +70,7 @@ describe('AchievementMeter', () => {
     expect(html).toMatch(/<a class="sec-more" href="#site-achievements"[^>]*>업적 목록 보기 /);
     expect(html).toMatch(/<script[^>]*type="module"/);
     const en = await renderAstro(AchievementMeter, { props: { lang: 'en', defs }, url: '/en/game/player-log/' });
-    expect(en).toMatch(/data-ach-meter-count[^>]*>0 \/ 8 unlocked</);
+    expect(en).toMatch(new RegExp(`data-ach-meter-count[^>]*>0 \\/ ${defs.length} unlocked<`));
     expect(en).toContain('See all achievements');
   });
 });

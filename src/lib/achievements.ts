@@ -12,6 +12,8 @@ export type AchievementDef = AchievementData;
 
 export const TRIGGER_EVENT = 'sb:trigger';
 export const UNLOCK_EVENT = 'sb:achievement-unlocked';
+/** P-02 (F-091): dispatched once, the first time a localStorage write of this store throws. */
+export const STORAGE_BLOCKED_EVENT = 'sb:achievement-storage-blocked';
 
 declare global {
   interface Window {
@@ -29,6 +31,18 @@ const LANGS: readonly Lang[] = ['ko', 'en'];
 
 let memoryUnlocked: Record<string, string> = {};
 let memoryVisits: Visits = { sections: [], langs: [] };
+let storageBlocked = false;
+
+/** P-02 (F-091): true once a write to the achievement store threw (progress then lives only on this page). */
+export function isStorageBlocked(): boolean {
+  return storageBlocked;
+}
+
+function markStorageBlocked(): void {
+  if (storageBlocked) return;
+  storageBlocked = true;
+  if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent(STORAGE_BLOCKED_EVENT));
+}
 
 /**
  * The achievements a visitor can actually reach on this build: bgm-on only when the BGM file exists (the BGM button
@@ -96,7 +110,7 @@ export function unlock(id: string, now: Date = new Date()): boolean {
   try {
     localStorage.setItem(STORAGE_KEYS.achievements, JSON.stringify({ ...readStoredUnlocked(), [id]: at }));
   } catch {
-    /* storage blocked: memoryUnlocked keeps this page consistent */
+    markStorageBlocked(); /* memoryUnlocked keeps this page consistent */
   }
   if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent(UNLOCK_EVENT, { detail: { id } }));
   return true;
@@ -141,7 +155,7 @@ export function recordVisit(section: NavSection | null, lang: Lang): Achievement
   try {
     localStorage.setItem(STORAGE_KEYS.visits, JSON.stringify(visits));
   } catch {
-    /* storage blocked: memoryVisits keeps this page consistent */
+    markStorageBlocked(); /* memoryVisits keeps this page consistent */
   }
   const out: AchievementTrigger[] = [];
   if (NAV_SECTIONS.every((s) => visits.sections.includes(s))) out.push('visit-all-sections');
@@ -153,4 +167,5 @@ export function recordVisit(section: NavSection | null, lang: Lang): Achievement
 export function __resetAchievementMemory(): void {
   memoryUnlocked = {};
   memoryVisits = { sections: [], langs: [] };
+  storageBlocked = false;
 }

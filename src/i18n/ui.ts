@@ -254,8 +254,11 @@ export const ui = {
     'achievement.unlocked': '업적 달성',
     'achievement.hidden': '숨은 업적',
     'achievement.hiddenTitle': '???',
+    'achievement.hiddenTitleSr': '숨은 업적, 달성하면 제목이 공개됩니다',
     'achievement.progress': '{n} / {total} 달성',
     'achievement.storageNote': '달성 기록은 이 브라우저에만 저장됩니다.',
+    'achievement.storageBlocked': '이 브라우저가 저장을 막아 업적이 이 페이지에서만 유지됩니다.',
+    'achievement.noJs': 'JavaScript를 켜면 업적이 기록됩니다.',
     'achievement.viewAll': '업적 목록 보기',
     'achievement.dismiss': '알림 닫기',
     'achievement.locked': '잠김',
@@ -296,11 +299,10 @@ export const ui = {
     'github.profile': 'GitHub 프로필',
 
     // 404
-    '404.title': 'GAME OVER',
-    '404.message': '페이지를 찾을 수 없습니다.',
-    '404.continue': 'CONTINUE?',
-    '404.home': '처음으로',
-    '404.projects': '프로젝트 보기',
+    '404.title': '페이지를 찾을 수 없습니다.',
+    '404.message': '보려는 포트폴리오 버전의 홈으로 이동할 수 있습니다.',
+    '404.gameHome': '게임 버전 홈',
+    '404.dataHome': '일반 버전 홈',
 
     // 푸터
     'footer.lastUpdated': '마지막 업데이트',
@@ -548,8 +550,11 @@ export const ui = {
     'achievement.unlocked': 'Achievement unlocked',
     'achievement.hidden': 'Hidden achievement',
     'achievement.hiddenTitle': '???',
+    'achievement.hiddenTitleSr': 'Hidden achievement, title revealed on unlock',
     'achievement.progress': '{n} / {total} unlocked',
     'achievement.storageNote': 'Progress is saved only in this browser.',
+    'achievement.storageBlocked': 'This browser blocks storage, so achievements last only on this page.',
+    'achievement.noJs': 'Turn on JavaScript to record achievements.',
     'achievement.viewAll': 'See all achievements',
     'achievement.dismiss': 'Dismiss',
     'achievement.locked': 'Locked',
@@ -590,11 +595,10 @@ export const ui = {
     'github.profile': 'GitHub profile',
 
     // 404
-    '404.title': 'GAME OVER',
-    '404.message': 'Page not found.',
-    '404.continue': 'CONTINUE?',
-    '404.home': 'Back to start',
-    '404.projects': 'See projects',
+    '404.title': 'Page not found.',
+    '404.message': 'You can go to the home page of either portfolio version.',
+    '404.gameHome': 'Game version home',
+    '404.dataHome': 'General version home',
 
     // Footer
     'footer.lastUpdated': 'Last updated',

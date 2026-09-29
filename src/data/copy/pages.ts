@@ -120,11 +120,11 @@ export const PAGE_META: Record<CommonPageKey, Localized<{ title: string; descrip
   },
   'not-found': {
     ko: {
-      title: 'GAME OVER · 백성은',
+      title: '페이지를 찾을 수 없습니다 · 백성은',
       description: '페이지를 찾을 수 없습니다. Page not found.',
     },
     en: {
-      title: 'GAME OVER · Seongeun Baek',
+      title: 'Page not found · Seongeun Baek',
       description: 'Page not found. 페이지를 찾을 수 없습니다.',
     },
   },

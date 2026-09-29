@@ -76,6 +76,8 @@ test.describe('D-13: the Player Log shows only what exists', () => {
       await expect(page.locator('#site-achievements [data-ach-id]')).toHaveCount(ACHIEVEMENT_COUNT);
       const hint = route.startsWith('/en/') ? 'Menu → 한국어' : '메뉴 → English';
       await expect(page.locator('#site-achievements [data-ach-id="bilingual"]')).toContainText(hint);
+      // P-02 (F-091): the no-JS line stays hidden when JavaScript runs.
+      await expect(page.locator('#site-achievements .site-ach__nojs')).toBeHidden();
     });
   }
 });

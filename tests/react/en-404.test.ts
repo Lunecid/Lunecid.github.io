@@ -1,10 +1,18 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { CV_HREF } from '../../src/config';
 import { ui } from '../../src/i18n/ui';
 import { EN_404_SCRIPT } from '../../src/lib/en-404';
 
-// EN_404_SCRIPT is the inline page-end script of src/pages/404.astro (P2-15); the Playwright specs in
-// tests/e2e/interaction.spec.ts cover it end to end, this pins the one string it must share with ui.ts.
+const SKELETON = `
+  <a class="skip-link" href="#main">본문으로 건너뛰기</a>
+  <a class="nt-header__brand" href="/" data-nt-brand>백성은</a>
+  <a href="/en/" hreflang="en" lang="en" data-nt-lang>English</a>
+  <h1 data-nf-title>페이지를 찾을 수 없습니다.</h1><p data-nf-message>…</p>
+  <a href="/game/" data-nf-home="game">게임 버전 홈</a><a href="/data/" data-nf-home="data">일반 버전 홈</a>
+  <nav class="nt-footer__nav" aria-label="사이트 정보">
+    <a href="/stats/" data-nt-footer-link="stats">방문 통계</a><a href="/privacy/" data-nt-footer-link="privacy">개인정보 처리방침</a>
+    <a href="/credits/" data-nt-footer-link="credits">출처·고지</a><a href="/?choose" data-nt-footer-link="chooser">선택 화면으로</a>
+  </nav>
+  <p class="nt-footer__copy" data-year="2026">© 2026 백성은</p>`;
 
 afterEach(() => {
   document.body.innerHTML = '';
@@ -12,54 +20,44 @@ afterEach(() => {
   window.history.replaceState(null, '', '/');
 });
 
-describe('EN_404_SCRIPT', () => {
-  it('is a self-contained classic script (no imports/exports at runtime)', () => {
+describe('EN_404_SCRIPT (§7: built from ui.en and the link builders)', () => {
+  it('is a self-contained classic script', () => {
     expect(EN_404_SCRIPT).not.toMatch(/\b(import|export|require)\b/);
     expect(EN_404_SCRIPT.trim().startsWith('(function')).toBe(true);
   });
 
-  it("fix round 4 item 1: on /en/ the footer motion note reads ui.ts's English action.motionOsOff, not a stale literal", () => {
-    // The note becomes the motion toggle's accessible description while the OS forces reduced motion (the footer's
-    // runtime sync() adds aria-describedby="motion-os-note" only then), so it must match every other /en/ footer.
-    document.body.innerHTML = `<p id="motion-os-note" hidden>${ui.ko['action.motionOsOff']}</p>`;
-    window.history.replaceState(null, '', '/en/zzz-missing/');
-    new Function(EN_404_SCRIPT)();
-    expect(document.documentElement.lang).toBe('en');
-    expect(document.getElementById('motion-os-note')?.textContent).toBe(ui.en['action.motionOsOff']);
-    expect(ui.en['action.motionOsOff']).toBe('Motion reduced by your device setting');
-  });
+  for (const path of ['/en/zzz-missing/', '/en/game/zzz/', '/en/data/zzz/']) {
+    it(`${path}: English texts, English version homes, the switch back to Korean`, () => {
+      document.body.innerHTML = SKELETON;
+      window.history.replaceState(null, '', path);
+      new Function(EN_404_SCRIPT)();
+      const $ = (s: string) => document.querySelector(s) as HTMLElement;
+      expect(document.documentElement.lang).toBe('en');
+      expect(document.title).toBe('Page not found · Seongeun Baek');
+      expect($('.skip-link').textContent).toBe(ui.en['site.skipToContent']);
+      expect($('[data-nf-title]').textContent).toBe(ui.en['404.title']);
+      expect($('[data-nf-message]').textContent).toBe(ui.en['404.message']);
+      expect($('[data-nf-home="game"]').getAttribute('href')).toBe('/en/game/');
+      expect($('[data-nf-home="game"]').textContent).toBe(ui.en['404.gameHome']);
+      expect($('[data-nf-home="data"]').getAttribute('href')).toBe('/en/data/');
+      expect($('[data-nf-home="data"]').textContent).toBe(ui.en['404.dataHome']);
+      expect($('[data-nt-brand]').getAttribute('href')).toBe('/en/');
+      expect($('[data-nt-brand]').textContent).toBe('Seongeun Baek');
+      const lang = $('[data-nt-lang]');
+      expect([lang.getAttribute('href'), lang.getAttribute('hreflang'), lang.getAttribute('lang'), lang.textContent]).toEqual(['/', 'ko', 'ko', '한국어']);
+      expect($('.nt-footer__nav').getAttribute('aria-label')).toBe(ui.en['footer.siteInfo']);
+      expect([...document.querySelectorAll('[data-nt-footer-link]')].map((a) => [a.getAttribute('href'), a.textContent])).toEqual([
+        ['/en/stats/', ui.en['nav.stats']], ['/en/privacy/', ui.en['nav.privacy']], ['/en/credits/', ui.en['nav.credits']], ['/en/?choose', ui.en['nav.chooser']],
+      ]);
+      expect($('.nt-footer__copy').textContent).toBe('© 2026 Seongeun Baek');
+    });
+  }
 
   it('leaves a Korean-path 404 alone', () => {
-    document.body.innerHTML = `<p id="motion-os-note" hidden>${ui.ko['action.motionOsOff']}</p>`;
-    window.history.replaceState(null, '', '/zzz-missing/');
+    document.body.innerHTML = SKELETON;
+    window.history.replaceState(null, '', '/data/zzz/');
     new Function(EN_404_SCRIPT)();
-    expect(document.getElementById('motion-os-note')?.textContent).toBe(ui.ko['action.motionOsOff']);
-  });
-
-  it('interpolates nav, CV, 404 and achievement strings from ui.ts / config at build time', () => {
-    expect(EN_404_SCRIPT).toContain(JSON.stringify(ui.en['nav.research']));
-    expect(EN_404_SCRIPT).toContain(JSON.stringify(ui.en['404.message']));
-    expect(EN_404_SCRIPT).toContain(JSON.stringify(ui.en['achievement.region']));
-    expect(EN_404_SCRIPT).toContain(ui.ko['achievement.region']);
-    expect(EN_404_SCRIPT).toContain(ui.ko['achievement.dismiss']);
-    expect(EN_404_SCRIPT).toContain(JSON.stringify(CV_HREF.en));
-  });
-
-  it('P1-9b: on /en/ it switches the achievement host (data-lang, close label, region name) before the host script runs', () => {
-    document.body.innerHTML = `<div class="ach-toast-region" role="status" aria-label="${ui.ko['achievement.region']}" data-achievement-host data-lang="ko" data-close-label="${ui.ko['achievement.dismiss']}" data-defs="[]"></div>`;
-    window.history.replaceState(null, '', '/en/zzz-missing/');
-    new Function(EN_404_SCRIPT)();
-    const host = document.querySelector('[data-achievement-host]') as HTMLElement;
-    expect(host.dataset.lang).toBe('en');
-    expect(host.dataset.closeLabel).toBe(ui.en['achievement.dismiss']);
-    expect(host.getAttribute('aria-label')).toBe(ui.en['achievement.region']);
-    expect(EN_404_SCRIPT).not.toContain('astro-island');
-  });
-
-  it('P1-9b: a Korean-path 404 leaves the achievement host in Korean', () => {
-    document.body.innerHTML = `<div aria-label="${ui.ko['achievement.region']}" data-achievement-host data-lang="ko" data-close-label="${ui.ko['achievement.dismiss']}"></div>`;
-    window.history.replaceState(null, '', '/zzz-missing/');
-    new Function(EN_404_SCRIPT)();
-    expect((document.querySelector('[data-achievement-host]') as HTMLElement).dataset.lang).toBe('ko');
+    expect((document.querySelector('[data-nf-title]') as HTMLElement).textContent).toBe('페이지를 찾을 수 없습니다.');
+    expect((document.querySelector('[data-nf-home="game"]') as HTMLElement).getAttribute('href')).toBe('/game/');
   });
 });

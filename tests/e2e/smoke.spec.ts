@@ -166,39 +166,6 @@ test.describe('projects tag filter (P2-8)', () => {
   });
 });
 
-test('unknown route serves GAME OVER', async ({ page }) => {
-  const res = await page.goto('/no-such-page/');
-  expect(res?.status()).toBe(404);
-  await expect(page.getByRole('heading', { level: 1 })).toContainText('GAME OVER');
-  await expect(page.getByText('페이지를 찾을 수 없습니다')).toBeVisible();
-  await expect(page.getByText('CONTINUE?', { exact: true })).toBeVisible();
-  await expect(page.getByRole('link', { name: '처음으로', exact: true })).toHaveAttribute('href', '/game/');
-  await expect(page.getByRole('link', { name: '프로젝트 보기', exact: true })).toHaveAttribute('href', '/game/projects/');
-  await expect(page.locator('meta[http-equiv="refresh"]')).toHaveCount(0);
-  await expect(page.locator('link[hreflang]')).toHaveCount(0);
-  const url = page.url();
-  await page.waitForTimeout(3000); // no auto-redirect (spec §5)
-  expect(page.url()).toBe(url);
-  expect(await page.evaluate(() => location.pathname)).toBe('/no-such-page/');
-});
-
-test("stores achievement 'game-over' in sb:achievements after AchievementHost hydrates", async ({ page }) => {
-  await page.goto('/no-such-page/');
-  await expect
-    .poll(
-      () =>
-        page.evaluate(() => {
-          try {
-            return JSON.parse(localStorage.getItem('sb:achievements') ?? '{}')['game-over'] ?? null;
-          } catch {
-            return null;
-          }
-        }),
-      { timeout: 10_000 },
-    )
-    .toBeTruthy();
-});
-
 for (const width of [375, 320]) {
   test.describe(`legal pages at ${width} px`, () => {
     test.use({ viewport: { width, height: 812 } });

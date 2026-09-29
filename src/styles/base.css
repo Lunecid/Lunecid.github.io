@@ -84,6 +84,10 @@ a.hit { display: inline-block; }
 html:not(.js) .bgm,
 html:not(.js) [data-motion-toggle],
 html:not(.js) .fg__list { display: none; }
+/* P-02 (F-091): without JS nothing is recorded, so the site-achievement hints, progress and storage note stay out and
+   one line (.site-ach__nojs) says so instead; with JS that line is hidden. */
+html:not(.js) .site-ach__hint, html:not(.js) .site-ach__desc--hint, html:not(.js) .site-ach__progress, html:not(.js) .site-ach__note { display: none; }
+html.js .site-ach__nojs { display: none; }
 
 /* No JS + OS reduced motion: stop the first-paint keyframe entrances (JS users get the per-component fades).
    F-069: also twin the [data-motion=reduce] lift / press / slide rules — without JS that attribute is never set.
