@@ -301,7 +301,7 @@ describe('AchievementHost', () => {
     expect(container.querySelector('.ach-toast')).toHaveAttribute('data-state', 'in');
   });
 
-  it('reads its language and close label from the host attributes (the /en/ 404 patches them)', () => {
+  it('reads its language and close label from the host attributes', () => {
     const { container } = renderHost('ko');
     act(() => emitTrigger('bgm-on'));
     expect(container.querySelector('.ach-toast__text')).toHaveTextContent('소리 켜짐');

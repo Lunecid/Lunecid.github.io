@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { STORAGE_KEYS } from '../../src/config';
 import { NAV_SECTIONS } from '../../src/types';
 import {
+  STORAGE_BLOCKED_EVENT,
   TRIGGER_EVENT,
   UNLOCK_EVENT,
   __resetAchievementMemory,
@@ -9,6 +10,7 @@ import {
   drainTriggers,
   emitTrigger,
   idsForTrigger,
+  isStorageBlocked,
   isUnlocked,
   readUnlocked,
   recordVisit,
@@ -49,6 +51,22 @@ afterEach(() => {
 });
 
 describe('achievements runtime', () => {
+  it('P-02 (F-091): a throwing storage write flags the shared store once and fires the blocked event once', () => {
+    const listener = vi.fn();
+    window.addEventListener(STORAGE_BLOCKED_EVENT, listener);
+    vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      throw new DOMException('blocked', 'SecurityError');
+    });
+    expect(isStorageBlocked()).toBe(false);
+    unlock('bgm-on');
+    recordVisit(null, 'ko');
+    expect(isStorageBlocked()).toBe(true);
+    expect(listener).toHaveBeenCalledTimes(1);
+    __resetAchievementMemory();
+    expect(isStorageBlocked()).toBe(false);
+    window.removeEventListener(STORAGE_BLOCKED_EVENT, listener);
+  });
+
   it('emitTrigger queues and dispatches sb:trigger', () => {
     const listener = vi.fn();
     window.addEventListener(TRIGGER_EVENT, listener);
