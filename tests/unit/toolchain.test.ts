@@ -105,12 +105,20 @@ describe('toolchain', () => {
     expect(Object.values(PRINT_ROUTES).every((r) => /^\/print\/[a-z-]+\/$/.test(r))).toBe(true);
     expect(STORAGE_KEYS.motion).toBe('sb:motion');
     expect(STORAGE_KEYS.intro).toBe('sb:intro');
+    expect(STORAGE_KEYS.variant).toBe('sb:variant');
+    expect(STORAGE_KEYS.bgmTime).toBe('sb:bgm-t');
     expect(GOATCOUNTER.sri.startsWith('sha384-')).toBe(true);
     expect(GOATCOUNTER.code === null || /^[a-z0-9-]+$/.test(GOATCOUNTER.code)).toBe(true);
     expect(MEDIA.bgm).toBe('/audio/bgm/everything-you-ever-dreamed.mp3');
     expect(NAV_HEIGHT_PX).toBe(52);
     expect(HUD_LABEL_LIME).toBe(false);
     expect(RIOT_NOTICE_ON_PAGES).toBe(false);
+  });
+
+  it('P1-14: the BgmToggle BGM_TIME_KEY (src/lib/bgm.ts, P1-9b) equals STORAGE_KEYS.bgmTime (contract §1.9, §6.1)', async () => {
+    const { STORAGE_KEYS } = await import('../../src/config');
+    const { BGM_TIME_KEY } = await import('../../src/lib/bgm');
+    expect(BGM_TIME_KEY).toBe(STORAGE_KEYS.bgmTime);
   });
 
   it('config.ts and types.ts have no import statements', () => {

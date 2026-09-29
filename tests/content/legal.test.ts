@@ -251,6 +251,8 @@ describe('legal content', () => {
       '- 사이트 업적 달성 기록',
       '- 업적을 위해 둘러본 메뉴(연구·프로젝트·기록·플레이 로그)와 언어',
       'CRT 인트로',
+      '- 마지막으로 고른 포트폴리오 버전(게임·일반)',
+      '- 배경음악을 이어 듣기 위한 재생 위치(sessionStorage, 창을 닫으면 사라지고 30분이 지나면 쓰지 않음)',
     ]) {
       expect(ko).toContain(s);
     }
@@ -261,10 +263,25 @@ describe('legal content', () => {
       '- Site achievements you have unlocked',
       '- Which of the four menu sections and which languages you have opened (for achievements)',
       'CRT intro',
+      '- The portfolio version you last chose (game or general)',
+      '- The background-music position so it continues on the next page (sessionStorage; cleared when the tab closes, ignored after 30 minutes)',
     ]) {
       expect(en).toContain(s);
     }
     expect(en.includes('Sound on/off'), 'en sound setting listed').toBe(sound.bgm);
+  });
+
+  it('P1-14: the closing "last updated" line of every legal file states its frontmatter date', () => {
+    for (const doc of DOCS) {
+      for (const lang of LANGS) {
+        const updated = (readFrontmatter(file(lang, doc)) as { updated: string }).updated; // 'YYYY-MM-DD'
+        const [y, m, d] = updated.split('-').map(Number) as [number, number, number];
+        const expected = lang === 'ko'
+          ? `최종 수정일: ${y}년 ${m}월 ${d}일`
+          : `Last updated: ${new Intl.DateTimeFormat('en-US', { month: 'long', day: 'numeric', year: 'numeric', timeZone: 'UTC' }).format(new Date(Date.UTC(y, m - 1, d)))}`;
+        expect(raw(lang, doc).trim().split('\n').at(-1), `${lang}/${doc}`).toBe(expected);
+      }
+    }
   });
 
   it('bare URLs never touch the following word (a GFM autolink would swallow it)', () => {

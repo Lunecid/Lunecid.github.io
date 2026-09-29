@@ -1,7 +1,8 @@
 // src/lib/bgm.ts — BGM position and page-leave helpers (N20), moved unchanged from the former React island
 // src/islands/BgmToggle.tsx (P1-9b, P-03): same names, signatures and values. The HUD BGM button
-// (src/components/hud/BgmToggle.astro + src/scripts/bgm-toggle.ts) imports them from here. BGM_TIME_KEY must equal
-// STORAGE_KEYS.bgmTime once P1-14 adds it (contract §1.9).
+// (src/components/hud/BgmToggle.astro + src/scripts/bgm-toggle.ts) imports them from here. BGM_TIME_KEY is
+// STORAGE_KEYS.bgmTime (P1-14, contract §1.9; tests/unit/toolchain.test.ts pins the value).
+import { STORAGE_KEYS } from '../config';
 
 export const BGM_VOLUME = 0.3,
   BGM_FADE_IN = 1.5,
@@ -13,7 +14,7 @@ export const BGM_VOLUME = 0.3,
   BGM_RESUME_FADE_IN = 0.6,
   BGM_TIME_MAX_AGE_MS = 30 * 60 * 1000;
 
-export const BGM_TIME_KEY = 'sb:bgm-t';
+export const BGM_TIME_KEY = STORAGE_KEYS.bgmTime;
 
 export type BgmTimeSave = { t: number; at: number };
 

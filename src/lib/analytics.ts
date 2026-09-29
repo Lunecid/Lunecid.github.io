@@ -32,3 +32,22 @@ export function parseCount(value: string): number | null {
   const digits = value.replace(/[^0-9]/g, '');
   return digits === '' ? null : Number(digits);
 }
+
+/**
+ * CA-25: the chooser's counter loader (analytics="unless-redirecting"). A classic inline script that appends the
+ * GoatCounter tag only when chooser-init did not start a redirect, so a returning visitor is counted once, on the page
+ * they land on (§6 방문 통계). GOATCOUNTER.code is 'lunecid' (counting live since the 2026-09-28 launch), so this loader
+ * decides live counts on '/' and '/en/'; HeadMeta renders nothing only if the code is ever set back to null.
+ */
+export function goatcounterLoaderScript(attrs: GoatcounterScriptAttrs): string {
+  return `(function () {
+  if (window.__sbRedirect === true) return;
+  var s = document.createElement('script');
+  s.async = true;
+  s.src = ${JSON.stringify(attrs.src)};
+  s.setAttribute('data-goatcounter', ${JSON.stringify(attrs['data-goatcounter'])});
+  s.setAttribute('integrity', ${JSON.stringify(attrs.integrity)});
+  s.setAttribute('crossorigin', 'anonymous');
+  document.head.appendChild(s);
+})();`;
+}

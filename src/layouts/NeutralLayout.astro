@@ -7,6 +7,7 @@ import '../styles/read.css';
 import '../styles/neutral.css';
 import type { Lang } from '../i18n/ui';
 import { otherLang, switchLocalePath, t } from '../i18n/utils';
+import { chooserInitScript } from '../lib/chooser-init';
 import { FONT_URL, fontFaceCss } from '../lib/fonts';
 import { HEAD_INIT_SCRIPT } from '../lib/head-init';
 import { NEUTRAL_IDENTITY } from '../variants/neutral';
@@ -24,16 +25,20 @@ interface Props {
   /** Header language switch target; hreflang <link>s render only when this is not null and the page is indexed. */
   altLangHref?: string | null;
   jsonLd?: Record<string, unknown>;
+  /** P1-14: 'chooser' inlines the pre-paint redirect as the first <script> (only '/' and '/en/'). */
+  headScript?: 'chooser';
+  analytics?: 'always' | 'unless-redirecting';
 }
-const { lang, title, description, page, ogSlug, noindex = false, altLangHref, jsonLd } = Astro.props;
+const { lang, title, description, page, ogSlug, noindex = false, altLangHref, jsonLd, headScript, analytics = 'always' } = Astro.props;
 const altHref = altLangHref === undefined ? switchLocalePath(Astro.url.pathname, otherLang(lang)) : altLangHref;
 ---
 <!doctype html>
 <html lang={lang} data-variant="neutral" data-page={page} data-motion="full">
   <head>
     <meta charset="utf-8" />
+    {headScript === 'chooser' && <script is:inline set:html={chooserInitScript(lang)} />}
     <script is:inline set:html={HEAD_INIT_SCRIPT} />
-    <HeadMeta lang={lang} title={title} description={description} siteName={NEUTRAL_IDENTITY.siteTitle[lang]} ogSlug={ogSlug} noindex={noindex} alternates={altHref !== null && !noindex} jsonLd={jsonLd} analytics="always">
+    <HeadMeta lang={lang} title={title} description={description} siteName={NEUTRAL_IDENTITY.siteTitle[lang]} ogSlug={ogSlug} noindex={noindex} alternates={altHref !== null && !noindex} jsonLd={jsonLd} analytics={analytics}>
       <Fragment slot="fonts">
         <style is:inline set:html={fontFaceCss(['sans'])}></style>
         <link rel="preload" href={FONT_URL.sans} as="font" type="font/woff2" crossorigin />

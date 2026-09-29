@@ -43,6 +43,8 @@ export const STORAGE_KEYS = {
   achievements: 'sb:achievements', // localStorage JSON Record<achievementId, ISO timestamp>
   visits: 'sb:visits', // localStorage JSON { sections: NavSection[]; langs: Lang[] }
   intro: 'sb:intro', // sessionStorage '1' once the CRT intro played (or was skipped)
+  variant: 'sb:variant', // localStorage 'game' | 'data': the chooser choice (written only by the chooser and the version switch, A-7)
+  bgmTime: 'sb:bgm-t', // sessionStorage JSON { t, at }: BGM resume position (N20), ignored after 30 min
 } as const;
 
 export const NAV_HEIGHT_PX = 52;

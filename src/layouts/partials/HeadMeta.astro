@@ -4,7 +4,7 @@
 // (tests/astro/BaseLayout.test.ts) and is the same on neutral pages (tests/astro/NeutralLayout.test.ts).
 import { GOATCOUNTER, SITE } from '../../config';
 import type { Lang } from '../../i18n/ui';
-import { goatcounterScript } from '../../lib/analytics';
+import { goatcounterLoaderScript, goatcounterScript } from '../../lib/analytics';
 import { goatcounterSelfHosted } from '../../lib/public-assets';
 import { alternateLinks, canonicalUrl, ogSlugFor } from '../../lib/seo';
 
@@ -17,9 +17,9 @@ interface Props {
   noindex?: boolean;
   alternates: boolean;
   jsonLd?: Record<string, unknown>;
-  analytics: 'always';
+  analytics: 'always' | 'unless-redirecting';
 }
-const { lang, title, description, siteName, ogSlug, noindex = false, alternates, jsonLd } = Astro.props;
+const { lang, title, description, siteName, ogSlug, noindex = false, alternates, jsonLd, analytics } = Astro.props;
 const pathname = Astro.url.pathname;
 const canonical = canonicalUrl(pathname);
 const ogImage = `${SITE.url}/og/${ogSlug ?? ogSlugFor(pathname)}.png`;
@@ -50,6 +50,7 @@ const jsonLdText = jsonLd ? JSON.stringify(jsonLd).replace(/</g, '\\u003c') : nu
 <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
 <slot name="fonts" />
 {jsonLdText && <script is:inline type="application/ld+json" set:html={jsonLdText} />}
-{goatcounter && (
+{goatcounter && analytics === 'always' && (
   <script is:inline async src={goatcounter.src} data-goatcounter={goatcounter['data-goatcounter']} integrity={goatcounter.integrity} crossorigin={goatcounter.crossorigin}></script>
 )}
+{goatcounter && analytics === 'unless-redirecting' && <script is:inline set:html={goatcounterLoaderScript(goatcounter)} />}

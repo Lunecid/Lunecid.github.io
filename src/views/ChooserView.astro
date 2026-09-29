@@ -1,6 +1,6 @@
 ---
 // The chooser (spec §6) — P1 skeleton: the name, the B-13 line and one whole-card link per version (game first, Tab
-// order game → data). P1-14 adds the remembered choice, P2-10 the design.
+// order game → data). P1-14: the remembered choice (pre-paint redirect, click script); P2-10 the design.
 import NeutralLayout from '../layouts/NeutralLayout.astro';
 import { chooserCopy } from '../data/copy/chooser';
 import type { Lang } from '../i18n/ui';
@@ -20,7 +20,7 @@ const copy = resolveDeep(chooserCopy[lang], lang, facts);
 const meta = pageMetaFor('chooser', lang, null, facts);
 const jsonLd = personJsonLd(lang, { jobTitle: NEUTRAL_IDENTITY.headline[lang], url: canonicalUrl(chooserHref(lang)) }, person.researchIds);
 ---
-<NeutralLayout lang={lang} title={meta.title} description={meta.description} page="chooser" jsonLd={jsonLd}>
+<NeutralLayout lang={lang} title={meta.title} description={meta.description} page="chooser" jsonLd={jsonLd} headScript="chooser" analytics="unless-redirecting">
   <section class="chooser" aria-labelledby="chooser-title">
     <h1 id="chooser-title" class="chooser__name">{person.name[lang]}</h1>
     <p class="chooser__line">{NEUTRAL_IDENTITY.oneLiner[lang]}</p>
@@ -48,3 +48,14 @@ const jsonLd = personJsonLd(lang, { jobTitle: NEUTRAL_IDENTITY.headline[lang], u
   .chooser__evidence { font-size: var(--fs-body); color: var(--nt-muted); }
   @media (min-width: 734px) { .chooser__options { grid-template-columns: 1fr 1fr; } }
 </style>
+
+<script>
+  // A chooser choice is remembered (A-7) and the link then navigates as usual; without JS it is a plain link.
+  import { rememberVariant } from '../lib/variant-pref';
+  import { isVariantId } from '../variants/ids';
+  document.addEventListener('click', (event) => {
+    const link = event.target instanceof Element ? event.target.closest<HTMLAnchorElement>('a[data-choose-variant]') : null;
+    const variant = link?.dataset.chooseVariant;
+    if (isVariantId(variant)) rememberVariant(variant);
+  });
+</script>
