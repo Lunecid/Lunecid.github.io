@@ -27,7 +27,8 @@ function builtPages() {
   return walk(DIST)
     .filter((f) => f.endsWith('.html'))
     .map((file) => ({ file, route: '/' + relative(DIST, file).split(sep).join('/').replace(/index\.html$/, '') }))
-    .filter((p) => !p.route.startsWith('/print/')); // PDF sources: PrintLayout and the static "Pretendard Print" family
+    .filter((p) => !p.route.startsWith('/print/')) // PDF sources: PrintLayout and the static "Pretendard Print" family
+    .filter((p) => !readFileSync(p.file, 'utf8').includes('data-legacy-redirect')); // P1-13: redirect stubs carry no page fonts
 }
 
 /** Controls, invisible format characters, variation selectors and emoji-presentation characters. @param {string} ch */

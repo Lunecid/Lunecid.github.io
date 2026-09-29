@@ -3,6 +3,7 @@ import { defineConfig, fontProviders } from 'astro/config';
 import react from '@astrojs/react';
 import sitemap from '@astrojs/sitemap';
 import { fontSubsets } from './scripts/fonts/build.mjs';
+import { legacyRedirectStubs } from './scripts/redirects/build.mjs';
 import { satteri } from '@astrojs/markdown-satteri';
 import { baseLinksHastPlugin } from './scripts/markdown/rehype-base-links.mjs';
 
@@ -45,6 +46,7 @@ export default defineConfig({
     react(),
     sitemap({ filter: sitemapFilter, serialize: sitemapSerialize, i18n: { defaultLocale: 'ko', locales: { ko: 'ko', en: 'en' } } }),
     fontSubsets(), // after the build: subset the page fonts to the characters of the built pages (batch 2)
+    legacyRedirectStubs(), // P1-13 (A-6): LAST — after the sitemap and the font subsetting, so stubs are in neither
   ],
   i18n: { defaultLocale: 'ko', locales: ['ko', 'en'], routing: { prefixDefaultLocale: false } },
   fonts: [
