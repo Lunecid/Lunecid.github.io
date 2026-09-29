@@ -8,9 +8,13 @@ import { parseYamlList } from '../../src/content/yaml-loader';
 import { heroCopy, mainMenuCopy, splitTagline } from '../../src/data/copy/hero';
 import { figureCopy, overallAuc } from '../../src/data/research/cog-2026';
 import { t } from '../../src/i18n/utils';
+import { resolveDeep } from '../../src/lib/facts';
 import type { StageCharacter } from '../../src/islands/CharacterStage';
 import { isKnownInternalHref } from '../../src/lib/routes';
+import { loadFactSource } from '../helpers/fact-source';
 import { readSource, renderAstro } from './helpers';
+
+const facts = loadFactSource();
 
 const KO_TAGLINE = '플레이어를 예측하는 데서 멈추지 않고, 이해하는 데이터를 만듭니다.';
 const EN_TAGLINE = 'Beyond predicting players: building data that explains them.';
@@ -32,7 +36,7 @@ const REMIELLE: StageCharacter = {
 };
 
 function props(overrides: Record<string, unknown> = {}): Record<string, unknown> {
-  const copy = heroCopy.ko;
+  const copy = resolveDeep(heroCopy.ko, 'ko', loadFactSource());
   const classLine = CLASS_LINE[overrides.lang === 'en' ? 'en' : 'ko'];
   return {
     lang: 'ko',
@@ -95,7 +99,7 @@ describe('Hero.astro', () => {
   });
 
   it('final fix 2 item 11: the English hero has no title card repeating the name above the H1', async () => {
-    const en = await renderAstro(Hero, { props: props({ lang: 'en', name: 'Seongeun Baek', roman: heroCopy.en.roman }), url: '/en/' });
+    const en = await renderAstro(Hero, { props: props({ lang: 'en', name: 'Seongeun Baek', roman: resolveDeep(heroCopy.en, 'en', facts).roman }), url: '/en/' });
     expect(en).not.toContain('hero__titlecard');
     expect(en.match(/Seongeun Baek/gi)).toHaveLength(1);
   });
@@ -143,7 +147,7 @@ describe('Hero.astro', () => {
           jobFitHref: '/en/records/#job-fit',
           jobFitLabel: 'See job requirements fit',
         },
-        artifact: { ...heroCopy.en.artifact, href: '/en/research/cog-2026-engagement/' },
+        artifact: { ...resolveDeep(heroCopy.en, 'en', facts).artifact, href: '/en/research/cog-2026-engagement/' },
       }),
       url: '/en/',
     });
@@ -155,7 +159,7 @@ describe('Hero.astro', () => {
 
   it('D-1 no art: the right slot is the CoG AUC chart in a HUD bracket frame (figureCopy caption/alt), with a paper link', async () => {
     for (const lang of ['ko', 'en'] as const) {
-      const html = await renderAstro(Hero, { props: props({ lang, artifact: heroCopy[lang].artifact }), url: lang === 'en' ? '/en/' : '/' });
+      const html = await renderAstro(Hero, { props: props({ lang, artifact: resolveDeep(heroCopy[lang], lang, facts).artifact }), url: lang === 'en' ? '/en/' : '/' });
       expect(html).not.toContain('<astro-island');
       expect(html).not.toContain('char-stage');
       expect(html).not.toContain('hero__credit');
@@ -254,9 +258,9 @@ describe('Hero.astro', () => {
       expect(copy.label).toBe('[ PLAYER PROFILE ]');
       expect(copy.contact.jobFitHref).toBe('/records/#job-fit');
     }
-    expect(heroCopy.ko.playerCard.badges).toEqual(['IEEE CoG 2026 ORAL', '최우수상 ×2']);
+    expect(resolveDeep(heroCopy.ko, 'ko', facts).playerCard.badges).toEqual(['IEEE CoG 2026 ORAL', '최우수상 ×2']);
     // P2-16: the badge never truncates the award name
-    expect(heroCopy.en.playerCard.badges).toEqual(['IEEE CoG 2026 ORAL', 'Top Excellence Award ×2']);
+    expect(resolveDeep(heroCopy.en, 'en', facts).playerCard.badges).toEqual(['IEEE CoG 2026 ORAL', 'Top Excellence Award ×2']);
   });
 
   it('final review fix 1 item 15: the MAIN MENU projects caption matches the award records', () => {
@@ -265,10 +269,10 @@ describe('Hero.astro', () => {
     expect(top).toHaveLength(2);
     // One of the two is a bootcamp project evaluation (Multicampus), not a competition: no "경진대회 최우수상 2회".
     expect(top.some((a) => !/대회/.test(a.contest.ko))).toBe(true);
-    const ko = mainMenuCopy.ko.items.find((i) => i.href === '/projects/')?.caption ?? '';
-    const en = mainMenuCopy.en.items.find((i) => i.href === '/projects/')?.caption ?? '';
+    const ko = resolveDeep(mainMenuCopy.ko, 'ko', facts).items.find((i) => i.href === '/projects/')?.caption ?? '';
+    const en = resolveDeep(mainMenuCopy.en, 'en', facts).items.find((i) => i.href === '/projects/')?.caption ?? '';
     expect(ko).not.toMatch(/대회/);
-    expect(ko).toContain(`최우수상 ${top.length}회`);
+    expect(ko).toContain(`최우수상 ×${top.length}`);
     expect(en).toContain(`Top Excellence Award ×${top.length}`);
     // Only one of the projects is a web service (KickKick Park).
     expect(en).not.toMatch(/web services/);

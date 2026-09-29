@@ -6,6 +6,7 @@ import { allRoutes, PROJECT_PAGE_SLUGS, STORY_SLUGS } from '../../src/lib/routes
 import { containsTrademark, ogSlugFor, TRADEMARK_TERMS } from '../../src/lib/seo';
 import { PAGE_META } from '../../src/data/copy/pages';
 import type { Lang } from '../../src/i18n/ui';
+import { pageMetaFor } from '../../src/variants';
 import { gameVariant } from '../../src/variants/game';
 import { loadFactSource } from '../helpers/fact-source';
 
@@ -82,8 +83,8 @@ describe('buildOgMap', () => {
     expect(map['en/research/cog-2026-engagement'].title).toBe('Engagement Outcome Prediction Paper');
     expect(`${map['research/cog-2026-engagement'].title} · 백성은`).toBe(PAGE_META['research-story'].ko.title);
     expect(`${map['en/research/cog-2026-engagement'].title} · Seongeun Baek`).toBe(PAGE_META['research-story'].en.title);
-    expect(map['research/cog-2026-engagement'].subtitle).toBe(PAGE_META['research-story'].ko.description);
-    expect(map['en/research/cog-2026-engagement'].subtitle).toBe(PAGE_META['research-story'].en.description);
+    expect(map['research/cog-2026-engagement'].subtitle).toBe(pageMetaFor('research-story', 'ko', 'game', loadFactSource()).description);
+    expect(map['en/research/cog-2026-engagement'].subtitle).toBe(pageMetaFor('research-story', 'en', 'game', loadFactSource()).description);
     expect(map['research/cog-2026-engagement'].eyebrow).toBe('RESEARCH');
   });
 
@@ -122,5 +123,12 @@ describe('buildOgMap', () => {
     const src = fixtureSources();
     src.projects[0] = { ...src.projects[0], title: `${TRADEMARK_TERMS[0]} dashboard` };
     expect(() => buildOgMap(src)).toThrow(/og: title names a game trademark/);
+  });
+
+  it('Review Focus 2: no OG title or subtitle carries a fact token', () => {
+    const map = buildOgMap(realSources());
+    const residue = Object.entries(map).filter(([, og]) => /[{}]/.test(`${og.title} ${og.subtitle ?? ''}`)).map(([k]) => k);
+    expect(residue).toEqual([]);
+    expect(map['research/cog-2026-engagement']?.subtitle).toBe('교전 직전 30초의 공개 경기 기록으로 교전 뒤 이득을 예측한 IEEE CoG 2026 구두 발표 논문의 초록과 BibTeX.');
   });
 });

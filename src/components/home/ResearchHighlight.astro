@@ -14,9 +14,12 @@ interface Props {
   lang: Lang;
   paper: PaperCardData;
   nowPlaying: string;
+  /** The resolved hero artifact label, e.g. 'FIG · CoG 2026 · AUC BY MODEL' (contract §3.3). */
+  figureLabel: string;
 }
 
-const { lang, paper, nowPlaying } = Astro.props;
+const { lang, paper, nowPlaying, figureLabel } = Astro.props;
+const [figTag, ...figRest] = figureLabel.split(' · ');
 ---
 
 <section id="research-highlight" class="rh read read-sec" aria-labelledby="rh-title">
@@ -49,7 +52,7 @@ const { lang, paper, nowPlaying } = Astro.props;
         <PaperLinks lang={lang} paper={paper} idBase="rh" />
       </div>
       <div class="paper__fig">
-        <p class="paper__strip" lang="en"><span class="paper__strip-tag">FIG</span> · CoG 2026 · AUC BY MODEL</p>
+        <p class="paper__strip" lang="en"><span class="paper__strip-tag">{figTag}</span> · {figRest.join(' · ')}</p>
         <AucOverallChart lang={lang} rows={overallAuc} caption={figureCopy.aucOverall.caption[lang]} alt={figureCopy.aucOverall.alt[lang]} idPrefix="rh-auc" />
       </div>
     </article>

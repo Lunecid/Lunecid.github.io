@@ -21,6 +21,7 @@ import { toCartridge, type CartridgeProps } from '../lib/projects';
 import { toPaperCard, toPaperCartridge } from '../lib/publications';
 import { toPatchNotes } from '../lib/news';
 import { canonicalUrl, personJsonLd } from '../lib/seo';
+import { resolveDeep } from '../lib/facts';
 import type { VariantId } from '../variants/ids';
 import { getVariant, pageMetaFor, resolveIdentity } from '../variants';
 
@@ -37,9 +38,9 @@ const resumeData = await getResume();
 const { profile } = resumeData;
 const identity = resolveIdentity(v, lang, facts);
 const meta = pageMetaFor('home', lang, variant, facts);
-const hero = heroCopy[lang];
-const menu = mainMenuCopy[lang];
-const home = homeCopy[lang];
+const hero = resolveDeep(heroCopy[lang], lang, facts);
+const menu = resolveDeep(mainMenuCopy[lang], lang, facts);
+const home = resolveDeep(homeCopy[lang], lang, facts);
 
 // Character art is optional (Task 2): every call below returns [] / null / [] when it is missing.
 const heroChars = await getStageCharacters(['remielle', 'eula'], 'hero', lang);
@@ -114,7 +115,7 @@ const location = lang === 'ko' ? `${profile.location.ko} · ${profile.location.e
     side={sideChars}
   />
   <CartridgeSection lang={lang} cartridges={featured} moreHref={localizeHref('/projects/', lang)} moreLabel={home.moreProjects} />
-  <ResearchHighlight lang={lang} paper={paper} nowPlaying={home.researchNowPlaying} />
+  <ResearchHighlight lang={lang} paper={paper} nowPlaying={home.researchNowPlaying} figureLabel={hero.artifact.label} />
   <PatchNotes lang={lang} notes={notes} />
   <HelloProfile
     lang={lang}

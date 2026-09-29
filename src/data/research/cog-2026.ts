@@ -45,7 +45,8 @@ export const figureCopy: Readonly<Record<'aucOverall' | 'killGap' | 'labelHorizo
       en: 'Density curve of inter-kill intervals with peaks at 5.72 and 62.73 seconds and a valley at 13.72 seconds. The band from 10 to 18 seconds is shaded.',
     },
   },
-  // label-horizon.webp = the paper's Fig. 1; the alt texts are the publication thumbnail's (cog-2026-engagement.md).
+  // label-horizon.webp = the paper's Fig. 1 (its alt texts were the publication thumbnail's until P1-8; the thumbnail
+  // is now kill-gap-kde.webp with the killGap alt, P-01/F-045).
   labelHorizon: {
     caption: {
       ko: 'CoG 2026 논문 그림 1: 교전 구간을 찾는 과정과 예측 설정입니다.',

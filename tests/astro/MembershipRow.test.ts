@@ -7,7 +7,9 @@ import AchievementMeter from '../../src/components/player-log/AchievementMeter.a
 import { achievementSchema } from '../../src/content/schemas';
 import { parseYamlList } from '../../src/content/yaml-loader';
 import { membershipCard, playerLogCopy } from '../../src/data/copy/player-log';
+import { resolveDeep } from '../../src/lib/facts';
 import type { FavoriteTile } from '../../src/lib/favorites';
+import { loadFactSource } from '../helpers/fact-source';
 import { readSource, renderAstro } from './helpers';
 
 const defs = parseYamlList(readFileSync(join(process.cwd(), 'src/data/achievements.yaml'), 'utf8')).map((a) => achievementSchema.parse(a));
@@ -17,7 +19,7 @@ const THREE = [tile('remielle', '레미엘'), tile('eula', '유라'), tile('mona
 
 const render = (tiles: FavoriteTile[], lang: 'ko' | 'en' = 'ko') =>
   renderAstro(MembershipRow, {
-    props: { lang, membership: membershipCard(playerLogCopy[lang].membership, lang === 'ko' ? '게임 데이터 분석가 · 연구자' : 'Game Data Analyst · Researcher'), tiles, tileSlots: 3, achievements: defs },
+    props: { lang, membership: membershipCard(resolveDeep(playerLogCopy[lang], lang, loadFactSource()).membership, lang === 'ko' ? '게임 데이터 분석가 · 연구자' : 'Game Data Analyst · Researcher'), tiles, tileSlots: 3, achievements: defs },
     url: lang === 'en' ? '/en/player-log/' : '/player-log/',
   });
 

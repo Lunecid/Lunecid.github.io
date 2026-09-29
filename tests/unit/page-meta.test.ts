@@ -5,7 +5,9 @@ import { containsTrademark } from '../../src/lib/seo';
 import { ui } from '../../src/i18n/ui';
 import { PROJECT_PAGE_SLUGS } from '../../src/lib/routes';
 import { readFrontmatter } from '../content/helpers';
+import { loadFactSource } from '../helpers/fact-source';
 import type { Localized } from '../../src/i18n/utils';
+import { pageMetaFor, type PageMetaText } from '../../src/variants';
 import { dataVariant } from '../../src/variants/data';
 import { gameVariant } from '../../src/variants/game';
 
@@ -23,6 +25,18 @@ const VARIANT_META: [string, MetaText][] = [
   ['data.projects', dataProjects],
 ];
 const ALL_META: [string, MetaText][] = [...KEYS.map((key): [string, MetaText] => [key, PAGE_META[key]]), ...VARIANT_META];
+/** P1-8: what the pages emit, tokens resolved: common keys neutral and on each version, version keys per version. */
+const facts = loadFactSource();
+const RESOLVED_META: [string, Localized<PageMetaText>][] = [
+  ...KEYS.flatMap((key) => ([null, 'game', 'data'] as const).map((variant): [string, Localized<PageMetaText>] => [
+    `${variant ?? 'neutral'}.${key}`,
+    { ko: pageMetaFor(key, 'ko', variant, facts), en: pageMetaFor(key, 'en', variant, facts) },
+  ])),
+  ...(['home', 'records'] as const).flatMap((key) => (['game', 'data'] as const).map((variant): [string, Localized<PageMetaText>] => [
+    `${variant}.${key}`,
+    { ko: pageMetaFor(key, 'ko', variant, facts), en: pageMetaFor(key, 'en', variant, facts) },
+  ])),
+];
 
 describe('PAGE_META', () => {
   it('every PageKey has ko/en title and description', () => {
@@ -39,7 +53,7 @@ describe('PAGE_META', () => {
   });
 
   it('no title contains a trademark', () => {
-    for (const [key, meta] of ALL_META) {
+    for (const [key, meta] of RESOLVED_META) {
       for (const lang of LANGS) expect(containsTrademark(meta[lang].title), `${key}.${lang}`).toBe(false);
     }
   });
@@ -47,7 +61,7 @@ describe('PAGE_META', () => {
   it('no meta description (also og:description and the OG card subtitle) contains a trademark', () => {
     // Every description a page can emit: PAGE_META (both /stats/ states) and the project pages' summaries.
     const descriptions: [string, string][] = [];
-    for (const [key, meta] of ALL_META) for (const lang of LANGS) descriptions.push([`${key}.${lang}`, meta[lang].description]);
+    for (const [key, meta] of RESOLVED_META) for (const lang of LANGS) descriptions.push([`${key}.${lang}`, meta[lang].description]);
     for (const state of ['offline', 'collecting'] as const) {
       for (const lang of LANGS) descriptions.push([`stats.${state}.${lang}`, STATS_META[state][lang].description]);
     }
@@ -64,7 +78,7 @@ describe('PAGE_META', () => {
   });
 
   it('descriptions are at most 160 characters', () => {
-    for (const [key, meta] of ALL_META) {
+    for (const [key, meta] of RESOLVED_META) {
       for (const lang of LANGS) expect(meta[lang].description.length, `${key}.${lang}`).toBeLessThanOrEqual(160);
     }
   });

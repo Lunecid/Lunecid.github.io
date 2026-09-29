@@ -54,10 +54,18 @@ describe('toPatchNotes', () => {
   });
 
   it('P1-9: the version tag comes from the date and the short title from the entry when it has one', () => {
-    expect(patchVersion('2026-09-01')).toBe('v2026.09');
+    expect(patchVersion('2026-09-01')).toMatch(/v2026\.09(\.\d+)?/);
     const withShort = [{ data: { ...items[1]!.data, short: { ko: 'CoG 2026 구두 발표', en: 'Oral at CoG 2026' } } }];
-    expect(toPatchNotes(withShort, 'ko')[0]).toMatchObject({ version: 'v2026.09', short: 'CoG 2026 구두 발표', text: 'IEEE CoG 2026에서 구두 발표했습니다.' });
+    expect(toPatchNotes(withShort, 'ko')[0]).toMatchObject({ version: expect.stringMatching(/v2026\.09(\.\d+)?/), short: 'CoG 2026 구두 발표', text: 'IEEE CoG 2026에서 구두 발표했습니다.' });
     expect(toPatchNotes(withShort, 'en')[0]?.short).toBe('Oral at CoG 2026');
+  });
+
+  it('P-01/F-094: later entries of a month get a sequence suffix, computed over all entries, so no two rows share a version', () => {
+    const september = [...items, { data: { date: '2026-09-28', kind: 'site' as const, title: { ko: '사이트 개편', en: 'Site update' }, href: null } }];
+    const shown = toPatchNotes(september, 'ko', 2);
+    expect(shown.map((n) => [n.dateIso, n.version])).toEqual([['2026-10-01', 'v2026.10'], ['2026-09-28', 'v2026.09.1']]);
+    const all = toPatchNotes(september, 'ko', september.length).map((n) => n.version);
+    expect(new Set(all).size).toBe(all.length);
   });
 
   it('respects a custom limit and never reorders its input', () => {

@@ -31,12 +31,12 @@ rows:
     requirement: { ko: Python · 머신러닝, en: Python · Machine learning }
     frequency: '12/13 · 7/13'
     evidence:
-      - label: { ko: CoG 2026 논문(LightGBM), en: CoG 2026 paper (LightGBM) }
-        short: { ko: 'CoG 2026 논문', en: 'CoG 2026 paper' }
+      - label: { ko: '{pub.cog-2026-engagement.venueAbbr} 논문(LightGBM)', en: '{pub.cog-2026-engagement.venueAbbr} paper (LightGBM)' }
+        short: { ko: '{pub.cog-2026-engagement.venueAbbr} 논문', en: '{pub.cog-2026-engagement.venueAbbr} paper' }
         href: /research/cog-2026-engagement/
       # PyTorch is not on the paper page (abstract only, D-15); the tagged code uses it (requirements.txt, import torch).
-      - label: { ko: CoG 2026 코드(PyTorch), en: CoG 2026 code (PyTorch) }
-        short: { ko: 'CoG 2026 코드', en: 'CoG 2026 code' }
+      - label: { ko: '{pub.cog-2026-engagement.venueAbbr} 코드(PyTorch)', en: '{pub.cog-2026-engagement.venueAbbr} code (PyTorch)' }
+        short: { ko: '{pub.cog-2026-engagement.venueAbbr} 코드', en: '{pub.cog-2026-engagement.venueAbbr} code' }
         href: https://github.com/Lunecid/LOL_teamfight_Lab/tree/v1.0-cog2026
       # The youth start-up case backs no row: my part there was data exploration and data engineering (owner,
       # 2026-09-28); its models, K-Means and Streamlit dashboard are the team's work (D-9).
@@ -64,11 +64,11 @@ rows:
     requirement: { ko: 학위, en: Degree }
     frequency: '6/13'
     evidence:
-      - label: { ko: 석사과정 재학(2027년 2월 졸업 예정), en: M.S. student (expected February 2027) }
+      - label: { ko: '석사과정 재학({person.graduation} 졸업 예정)', en: 'M.S. student (expected {person.graduation})' }
         short: { ko: '석사과정 재학', en: 'M.S. student' }
         href: /records/#education
-      - label: { ko: IEEE CoG 2026 구두 발표, en: IEEE CoG 2026 oral presentation }
-        short: { ko: 'IEEE CoG 2026 구두 발표', en: 'IEEE CoG 2026 oral' }
+      - label: { ko: '{pub.cog-2026-engagement.venueShort} 구두 발표', en: '{pub.cog-2026-engagement.venueShort} oral presentation' }
+        short: { ko: '{pub.cog-2026-engagement.venueShort} 구두 발표', en: '{pub.cog-2026-engagement.venueShort} oral' }
         href: /research/cog-2026-engagement/
     status: met
     plan: null
@@ -87,8 +87,8 @@ rows:
     requirement: { ko: 소통·스토리텔링, en: Communication and storytelling }
     frequency: '11/13'
     evidence:
-      - label: { ko: IEEE CoG 2026 구두 발표, en: IEEE CoG 2026 oral presentation }
-        short: { ko: 'IEEE CoG 2026 구두 발표', en: 'IEEE CoG 2026 oral' }
+      - label: { ko: '{pub.cog-2026-engagement.venueShort} 구두 발표', en: '{pub.cog-2026-engagement.venueShort} oral presentation' }
+        short: { ko: '{pub.cog-2026-engagement.venueShort} 구두 발표', en: '{pub.cog-2026-engagement.venueShort} oral' }
         href: /research/cog-2026-engagement/
       - label: { ko: 사각지대 사례 연구의 기획자·PM 관점, en: Planner/PM perspective in the school-zone case study }
         short: { ko: '기획자·PM 관점', en: 'Planner/PM perspective' }
@@ -100,8 +100,8 @@ rows:
     requirement: { ko: 대용량 데이터·클라우드, en: Large-scale data and cloud }
     frequency: '9/13'
     evidence:
-      - label: { ko: CoG 논문 데이터 20.6만 경기 처리, en: Processing 206K matches for the CoG paper }
-        short: { ko: '20.6만 경기 처리', en: 'Processing 206K matches' }
+      - label: { ko: 'CoG 논문 데이터 {pub.cog-2026-engagement.fact.matchesShort} 처리', en: 'Processing {pub.cog-2026-engagement.fact.matchesShort} for the CoG paper' }
+        short: { ko: '{pub.cog-2026-engagement.fact.matchesShort} 처리', en: 'Processing {pub.cog-2026-engagement.fact.matchesShort}' }
         href: /research/cog-2026-engagement/
     status: partial
     plan: { ko: 장기 과제(Airflow·Spark·BigQuery), en: 'Long-term: Airflow, Spark, BigQuery' }

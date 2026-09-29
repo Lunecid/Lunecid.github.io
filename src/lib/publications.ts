@@ -110,7 +110,8 @@ export function toPaperPage(entry: CollectionEntry<'publications'>, lang: Lang):
 
 /**
  * The CoG card on home and /projects/ (A-16; views built it by hand from src/data/copy/home.ts until P1-7b): title =
- * shortTitle, meta = the card's tool line, tags = card.tags, the AUC chart as label, an ORAL sticker for an oral paper.
+ * shortTitle, meta = the card's tool line, tags = card.tags, the thumbnail as a contained cover (the KDE figure, P-01/F-045),
+ * an ORAL sticker for an oral paper.
  */
 export function toPaperCartridge(entry: CollectionEntry<'publications'>, lang: Lang, href: string | null): CartridgeProps {
   const d = entry.data;
@@ -121,7 +122,8 @@ export function toPaperCartridge(entry: CollectionEntry<'publications'>, lang: L
     meta: d.card.tools.join(' · '),
     tagKeys: [...d.card.tags],
     tags: d.card.tags.map((key) => tagLabel(key, lang)),
-    chart: { kind: 'auc-overall', lang },
+    cover: d.thumbnail.src,
+    coverFit: 'contain',
     ...(d.format === 'Oral' ? { sticker: { text: 'ORAL', sr: FORMAT_PHRASE[lang].Oral, kind: 'oral' as const } } : {}),
     wide: true,
   };

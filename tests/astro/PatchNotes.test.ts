@@ -17,7 +17,7 @@ describe('PatchNotes.astro (P1-9: a dark hud-grid band)', () => {
     expect(html).toContain('PATCH NOTES');
     expect(html).toMatch(/<ol[^>]*class="pn__list"/);
     expect(html.match(/<li\b/g) ?? []).toHaveLength(2);
-    expect(html).toMatch(/<span class="pn__ver" lang="en"[^>]*>v2026\.09<\/span>/);
+    expect(html).toMatch(/<span class="pn__ver" lang="en"[^>]*>v2026\.09(\.\d+)?<\/span>/);
     expect(html).toMatch(/<time[^>]*datetime="2026-09-01"[^>]*>2026\.09\.01<\/time>/);
     expect(html).toMatch(/<span[^>]*class="pn__tag"[^>]*>연구<\/span>/);
     expect(html).toMatch(/<span class="pn__ptr" aria-hidden="true"[^>]*>▶<\/span>/);

@@ -19,8 +19,8 @@ export const playerLogCopy: Localized<PlayerLogCopy> = {
     membership: {
       name: { label: 'NAME', value: '백성은 · Lunecid' },
       favorite: { label: 'FAVORITE', value: '레미엘 · 유라 · 모나' },
-      sticker: 'CoG 2026 ORAL',
-      memberSince: 'MEMBER SINCE 2025',
+      sticker: '{pub.cog-2026-engagement.venueAbbr} ORAL',
+      memberSince: 'MEMBER SINCE {edu.ms-pnu.startYear}',
     },
     gamePlatforms: GAME_PLATFORMS,
   },
@@ -28,8 +28,8 @@ export const playerLogCopy: Localized<PlayerLogCopy> = {
     membership: {
       name: { label: 'NAME', value: 'Seongeun Baek · Lunecid' },
       favorite: { label: 'FAVORITE', value: 'Remielle · Eula · Mona' },
-      sticker: 'CoG 2026 ORAL',
-      memberSince: 'MEMBER SINCE 2025',
+      sticker: '{pub.cog-2026-engagement.venueAbbr} ORAL',
+      memberSince: 'MEMBER SINCE {edu.ms-pnu.startYear}',
     },
     gamePlatforms: GAME_PLATFORMS,
   },

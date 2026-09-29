@@ -16,6 +16,7 @@ import { generated } from '../lib/generated';
 import { availableAchievements } from '../lib/achievements';
 import { soundAvailability } from '../lib/public-assets';
 import { ACHIEVEMENT_TRIGGERS, GAME_IDS } from '../types';
+import { resolveDeep } from '../lib/facts';
 import { getFactSource } from '../lib/portfolio';
 import { getVariant, pageMetaFor, resolveIdentity } from '../variants';
 
@@ -26,7 +27,7 @@ const { lang } = Astro.props;
 const facts = await getFactSource();
 const identity = resolveIdentity(getVariant('game'), lang, facts);
 const meta = pageMetaFor('player-log', lang, 'game', facts);
-const copy = playerLogCopy[lang];
+const copy = resolveDeep(playerLogCopy[lang], lang, facts);
 
 // Collections do not promise insertion order: sort by the shared id lists (same order as the YAML files).
 const games = (await getCollection('favorites')).map((e) => e.data).sort((a, b) => GAME_IDS.indexOf(a.id) - GAME_IDS.indexOf(b.id));

@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import MainMenu from '../../src/components/hud/MainMenu.astro';
 import { mainMenuCopy } from '../../src/data/copy/hero';
 import type { StageCharacter } from '../../src/islands/CharacterStage';
+import { resolveDeep } from '../../src/lib/facts';
+import { loadFactSource } from '../helpers/fact-source';
 import { readSource, renderAstro } from './helpers';
 
 const EULA: StageCharacter = {
@@ -18,7 +20,7 @@ const EULA: StageCharacter = {
 };
 
 function props(lang: 'ko' | 'en', side: StageCharacter[] = []): Record<string, unknown> {
-  const copy = mainMenuCopy[lang];
+  const copy = resolveDeep(mainMenuCopy[lang], lang, loadFactSource());
   const prefix = lang === 'en' ? '/en' : '';
   return { lang, items: copy.items.map((item) => ({ ...item, href: `${prefix}${item.href}` })), hint: copy.hint, side };
 }

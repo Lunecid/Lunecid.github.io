@@ -2,8 +2,9 @@ import type { Page } from '@playwright/test';
 import { test, expect } from './helpers';
 
 // Batch 2 (DIAGNOSIS P2-39): LCP images load eagerly with high priority, everything below the fold stays lazy.
-// Batch 5 fix round 1: the CoG cartridge label on / is the paper's AUC chart drawn inline (AucLabel), and the research
-// highlight shows the same kind of chart, so no research figure image is fetched on / at any size.
+// P1-8 (P-01/F-045, owner decision 11): the CoG cartridge on / shows the KDE figure (kill-gap-kde) as its cover instead
+// of the inline AUC chart; the research highlight keeps its inline AUC chart, so no research figure other than
+// kill-gap-kde (e.g. label-horizon) is fetched on / at any size.
 
 async function scrollThrough(page: Page): Promise<void> {
   await page.evaluate(async () => {
@@ -23,15 +24,17 @@ for (const device of [
   test.describe(`${device.name}`, () => {
     test.use({ viewport: device.viewport, deviceScaleFactor: device.deviceScaleFactor });
 
-    test('/ draws the CoG label as an inline chart: no research figure image is fetched', async ({ page }) => {
+    test('/ shows the KDE figure as the CoG cartridge cover: no other research figure image is fetched', async ({ page }) => {
       const urls: string[] = [];
       page.on('request', (request) => {
-        if (/\/_astro\/(label-horizon|kill-gap-kde)\./.test(request.url())) urls.push(request.url());
+        const figure = /\/_astro\/(label-horizon|kill-gap-kde)\./.exec(request.url());
+        if (figure && figure[1] !== 'kill-gap-kde') urls.push(request.url());
       });
       await page.goto('/', { waitUntil: 'networkidle' });
       await scrollThrough(page);
       expect(urls, urls.join('\n')).toEqual([]);
-      await expect(page.locator('#featured-projects .cart--wide .auc-label svg').filter({ visible: true })).toHaveCount(1);
+      // one visible cover img whose src is the KDE figure, in a CoG cartridge that holds no inline .auc-label svg
+      await expect(page.locator('#featured-projects .cart--wide:not(:has(.auc-label svg)) img[src*="kill-gap-kde"]').filter({ visible: true })).toHaveCount(1);
     });
   });
 }

@@ -45,7 +45,7 @@ export const researchPage = {
     {
       id: 'cog-journal',
       status: { ko: '준비 중', en: 'In preparation' },
-      title: { ko: 'CoG 2026 논문의 저널 확장', en: 'Journal extension of the CoG 2026 paper' },
+      title: { ko: '{pub.cog-2026-engagement.venueAbbr} 논문의 저널 확장', en: 'Journal extension of the {pub.cog-2026-engagement.venueAbbr} paper' },
       body: {
         ko: '교전을 나누는 기준을 데이터 분포로 점검하고, 교전 가치의 정의와 평가를 넓히고 있습니다.',
         en: 'Checking the engagement boundaries against the data distribution, and broadening how engagement value is defined and evaluated.',
@@ -54,7 +54,7 @@ export const researchPage = {
     },
     {
       id: 'ms-thesis',
-      status: { ko: '준비 중 · 2027년 2월 졸업 예정', en: 'In preparation · expected Feb 2027' },
+      status: { ko: '준비 중 · {person.graduation} 졸업 예정', en: 'In preparation · expected {person.graduationShort}' },
       title: { ko: '석사 학위논문: 리그 오브 레전드 교전의 전략적 가치', en: 'M.S. thesis: the strategic value of League of Legends engagements' },
       body: {
         ko: '공개 경기 기록(Riot API)으로 교전을 구성하고, 교전 전후 추정 승리 확률의 변화로 교전의 가치를 정의한 뒤, 교전 전 정보로 그 변화를 예측합니다.',

@@ -32,7 +32,7 @@ const paper: PaperCardData = {
 
 describe('ResearchHighlight.astro', () => {
   it('section#research-highlight with ORAL badge, bold own name, the abstract disclosure with data-trigger=open-abstract, pending PDF label', async () => {
-    const html = await renderAstro(ResearchHighlight, { props: { lang: 'ko', paper, nowPlaying: '준비 중: 석사 학위논문' } });
+    const html = await renderAstro(ResearchHighlight, { props: { lang: 'ko', paper, nowPlaying: '준비 중: 석사 학위논문', figureLabel: 'FIG · CoG 2026 · AUC BY MODEL' } });
     expect(html).toMatch(/<section[^>]*id="research-highlight"[^>]*class="rh read read-sec"/);
     expect(html).toContain('연구 하이라이트');
     expect(html).toMatch(/<span[^>]*class="paper__oral"[^>]*>ORAL<\/span>/);
@@ -54,7 +54,7 @@ describe('ResearchHighlight.astro', () => {
   });
 
   it('final review fix 1 item 4: the P2-9 disclosure pattern of /research/ (buttons in one row, panels below it, visible without JS)', async () => {
-    const html = await renderAstro(ResearchHighlight, { props: { lang: 'ko', paper, nowPlaying: 'x' } });
+    const html = await renderAstro(ResearchHighlight, { props: { lang: 'ko', paper, nowPlaying: 'x', figureLabel: 'FIG · CoG 2026 · AUC BY MODEL' } });
     // No <details> growing inside the chip row any more (the chart's own "view as table" <details> is in .paper__fig).
     const body = html.slice(html.indexOf('class="paper__body"'), html.indexOf('class="paper__fig"'));
     expect(body.length).toBeGreaterThan(0);
@@ -77,7 +77,7 @@ describe('ResearchHighlight.astro', () => {
 
   it('links the PDF and DOI instead of the pending label once they exist', async () => {
     const html = await renderAstro(ResearchHighlight, {
-      props: { lang: 'en', paper: { ...paper, pdf: '/papers/cog-2026.pdf', doi: '10.1109/CoG00000.2026.0000000', statusNote: null, titleGloss: null, abstractLang: 'en' }, nowPlaying: 'In preparation' },
+      props: { lang: 'en', paper: { ...paper, pdf: '/papers/cog-2026.pdf', doi: '10.1109/CoG00000.2026.0000000', statusNote: null, titleGloss: null, abstractLang: 'en' }, nowPlaying: 'In preparation', figureLabel: 'FIG · CoG 2026 · AUC BY MODEL' },
     });
     expect(html).not.toContain('pub__pending');
     expect(html).toMatch(/<a[^>]*href="\/papers\/cog-2026.pdf"[^>]*>PDF<\/a>/);
@@ -88,7 +88,7 @@ describe('ResearchHighlight.astro', () => {
   });
 
   it('P1-9: the paper AUC chart replaces the 160px diagram thumbnail, in one bracketed light-HUD panel', async () => {
-    const html = await renderAstro(ResearchHighlight, { props: { lang: 'ko', paper, nowPlaying: 'x' } });
+    const html = await renderAstro(ResearchHighlight, { props: { lang: 'ko', paper, nowPlaying: 'x', figureLabel: 'FIG · CoG 2026 · AUC BY MODEL' } });
     expect(html).not.toMatch(/<img/);
     expect(html).toMatch(/<article class="paper lh-frame bracket bracket--sm"/);
     expect(html).toMatch(/class="chart chart--overall"/);

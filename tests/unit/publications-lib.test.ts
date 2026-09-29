@@ -128,7 +128,8 @@ describe('toPaperCartridge', () => {
         meta: 'Python · LightGBM · PyTorch',
         tagKeys: ['ml', 'collection'],
         tags: [tagLabel('ml', lang), tagLabel('collection', lang)],
-        chart: { kind: 'auc-overall', lang },
+        cover: thumb,
+        coverFit: 'contain',
         sticker: { text: 'ORAL', sr: lang === 'ko' ? '구두 발표' : 'oral presentation', kind: 'oral' },
         wide: true,
       });
@@ -138,5 +139,7 @@ describe('toPaperCartridge', () => {
     expect(toPaperCartridge(entry({ format: 'Poster' }), 'ko', null)).not.toHaveProperty('sticker');
     expect(toPaperCartridge(entry(), 'ko', null)).not.toHaveProperty('href');
     expect(() => toPaperCartridge(entry({ card: undefined }), 'ko', '/x/')).toThrow(/has no card/);
+    // P-01/F-045 (owner decision 11): the cover is the publication thumbnail, the KDE figure, never a manuscript crop
+    expect(parsed.thumbnail.src).toBe('../../assets/research/cog-2026/kill-gap-kde.webp');
   });
 });

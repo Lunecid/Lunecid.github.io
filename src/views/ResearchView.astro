@@ -9,6 +9,7 @@ import InProgressList from '../components/research/InProgressList.astro';
 import PublicationItem from '../components/research/PublicationItem.astro';
 import ImageViewer from '../islands/ImageViewer';
 import { researchPage } from '../data/research-page';
+import { resolveFacts, resolveLocalizedDeep } from '../lib/facts';
 import { getFactSource, getPerson, getPublications } from '../lib/portfolio';
 import { toPaperCard } from '../lib/publications';
 import type { Lang } from '../i18n/ui';
@@ -33,11 +34,11 @@ const years = [...new Set(papers.map((paper) => paper.year))].sort((a, b) => b -
 const ids = (await getPerson()).researchIds;
 ---
 <BaseLayout lang={lang} title={meta.title} description={meta.description} page="research" section="research" sectionIndex>
-  <PageHeader lang={lang} label="RESEARCH" title={t(lang, 'research.title')} intro={researchPage.intro[lang]}>
+  <PageHeader lang={lang} label="RESEARCH" title={t(lang, 'research.title')} intro={resolveFacts(researchPage.intro[lang], lang, facts)}>
     {/* D-7: professors reach the Academic CV from the research page header (and from #for-labs below). */}
     <p class="research-cv"><a class="btn btn--line cut cut--line" href={ACADEMIC_CV_HREF} title={t(lang, 'nav.cvAcademic')} download>{t(lang, 'nav.cvAcademic')} <span aria-hidden="true">↓</span></a></p>
   </PageHeader>
-  <InterestCards lang={lang} interests={researchPage.interests} />
+  <InterestCards lang={lang} interests={resolveLocalizedDeep(researchPage.interests, facts)} />
   <section id="publications" class="pub__section read read-sec" aria-labelledby="publications-title">
     <GhostArt side="left" />
     <div class="container">
@@ -54,7 +55,7 @@ const ids = (await getPerson()).researchIds;
       ))}
     </div>
   </section>
-  <InProgressList lang={lang} items={researchPage.ongoing} />
+  <InProgressList lang={lang} items={resolveLocalizedDeep(researchPage.ongoing, facts)} />
   <section id="for-labs" class="for-labs read read-sec" aria-labelledby="for-labs-title">
     <div class="container">
       {/* light HUD panel with corner marks, like [ NOW PLAYING ] (P1-9) */}

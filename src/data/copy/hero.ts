@@ -28,11 +28,11 @@ export const heroCopy: Localized<HeroCopy> = {
     meta: '부산대학교 데이터사이언스 석사과정 · 게임 텔레메트리 · 그래프 ML',
     ctas: { primary: { label: '연구 보기', href: '/research/' } },
     contact: { cvLabel: 'CV (PDF)', jobFitLabel: t('ko', 'action.viewJobFit'), jobFitHref: '/records/#job-fit' },
-    artifact: { label: 'FIG · CoG 2026 · AUC BY MODEL', linkLabel: '논문 초록 보기', href: '/research/cog-2026-engagement/' },
+    artifact: { label: 'FIG · {pub.cog-2026-engagement.venueAbbr} · AUC BY MODEL', linkLabel: '논문 초록 보기', href: '/research/cog-2026-engagement/' },
     swap: { groupLabel: '첫 화면 캐릭터 선택', replayLabel: '등장 다시 보기' },
     playerCard: {
       label: '플레이어 카드',
-      badges: ['IEEE CoG 2026 ORAL', '최우수상 ×2'],
+      badges: ['{pub.cog-2026-engagement.venueShort} ORAL', '{awards.name:top} ×{awards.count:top}'],
       photoAlt: t('ko', 'card.photoAlt'),
     },
   },
@@ -42,11 +42,11 @@ export const heroCopy: Localized<HeroCopy> = {
     meta: 'M.S. student in Data Science, Pusan National University · Game telemetry · Graph ML',
     ctas: { primary: { label: 'See research', href: '/research/' } },
     contact: { cvLabel: 'CV (PDF)', jobFitLabel: t('en', 'action.viewJobFit'), jobFitHref: '/records/#job-fit' },
-    artifact: { label: 'FIG · CoG 2026 · AUC BY MODEL', linkLabel: 'Read the abstract', href: '/research/cog-2026-engagement/' },
+    artifact: { label: 'FIG · {pub.cog-2026-engagement.venueAbbr} · AUC BY MODEL', linkLabel: 'Read the abstract', href: '/research/cog-2026-engagement/' },
     swap: { groupLabel: 'Choose the hero character', replayLabel: 'Replay entrance' },
     playerCard: {
       label: 'Player card',
-      badges: ['IEEE CoG 2026 ORAL', 'Top Excellence Award ×2'],
+      badges: ['{pub.cog-2026-engagement.venueShort} ORAL', '{awards.name:top} ×{awards.count:top}'],
       photoAlt: t('en', 'card.photoAlt'),
     },
   },
@@ -62,7 +62,7 @@ export const mainMenuCopy: Localized<MainMenuCopy> = {
   ko: {
     items: [
       { num: '01', href: '/research/', title: t('ko', 'nav.research'), caption: '리그 오브 레전드 교전 예측 · PUBG 생존 모델' },
-      { num: '02', href: '/projects/', title: t('ko', 'nav.projects'), caption: '최우수상 2회 · 웹 서비스' },
+      { num: '02', href: '/projects/', title: t('ko', 'nav.projects'), caption: '{awards.name:top} ×{awards.count:top} · 웹 서비스' },
       { num: '03', href: '/records/', title: t('ko', 'nav.records'), caption: '학력 · 수상 · 자격 · 이력서' },
       { num: '04', href: '/player-log/', title: t('ko', 'nav.playerLog'), caption: '좋아하는 게임 · 업적 · 숨은 요소' },
     ],
@@ -71,7 +71,7 @@ export const mainMenuCopy: Localized<MainMenuCopy> = {
   en: {
     items: [
       { num: '01', href: '/research/', title: t('en', 'nav.research'), caption: 'League of Legends engagement prediction · PUBG survival model' },
-      { num: '02', href: '/projects/', title: t('en', 'nav.projects'), caption: 'Top Excellence Award ×2 · web service' },
+      { num: '02', href: '/projects/', title: t('en', 'nav.projects'), caption: '{awards.name:top} ×{awards.count:top} · web service' },
       { num: '03', href: '/records/', title: t('en', 'nav.records'), caption: 'Education · awards · certifications · CV' },
       { num: '04', href: '/player-log/', title: t('en', 'nav.playerLog'), caption: 'Games I play · achievements · hidden extras' },
     ],

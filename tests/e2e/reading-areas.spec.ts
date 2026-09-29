@@ -49,7 +49,7 @@ test.describe('P1-9: the reading bands are light HUD, not rounded card grids', (
     await row.hover();
     await expect.poll(() => ptr.evaluate((el) => getComputedStyle(el).opacity)).toBe('1');
     for (const item of await pn.locator('.pn__item').all()) expect(await item.locator('a').count()).toBeLessThanOrEqual(1);
-    await expect(pn.locator('.pn__ver').first()).toHaveText(/^v\d{4}\.\d{2}$/);
+    await expect(pn.locator('.pn__ver').first()).toHaveText(/^v\d{4}\.\d{2}(\.\d+)?$/);
     const rh = page.locator('#research-highlight');
     await expect(rh.locator('img')).toHaveCount(0);
     await expect(rh.locator('.chart__scroll--wide svg')).toBeVisible();
@@ -202,37 +202,28 @@ test.describe('P1-6 / P2-23: cartridge labels and stickers', () => {
     });
   }
 
-  test('the youth start-up label draws its chart whole (contain), never cropped', async ({ page }) => {
+  test('the chart labels (youth start-up, CoG KDE figure) are drawn whole (contain), never cropped', async ({ page }) => {
     await open(page, '/projects/', 1440);
     const fits = await page.locator('img.cart__img--contain').evaluateAll((els) => els.map((el) => getComputedStyle(el).objectFit));
-    expect(fits).toEqual(['contain']);
+    expect(fits).toEqual(['contain', 'contain']);
   });
 
-  // Fix round 1: the CoG label is the paper's own AUC result (AucLabel), drawn inline from overallAuc.
+  // P1-8 (F-045, owner decision 11 and the 2026-09-29 answer): the CoG label on home and /projects/ is the paper's
+  // KDE figure (kill-gap-kde), shown whole as a contained cover; the inline AUC chart is gone from the card.
   for (const [route, width] of [['/', 320], ['/', 375], ['/en/', 768], ['/', 1068], ['/projects/', 1440], ['/en/projects/', 1920]] as const) {
-    test(`${route} ${width}px: the CoG label is the AUC chart: one visible SVG, whole in its label, text 12px or more`, async ({ page }) => {
+    test(`${route} ${width}px: the CoG label is the KDE figure: one visible image, whole in its label, no inline chart`, async ({ page }) => {
       await open(page, route, width);
       const cart = page.locator('.cart--wide').first();
-      const svg = cart.locator('.auc-label svg').filter({ visible: true });
-      await expect(svg).toHaveCount(1);
-      await expect(svg.locator('[data-row="lightgbm"] .auc-label__value')).toHaveText('0.675');
-      const [s, label] = await Promise.all([box(svg), box(cart.locator('.cart__chart'))]);
-      expect(s.x).toBeGreaterThanOrEqual(label.x - 0.5);
-      expect(s.x + s.width).toBeLessThanOrEqual(label.x + label.width + 0.5);
-      expect(s.y + s.height).toBeLessThanOrEqual(label.y + label.height + 0.5);
-      const sizes = await svg.locator('text').evaluateAll((texts) =>
-        texts.map((t) => parseFloat(getComputedStyle(t).fontSize) * (t as SVGGraphicsElement).getScreenCTM()!.a),
-      );
-      expect(Math.min(...sizes)).toBeGreaterThanOrEqual(12 - 0.01);
-      // every mark sits inside the SVG's own box (nothing clipped)
-      const spill = await svg.evaluate((el) => {
-        const r = el.getBoundingClientRect();
-        return Array.from(el.querySelectorAll('text, circle, line')).filter((n) => {
-          const b = n.getBoundingClientRect();
-          return b.left < r.left - 0.5 || b.right > r.right + 0.5 || b.top < r.top - 0.5 || b.bottom > r.bottom + 0.5;
-        }).length;
-      });
-      expect(spill).toBe(0);
+      const img = cart.locator('img.cart__img').filter({ visible: true });
+      await expect(img).toHaveCount(1);
+      await expect(img).toHaveAttribute('src', /kill-gap-kde/);
+      await expect(cart.locator('.auc-label svg')).toHaveCount(0);
+      const [i, label] = await Promise.all([box(img), box(cart.locator('.cart__label'))]);
+      expect(i.x).toBeGreaterThanOrEqual(label.x - 0.5);
+      expect(i.x + i.width).toBeLessThanOrEqual(label.x + label.width + 0.5);
+      expect(i.y + i.height).toBeLessThanOrEqual(label.y + label.height + 0.5);
+      // the figure is loaded and drawn whole (contain), not cropped
+      expect(await img.evaluate((el) => (el as HTMLImageElement).naturalWidth > 0 && getComputedStyle(el).objectFit === 'contain')).toBe(true);
     });
   }
 });

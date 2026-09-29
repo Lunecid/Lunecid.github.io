@@ -69,11 +69,11 @@ export const PAGE_META: Record<CommonPageKey, Localized<{ title: string; descrip
   'research-story': {
     ko: {
       title: '교전 결과 예측 논문 · 백성은',
-      description: '교전 직전 30초의 공개 경기 기록으로 교전 뒤 이득을 예측한 IEEE CoG 2026 구두 발표 논문의 초록과 BibTeX.',
+      description: '교전 직전 {pub.cog-2026-engagement.fact.window}의 공개 경기 기록으로 교전 뒤 이득을 예측한 {pub.cog-2026-engagement.venueShort} 구두 발표 논문의 초록과 BibTeX.',
     },
     en: {
       title: 'Engagement Outcome Prediction Paper · Seongeun Baek',
-      description: 'Abstract and BibTeX of an IEEE CoG 2026 oral paper that predicts engagement outcomes from 30 seconds of public match records.',
+      description: 'Abstract and BibTeX of an {pub.cog-2026-engagement.venueShort} oral paper that predicts engagement outcomes from {pub.cog-2026-engagement.fact.window} of public match records.',
     },
   },
   projects: {

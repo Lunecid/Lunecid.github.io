@@ -15,7 +15,7 @@ const base = {
   location: '부산 · Busan, South Korea',
   education: ['부산대학교 데이터사이언스전문대학원 데이터사이언스학과 석사과정 · 2025.03 – 2027.02 (졸업 예정)'],
   skills: primary,
-  records: ['IEEE CoG 2026 구두 발표', '최우수상 2회 · 장려상 1회', 'ADsP · CDS 빅데이터 2급'],
+  records: ['IEEE CoG 2026 구두 발표', '최우수상 ×2 · 장려상 ×1', 'ADsP · CDS 빅데이터 2급'],
   contact: {
     email: 'todtjddms104204@pusan.ac.kr',
     github: 'https://github.com/Lunecid',
