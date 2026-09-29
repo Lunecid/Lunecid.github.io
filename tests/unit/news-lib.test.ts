@@ -54,7 +54,8 @@ describe('toPatchNotes', () => {
   });
 
   it('P1-9: the version tag comes from the date and the short title from the entry when it has one', () => {
-    expect(patchVersion('2026-09-01')).toMatch(/v2026\.09(\.\d+)?/);
+    expect(patchVersion('2026-09-01')).toBe('v2026.09');
+    expect(patchVersion('2026-09-28', 1)).toBe('v2026.09.1');
     const withShort = [{ data: { ...items[1]!.data, short: { ko: 'CoG 2026 구두 발표', en: 'Oral at CoG 2026' } } }];
     expect(toPatchNotes(withShort, 'ko')[0]).toMatchObject({ version: expect.stringMatching(/v2026\.09(\.\d+)?/), short: 'CoG 2026 구두 발표', text: 'IEEE CoG 2026에서 구두 발표했습니다.' });
     expect(toPatchNotes(withShort, 'en')[0]?.short).toBe('Oral at CoG 2026');
@@ -66,6 +67,13 @@ describe('toPatchNotes', () => {
     expect(shown.map((n) => [n.dateIso, n.version])).toEqual([['2026-10-01', 'v2026.10'], ['2026-09-28', 'v2026.09.1']]);
     const all = toPatchNotes(september, 'ko', september.length).map((n) => n.version);
     expect(new Set(all).size).toBe(all.length);
+  });
+
+  it('F-094: same-date entries are numbered by entry id, whatever the input order; the higher version is listed first', () => {
+    const day = (id: string) => ({ id, data: { date: '2026-11-02', kind: 'site' as const, title: { ko: id, en: id }, href: null } });
+    for (const input of [[day('a'), day('b')], [day('b'), day('a')]]) {
+      expect(toPatchNotes(input, 'en').map((n) => [n.text, n.version])).toEqual([['b', 'v2026.11.1'], ['a', 'v2026.11']]);
+    }
   });
 
   it('respects a custom limit and never reorders its input', () => {

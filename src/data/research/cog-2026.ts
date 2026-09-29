@@ -1,5 +1,6 @@
 // Numbers and figure copy for the CoG 2026 AUC charts. The CoG page itself shows the abstract only since D-15;
-// overallAuc / figureCopy.aucOverall feed the home hero artefact and the cartridge AucLabel. Keep them in sync.
+// overallAuc / figureCopy.aucOverall feed the hero artefact and the research highlight (AucOverallChart); the
+// cartridge AucLabel no longer renders since P1-8 (the CoG card shows the KDE figure). Keep them in sync.
 // All AUCs: held-out test on patch 15.16, mean of three seeds (paper/result.tex).
 
 export const CHANCE_AUC = 0.5;

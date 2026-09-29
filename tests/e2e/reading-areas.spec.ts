@@ -220,6 +220,7 @@ test.describe('P1-6 / P2-23: cartridge labels and stickers', () => {
       await expect(cart.locator('.auc-label svg')).toHaveCount(0);
       const [i, label] = await Promise.all([box(img), box(cart.locator('.cart__label'))]);
       expect(i.x).toBeGreaterThanOrEqual(label.x - 0.5);
+      expect(i.y).toBeGreaterThanOrEqual(label.y - 0.5);
       expect(i.x + i.width).toBeLessThanOrEqual(label.x + label.width + 0.5);
       expect(i.y + i.height).toBeLessThanOrEqual(label.y + label.height + 0.5);
       // the figure is loaded and drawn whole (contain), not cropped

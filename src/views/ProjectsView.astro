@@ -33,7 +33,7 @@ const cards: CartridgeProps[] = (await resolveOrder(v.orders.projectsOrder, lang
 const tagCounts = new Map<TagKey, number>();
 for (const card of cards) for (const key of card.tagKeys) tagCounts.set(key, (tagCounts.get(key) ?? 0) + 1);
 const filterKeys = TAG_KEYS.filter((key) => (tagCounts.get(key) ?? 0) >= 2);
-// The page's LCP image is the first card that has one (the CoG card draws its label inline since fix round 1).
+// The page's LCP image is the first card that has one (since P1-8 the CoG card's KDE figure, P-01/F-045).
 const firstImage = cards.findIndex((card) => card.cover !== undefined);
 const github = usableGitHub(generated.github());
 ---

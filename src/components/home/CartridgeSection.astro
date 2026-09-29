@@ -15,7 +15,7 @@ interface Props {
 
 const { lang, cartridges, moreHref, moreLabel } = Astro.props;
 // Final fix 2 item 13: on a 2560x1440 screen the first image card is the home page's LCP element, so it loads eagerly
-// (the CoG card before it draws its label inline, no image).
+// (since P1-8 that is the CoG card's KDE figure, P-01/F-045; it loads eagerly at low priority on home).
 const firstImage = cartridges.findIndex((cartridge) => cartridge.cover !== undefined);
 ---
 

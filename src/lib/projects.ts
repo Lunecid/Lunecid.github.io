@@ -25,7 +25,8 @@ export interface CartridgeProps {
    * empty box. Never a drawn chart: the plate shows no data it does not have.
    */
   plate?: { id: string; period: string; tag?: string };
-  /** The CoG card (fix round 1): the paper's own AUC result drawn as the label (AucLabel.astro) instead of an image. */
+  /** Fix round 1: the paper's AUC result drawn as the label (AucLabel.astro). No builder sets it since P1-8 (the CoG
+   *  card shows the KDE figure as its cover, P-01/F-045). */
   chart?: { kind: 'auc-overall'; lang: Lang };
   sticker?: { text: string; sr?: string; kind: 'oral' | 'award' };
   wide?: boolean;

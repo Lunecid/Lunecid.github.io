@@ -17,6 +17,13 @@ export interface PatchNoteItem {
 }
 
 /** '2026-09-01' → 'v2026.09'; with seq > 0 (the entry's place within its month, 0-based) → 'v2026.09.<seq>'. */
+type NewsLike = { id?: string; data: NewsData };
+
+/** Date ascending; same date → entry id ascending. */
+function byDateAsc(a: NewsLike, b: NewsLike): number {
+  return a.data.date.localeCompare(b.data.date) || (a.id ?? '').localeCompare(b.id ?? '');
+}
+
 export function patchVersion(dateIso: string, seq = 0): string {
   const base = `v${dateIso.slice(0, 4)}.${dateIso.slice(5, 7)}`;
   return seq > 0 ? `${base}.${seq}` : base;
@@ -24,12 +31,13 @@ export function patchVersion(dateIso: string, seq = 0): string {
 
 /**
  * P-01/F-094: the version of every entry, computed per month in date order over all entries (not only the shown slice):
- * the first entry of a month gets 'v2026.09', later ones 'v2026.09.1', '.2', … Same-date entries keep their input order.
+ * the first entry of a month gets 'v2026.09', later ones 'v2026.09.1', '.2', … Same-date entries are ordered by entry id
+ * (getCollection order is not guaranteed), so the numbering is deterministic.
  */
-function patchVersions<T extends { data: NewsData }>(entries: readonly T[]): Map<T, string> {
+function patchVersions<T extends NewsLike>(entries: readonly T[]): Map<T, string> {
   const seqByMonth = new Map<string, number>();
   const versions = new Map<T, string>();
-  for (const entry of [...entries].sort((a, b) => a.data.date.localeCompare(b.data.date))) {
+  for (const entry of [...entries].sort(byDateAsc)) {
     const month = entry.data.date.slice(0, 7);
     const seq = seqByMonth.get(month) ?? 0;
     seqByMonth.set(month, seq + 1);
@@ -44,18 +52,18 @@ const KIND_KEY = {
   site: 'news.kind.site',
 } as const satisfies Record<NewsData['kind'], UiKey>;
 
-/** Newest first (date desc), first `limit` (default 4); dateLabel = formatDate; version tag; kindLabel from ui news.kind.*; href localized. */
-export function toPatchNotes(entries: readonly { data: NewsData }[], lang: Lang, limit = 4): PatchNoteItem[] {
+/** Newest first (date desc; same date: id desc, so the higher version is on top), first `limit` (default 4); dateLabel = formatDate; version tag; kindLabel from ui news.kind.*; href localized. */
+export function toPatchNotes(entries: readonly NewsLike[], lang: Lang, limit = 4): PatchNoteItem[] {
   const versions = patchVersions(entries);
   return [...entries]
-    .sort((a, b) => b.data.date.localeCompare(a.data.date))
+    .sort((a, b) => byDateAsc(b, a))
     .slice(0, limit)
     .map((entry) => {
       const { data } = entry;
       return {
         dateIso: data.date,
         dateLabel: formatDate(data.date, lang),
-        version: versions.get(entry) ?? patchVersion(data.date),
+        version: versions.get(entry)!,
         kindLabel: t(lang, KIND_KEY[data.kind]),
         short: data.short ? data.short[lang] : null,
         text: data.title[lang],
