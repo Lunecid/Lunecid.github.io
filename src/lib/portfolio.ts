@@ -6,9 +6,10 @@ import type { ImageMetadata } from 'astro';
 import { getCollection, getEntry, type CollectionEntry } from 'astro:content';
 import photo from '../assets/photo/photo-id.webp';
 import { DOCUMENTS, SITE, type DocumentId } from '../config';
-import type { AwardData, ResumeData } from '../content/schemas';
+import type { AwardData, JobfitData, ResumeData } from '../content/schemas';
 import type { Lang } from '../i18n/ui';
 import { splitEntryId, type Localized } from '../i18n/utils';
+import type { JobfitId } from '../types';
 import { VARIANT_IDS, type VariantId } from '../variants/ids';
 import { buildFactSource, graduationEntry, type FactSource } from './facts';
 import { hasProjectPage, projectSlug } from './projects';
@@ -127,6 +128,12 @@ export async function getSkills(): Promise<ResumeData['skills']> {
 
 export async function getNews(): Promise<NewsEntry[]> {
   return getCollection('news');
+}
+
+/** The version's job-fit table, or null while its file is absent (the pending state, §2.6). */
+export async function getJobfit(id: JobfitId): Promise<JobfitData | null> {
+  const entry = await getEntry('jobfit', id);
+  return entry ? entry.data : null;
 }
 
 export interface DocumentEntry {

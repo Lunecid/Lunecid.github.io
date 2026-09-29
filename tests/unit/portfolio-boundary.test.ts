@@ -4,8 +4,7 @@ import { join, relative, sep } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 const ROOT = process.cwd();
-/** P1-6 appends 'jobfit' when getJobfit arrives (CA-11). */
-const FACT_COLLECTIONS = ['projects', 'publications', 'news', 'resume', 'awards'];
+const FACT_COLLECTIONS = ['projects', 'publications', 'news', 'resume', 'awards', 'jobfit'];
 const ALLOWED = new Set(['src/lib/portfolio.ts', 'src/content.config.ts']);
 
 function walk(dir: string): string[] {

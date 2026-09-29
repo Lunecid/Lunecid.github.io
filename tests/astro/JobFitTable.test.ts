@@ -8,11 +8,12 @@ import type { Lang } from '../../src/i18n/ui';
 import { formatDate } from '../../src/i18n/utils';
 import type { JobfitStatus } from '../../src/types';
 import { anchorBlock, readSource, renderAstro } from './helpers';
+import { loadFactSource } from '../helpers/fact-source';
 
-const jobfit = jobfitSchema.parse(parseYamlDocument(readFileSync(resolve(process.cwd(), 'src/data/jobfit.yaml'), 'utf8'), 'jobfit'));
+const jobfit = jobfitSchema.parse(parseYamlDocument(readFileSync(resolve(process.cwd(), 'src/data/jobfit.game.yaml'), 'utf8'), 'game'));
 const STATUS_KO: Record<JobfitStatus, string> = { met: '충족', partial: '부분', 'in-progress': '보완 중', later: '후순위', 'n-a': '해당 없음' };
 const STATUS_EN: Record<JobfitStatus, string> = { met: 'Met', partial: 'Partial', 'in-progress': 'In progress', later: 'Later', 'n-a': 'N/A' };
-const render = (lang: Lang) => renderAstro(JobFitTable, { props: { lang, data: jobfit } });
+const render = (lang: Lang) => renderAstro(JobFitTable, { props: { lang, data: jobfit, facts: loadFactSource() } });
 const hrefsOf = (html: string): string[] => [...html.matchAll(/<a\b[^>]*href="([^"]+)"/g)].map((m) => m[1]);
 
 describe('JobFitTable.astro', () => {
@@ -133,5 +134,21 @@ describe('JobFitTable.astro', () => {
     expect(src).toMatch(/\.jobfit__status--partial \{[^}]*border-color: var\(--accent-deep\); color: var\(--accent-deep\)/);
     expect(src).toMatch(/\.jobfit__status--in-progress \{[^}]*border: 1px dashed var\(--gold\); color: var\(--gold-deep\)/);
     expect(src).toMatch(/\.jobfit__status--later,\s*\.jobfit__status--n-a \{[^}]*color: var\(--read-muted\)/);
+  });
+
+  it('A-13 / §2.6: a missing table renders the pending state inside section#job-fit', async () => {
+    for (const [lang, line] of [['ko', '공고 조사를 마친 뒤 이 표를 채웁니다.'], ['en', 'This table will be filled in after the job-posting survey is complete.']] as const) {
+      const html = await renderAstro(JobFitTable, { props: { lang, data: null, facts: loadFactSource() } });
+      expect(html).toMatch(/<section(?=[^>]*\bid="job-fit")[^>]*>/);
+      expect(html).toMatch(/<h2[^>]*id="job-fit-title"/);
+      expect(html).toMatch(new RegExp(`<p class="jobfit__pending"[^>]*>${line.replace(/\./g, '\\.')}</p>`));
+      expect(html).not.toContain('<table');
+    }
+  });
+
+  it('the intro and the source line resolve {table.*} from the table sample', async () => {
+    const ko = await render('ko');
+    expect(ko).toContain('국내 게임사 데이터 분석가 공고 13건(2024–2026, 원문 확인)');
+    expect(ko).not.toMatch(/\{table\./);
   });
 });

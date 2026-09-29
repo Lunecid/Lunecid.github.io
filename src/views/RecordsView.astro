@@ -1,7 +1,6 @@
 ---
 // /records/ and /en/records/ (spec §3 기록, §5.14 order). resume.yaml is the single source shared with the
 // three PDFs, so GPA, dates and award names here equal the PDF text (Task 27 checks that).
-import { getEntry } from 'astro:content';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import PageHeader from '../components/hud/PageHeader.astro';
 import SectionHead from '../components/hud/SectionHead.astro';
@@ -17,7 +16,7 @@ import DocumentList from '../components/records/DocumentList.astro';
 import ImageViewer from '../islands/ImageViewer';
 import { buildCertificate } from '../lib/certificates';
 import type { Certificate } from '../lib/certificates';
-import { getAwards, getProjects, getPublications, getResume } from '../lib/portfolio';
+import { getAwards, getFactSource, getJobfit, getProjects, getPublications, getResume } from '../lib/portfolio';
 import { projectSlug } from '../lib/projects';
 import { toPaperCard } from '../lib/publications';
 import { awardItems, credentialItems, projectSummaryItems, skillGroups, todayIso, type AwardCertMeta } from '../lib/records';
@@ -35,8 +34,8 @@ interface Props {
 const { lang } = Astro.props;
 
 const resume = await getResume();
-const jobfitEntry = await getEntry('jobfit', 'jobfit');
-if (!jobfitEntry) throw new Error('records: src/data/jobfit.yaml is required');
+const jobfit = await getJobfit('game');
+const facts = await getFactSource();
 
 const awards = await getAwards();
 const projects = await getProjects(lang);
@@ -113,7 +112,7 @@ const meta = PAGE_META.records[lang];
       ]}
     />
     <SkillList lang={lang} primary={skills.primary} familiar={skills.familiar} />
-    <JobFitTable lang={lang} data={jobfitEntry.data} />
+    <JobFitTable lang={lang} data={jobfit} facts={facts} />
     <DocumentList lang={lang} documents={documents} />
   </div>
   <ImageViewer

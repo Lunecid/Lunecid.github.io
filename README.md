@@ -47,7 +47,7 @@ Lighthouse budgets (performance ≥ 0.90, accessibility ≥ 0.95, mobile and des
 - Project case studies: `src/content/projects/{ko,en}/*.md`
 - Research: `src/content/publications/`, `src/content/research/{ko,en}/`, `src/data/research-page.ts`, `src/data/research/cog-2026.ts`
 - Patch notes: `src/content/news/*.md` (dates are quoted `'YYYY-MM-DD'` strings)
-- Résumé data for the site and all three PDFs: `src/data/resume.yaml`; job-fit table `src/data/jobfit.yaml`; awards, favorites and achievements in `src/data/*.yaml`
+- Résumé data for the site and all three PDFs: `src/data/resume.yaml`; job-fit tables `src/data/jobfit.<id>.yaml` (one per version: `jobfit.game.yaml`; `jobfit.data.yaml` once the P3 survey lands); awards, favorites and achievements in `src/data/*.yaml`
 - UI strings: `src/i18n/ui.ts` (Korean and English keys must match; a test checks it)
 - Images: converted once into `src/assets/**` by `npm run assets` (sharp, WebP, metadata stripped) from a staging folder outside the repository (`ASSET_STAGING`, `LOL_ROOT`)
 

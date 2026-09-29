@@ -21,7 +21,7 @@
   "tests/astro/HudNav.test.ts": 32,
   "tests/astro/InProgressList.test.ts": 10,
   "tests/astro/InterestCards.test.ts": 25,
-  "tests/astro/JobFitTable.test.ts": 54,
+  "tests/astro/JobFitTable.test.ts": 60,
   "tests/astro/MainMenu.test.ts": 38,
   "tests/astro/MembershipCard.test.ts": 23,
   "tests/astro/MembershipRow.test.ts": 25,
@@ -48,9 +48,9 @@
   "tests/astro/TagFilter.test.ts": 23,
   "tests/content/legal.test.ts": 59,
   "tests/content/projects.test.ts": 150,
-  "tests/content/records.test.ts": 126,
+  "tests/content/records.test.ts": 133,
   "tests/content/research.test.ts": 59,
-  "tests/content/schemas.test.ts": 83,
+  "tests/content/schemas.test.ts": 91,
   "tests/e2e/anchors.spec.ts": 11,
   "tests/e2e/art-variants.spec.ts": 65,
   "tests/e2e/content-honesty.spec.ts": 39,
@@ -142,5 +142,5 @@
   "tests/unit/style-rules.test.ts": 31,
   "tests/unit/tokens.test.ts": 55,
   "tests/unit/toolchain.test.ts": 76,
-  "tests/unit/yaml-loader.test.ts": 28
+  "tests/unit/yaml-loader.test.ts": 33
 }

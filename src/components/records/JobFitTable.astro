@@ -13,15 +13,17 @@
 import SectionHead from '../hud/SectionHead.astro';
 import type { JobfitData } from '../../content/schemas';
 import type { Lang } from '../../i18n/ui';
+import { factResolver, type FactSource } from '../../lib/facts';
 import { formatDate, localizeHref, t, type UiKey } from '../../i18n/utils';
 import type { JobfitStatus } from '../../types';
 
 interface Props {
   lang: Lang;
-  data: JobfitData;
+  data: JobfitData | null;
+  facts: FactSource;
 }
 
-const { lang, data } = Astro.props;
+const { lang, data, facts } = Astro.props;
 const STATUS_KEY: Record<JobfitStatus, UiKey> = {
   met: 'jobfit.status.met',
   partial: 'jobfit.status.partial',
@@ -30,63 +32,70 @@ const STATUS_KEY: Record<JobfitStatus, UiKey> = {
   'n-a': 'jobfit.status.n-a',
 };
 const COLUMNS: UiKey[] = ['jobfit.requirement', 'jobfit.frequency', 'jobfit.evidence', 'jobfit.status', 'jobfit.plan'];
-const rows = data.rows.map((row) => ({
+const r = data ? factResolver(facts, lang, { table: data.sample }) : (text: string) => text;
+const rows = (data?.rows ?? []).map((row) => ({
   id: row.id,
-  requirement: row.requirement[lang],
-  // one value per requirement part (jobfit.yaml joins them with ' · ')
+  requirement: r(row.requirement[lang]),
+  // one value per requirement part (jobfit.<id>.yaml joins them with ' · ')
   frequency: row.frequency.split(' · '),
-  evidence: row.evidence.map((e) => ({ label: e.label[lang], short: e.short ? e.short[lang] : null, href: localizeHref(e.href, lang) })),
+  evidence: row.evidence.map((e) => ({ label: r(e.label[lang]), short: e.short ? r(e.short[lang]) : null, href: localizeHref(e.href, lang) })),
   status: row.status,
   statusLabel: t(lang, STATUS_KEY[row.status]),
-  plan: row.plan === null ? null : row.plan[lang],
+  plan: row.plan === null ? null : r(row.plan[lang]),
 }));
 const title = t(lang, 'jobfit.title');
 ---
 <section id="job-fit" class="jobfit read-sec" aria-labelledby="job-fit-title">
   <div class="container">
     <SectionHead id="job-fit-title" caption={t(lang, 'section.jobFit')} title={title} />
-    <p class="jobfit__intro">{data.intro[lang]}</p>
-    <p class="jobfit__asof">{t(lang, 'jobfit.asOf')} <time datetime={data.asOf}>{formatDate(data.asOf, lang)}</time></p>
-    <table class="jobfit__table" role="table">
-      <caption class="sr-only">{title}</caption>
-      <colgroup>
-        <col class="jobfit__col-req" /><col class="jobfit__col-freq" /><col class="jobfit__col-ev" /><col class="jobfit__col-status" /><col class="jobfit__col-plan" />
-      </colgroup>
-      <thead class="jobfit__head" role="rowgroup">
-        <tr role="row">{COLUMNS.map((key) => <th scope="col" role="columnheader">{t(lang, key)}</th>)}</tr>
-      </thead>
-      <tbody role="rowgroup">
-        {rows.map((row) => (
-          <tr class="jobfit__row" data-row={row.id} data-status={row.status} role="row">
-            <th scope="row" role="rowheader" class="jobfit__req">{row.requirement}</th>
-            <td class="jobfit__freq" role="cell"><span class="jobfit__label">{t(lang, 'jobfit.frequency')}</span><span class="jobfit__freq-value">{row.frequency.map((part, i) => <>{i > 0 && <span class="jobfit__freq-sep"> · </span>}<span class="jobfit__freq-part">{part}</span></>)}</span></td>
-            <td class="jobfit__ev-cell" role="cell">
-              {row.evidence.length > 0 ? (
-                <ul class="jobfit__evidence" role="list">
-                  {row.evidence.map((e) => {
-                    const external = e.href.startsWith('http');
-                    return (
-                      <li>
-                        {e.short ? (
-                          <a class="jobfit__ev" href={e.href} title={e.label}><span class="jobfit__ev-short" aria-hidden="true">{e.short}</span><span class="jobfit__ev-full">{e.label}</span>{external && <span class="jobfit__ev-arrow" aria-hidden="true">↗</span>}</a>
-                        ) : (
-                          <a class="jobfit__ev" href={e.href}>{e.label}{external && <span class="jobfit__ev-arrow" aria-hidden="true">↗</span>}</a>
-                        )}
-                      </li>
-                    );
-                  })}
-                </ul>
-              ) : (
-                <span class="jobfit__none">{t(lang, 'jobfit.noEvidence')}</span>
-              )}
-            </td>
-            <td class="jobfit__status-cell" role="cell"><span class={`jobfit__status jobfit__status--${row.status}`}>{row.statusLabel}</span></td>
-            <td class="jobfit__plan" role="cell">{row.plan && <Fragment><span class="jobfit__label">{t(lang, 'jobfit.plan')}</span>{row.plan}</Fragment>}</td>
-          </tr>
-        ))}
-      </tbody>
-    </table>
-    <p class="jobfit__note"><span class="jobfit__sources-title">{t(lang, 'jobfit.sources')}:</span> {data.sources.note[lang]}</p>
+    {data ? (
+      <Fragment>
+        <p class="jobfit__intro">{r(data.intro[lang])}</p>
+        <p class="jobfit__asof">{t(lang, 'jobfit.asOf')} <time datetime={data.asOf}>{formatDate(data.asOf, lang)}</time></p>
+        <table class="jobfit__table" role="table">
+          <caption class="sr-only">{title}</caption>
+          <colgroup>
+            <col class="jobfit__col-req" /><col class="jobfit__col-freq" /><col class="jobfit__col-ev" /><col class="jobfit__col-status" /><col class="jobfit__col-plan" />
+          </colgroup>
+          <thead class="jobfit__head" role="rowgroup">
+            <tr role="row">{COLUMNS.map((key) => <th scope="col" role="columnheader">{t(lang, key)}</th>)}</tr>
+          </thead>
+          <tbody role="rowgroup">
+            {rows.map((row) => (
+              <tr class="jobfit__row" data-row={row.id} data-status={row.status} role="row">
+                <th scope="row" role="rowheader" class="jobfit__req">{row.requirement}</th>
+                <td class="jobfit__freq" role="cell"><span class="jobfit__label">{t(lang, 'jobfit.frequency')}</span><span class="jobfit__freq-value">{row.frequency.map((part, i) => <>{i > 0 && <span class="jobfit__freq-sep"> · </span>}<span class="jobfit__freq-part">{part}</span></>)}</span></td>
+                <td class="jobfit__ev-cell" role="cell">
+                  {row.evidence.length > 0 ? (
+                    <ul class="jobfit__evidence" role="list">
+                      {row.evidence.map((e) => {
+                        const external = e.href.startsWith('http');
+                        return (
+                          <li>
+                            {e.short ? (
+                              <a class="jobfit__ev" href={e.href} title={e.label}><span class="jobfit__ev-short" aria-hidden="true">{e.short}</span><span class="jobfit__ev-full">{e.label}</span>{external && <span class="jobfit__ev-arrow" aria-hidden="true">↗</span>}</a>
+                            ) : (
+                              <a class="jobfit__ev" href={e.href}>{e.label}{external && <span class="jobfit__ev-arrow" aria-hidden="true">↗</span>}</a>
+                            )}
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  ) : (
+                    <span class="jobfit__none">{t(lang, 'jobfit.noEvidence')}</span>
+                  )}
+                </td>
+                <td class="jobfit__status-cell" role="cell"><span class={`jobfit__status jobfit__status--${row.status}`}>{row.statusLabel}</span></td>
+                <td class="jobfit__plan" role="cell">{row.plan && <Fragment><span class="jobfit__label">{t(lang, 'jobfit.plan')}</span>{row.plan}</Fragment>}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        <p class="jobfit__note"><span class="jobfit__sources-title">{t(lang, 'jobfit.sources')}:</span> {r(data.sources.note[lang])}</p>
+      </Fragment>
+    ) : (
+      <p class="jobfit__pending">{t(lang, 'jobfit.pending')}</p>
+    )}
   </div>
 </section>
 
@@ -121,6 +130,7 @@ const title = t(lang, 'jobfit.title');
 
   .jobfit__note { margin-top: 16px; font-size: 14px; line-height: 1.6; color: var(--read-muted); max-width: var(--measure); }
   .jobfit__sources-title { font-weight: 700; color: var(--read-text); }
+  .jobfit__pending { margin-top: 16px; font-size: 16px; line-height: 1.7; max-width: var(--measure); color: var(--read-muted); }
 
   /* ── Below 734px: one card per row ── */
   @media (max-width: 733.98px) {

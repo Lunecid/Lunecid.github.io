@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import type { LoaderContext } from 'astro/loaders';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { parseYamlDocument, parseYamlList, yamlDocumentLoader, yamlListLoader } from '../../src/content/yaml-loader';
+import { parseYamlDocument, parseYamlList, yamlDocumentLoader, yamlDocumentsLoader, yamlListLoader } from '../../src/content/yaml-loader';
 
 describe('parse functions', () => {
   it('parseYamlDocument adds the id', () => {
@@ -109,5 +109,39 @@ describe('loaders', () => {
     writeFileSync(join(root, 'src/data/achievements.yaml'), '- id: a\n- title: no id\n');
     const noId = fakeContext(root);
     await expect(yamlListLoader('src/data/achievements.yaml').load(noId.context)).rejects.toThrow(/missing a string id/);
+  });
+});
+
+describe('yamlDocumentsLoader (A-13)', () => {
+  function context(root: URL) {
+    const entries = new Map<string, { id: string; data: unknown }>();
+    const warnings: string[] = [];
+    return {
+      entries,
+      warnings,
+      ctx: {
+        store: { clear: () => entries.clear(), set: (e: { id: string; data: unknown }) => entries.set(e.id, e) },
+        parseData: async ({ data }: { data: unknown }) => data,
+        logger: { warn: (m: string) => warnings.push(m), error: () => undefined, info: () => undefined },
+        watcher: undefined,
+        config: { root },
+      },
+    };
+  }
+
+  it('stores one entry per key (id = key), warns and skips a missing file, fails on a parse error', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'yaml-docs-'));
+    writeFileSync(join(dir, 'a.yaml'), 'title: A\n');
+    writeFileSync(join(dir, 'bad.yaml'), 'title: [unclosed\n');
+    const root = pathToFileURL(`${dir}/`);
+    const ok = context(root);
+    const loader = yamlDocumentsLoader({ game: 'a.yaml', data: 'missing.yaml' });
+    expect(loader.name).toBe('yaml-documents');
+    await loader.load(ok.ctx as never);
+    expect([...ok.entries.keys()]).toEqual(['game']);
+    expect(ok.entries.get('game')?.data).toEqual({ title: 'A', id: 'game' });
+    expect(ok.warnings.join('\n')).toMatch(/missing\.yaml not found/);
+    const bad = context(root);
+    await expect(yamlDocumentsLoader({ game: 'bad.yaml' }).load(bad.ctx as never)).rejects.toThrow(/bad\.yaml/);
   });
 });

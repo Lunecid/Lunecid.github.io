@@ -10,12 +10,14 @@ import { achievementSchema, awardSchema, favoriteGameSchema, jobfitSchema, resum
 import { parseYamlDocument, parseYamlList } from '../../src/content/yaml-loader';
 import { findDates, readFrontmatter } from './helpers';
 import { researchPage } from '../../src/data/research-page';
+import { resolveLocalizedDeep } from '../../src/lib/facts';
+import { loadFactSource } from '../helpers/fact-source';
 
 const ROOT = process.cwd();
 const DATA = join(ROOT, 'src', 'data');
 const FILES = {
   resume: 'resume.yaml',
-  jobfit: 'jobfit.yaml',
+  jobfit: 'jobfit.game.yaml',
   awards: 'awards.yaml',
   favorites: 'favorites.yaml',
   achievements: 'achievements.yaml',
@@ -25,7 +27,12 @@ const text = (name: string): string => readFileSync(join(DATA, name), 'utf8').re
 const rel = (path: string): string => relative(ROOT, path).split(sep).join('/');
 
 const resume = () => resumeSchema.parse(parseYamlDocument(text(FILES.resume), 'resume'));
-const jobfit = () => jobfitSchema.parse(parseYamlDocument(text(FILES.jobfit), 'jobfit'));
+const rawJobfit = () => jobfitSchema.parse(parseYamlDocument(text(FILES.jobfit), 'game'));
+/** The game table as the page shows it: tokens resolved per language ({table.*} from its own sample). */
+const jobfit = () => {
+  const data = rawJobfit();
+  return resolveLocalizedDeep(data, loadFactSource(), { table: data.sample });
+};
 const awards = () => parseYamlList(text(FILES.awards)).map((item) => awardSchema.parse(item));
 const favorites = () => parseYamlList(text(FILES.favorites), 'games').map((item) => favoriteGameSchema.parse(item));
 const achievements = () => parseYamlList(text(FILES.achievements)).map((item) => achievementSchema.parse(item));
@@ -86,7 +93,7 @@ describe('records data files', () => {
   it('each file validates against its schema through the loader parsers', () => {
     const issues = (result: { error?: { issues: unknown[] } }) => result.error?.issues ?? [];
     expect(issues(resumeSchema.safeParse(parseYamlDocument(text(FILES.resume), 'resume')))).toEqual([]);
-    expect(issues(jobfitSchema.safeParse(parseYamlDocument(text(FILES.jobfit), 'jobfit')))).toEqual([]);
+    expect(issues(jobfitSchema.safeParse(parseYamlDocument(text(FILES.jobfit), 'game')))).toEqual([]);
     for (const item of parseYamlList(text(FILES.awards))) expect(issues(awardSchema.safeParse(item)), item.id).toEqual([]);
     for (const item of parseYamlList(text(FILES.favorites), 'games')) expect(issues(favoriteGameSchema.safeParse(item)), item.id).toEqual([]);
     for (const item of parseYamlList(text(FILES.achievements))) expect(issues(achievementSchema.safeParse(item)), item.id).toEqual([]);
@@ -209,6 +216,19 @@ describe('records data files', () => {
       const pieces = row.frequency.split(' · ').length;
       expect(row.requirement.ko.split(' · ').length, `${row.id} ko`).toBe(pieces);
       expect(row.requirement.en.split(' · ').length, `${row.id} en`).toBe(pieces);
+    }
+  });
+
+  it('A-13: the game table declares its sample (13 postings, 2024–2026) and its intro/sources use {table.*}, not literals', () => {
+    const data = rawJobfit();
+    expect(data.id).toBe('game');
+    expect(data.sample).toEqual({ count: 13, years: '2024–2026' });
+    for (const lang of ['ko', 'en'] as const) {
+      expect(data.intro[lang]).toContain('{table.count}');
+      expect(data.sources.note[lang]).toContain('{table.count}');
+      expect(data.sources.note[lang]).toContain('{table.years}');
+      expect(data.intro[lang]).not.toMatch(/\d/);
+      expect(data.sources.note[lang]).not.toMatch(/\d/);
     }
   });
 
@@ -364,7 +384,7 @@ describe('records data files', () => {
   });
 
   it('P2-28: one form per term in the site copy (석사 학위논문, Ph.D., public match records (Riot API), lab full name first)', () => {
-    const copyFiles = ['src/data/resume.yaml', 'src/data/jobfit.yaml', 'src/data/research-page.ts', 'src/data/copy/pages.ts', 'src/data/copy/home.ts', 'src/data/copy/hero.ts'];
+    const copyFiles = ['src/data/resume.yaml', 'src/data/jobfit.game.yaml', 'src/data/research-page.ts', 'src/data/copy/pages.ts', 'src/data/copy/home.ts', 'src/data/copy/hero.ts'];
     for (const file of copyFiles) {
       const content = readFileSync(join(ROOT, file), 'utf8');
       expect(content, file).not.toMatch(/석사학위|석사 학위 논문/);

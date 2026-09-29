@@ -1,4 +1,4 @@
-# jobfit.yaml — 기록 페이지 '지원 요건 대응' 섹션(/records/#job-fit). 원본: spec §9.2.
+# jobfit.game.yaml — 게임 버전 기록 페이지 '지원 요건 대응' 섹션(/game/records/#job-fit). 원본: spec §9.2.
 # 규칙
 # - 게임 계정 연동 데이터는 이 표에 넣지 않는다(NEXON Open API 약관 8.2).
 # - status: met(충족) | partial(부분) | in-progress(보완 중) | later(후순위) | n-a(해당 없음)
@@ -10,17 +10,20 @@
 # - plan(보완 계획): 실제 역량을 키우는 다음 단계만 쓴다. 날짜와 사이트 제작 할 일은 쓰지 않는다.
 #   충족 행과 실제 다음 단계가 없는 행은 null로 두고, 표에서는 빈칸으로 보인다(D-6).
 # - sources: 참고한 공고는 회사명·주소 없이 건수와 기간만 적는다(D-6).
+# - sample: 조사한 공고 수와 기간. intro·sources의 {table.count}·{table.years}가 이 값이다(R-4). 빈도의 분모는 sample.count와 같아야 한다.
 # - 요건이 바뀌면 asOf를 고친다.
 
 asOf: '2026-09-26'
 
+sample: { count: 13, years: '2024–2026' }
+
 intro:
   ko: >-
-    국내 게임사 데이터 분석가 공고 13건(2024–2026, 원문 확인)에서 자주 나온 요건과,
+    국내 게임사 데이터 분석가 공고 {table.count}건({table.years}, 원문 확인)에서 자주 나온 요건과,
     요건마다 제 근거와 보완 계획을 정리했습니다. 빈도는 그 요건을 언급한 공고 수입니다.
   en: >-
-    These are the requirements that came up most often in 13 data analyst job postings from Korean game companies
-    (2024–2026, checked against the original postings), with my evidence and next step for each.
+    These are the requirements that came up most often in {table.count} data analyst job postings from Korean game companies
+    ({table.years}, checked against the original postings), with my evidence and next step for each.
     Frequency is the number of postings that mention the requirement.
 
 rows:
@@ -168,5 +171,5 @@ rows:
 
 sources:
   note:
-    ko: 국내 게임사 데이터 분석가 공고 13건 (2024–2026)
-    en: 13 Korean game-company data-analyst postings (2024–2026)
+    ko: '국내 게임사 데이터 분석가 공고 {table.count}건 ({table.years})'
+    en: '{table.count} Korean game-company data-analyst postings ({table.years})'

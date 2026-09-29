@@ -96,11 +96,12 @@ const jobfitRow = (i: number) => ({
   plan: L('계획', 'Plan'),
 });
 const validJobfit = {
-  id: 'jobfit',
+  id: 'game',
   asOf: '2026-09-25',
-  intro: L('소개', 'Intro'),
+  sample: { count: 13, years: '2024–2026' },
+  intro: L('공고 {table.count}건', '{table.count} postings'),
   rows: Array.from({ length: 13 }, (_, i) => jobfitRow(i)),
-  sources: { note: L('국내 게임사 데이터 분석가 공고 13건 (2024–2026)', '13 Korean game-company data-analyst postings (2024–2026)') },
+  sources: { note: L('국내 게임사 데이터 분석가 공고 {table.count}건 ({table.years})', '{table.count} Korean game-company data-analyst postings ({table.years})') },
 };
 
 const validGame = {
@@ -238,15 +239,30 @@ describe('resumeSchema', () => {
 });
 
 describe('jobfitSchema', () => {
-  it('jobfitSchema requires 13 rows and known statuses', () => {
+  it('jobfitSchema takes the ids game/data, a sample, at least one row and known statuses', () => {
     expect(jobfitSchema.safeParse(validJobfit).success).toBe(true);
-    expect(jobfitSchema.safeParse({ ...validJobfit, rows: validJobfit.rows.slice(0, 12) }).success).toBe(false);
+    expect(jobfitSchema.safeParse({ ...validJobfit, id: 'data' }).success).toBe(true);
+    expect(jobfitSchema.safeParse({ ...validJobfit, id: 'jobfit' }).success).toBe(false);
+    // the 13-row pin moved to tests/content/records.test.ts (game table); the schema only needs one row now
+    expect(jobfitSchema.safeParse({ ...validJobfit, rows: validJobfit.rows.slice(0, 12) }).success).toBe(true);
+    expect(jobfitSchema.safeParse({ ...validJobfit, rows: [] }).success).toBe(false);
     const badStatus = validJobfit.rows.map((r, i) => (i === 0 ? { ...r, status: 'done' } : r));
     expect(jobfitSchema.safeParse({ ...validJobfit, rows: badStatus }).success).toBe(false);
     const twoPart = validJobfit.rows.map((r, i) => (i === 0 ? { ...r, frequency: '8/13 · 4/13' } : r));
     expect(jobfitSchema.safeParse({ ...validJobfit, rows: twoPart }).success).toBe(true);
     const badFrequency = validJobfit.rows.map((r, i) => (i === 0 ? { ...r, frequency: '8 of 13' } : r));
     expect(jobfitSchema.safeParse({ ...validJobfit, rows: badFrequency }).success).toBe(false);
+  });
+
+  it('every frequency denominator equals sample.count and no numerator exceeds it (A-13)', () => {
+    const wrongDenominator = validJobfit.rows.map((r, i) => (i === 0 ? { ...r, frequency: '5/12' } : r));
+    const result = jobfitSchema.safeParse({ ...validJobfit, rows: wrongDenominator });
+    expect(result.success).toBe(false);
+    expect(result.error?.issues.map((issue) => issue.message).join(' ')).toMatch(/denominator 12 is not sample\.count 13/);
+    const tooMany = validJobfit.rows.map((r, i) => (i === 0 ? { ...r, frequency: '14/13' } : r));
+    expect(jobfitSchema.safeParse({ ...validJobfit, rows: tooMany }).success).toBe(false);
+    expect(jobfitSchema.safeParse({ ...validJobfit, sample: { count: 13, years: '2024-2026' } }).success).toBe(false); // en dash only
+    expect(jobfitSchema.safeParse({ ...validJobfit, sample: { count: 13, years: '2024–2026', note: 'x' } }).success).toBe(false);
   });
 
   it('jobfitSchema: plan may be null (empty next step), sources is one note without posting links (D-6)', () => {

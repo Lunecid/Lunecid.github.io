@@ -2,7 +2,7 @@
 // Plain module (no astro:* imports) so Vitest can import it; content.config.ts passes image() in,
 // tests pass z.string().
 import { z } from 'astro/zod';
-import { ACHIEVEMENT_TRIGGERS, AWARD_LEVELS, CERTIFICATE_IDS, CHARACTER_IDS, GAME_IDS, JOBFIT_STATUSES, NOTICE_KEYS } from '../types';
+import { ACHIEVEMENT_TRIGGERS, AWARD_LEVELS, CERTIFICATE_IDS, CHARACTER_IDS, GAME_IDS, JOBFIT_IDS, JOBFIT_STATUSES, NOTICE_KEYS, type JobfitId } from '../types';
 import { TAG_KEYS, TAGS_EN, TAGS_KO } from './tags';
 
 export const isoMonth = z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/, 'YYYY-MM, quoted');
@@ -201,23 +201,53 @@ export const resumeSchema = z.object({
   researchIds: z.object({ scholar: z.url().nullable(), orcid: z.url().nullable() }),
 });
 
-export const jobfitSchema = z.object({
-  id: z.literal('jobfit'),
-  asOf: isoDate,
-  intro: localized,
-  rows: z.array(z.object({
-    id: slug,
-    requirement: localized,
-    frequency: z.string().regex(/^\d+\/13( · \d+\/13)*$/),
-    // short: the label shown in the table from 734px (P1-11); a part of `label`, which stays the accessible name and title.
-    evidence: z.array(z.object({ label: localized, short: localized.optional(), href: z.string().min(1) })),
-    status: z.enum(JOBFIT_STATUSES),
-    // null = no next step: met rows and rows without a genuine skill step stay empty (D-6).
-    plan: localized.nullable(),
-  })).length(13),
-  // One anonymized line (count and years): no company names or posting URLs on the site (D-6).
-  sources: z.object({ note: localized }).strict(),
-});
+/** CA-30: the job-fit tables, one collection entry per version (A-13). A missing file is the pending state (§2.6). */
+export const JOBFIT_FILES: Readonly<Record<JobfitId, string>> = {
+  game: 'src/data/jobfit.game.yaml',
+  data: 'src/data/jobfit.data.yaml',
+};
+
+const FREQUENCY_PART = /^(\d+)\/(\d+)$/;
+
+export const jobfitSchema = z
+  .object({
+    id: z.enum(JOBFIT_IDS),
+    asOf: isoDate,
+    // The posting survey behind the table: {table.count} and {table.years} in intro/sources come from here (R-4).
+    sample: z.object({ count: z.number().int().positive(), years: z.string().regex(/^\d{4}–\d{4}$/) }).strict(),
+    intro: localized,
+    rows: z
+      .array(
+        z.object({
+          id: slug,
+          requirement: localized,
+          frequency: z.string().regex(/^\d+\/\d+( · \d+\/\d+)*$/),
+          // short: the label shown in the table from 734px (P1-11); a part of `label`, which stays the accessible name and title.
+          evidence: z.array(z.object({ label: localized, short: localized.optional(), href: z.string().min(1) })),
+          status: z.enum(JOBFIT_STATUSES),
+          // null = no next step: met rows and rows without a genuine skill step stay empty (D-6).
+          plan: localized.nullable(),
+        }),
+      )
+      .min(1),
+    // One anonymized line (count and years): no company names or posting URLs on the site (D-6).
+    sources: z.object({ note: localized }).strict(),
+  })
+  .superRefine((data, ctx) => {
+    data.rows.forEach((row, i) => {
+      for (const part of row.frequency.split(' · ')) {
+        const match = FREQUENCY_PART.exec(part);
+        if (!match) continue; // the regex above already reports it
+        const [, n, d] = match;
+        if (Number(d) !== data.sample.count) {
+          ctx.addIssue({ code: 'custom', path: ['rows', i, 'frequency'], message: `denominator ${d} is not sample.count ${data.sample.count}` });
+        }
+        if (Number(n) > data.sample.count) {
+          ctx.addIssue({ code: 'custom', path: ['rows', i, 'frequency'], message: `numerator ${n} exceeds sample.count ${data.sample.count}` });
+        }
+      }
+    });
+  });
 
 // Inferred types (use these names everywhere)
 export type ProjectFrontmatter = z.infer<ReturnType<typeof projectSchema<z.ZodString>>>; // image fields as strings (tests, resume model)

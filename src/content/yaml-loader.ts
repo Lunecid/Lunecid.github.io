@@ -90,3 +90,43 @@ export function yamlDocumentLoader(file: string, id: string): Loader {
 export function yamlListLoader(file: string, listKey?: string): Loader {
   return yamlLoader('yaml-list', file, (text) => parseYamlList(text, listKey));
 }
+
+/**
+ * Loader (A-13): one entry per key of `files` (entry id = key, repo-relative paths). A missing file warns and is skipped
+ * (the pending job-fit table, §2.6); a parse error fails the build.
+ */
+export function yamlDocumentsLoader(files: Readonly<Record<string, string>>): Loader {
+  return {
+    name: 'yaml-documents',
+    load: async ({ store, parseData, logger, watcher, config }: LoaderContext) => {
+      const docs = Object.entries(files).map(([id, file]) => ({ id, file, absPath: resolve(fileURLToPath(new URL(file, config.root))) }));
+      const sync = async (): Promise<void> => {
+        store.clear();
+        for (const { id, file, absPath } of docs) {
+          if (!existsSync(absPath)) {
+            logger.warn(`${file} not found (entry '${id}' skipped)`);
+            continue;
+          }
+          let item: Item;
+          try {
+            item = parseYamlDocument(await fs.readFile(absPath, 'utf8'), id);
+          } catch (error) {
+            throw new Error(`${file}: ${(error as Error).message}`);
+          }
+          const data = await parseData({ id, data: item, filePath: absPath });
+          store.set({ id, data, filePath: file });
+        }
+      };
+      await sync();
+      for (const { absPath } of docs) watcher?.add(absPath);
+      watcher?.on('change', (changed: string) => {
+        if (!docs.some((doc) => doc.absPath === resolve(changed))) return;
+        sync().catch((error: unknown) => logger.error((error as Error).message));
+      });
+      watcher?.on('add', (added: string) => {
+        if (!docs.some((doc) => doc.absPath === resolve(added))) return;
+        sync().catch((error: unknown) => logger.error((error as Error).message));
+      });
+    },
+  };
+}

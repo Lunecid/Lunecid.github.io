@@ -19,3 +19,5 @@ export const PAGE_IDS = ['home', 'research', 'research-story', 'projects', 'proj
 export type PageId = (typeof PAGE_IDS)[number];
 export const AWARD_LEVELS = ['top', 'encouragement'] as const;
 export type AwardLevel = (typeof AWARD_LEVELS)[number];
+export const JOBFIT_IDS = ['game', 'data'] as const;
+export type JobfitId = (typeof JOBFIT_IDS)[number];
