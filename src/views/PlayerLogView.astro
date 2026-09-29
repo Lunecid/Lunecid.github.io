@@ -1,7 +1,7 @@
 ---
 import { Font } from 'astro:assets';
 import { getCollection } from 'astro:content';
-import BaseLayout from '../layouts/BaseLayout.astro';
+import VariantLayout from '../layouts/VariantLayout.astro';
 import PageHeader from '../components/hud/PageHeader.astro';
 import GameAchievements from '../components/player-log/GameAchievements.astro';
 import MembershipRow from '../components/player-log/MembershipRow.astro';
@@ -50,7 +50,7 @@ const labels = {
   progress: t(lang, 'favorites.progress'),
 };
 ---
-<BaseLayout lang={lang} variant="game" title={meta.title} description={meta.description} page="player-log" section="player-log" sectionIndex notices={notices}>
+<VariantLayout lang={lang} variant="game" title={meta.title} description={meta.description} page="player-log" section="player-log" sectionIndex notices={notices}>
   <Font cssVariable="--font-anton" slot="head" />
   <PageHeader lang={lang} label="PLAYER LOG" title={t(lang, 'playerLog.title')} intro={t(lang, 'playerLog.intro')} />
   <MembershipRow
@@ -76,7 +76,7 @@ const labels = {
   </section>
   <GameAchievements lang={lang} platforms={copy.gamePlatforms} accounts={accounts} />
   <SiteAchievementList lang={lang} defs={siteAchievements} />
-</BaseLayout>
+</VariantLayout>
 
 <style>
   .pl-showcase { padding-block: 0 var(--section-pad-y); background: var(--hud-bg); }

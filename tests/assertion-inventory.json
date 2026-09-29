@@ -28,6 +28,7 @@
   "tests/astro/MainMenu.test.ts": 38,
   "tests/astro/MembershipCard.test.ts": 23,
   "tests/astro/MembershipRow.test.ts": 25,
+  "tests/astro/NeutralLayout.test.ts": 25,
   "tests/astro/PageHeader.test.ts": 9,
   "tests/astro/PaperSheet.test.ts": 47,
   "tests/astro/PatchNotes.test.ts": 20,
@@ -50,6 +51,7 @@
   "tests/astro/StatsLiveTotal.test.ts": 9,
   "tests/astro/StatsSummary.test.ts": 34,
   "tests/astro/TagFilter.test.ts": 23,
+  "tests/astro/VariantLayout.test.ts": 4,
   "tests/content/legal.test.ts": 59,
   "tests/content/projects.test.ts": 146,
   "tests/content/records.test.ts": 134,
@@ -149,8 +151,8 @@
   "tests/unit/seo.test.ts": 28,
   "tests/unit/stats-hygiene.test.ts": 26,
   "tests/unit/style-rules.test.ts": 31,
-  "tests/unit/tokens.test.ts": 55,
-  "tests/unit/toolchain.test.ts": 76,
+  "tests/unit/tokens.test.ts": 76,
+  "tests/unit/toolchain.test.ts": 77,
   "tests/unit/variants.test.ts": 57,
   "tests/unit/yaml-loader.test.ts": 33
 }

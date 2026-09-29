@@ -58,6 +58,18 @@
      the Korean paper page) first — Windows ships no Korean serif — then the stack above for everything else. */
   --font-paper-ko: "SB Serif KR", var(--font-paper);
 
+  /* Neutral pages (chooser, shared pages, 404; spec §7, contract §4.2). Literals here only; P2-1 aliases them to --ed-*. */
+  --nt-bg: #FFFFFF;
+  --nt-ink: #141414;      /* 18.4:1 on --nt-bg */
+  --nt-muted: #6B6B6B;    /* 5.3:1 on --nt-bg */
+  --nt-rule: #E5E5E5;
+  --nt-accent: #1E3A8A;   /* links and focus only (B-14), 10.4:1 */
+  /* Role tokens: base.css paints the page with these; they switch by <html data-variant>. */
+  --page-bg: var(--hud-bg);
+  --page-ink: var(--hud-text);
+  --page-muted: var(--hud-muted);
+  --page-focus: var(--accent);
+
   /* ── HUD labels (D8 / Task 0 Q13). Accent means "clickable" only, so labels are muted.
         Q13 = lime flips both lines: --hud-label: var(--accent); --read-label: var(--accent-deep). ── */
   --hud-label: var(--hud-muted);
@@ -124,6 +136,7 @@
   --bracket: 26px;
   --bracket-sm: 14px;
 }
+:root[data-variant="neutral"] { --page-bg: var(--nt-bg); --page-ink: var(--nt-ink); --page-muted: var(--nt-muted); --page-focus: var(--nt-accent); }
 @media (min-width: 734px) {
   :root { --fs-name: 60px; --fs-display: 48px; --fs-h2: 28px; --fs-sub: 21px; --gutter: 32px; --section-pad-y: 44px; }
 }

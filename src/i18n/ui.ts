@@ -38,6 +38,7 @@ export const ui = {
     'nav.credits': '출처·고지',
     'nav.stats': '방문 통계',
     'nav.brandSr': '백성은 홈',
+    'nav.chooser': '선택 화면으로',
 
     // 버튼·조작
     'action.downloadCv': 'CV 다운로드',
@@ -333,6 +334,7 @@ export const ui = {
     'nav.credits': 'Credits',
     'nav.stats': 'Visitor stats',
     'nav.brandSr': 'Seongeun Baek home',
+    'nav.chooser': 'Choose a portfolio',
 
     // Buttons and controls
     'action.downloadCv': 'Download CV',

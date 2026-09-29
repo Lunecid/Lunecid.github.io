@@ -1,6 +1,6 @@
 ---
 // /research/ and /en/research/: PageHeader → #interests → #publications (year groups) → #in-progress → #for-labs.
-import BaseLayout from '../layouts/BaseLayout.astro';
+import VariantLayout from '../layouts/VariantLayout.astro';
 import GhostArt from '../components/hud/GhostArt.astro';
 import PageHeader from '../components/hud/PageHeader.astro';
 import SectionHead from '../components/hud/SectionHead.astro';
@@ -33,7 +33,7 @@ const papers = (await getPublications()).map((entry) => toPaperCard(entry, lang)
 const years = [...new Set(papers.map((paper) => paper.year))].sort((a, b) => b - a);
 const ids = (await getPerson()).researchIds;
 ---
-<BaseLayout lang={lang} variant={variant} title={meta.title} description={meta.description} page="research" section="research" sectionIndex>
+<VariantLayout lang={lang} variant={variant} title={meta.title} description={meta.description} page="research" section="research" sectionIndex>
   <PageHeader lang={lang} label="RESEARCH" title={t(lang, 'research.title')} intro={resolveFacts(researchPage.intro[lang], lang, facts)}>
     {/* D-7: professors reach the Academic CV from the research page header (and from #for-labs below). */}
     <p class="research-cv"><a class="btn btn--line cut cut--line" href={ACADEMIC_CV_HREF} title={t(lang, 'nav.cvAcademic')} download>{t(lang, 'nav.cvAcademic')} <span aria-hidden="true">↓</span></a></p>
@@ -81,7 +81,7 @@ const ids = (await getPerson()).researchIds;
       counter: ui[lang]['viewer.counter'],
     }}
   />
-</BaseLayout>
+</VariantLayout>
 
 <style>
   .research-cv { margin-top: 20px; }

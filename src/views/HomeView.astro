@@ -2,7 +2,7 @@
 // Home (spec §3): hero → MAIN MENU → cartridges → research highlight → patch notes → hello profile.
 // All copy hrefs are Korean-based and localized here; resume.yaml is the single source of name and
 // education, the version identity (src/variants/*.ts) of tagline, status and about (site = PDFs).
-import BaseLayout from '../layouts/BaseLayout.astro';
+import VariantLayout from '../layouts/VariantLayout.astro';
 import Hero from '../components/hud/Hero.astro';
 import MainMenu from '../components/hud/MainMenu.astro';
 import CartridgeSection from '../components/home/CartridgeSection.astro';
@@ -70,7 +70,7 @@ const education = resumeData.education.map((e) => educationLine(e, lang));
 const location = lang === 'ko' ? `${profile.location.ko} · ${profile.location.en}` : profile.location.en;
 ---
 
-<BaseLayout lang={lang} variant={variant} title={meta.title} description={meta.description} page="home" notices={notices} jsonLd={personJsonLd(lang, { jobTitle: identity.headline, url: canonicalUrl(localizeHref('/', lang)) }, resumeData.researchIds)}>
+<VariantLayout lang={lang} variant={variant} title={meta.title} description={meta.description} page="home" notices={notices} jsonLd={personJsonLd(lang, { jobTitle: identity.headline, url: canonicalUrl(localizeHref('/', lang)) }, resumeData.researchIds)}>
   {leadChar && leadChar.image.avifSrcSet && (
     <link
       slot="head"
@@ -131,4 +131,4 @@ const location = lang === 'ko' ? `${profile.location.ko} · ${profile.location.e
     contact={{ email: SITE.email, github: SITE.githubUrl, cvHref: CV_HREF[lang], cvDocLabel: t(lang, 'nav.cvResume') }}
     ids={resumeData.researchIds}
   />
-</BaseLayout>
+</VariantLayout>

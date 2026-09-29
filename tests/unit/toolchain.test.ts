@@ -167,6 +167,7 @@ describe('toolchain', () => {
     expect(types.GAME_IDS).toEqual(['zzz', 'genshin', 'lol', 'dnf', 'steam']);
     expect(types.SFX_NAMES).toEqual(['move', 'select', 'open', 'close']);
     expect(types.PAGE_IDS).toContain('not-found');
+    expect(types.PAGE_IDS).toContain('chooser');
   });
 
   it('favicon.svg is the vector [SB] mark in accent on hud-bg', () => {

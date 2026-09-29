@@ -1,7 +1,7 @@
 ---
 // /projects/ (spec §3): SELECT YOUR PROJECT grid in the version's projectsOrder (game: CoG wide card first),
 // a tag filter, and the GitHub section when build-time GitHub data is usable.
-import BaseLayout from '../layouts/BaseLayout.astro';
+import VariantLayout from '../layouts/VariantLayout.astro';
 import PageHeader from '../components/hud/PageHeader.astro';
 import TagFilter from '../components/projects/TagFilter.astro';
 import ProjectCartridge from '../components/projects/ProjectCartridge.astro';
@@ -38,7 +38,7 @@ const firstImage = cards.findIndex((card) => card.cover !== undefined);
 const github = usableGitHub(generated.github());
 ---
 
-<BaseLayout lang={lang} variant={variant} title={meta.title} description={meta.description} page="projects" section="projects" sectionIndex={true}>
+<VariantLayout lang={lang} variant={variant} title={meta.title} description={meta.description} page="projects" section="projects" sectionIndex={true}>
   <PageHeader lang={lang} label="SELECT YOUR PROJECT" title={t(lang, 'projects.title')} intro={meta.description} />
   <section id="project-list" class="sec hud-grid" aria-labelledby="project-list-title">
     <div class="container container--hud">
@@ -50,4 +50,4 @@ const github = usableGitHub(generated.github());
     </div>
   </section>
   <GitHubSection lang={lang} variant={variant} data={github} />
-</BaseLayout>
+</VariantLayout>

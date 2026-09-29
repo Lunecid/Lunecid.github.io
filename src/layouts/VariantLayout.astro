@@ -1,0 +1,14 @@
+---
+// P1: renders BaseLayout (HUD) for layout 'base'. P2-2a deletes this component: each version page module imports its own layout (contract §2.2).
+import BaseLayout from './BaseLayout.astro';
+import type { Props as BaseLayoutProps } from './BaseLayout.astro';
+import { getVariant } from '../variants';
+type Props = BaseLayoutProps;
+const props = Astro.props;
+const layout = getVariant(props.variant).layout;
+if (layout !== 'base') throw new Error(`VariantLayout: layout '${layout}' of the ${props.variant} version is not wired in P1 (page modules pick the layout from P2-2a)`);
+---
+<BaseLayout {...props}>
+  <slot name="head" slot="head" />
+  <slot />
+</BaseLayout>

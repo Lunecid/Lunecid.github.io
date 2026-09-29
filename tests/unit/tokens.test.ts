@@ -201,4 +201,43 @@ describe('design tokens (src/styles/tokens.css)', () => {
       expect(css.match(/#[0-9a-fA-F]{3,8}\b|\brgba?\(|\bhsla?\(/g) ?? [], f).toEqual([]);
     }
   });
+
+  it('P1-10: neutral tokens and the role tokens that switch by <html data-variant>', () => {
+    const d = rootDecls(BASE);
+    expect(d.get('--nt-bg')).toBe('#FFFFFF');
+    expect(d.get('--nt-ink')).toBe('#141414');
+    expect(d.get('--nt-muted')).toBe('#6B6B6B');
+    expect(d.get('--nt-rule')).toBe('#E5E5E5');
+    expect(d.get('--nt-accent')).toBe('#1E3A8A');
+    expect(d.get('--page-bg')).toBe('var(--hud-bg)');
+    expect(d.get('--page-ink')).toBe('var(--hud-text)');
+    expect(d.get('--page-muted')).toBe('var(--hud-muted)');
+    expect(d.get('--page-focus')).toBe('var(--accent)');
+    const neutral = parseRules(read('src/styles/tokens.css')).find((r) => r.selector === ':root[data-variant="neutral"]')?.decls;
+    expect(neutral?.get('--page-bg')).toBe('var(--nt-bg)');
+    expect(neutral?.get('--page-ink')).toBe('var(--nt-ink)');
+    expect(neutral?.get('--page-muted')).toBe('var(--nt-muted)');
+    expect(neutral?.get('--page-focus')).toBe('var(--nt-accent)');
+    const base = parseRules(read('src/styles/base.css'));
+    expect(base.find((r) => r.selector === 'body')?.decls.get('background')).toBe('var(--page-bg)');
+    expect(base.find((r) => r.selector === 'body')?.decls.get('color')).toBe('var(--page-ink)');
+    // P1-10 adds only the neutral half; P2-2 (with the layout flip) widens both selectors to data + neutral, contract §8.1 F-5.
+    // Matching one part of a selector list keeps this test green before and after that widening.
+    const ruleWith = (part: string) => base.find((r) => r.selector.split(',').map((s) => s.trim()).includes(part));
+    expect(ruleWith(':root[data-variant="neutral"]')?.decls.get('color-scheme')).toBe('light');
+    expect(ruleWith(':root[data-variant="neutral"] :focus-visible')?.decls.get('outline-color')).toBe('var(--page-focus)');
+    const neutralCss = read('src/styles/neutral.css').replace(/\/\*[\s\S]*?\*\//g, '');
+    expect(neutralCss.match(/#[0-9a-fA-F]{3,8}\b|\brgba?\(|\bhsla?\(/g) ?? []).toEqual([]);
+  });
+
+  it('P1-10: contrast of the neutral pairs (AA for text)', () => {
+    const lum = (hex: string) => {
+      const c = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255).map((v) => (v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4));
+      return 0.2126 * c[0]! + 0.7152 * c[1]! + 0.0722 * c[2]!;
+    };
+    const ratio = (a: string, b: string) => (Math.max(lum(a), lum(b)) + 0.05) / (Math.min(lum(a), lum(b)) + 0.05);
+    expect(ratio('#141414', '#FFFFFF')).toBeGreaterThan(18);
+    expect(ratio('#6B6B6B', '#FFFFFF')).toBeGreaterThanOrEqual(4.5);
+    expect(ratio('#1E3A8A', '#FFFFFF')).toBeGreaterThan(10);
+  });
 });

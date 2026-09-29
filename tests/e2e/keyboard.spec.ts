@@ -226,7 +226,8 @@ for (const route of ['/records/', '/en/records/', '/credits/']) {
       await page.keyboard.press('Shift+Tab');
       const stop = await page.evaluate(() => {
         const el = document.activeElement as HTMLElement | null;
-        const nav = document.querySelector('.hud-nav');
+        // P1-10: /credits/ is a neutral page; its header (.nt-header) is not sticky, so the offset check still holds.
+        const nav = document.querySelector('.hud-nav, .nt-header');
         if (!el || el === document.body || !nav) return { kind: 'none' as const };
         if (nav.contains(el) || el.classList.contains('skip-link')) return { kind: 'nav' as const };
         const r = el.getBoundingClientRect();

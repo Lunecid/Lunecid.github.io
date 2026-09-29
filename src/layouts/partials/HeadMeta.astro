@@ -1,0 +1,55 @@
+---
+// The <head> part every page layout shares (P1-10): viewport → title → description → robots/canonical → hreflang →
+// Open Graph → Twitter → icons → [fonts slot] → JSON-LD → analytics. The order equals BaseLayout's before the split
+// (tests/astro/BaseLayout.test.ts) and is the same on neutral pages (tests/astro/NeutralLayout.test.ts).
+import { GOATCOUNTER, SITE } from '../../config';
+import type { Lang } from '../../i18n/ui';
+import { goatcounterScript } from '../../lib/analytics';
+import { goatcounterSelfHosted } from '../../lib/public-assets';
+import { alternateLinks, canonicalUrl, ogSlugFor } from '../../lib/seo';
+
+interface Props {
+  lang: Lang;
+  title: string;
+  description: string;
+  siteName: string;
+  ogSlug?: string;
+  noindex?: boolean;
+  alternates: boolean;
+  jsonLd?: Record<string, unknown>;
+  analytics: 'always';
+}
+const { lang, title, description, siteName, ogSlug, noindex = false, alternates, jsonLd } = Astro.props;
+const pathname = Astro.url.pathname;
+const canonical = canonicalUrl(pathname);
+const ogImage = `${SITE.url}/og/${ogSlug ?? ogSlugFor(pathname)}.png`;
+const goatcounter = import.meta.env.PROD ? goatcounterScript(GOATCOUNTER.code, goatcounterSelfHosted()) : null;
+const jsonLdText = jsonLd ? JSON.stringify(jsonLd).replace(/</g, '\\u003c') : null;
+---
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>{title}</title>
+<meta name="description" content={description} />
+{noindex && <meta name="robots" content="noindex" />}
+{!noindex && <link rel="canonical" href={canonical} />}
+{alternates && alternateLinks(pathname).map((alt) => <link rel="alternate" hreflang={alt.hreflang} href={alt.href} />)}
+<meta property="og:type" content="website" />
+<meta property="og:site_name" content={siteName} />
+<meta property="og:title" content={title} />
+<meta property="og:description" content={description} />
+{!noindex && <meta property="og:url" content={canonical} />}
+<meta property="og:image" content={ogImage} />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta property="og:locale" content={lang === 'ko' ? 'ko_KR' : 'en_US'} />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content={title} />
+<meta name="twitter:description" content={description} />
+<meta name="twitter:image" content={ogImage} />
+<link rel="icon" href="/favicon.ico" sizes="32x32" />
+<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+<slot name="fonts" />
+{jsonLdText && <script is:inline type="application/ld+json" set:html={jsonLdText} />}
+{goatcounter && (
+  <script is:inline async src={goatcounter.src} data-goatcounter={goatcounter['data-goatcounter']} integrity={goatcounter.integrity} crossorigin={goatcounter.crossorigin}></script>
+)}

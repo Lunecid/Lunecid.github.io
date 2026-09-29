@@ -1016,7 +1016,7 @@ test('item 4: on /stats/ the light band runs down to the footer (no dark strip b
     [2560, 1440],
   ] as const) {
     await open(page, '/stats/', width, height);
-    const footerEl = page.locator('.site-footer');
+    const footerEl = page.locator('.nt-footer'); // P1-10: /stats/ is a neutral page (was .site-footer)
     await footerEl.evaluate((el) => el.scrollIntoView({ block: 'center' }));
     const footer = await box(footerEl);
     expect(footer.y - 6, `${width}×${height}: sample y in viewport after scroll`).toBeGreaterThanOrEqual(0);

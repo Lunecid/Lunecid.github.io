@@ -1,0 +1,50 @@
+---
+// Layout of the version-free pages (spec §5.2, §7): chooser, privacy, credits, stats and the 404. Light, no game module,
+// no HUD chrome; only the sans face is preloaded.
+import '../styles/tokens.css';
+import '../styles/base.css';
+import '../styles/read.css';
+import '../styles/neutral.css';
+import type { Lang } from '../i18n/ui';
+import { otherLang, switchLocalePath, t } from '../i18n/utils';
+import { FONT_URL, fontFaceCss } from '../lib/fonts';
+import { HEAD_INIT_SCRIPT } from '../lib/head-init';
+import { NEUTRAL_IDENTITY } from '../variants/neutral';
+import HeadMeta from './partials/HeadMeta.astro';
+import NeutralHeader from '../components/neutral/NeutralHeader.astro';
+import NeutralFooter from '../components/neutral/NeutralFooter.astro';
+
+interface Props {
+  lang: Lang;
+  title: string;
+  description: string;
+  page: 'chooser' | 'privacy' | 'credits' | 'stats' | 'not-found';
+  ogSlug?: string;
+  noindex?: boolean;
+  /** Header language switch target; hreflang <link>s render only when this is not null and the page is indexed. */
+  altLangHref?: string | null;
+  jsonLd?: Record<string, unknown>;
+}
+const { lang, title, description, page, ogSlug, noindex = false, altLangHref, jsonLd } = Astro.props;
+const altHref = altLangHref === undefined ? switchLocalePath(Astro.url.pathname, otherLang(lang)) : altLangHref;
+---
+<!doctype html>
+<html lang={lang} data-variant="neutral" data-page={page} data-motion="full">
+  <head>
+    <meta charset="utf-8" />
+    <script is:inline set:html={HEAD_INIT_SCRIPT} />
+    <HeadMeta lang={lang} title={title} description={description} siteName={NEUTRAL_IDENTITY.siteTitle[lang]} ogSlug={ogSlug} noindex={noindex} alternates={altHref !== null && !noindex} jsonLd={jsonLd} analytics="always">
+      <Fragment slot="fonts">
+        <style is:inline set:html={fontFaceCss(['sans'])}></style>
+        <link rel="preload" href={FONT_URL.sans} as="font" type="font/woff2" crossorigin />
+      </Fragment>
+    </HeadMeta>
+    <slot name="head" />
+  </head>
+  <body>
+    <a class="skip-link" href="#main">{t(lang, 'site.skipToContent')}</a>
+    <NeutralHeader lang={lang} altLangHref={altHref} />
+    <main id="main" tabindex="-1"><slot /></main>
+    <NeutralFooter lang={lang} />
+  </body>
+</html>

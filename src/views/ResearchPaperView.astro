@@ -3,7 +3,7 @@
 // page of the IEEE paper, on a white sheet over the dark HUD background. Built from the publication entry;
 // HUD nav and footer stay. Page <title>/URL stay trademark-free; the <h1> is the real paper title.
 import type { CollectionEntry } from 'astro:content';
-import BaseLayout from '../layouts/BaseLayout.astro';
+import VariantLayout from '../layouts/VariantLayout.astro';
 import PaperSheet from '../components/research/PaperSheet.astro';
 import { fontFaceCss } from '../lib/fonts';
 import { toPaperPage } from '../lib/publications';
@@ -32,7 +32,7 @@ const meta = pageMetaFor('research-story', lang, variant, facts);
 // it to exactly the Hangul inside this page's sheet (scripts/fonts/build.mjs).
 const koreanSerif = paper.titleKo !== null || paper.abstractKo !== null ? fontFaceCss(['serifKo']) : null;
 ---
-<BaseLayout
+<VariantLayout
   lang={lang}
   variant={variant}
   title={meta.title}
@@ -50,7 +50,7 @@ const koreanSerif = paper.titleKo !== null || paper.abstractKo !== null ? fontFa
       </div>
     </div>
   </div>
-</BaseLayout>
+</VariantLayout>
 
 <style>
   /* Phones: the sheet spans the width (16px padding inside it). From 734px it floats on the HUD grid like a

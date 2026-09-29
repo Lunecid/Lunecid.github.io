@@ -10,8 +10,8 @@ body {
      stranded mid-screen with empty background below it (P2-20). */
   display: flex;
   flex-direction: column;
-  background: var(--hud-bg);
-  color: var(--hud-text);
+  background: var(--page-bg);
+  color: var(--page-ink);
   font-family: var(--font-sans);
   font-size: var(--fs-body);
   font-weight: 400;
@@ -93,3 +93,8 @@ html:not(.js) .fg__list { display: none; }
   html:not(.js) .btn:active { transform: none; }
   html:not(.js) .pn__ptr { transform: none; }
 }
+
+/* P1-10 (contract §4.2): the neutral pages are light pages with a navy focus ring. P2-2 adds :root[data-variant="data"]
+   to both selectors together with the data role tokens (until then the data pages still wear the dark HUD theme). */
+:root[data-variant="neutral"] { color-scheme: light; }
+:root[data-variant="neutral"] :focus-visible { outline-color: var(--page-focus); }

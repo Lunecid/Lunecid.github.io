@@ -1,0 +1,17 @@
+/* src/styles/neutral.css — the neutral pages (chooser, shared pages, 404; spec §7). Imported only by NeutralLayout.
+   P1-10 skeleton: readable, light, no game chrome; P2-11 designs these pages. Colours only through --nt-* tokens. */
+.nt-header { border-bottom: 1px solid var(--nt-rule); background: var(--nt-bg); }
+.nt-header__bar { max-width: var(--container); margin-inline: auto; padding-inline: var(--gutter); min-height: var(--nav-h); display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.nt-header__brand, .nt-header__lang a { display: inline-flex; align-items: center; min-height: var(--tap); min-width: var(--tap); color: var(--nt-ink); font-weight: 700; text-decoration: none; }
+.nt-header__lang a { font-weight: 500; text-decoration: underline; text-underline-offset: 3px; color: var(--nt-accent); }
+.nt-footer { margin-top: auto; border-top: 1px solid var(--nt-rule); background: var(--nt-bg); color: var(--nt-muted); font-size: var(--fs-small); }
+.nt-footer__inner { max-width: var(--container); margin-inline: auto; padding: 24px var(--gutter) 32px; display: grid; gap: 8px; }
+.nt-footer__links { display: flex; flex-wrap: wrap; gap: 4px 16px; margin: 0; padding: 0; list-style: none; }
+.nt-footer__links a { display: inline-flex; align-items: center; min-height: var(--tap); color: var(--nt-accent); text-underline-offset: 3px; }
+/* Shared components that still carry HUD classes (P2-11 replaces their markup): dark-on-light, no bracket marks. */
+:root[data-variant="neutral"] .page-head { background: var(--nt-bg); border-bottom-color: var(--nt-rule); }
+:root[data-variant="neutral"] .page-head__title { color: var(--nt-ink); }
+:root[data-variant="neutral"] .page-head__intro { color: var(--nt-muted); }
+:root[data-variant="neutral"] .hud-label { font: 600 var(--fs-label)/1.5 var(--font-sans); letter-spacing: .08em; color: var(--nt-muted); }
+:root[data-variant="neutral"] .hud-label__mark { display: none; }
+:root[data-variant="neutral"] main a:not([class]) { color: var(--nt-accent); }

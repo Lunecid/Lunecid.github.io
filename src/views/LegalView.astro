@@ -3,7 +3,7 @@ import { getEntry, render } from 'astro:content';
 import PageHeader from '../components/hud/PageHeader.astro';
 import { PAGE_META } from '../data/copy/pages';
 import type { Lang } from '../i18n/ui';
-import BaseLayout from '../layouts/BaseLayout.astro';
+import NeutralLayout from '../layouts/NeutralLayout.astro';
 
 interface Props {
   lang: Lang;
@@ -14,15 +14,15 @@ const entry = await getEntry('legal', `${lang}/${doc}`);
 if (!entry) throw new Error(`Legal entry missing: ${lang}/${doc}`);
 const { Content } = await render(entry);
 const meta = PAGE_META[doc][lang];
-// shared page: NeutralLayout from P1-10 (404: P1-16)
+// shared page: NeutralLayout (P1-10)
 ---
-<BaseLayout lang={lang} variant="game" title={meta.title} description={meta.description} page={doc}>
+<NeutralLayout lang={lang} title={meta.title} description={meta.description} page={doc}>
   <PageHeader lang={lang} label={doc === 'privacy' ? 'PRIVACY' : 'CREDITS'} title={entry.data.title} />
   {/* article.prose.read (contract §5.14): read.css spans the light band across the page and centres the text column */}
   <article class="legal prose read">
     <Content />
   </article>
-</BaseLayout>
+</NeutralLayout>
 
 <script>
   // Fix round 1 minor: below 734px the CSS stacks every row as a block (`display: block`, see the style block
