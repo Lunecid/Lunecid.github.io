@@ -8,7 +8,7 @@ import { parseYamlDocument, parseYamlList } from '../../src/content/yaml-loader'
 import { formatPeriod } from '../../src/i18n/utils';
 import { ACADEMIC_EXTRAS, DOC_FLAG, DOC_LANG, buildResumeModel, type ResumeInputs } from '../../src/lib/resume-model';
 import { listMarkdown, readFrontmatter } from '../content/helpers';
-import { resolveIdentity } from '../../src/variants';
+import { getVariant, resolveIdentity } from '../../src/variants';
 import { gameVariant } from '../../src/variants/game';
 import { loadFactSource } from '../helpers/fact-source';
 
@@ -35,6 +35,7 @@ function inputs(doc: DocumentId, over: Partial<ResumeInputs> = {}): ResumeInputs
     today: '2026-09-26',
     academicExtras: ACADEMIC_EXTRAS,
     identity: (() => { const i = resolveIdentity(gameVariant, DOC_LANG[doc], loadFactSource()); return { headline: i.headline, tagline: i.tagline }; })(),
+    order: getVariant('game').orders.pdfProjectOrder,
     ...over,
   };
 }
@@ -80,6 +81,28 @@ describe('buildResumeModel', () => {
     const cv = buildResumeModel(inputs('cv-academic'));
     expect(cv.projects.some((p) => /League of Legends/.test(p.title))).toBe(false);
     expect(cv.projects[0]?.title).toBe(projects.find((p) => p.slug === 'youth-startup-location' && p.lang === 'en')?.data.title);
+  });
+
+  it('A-17: the game pdfProjectOrder yields exactly the old end-month (newest first) order in every document', () => {
+    const endOf = (title: string, lang: 'ko' | 'en'): string => {
+      const pub = publications.find((x) => (x.data.shortTitle?.[lang] ?? x.data.title) === title);
+      if (pub && resume.publicationProject?.pub === pub.id) return resume.publicationProject.period.end;
+      const p = projects.find((x) => x.lang === lang && x.data.title === title);
+      if (!p) throw new Error(title);
+      return p.data.period.end;
+    };
+    for (const doc of DOCS) {
+      const m = buildResumeModel(inputs(doc));
+      const lang = DOC_LANG[doc];
+      const ends = m.projects.map((p) => endOf(p.title, lang));
+      expect(ends, doc).toEqual([...ends].sort((a, b) => (a < b ? 1 : a > b ? -1 : 0)));
+    }
+  });
+
+  it('the order list decides the row order and must cover every flagged row', () => {
+    const data = buildResumeModel(inputs('resume-ko', { order: getVariant('data').orders.pdfProjectOrder }));
+    expect(data.projects[0]?.title).toBe(projects.find((p) => p.slug === 'school-zone-blindspots' && p.lang === 'ko')?.data.title);
+    expect(() => buildResumeModel(inputs('resume-ko', { order: ['project:kickick-park'] }))).toThrow(/order misses/);
   });
 
   it('kbo-attendance and seoul-apartment-automl are excluded from every PDF and merged into a Korean-only projectsNote', () => {

@@ -104,7 +104,7 @@ const meta = pageMetaFor('records', lang, variant, facts);
         </ol>
       </div>
     </section>
-    <ProjectSummaryList lang={lang} items={projectSummaryItems(resume.projects, projects, lang)} />
+    <ProjectSummaryList lang={lang} items={projectSummaryItems(v.orders.recordsProjectsOrder.map((item) => ({ ref: item.slice('project:'.length) })), projects, lang)} />
     <AwardList lang={lang} awards={awardItems(resume.awards, awards, lang, certMeta)} />
     <CredentialList
       lang={lang}

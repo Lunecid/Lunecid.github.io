@@ -43,8 +43,6 @@ links:
 audience:
   game: 'In a game, the same structure applies to churn prediction: players who look likely to leave but are still here can be read as a list to act on first, not as model error.'
   research: 'I built 32 features at two radii (300 m and 50 m) for about 240,000 points placed every 30 m along Busan''s roads, and evaluated XGBoost with spatial cross-validation over 10 geographic blocks. Points predicted as high-risk without a recorded accident were not discarded as errors but split by school-zone status, and those outside a school zone became policy blind-spot candidates.'
-featured: true
-order: 1
 status: 'published'
 ---
 

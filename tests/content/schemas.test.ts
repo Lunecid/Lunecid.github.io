@@ -35,8 +35,6 @@ const validProject = {
   role: '문제 정의와 분석 방향을 주도했다.',
   tools: ['Python', 'QGIS'],
   tags: ['공간 분석', '머신러닝'],
-  featured: true,
-  order: 1,
   status: 'published',
 };
 
@@ -122,6 +120,7 @@ describe('projectSchema', () => {
     expect(parsed.figures).toEqual([]);
     expect(parsed.links).toEqual({});
     expect(parsed.cover).toBeUndefined();
+    expect(project.parse({ ...validProject, featured: true, order: 1 })).not.toHaveProperty('order');
     expect(project.safeParse({ ...validProject, team: '4-person team', tags: ['Geospatial'] }).success).toBe(true);
   });
 

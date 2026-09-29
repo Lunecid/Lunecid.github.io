@@ -12,7 +12,5 @@ tools: ['Python', 'Google Colab']
 tags: ['통계', '데이터 수집']
 figures: []
 links: {}
-featured: false
-order: 4
 status: 'card' # D-4: short link-less card on /projects/, no page and no body
 ---

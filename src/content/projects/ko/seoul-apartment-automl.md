@@ -12,7 +12,5 @@ tools: ['Python', 'AutoML', 'Tableau', 'Google Colab']
 tags: ['머신러닝', '시각화']
 figures: []
 links: {}
-featured: false
-order: 5
 status: 'card' # D-4: short link-less card on /projects/, no page and no body
 ---

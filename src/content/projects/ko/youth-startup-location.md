@@ -27,8 +27,6 @@ links:
 audience:
   game: '게임으로 옮기면, 전체 평균 대신 플레이어 군집마다 다른 콘텐츠와 상품을 제안하는 세그먼트 전략과 같은 구조입니다.'
   research: '팀은 부산 약 200개 행정동을 표준화한 소비·생활인구·경쟁 변수로 K-Means 군집 분석해 네 상권 유형으로 나누고(군집 수는 Elbow·Silhouette), 로그 변환한 LightGBM으로 음식점 매출을 예측했습니다. 예측 매출에서 실제 매출을 뺀 Potential Gap으로 조건에 비해 덜 버는 동네를 찾았습니다.'
-featured: false # D-3: the home row is CoG + school-zone-blindspots + kickick-park; this card is on /projects/ only
-order: 3
 status: 'published'
 ---
 

@@ -1,8 +1,7 @@
 import type { ImageMetadata } from 'astro';
 import { describe, expect, it } from 'vitest';
-import { TAG_KEYS } from '../../src/content/tags';
-import { cogCartridgeTagKeys, homeCopy } from '../../src/data/copy/home';
-import { cartridgeMeta, projectDetailRows, projectSlug, sortProjects, toCartridge, type ProjectEntry } from '../../src/lib/projects';
+import { homeCopy } from '../../src/data/copy/home';
+import { cartridgeMeta, projectDetailRows, projectSlug, toCartridge, type ProjectEntry } from '../../src/lib/projects';
 
 const KO = {
   type: '경진대회',
@@ -102,16 +101,6 @@ describe('project helpers', () => {
     expect(cartridgeMeta([])).toBe('');
   });
 
-  it('sortProjects is stable by order', () => {
-    const input = [
-      { id: 'a', data: { order: 2 } },
-      { id: 'b', data: { order: 1 } },
-      { id: 'c', data: { order: 2 } },
-    ];
-    expect(sortProjects(input).map((e) => e.id)).toEqual(['b', 'a', 'c']);
-    expect(input.map((e) => e.id)).toEqual(['a', 'b', 'c']);
-  });
-
   it('projectSlug strips the locale', () => {
     expect(projectSlug({ id: 'ko/kickick-park' })).toBe('kickick-park');
     expect(projectSlug({ id: 'en/kickick-park' })).toBe('kickick-park');
@@ -147,11 +136,7 @@ describe('project helpers', () => {
     expect(kbo.tagKeys).toEqual(['stats', 'collection']);
   });
 
-  it('home copy is bilingual and the CoG cartridge uses known tag keys', () => {
-    expect(cogCartridgeTagKeys).toEqual(['ml', 'collection']);
-    for (const key of cogCartridgeTagKeys) expect(TAG_KEYS).toContain(key);
-    expect(homeCopy.ko.cogCartridge).toEqual({ title: '리그 오브 레전드 교전 결과 예측', meta: 'Python · LightGBM · PyTorch', sticker: { text: 'ORAL', sr: '구두 발표' } });
-    expect(homeCopy.en.cogCartridge.sticker).toEqual({ text: 'ORAL', sr: 'oral presentation' });
+  it('home copy is bilingual', () => {
     expect(homeCopy.ko.helloRecords).toHaveLength(3);
     expect(homeCopy.en.helloRecords).toHaveLength(homeCopy.ko.helloRecords.length);
     expect(homeCopy.ko.moreProjects).toBe('프로젝트 전체 보기');

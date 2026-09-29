@@ -5,6 +5,27 @@ import type { Lang } from '../i18n/ui';
 import type { Localized } from '../i18n/utils';
 import type { JobfitId, NavSection } from '../types';
 import type { ModuleId, VariantId } from './ids';
+import { PROJECT_SLUGS, type ProjectSlug } from '../lib/routes';
+
+export type ProjectRef = `project:${ProjectSlug}`;
+export type PubRef = `pub:${string}`; // validated against publications at build (resolveOrder)
+export type OrderItem = ProjectRef | PubRef;
+
+export function parseOrderItem(item: OrderItem): { kind: 'project'; slug: ProjectSlug } | { kind: 'pub'; id: string } {
+  const match = /^(project|pub):([a-z0-9-]+)$/.exec(item);
+  if (!match) throw new Error(`variants: "${item}" is not an order item (project:<slug> | pub:<id>)`);
+  const [, kind, ref] = match as unknown as [string, 'project' | 'pub', string];
+  if (kind === 'pub') return { kind, id: ref };
+  if (!(PROJECT_SLUGS as readonly string[]).includes(ref)) throw new Error(`variants: unknown project "${ref}" in ${item}`);
+  return { kind, slug: ref as ProjectSlug };
+}
+
+export interface VariantOrders {
+  homeFeatured: readonly OrderItem[]; // exactly 3, all with a page
+  projectsOrder: readonly OrderItem[]; // every project slug once + every publication that has `card` once
+  recordsProjectsOrder: readonly ProjectRef[]; // every PROJECT_SLUG once (publications have their own #publications)
+  pdfProjectOrder: readonly OrderItem[]; // every item with any true pdf flag the version's résumés use, once
+}
 
 /** R-3: per-version identity copy. Strings may contain fact tokens and nothing else fact-like. */
 export interface IdentityCopy {
@@ -47,6 +68,7 @@ export interface Variant {
   layout: 'base' | 'data'; // P1: both 'base'; P2-2 sets data → 'data' (contract §8.1 F-3)
   theme: 'hud' | 'editorial';
   identity: IdentityCopy;
+  orders: VariantOrders;
   jobfit: JobfitId;
   documents: VariantDocuments;
   nav: readonly VariantNavItem[];

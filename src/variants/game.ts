@@ -63,6 +63,14 @@ export const gameVariant: Variant = {
       },
     },
   },
+  orders: {
+    homeFeatured: ['pub:cog-2026-engagement', 'project:school-zone-blindspots', 'project:kickick-park'],
+    // P1 keeps today's order; P2 Task 6 (P-07, owner decision 13, audit 2026-09-29) changes game.projectsOrder to ['pub:cog-2026-engagement','project:school-zone-blindspots','project:kickick-park','project:kbo-attendance','project:seoul-apartment-automl','project:youth-startup-location'] and this pin with it; the span-2 selector of ProjectCartridge stays.
+    projectsOrder: ['pub:cog-2026-engagement', 'project:school-zone-blindspots', 'project:kickick-park', 'project:youth-startup-location', 'project:kbo-attendance', 'project:seoul-apartment-automl'],
+    recordsProjectsOrder: ['project:school-zone-blindspots', 'project:kickick-park', 'project:youth-startup-location', 'project:kbo-attendance', 'project:seoul-apartment-automl'],
+    // A-17: equals today's end-month sort (tests/unit/resume-model.test.ts pins that).
+    pdfProjectOrder: ['pub:cog-2026-engagement', 'project:youth-startup-location', 'project:school-zone-blindspots', 'project:kickick-park'],
+  },
   jobfit: 'game',
   documents: { resume: { ko: 'resume-ko', en: 'resume-en' }, academic: 'cv-academic', list: ['resume-ko', 'resume-en', 'cv-academic'] },
   nav: [

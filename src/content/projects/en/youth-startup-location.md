@@ -27,8 +27,6 @@ links:
 audience:
   game: 'In a game, this is the same structure as a segment strategy that offers different content and products to each player cluster instead of designing for the average player.'
   research: 'The team clustered about 200 Busan administrative districts into four commercial-area types with K-Means on standardized spending, population and competition features (elbow method and silhouette score for the number of clusters), and predicted restaurant sales with LightGBM on a log-transformed target. Potential Gap, predicted minus actual sales, points to districts that earn less than their conditions suggest.'
-featured: false # D-3: the home row is CoG + school-zone-blindspots + kickick-park; this card is on /projects/ only
-order: 3
 status: 'published'
 ---
 

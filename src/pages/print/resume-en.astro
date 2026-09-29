@@ -22,6 +22,7 @@ const model = buildResumeModel({
   today: todayIso(),
   academicExtras: ACADEMIC_EXTRAS,
   identity: { headline: gameIdentity.headline, tagline: gameIdentity.tagline },
+  order: getVariant('game').orders.pdfProjectOrder,
 });
 ---
 <PrintLayout lang={model.lang} title="Seongeun Baek — English Résumé">

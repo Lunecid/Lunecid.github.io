@@ -118,7 +118,7 @@ publicationProject:
       - "Chronological patch-holdout evaluation: LightGBM AUC 0.675 vs. neural baselines 0.569–0.581."
       - First author; gave an oral presentation at IEEE CoG 2026 in Madrid, Spain.
 
-# 프로젝트 세부(기간·팀·역할·요약)는 projects 컬렉션에서 가져온다. 여기서는 순서와 PDF 포함 여부만 정한다.
+# 프로젝트 세부(기간·팀·역할·요약)는 projects 컬렉션에서 가져온다. 여기서는 PDF 포함 여부와 이력서 불릿만 정한다. 순서는 버전의 순서 목록(src/variants/*.ts orders)이 정한다(A-17).
 # resume: PDF 전용 이력서체 불릿(batch 3b). 웹 문구(summary/role)는 배치 3a부터 합니다체라서, PDF는 이 필드로
 # 명사형/"~함" 종결의 이력서체를 따로 쓴다(없으면 summary·role로 대체). 사실은 web 카피·프로젝트 상세와 같다.
 projects:
@@ -154,8 +154,8 @@ projects:
         - A four-person team segmented Busan districts into four commercial types and predicted restaurant sales.
         - Explored the floating-population, consumer-spending and restaurant data and did the data engineering.
   # kbo-attendance, seoul-apartment-automl: status 'card' (D-4), too thin for their own bullets. Excluded from every
-  # PDF here (pdf all false) and merged into projectsNote below instead (batch 3b P1-20). Still listed for
-  # /records/'s project summary, which reads this array regardless of these pdf flags (records.ts, D-4 note there).
+  # PDF here (pdf all false) and merged into projectsNote below instead (batch 3b P1-20). /records/'s project
+  # summary lists them through recordsProjectsOrder (src/variants/*.ts, P1-7b), regardless of these pdf flags.
   - ref: kbo-attendance
     pdf: { ko: false, en: false, academic: false }
   - ref: seoul-apartment-automl

@@ -11,6 +11,7 @@ import type { Lang } from '../i18n/ui';
 import { splitEntryId, type Localized } from '../i18n/utils';
 import type { JobfitId } from '../types';
 import { VARIANT_IDS, type VariantId } from '../variants/ids';
+import { parseOrderItem, type OrderItem } from '../variants/types';
 import { buildFactSource, graduationEntry, type FactSource } from './facts';
 import { hasProjectPage, projectSlug } from './projects';
 import { PROJECT_SLUGS, type ProjectSlug } from './routes';
@@ -116,6 +117,37 @@ export function checkPaperPages<T extends { id: string; data: { caseStudy?: stri
 
 export async function getPaperPages(): Promise<PublicationEntry[]> {
   return checkPaperPages(await getCollection('publications'));
+}
+
+export type OrderedItem =
+  | { kind: 'project'; slug: ProjectSlug; entry: ProjectEntry }
+  | { kind: 'pub'; id: string; entry: PublicationEntry };
+
+/** CA-10: pure part of resolveOrder over one language's project entries and the publications. */
+export function orderedItems<P extends { id: string }, Q extends { id: string }>(
+  order: readonly OrderItem[],
+  projects: readonly P[],
+  publications: readonly Q[],
+): ({ kind: 'project'; slug: ProjectSlug; entry: P } | { kind: 'pub'; id: string; entry: Q })[] {
+  const seen = new Set<string>();
+  return order.map((item) => {
+    if (seen.has(item)) throw new Error(`portfolio: duplicate order item ${item}`);
+    seen.add(item);
+    const ref = parseOrderItem(item);
+    if (ref.kind === 'pub') {
+      const entry = publications.find((p) => p.id === ref.id);
+      if (!entry) throw new Error(`portfolio: unknown publication in order item ${item}`);
+      return { kind: 'pub' as const, id: ref.id, entry };
+    }
+    const entry = projects.find((p) => splitEntryId(p.id).slug === ref.slug);
+    if (!entry) throw new Error(`portfolio: unknown project in order item ${item}`);
+    return { kind: 'project' as const, slug: ref.slug, entry };
+  });
+}
+
+/** Resolves a version order list; throws on an unknown slug/id or a duplicate. */
+export async function resolveOrder(order: readonly OrderItem[], lang: Lang): Promise<OrderedItem[]> {
+  return orderedItems(order, await getProjects(lang), await getCollection('publications')) as OrderedItem[];
 }
 
 export async function getAwards(): Promise<AwardData[]> {

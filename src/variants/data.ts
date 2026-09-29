@@ -24,6 +24,12 @@ export const dataVariant: Variant = {
       body: gameVariant.identity.labNote.body, // B-10: the block stays, only the title is neutral
     },
   },
+  orders: {
+    homeFeatured: ['project:school-zone-blindspots', 'project:youth-startup-location', 'project:kickick-park'],
+    projectsOrder: ['project:school-zone-blindspots', 'project:youth-startup-location', 'project:kickick-park', 'pub:cog-2026-engagement', 'project:kbo-attendance', 'project:seoul-apartment-automl'],
+    recordsProjectsOrder: ['project:school-zone-blindspots', 'project:youth-startup-location', 'project:kickick-park', 'project:kbo-attendance', 'project:seoul-apartment-automl'],
+    pdfProjectOrder: ['project:school-zone-blindspots', 'project:youth-startup-location', 'project:kickick-park', 'pub:cog-2026-engagement'],
+  },
   jobfit: 'data',
   // CA-16: resume-data-ko/-en become DocumentIds in P1-17, which switches these.
   documents: gameVariant.documents,

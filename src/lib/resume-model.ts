@@ -4,6 +4,7 @@ import type { Lang } from '../i18n/ui';
 import { formatDate, formatDateSpan, formatPeriod, formatYm, localizeHref, t } from '../i18n/utils';
 import { isExpired } from './records';
 import { canonicalUrl } from './seo';
+import { parseOrderItem, type OrderItem } from '../variants/types';
 
 export const DOC_LANG: Record<DocumentId, Lang> = { 'resume-ko': 'ko', 'resume-en': 'en', 'cv-academic': 'en' };
 export const DOC_FLAG: Record<DocumentId, 'ko' | 'en' | 'academic'> = { 'resume-ko': 'ko', 'resume-en': 'en', 'cv-academic': 'academic' };
@@ -60,6 +61,7 @@ export interface ResumeInputs {
   today: string;
   academicExtras: { abstract: boolean; presentations: boolean };
   identity: { headline: string; tagline: string };
+  order: readonly OrderItem[];
 }
 
 type Flags = { ko: boolean; en: boolean; academic: boolean };
@@ -92,15 +94,13 @@ export function buildResumeModel(input: ResumeInputs): ResumeModel {
   const pubs = flagged(resume.publications).map((r) => publication(r.ref));
 
   // Projects section (batch 3b P1-20/P2-32): the CoG paper (if flagged for this doc) plus every flagged
-  // projects-collection ref, newest first by end month. `resume.projects[]`'s own order stays untouched — it also
-  // drives /records/ (records.ts projectSummaryItems), which is unaffected by this sort or by the `resume`/`pdf`
-  // fields added here.
-  type ProjectRow = ResumeModel['projects'][number] & { sortKey: string };
+  // projects-collection ref.
   const caseStudyLink = (href: string | undefined | null): string | null => (href ? canonicalUrl(localizeHref(href, lang)) : null);
-  const refRows: ProjectRow[] = flagged(resume.projects).map((r) => {
+  // A-17: the version's pdfProjectOrder decides the order (the game list equals the old end-month sort); a row appears
+  // when its pdf flag is set for this document, and every flagged row must be in the order list.
+  const refRow = (r: ResumeData['projects'][number]): ResumeModel['projects'][number] => {
     const d = project(r.ref);
     return {
-      sortKey: d.period.end,
       title: d.title,
       org: d.org,
       period: formatPeriod(d.period.start, d.period.end, lang),
@@ -109,29 +109,34 @@ export function buildResumeModel(input: ResumeInputs): ResumeModel {
       caseStudyHref: d.status === 'card' ? null : caseStudyLink(`/projects/${r.ref}/`),
       pageLabel: d.status === 'card' ? null : PAGE_LINK_LABEL[lang][d.status === 'summary' ? 'summary' : 'case-study'],
     };
-  });
+  };
   const pp = resume.publicationProject;
-  const pubRow: ProjectRow[] =
-    pp && pp.pdf[flag]
-      ? [
-          (() => {
-            const d = publication(pp.pub);
-            return {
-              sortKey: pp.period.end,
-              title: d.shortTitle ? d.shortTitle[lang] : d.title,
-              org: `${d.venueShort} · ${FORMAT_LABEL[lang][d.format]}`,
-              period: formatPeriod(pp.period.start, pp.period.end, lang),
-              team: pp.team[lang],
-              bullets: pp.resume[lang],
-              caseStudyHref: caseStudyLink(d.caseStudy),
-              pageLabel: d.caseStudy ? PAGE_LINK_LABEL[lang].paper : null,
-            };
-          })(),
-        ]
-      : [];
-  const projectRows: ResumeModel['projects'] = [...pubRow, ...refRows]
-    .sort((a, b) => (a.sortKey < b.sortKey ? 1 : a.sortKey > b.sortKey ? -1 : 0))
-    .map((row) => ({ title: row.title, org: row.org, period: row.period, team: row.team, bullets: row.bullets, caseStudyHref: row.caseStudyHref, pageLabel: row.pageLabel }));
+  const pubRow = (): ResumeModel['projects'][number] => {
+    if (!pp) throw new Error('resume-model: no publicationProject');
+    const d = publication(pp.pub);
+    return {
+      title: d.shortTitle ? d.shortTitle[lang] : d.title,
+      org: `${d.venueShort} · ${FORMAT_LABEL[lang][d.format]}`,
+      period: formatPeriod(pp.period.start, pp.period.end, lang),
+      team: pp.team[lang],
+      bullets: pp.resume[lang],
+      caseStudyHref: caseStudyLink(d.caseStudy),
+      pageLabel: d.caseStudy ? PAGE_LINK_LABEL[lang].paper : null,
+    };
+  };
+  const listed = new Set<string>(input.order);
+  for (const r of resume.projects) if (r.pdf[flag] && !listed.has(`project:${r.ref}`)) throw new Error(`resume-model: ${doc} order misses project:${r.ref}`);
+  if (pp && pp.pdf[flag] && !listed.has(`pub:${pp.pub}`)) throw new Error(`resume-model: ${doc} order misses pub:${pp.pub}`);
+  const projectRows: ResumeModel['projects'] = input.order.flatMap((item) => {
+    const ref = parseOrderItem(item);
+    if (ref.kind === 'pub') {
+      if (!pp || pp.pub !== ref.id) throw new Error(`resume-model: order item ${item} has no publicationProject`);
+      return pp.pdf[flag] ? [pubRow()] : [];
+    }
+    const r = resume.projects.find((x) => x.ref === ref.slug);
+    if (!r) throw new Error(`resume-model: order item ${item} is not in resume.yaml projects`);
+    return r.pdf[flag] ? [refRow(r)] : [];
+  });
 
   return {
     doc,

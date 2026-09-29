@@ -13,13 +13,12 @@ import type { Lang } from '../i18n/ui';
 import { localizeHref, t } from '../i18n/utils';
 import { educationLine } from '../lib/records';
 import { CV_HREF, SITE } from '../config';
-import { tagLabel } from '../content/tags';
 import { heroCopy, mainMenuCopy, splitTagline } from '../data/copy/hero';
-import { cogCartridgeTagKeys, homeCopy } from '../data/copy/home';
+import { homeCopy } from '../data/copy/home';
 import { HERO_SIZES, characterCredit, characters, getStageCharacters } from '../lib/characters';
-import { getFactSource, getNews, getProjects, getPublications, getResume } from '../lib/portfolio';
+import { getFactSource, getNews, getPublications, getResume, resolveOrder } from '../lib/portfolio';
 import { toCartridge, type CartridgeProps } from '../lib/projects';
-import { toPaperCard } from '../lib/publications';
+import { toPaperCard, toPaperCartridge } from '../lib/publications';
 import { toPatchNotes } from '../lib/news';
 import { canonicalUrl, personJsonLd } from '../lib/seo';
 import type { VariantId } from '../variants/ids';
@@ -53,22 +52,10 @@ const sideChars = sideCandidates.some((c) => c.id !== leadChar?.id) ? sideCandid
 const notices = characters.notices(['remielle', 'eula']);
 const credit = characterCredit(['remielle', 'eula'], lang);
 
-const cogCartridge: CartridgeProps = {
-  href: localizeHref('/research/cog-2026-engagement/', lang),
-  title: home.cogCartridge.title,
-  meta: home.cogCartridge.meta,
-  tagKeys: [...cogCartridgeTagKeys],
-  tags: cogCartridgeTagKeys.map((key) => tagLabel(key, lang)),
-  // P1-6 / fix round 1: the label is the paper's own result, the AUC chart (AucLabel.astro), not an image.
-  chart: { kind: 'auc-overall', lang },
-  sticker: { text: home.cogCartridge.sticker.text, sr: home.cogCartridge.sticker.sr, kind: 'oral' },
-  wide: true,
-};
-// D-3: CoG (two columns) + the two featured projects fill one row of four columns.
-const featured = (await getProjects(lang))
-  .filter((entry) => entry.data.featured)
-  .slice(0, 2)
-  .map((entry) => toCartridge(entry, lang));
+const toCard = (item: Awaited<ReturnType<typeof resolveOrder>>[number]): CartridgeProps =>
+  item.kind === 'project' ? toCartridge(item.entry, lang) : toPaperCartridge(item.entry, lang, localizeHref(item.entry.data.caseStudy ?? '', lang));
+// D-3: the version's home row (game: CoG wide card + two projects = one row of four columns).
+const featured = (await resolveOrder(v.orders.homeFeatured, lang)).map(toCard);
 
 const publications = await getPublications();
 const highlighted = publications.find((entry) => entry.data.highlight) ?? publications[0];
@@ -126,7 +113,7 @@ const location = lang === 'ko' ? `${profile.location.ko} · ${profile.location.e
     hint={menu.hint}
     side={sideChars}
   />
-  <CartridgeSection lang={lang} cartridges={[cogCartridge, ...featured]} moreHref={localizeHref('/projects/', lang)} moreLabel={home.moreProjects} />
+  <CartridgeSection lang={lang} cartridges={featured} moreHref={localizeHref('/projects/', lang)} moreLabel={home.moreProjects} />
   <ResearchHighlight lang={lang} paper={paper} nowPlaying={home.researchNowPlaying} />
   <PatchNotes lang={lang} notes={notes} />
   <HelloProfile

@@ -38,8 +38,6 @@ links:
 audience:
   game: 'Using points and rankings to encourage good behavior is the same structure as a game''s reward design.'
   research: 'After ranking Seoul districts for parking locations with public data, the team reframed the problem as judging parking from a single return photo. For the judgment model, the decisive change the team saw was the labeling unit (the scooter and the parking zone in one box), more than the model upgrade.'
-featured: true
-order: 2
 status: 'published'
 ---
 

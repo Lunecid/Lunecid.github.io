@@ -47,8 +47,6 @@ export function projectSchema<TImage extends z.ZodType>(image: TImage) {
       .refine((a) => a.game !== undefined || a.research !== undefined, { message: 'audience needs game or research' })
       .optional(),
     facts: facts.optional(),
-    featured: z.boolean(),
-    order: z.number().int(),
     // published/summary: a case-study page at /projects/<slug>/. card: no page, only a short link-less card on
     // /projects/ and a line on /records/ (D-4); a card file has no Markdown body.
     status: z.enum(['published', 'summary', 'card']),
@@ -88,7 +86,7 @@ export function publicationSchema<TImage extends z.ZodType>(image: TImage) {
       keywords: z.array(z.string().min(1)).optional(),
       thumbnail: z.object({ src: image, alt: z.string(), altKo: z.string() }),
       highlight: z.boolean().default(false),
-      // The CoG card on home and /projects/ (A-16; was src/data/copy/home.ts cogCartridge): tag keys and the tool line.
+      // The CoG card on home and /projects/ (A-16; was the CoG card copy of src/data/copy/home.ts, removed in P1-7b): tag keys and the tool line.
       card: z.object({ tags: z.array(z.enum(TAG_KEYS)).max(4), tools: z.array(z.string().min(1)).min(1) }).strict().optional(),
       facts: facts.optional(),
     })

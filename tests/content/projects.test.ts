@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest';
 import { projectSchema, type ProjectFrontmatter } from '../../src/content/schemas';
 import { tagKey } from '../../src/content/tags';
 import { PROJECT_PAGE_SLUGS, PROJECT_SLUGS } from '../../src/lib/routes';
+import { VARIANT_IDS, getVariant } from '../../src/variants';
 import { listMarkdown, readBody, readFrontmatter, resolveFromFile } from './helpers';
 
 const schema = projectSchema(z.string());
@@ -44,13 +45,12 @@ describe('project case-study files', () => {
     }
   });
 
-  it('paired files share period, order, featured, status, links, tools, award date/certificate and cover/figure paths', () => {
+  it('paired files share period, facts, status, links, tools, award date/certificate and cover/figure paths', () => {
     for (const slug of PROJECT_SLUGS) {
       const ko = data('ko', slug);
       const en = data('en', slug);
       expect(en.period, slug).toEqual(ko.period);
-      expect(en.order, slug).toBe(ko.order);
-      expect(en.featured, slug).toBe(ko.featured);
+      expect(en.facts, slug).toEqual(ko.facts);
       expect(en.status, slug).toBe(ko.status);
       expect(en.links, slug).toEqual(ko.links);
       expect(en.tools, slug).toEqual(ko.tools);
@@ -91,7 +91,7 @@ describe('project case-study files', () => {
       for (const lang of LANGS) {
         const d = data(lang, slug);
         expect(readBody(fileOf(lang, slug)).trim(), `${lang}/${slug} body`).toBe('');
-        expect(d.featured, `${lang}/${slug}`).toBe(false);
+        for (const v of VARIANT_IDS) expect(getVariant(v).orders.homeFeatured, `${v} ${slug}`).not.toContain(`project:${slug}`);
         expect(d.award, `${lang}/${slug}`).toBeUndefined();
         expect(d.figures, `${lang}/${slug}`).toEqual([]);
         expect(d.links, `${lang}/${slug}`).toEqual({});
@@ -129,14 +129,9 @@ describe('project case-study files', () => {
     }
   });
 
-  it('D-3: the featured (home) projects are school-zone-blindspots and kickick-park, orders 1–2', () => {
-    const ko = PROJECT_SLUGS.map((slug) => ({ slug, ...data('ko', slug) }));
-    expect(ko.filter((p) => p.featured).map((p) => p.order).sort()).toEqual([1, 2]);
-    expect(ko.filter((p) => p.featured).map((p) => p.slug).sort()).toEqual(['kickick-park', 'school-zone-blindspots']);
-    expect(ko.map((p) => p.order).sort((a, b) => a - b)).toEqual([1, 2, 3, 4, 5]);
-    // P1-5: portfolio.ts sorts by PROJECT_SLUGS; until P1-7b retires `order`, both must give one sequence.
-    expect(ko.map((p) => p.order)).toEqual([1, 2, 3, 4, 5]);
-    expect(ko.filter((p) => p.featured).every((p) => p.status === 'published')).toBe(true);
+  it('D-3: the game home row is CoG + school-zone-blindspots + kickick-park, both projects published', () => {
+    expect(getVariant('game').orders.homeFeatured).toEqual(['pub:cog-2026-engagement', 'project:school-zone-blindspots', 'project:kickick-park']);
+    for (const slug of ['school-zone-blindspots', 'kickick-park'] as const) expect(data('ko', slug).status, slug).toBe('published');
   });
 
   it('no body contains a phone number or e-mail address', () => {

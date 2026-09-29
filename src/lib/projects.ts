@@ -37,11 +37,6 @@ export function projectSlug(entry: { id: string }): string {
   return splitEntryId(entry.id).slug;
 }
 
-/** order ascending; Array.prototype.sort is stable, and the input is not mutated. */
-export function sortProjects<T extends { data: { order: number } }>(entries: T[]): T[] {
-  return [...entries].sort((a, b) => a.data.order - b.data.order);
-}
-
 /** false for status 'card' (short card only, D-4): no /projects/<slug>/ page and no link to one. */
 export function hasProjectPage(data: Pick<ProjectFrontmatter, 'status'>): boolean {
   return data.status !== 'card';

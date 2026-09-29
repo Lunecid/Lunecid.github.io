@@ -106,8 +106,9 @@ describe('records data files', () => {
     expect(docs).toEqual(DOCUMENTS);
   });
 
-  it('resume project refs equal PROJECT_SLUGS order', () => {
-    expect(resume().projects.map((p) => p.ref)).toEqual([...PROJECT_SLUGS]);
+  it("resume project refs are exactly PROJECT_SLUGS (order is the versions' business, A-17)", () => {
+    expect(new Set(resume().projects.map((p) => p.ref))).toEqual(new Set(PROJECT_SLUGS));
+    expect(resume().projects).toHaveLength(PROJECT_SLUGS.length);
   });
 
   it('resume award refs and skill evidence ids resolve', () => {

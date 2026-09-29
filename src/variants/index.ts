@@ -11,7 +11,7 @@ import type { CaptionKey, IdentityCopy, PageMetaText, Variant, VariantPageKey } 
 
 export * from './ids';
 export type * from './types';
-export { CAPTION_KEYS } from './types';
+export { CAPTION_KEYS, parseOrderItem } from './types';
 export { NEUTRAL_IDENTITY } from './neutral';
 
 export const VARIANTS: Readonly<Record<VariantId, Variant>> = { game: gameVariant, data: dataVariant };
