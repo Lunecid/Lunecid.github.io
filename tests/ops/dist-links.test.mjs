@@ -8,7 +8,12 @@ import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join, relative, sep } from 'node:path';
 
 const DIST = process.env.DIST_DIR ?? 'dist';
-const OLD = /(?:^|["'=(\s]|&quot;|&#34;)(\/(?:en\/)?(?:research|projects|records|player-log)\/[^"'\s<>)&]*)/g;
+const OLD = /(?:^|["'`=(\s]|&quot;|&#34;)(\/(?:en\/)?(?:research|projects|records|player-log)\/[^"'`\s<>)&]*)/g;
+/**
+ * Built client scripts under dist/_astro. The one allowed hit: src/variants/ids.ts's BASE_PATH map, base-form keys that
+ * pageHref prefixes at runtime (never an href by itself). It is recognised by its shape, not by a file name.
+ */
+const BASE_PATH_MAP = /research:\s*[`"']\/research\/[`"'],\s*projects:\s*[`"']\/projects\/[`"'],\s*records:\s*[`"']\/records\/[`"'],\s*playerLog:\s*[`"']\/player-log\/[`"']/g;
 
 /** @param {string} dir @returns {string[]} */
 const walk = (dir) => readdirSync(dir, { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? walk(join(dir, e.name)) : [join(dir, e.name)]));
@@ -22,6 +27,15 @@ const pages = () => {
 
 test('no built page carries an old-form internal link', () => {
   const hits = pages().flatMap((p) => [...p.html.matchAll(OLD)].map((m) => `${p.route}: ${m[1]}`));
+  assert.deepEqual(hits, [], hits.join('\n'));
+});
+
+test('no built client script under _astro carries an old-form internal link (the BASE_PATH map aside)', () => {
+  const dir = join(DIST, '_astro');
+  assert.ok(existsSync(dir), `${dir} missing: run npm run build first`);
+  const hits = walk(dir)
+    .filter((f) => f.endsWith('.js'))
+    .flatMap((file) => [...readFileSync(file, 'utf8').replace(BASE_PATH_MAP, '').matchAll(OLD)].map((m) => `${relative(DIST, file)}: ${m[1]}`));
   assert.deepEqual(hits, [], hits.join('\n'));
 });
 
@@ -42,4 +56,7 @@ test('the scanners catch planted links', () => {
   assert.equal([...'<a href="/records/#job-fit">'.matchAll(OLD)].length, 1);
   assert.equal([...'<a href="/game/records/">'.matchAll(OLD)].length, 0);
   assert.equal([...'{&quot;href&quot;:&quot;/en/projects/x/&quot;}'.matchAll(OLD)].length, 1);
+  assert.equal([...'a.href = `/records/`;'.matchAll(OLD)].length, 1);
+  const map = 'const B={home:`/`,research:`/research/`,projects:`/projects/`,records:`/records/`,playerLog:`/player-log/`,privacy:`/privacy/`}';
+  assert.equal([...map.replace(BASE_PATH_MAP, '').matchAll(OLD)].length, 0);
 });
