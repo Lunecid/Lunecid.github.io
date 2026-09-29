@@ -419,6 +419,8 @@ test.describe('N11: Korean mono labels use sans space advance', () => {
 test.describe('N03: Player Log favorite tiles stay inside the side panel', () => {
   for (const route of ['/game/player-log/', '/en/game/player-log/']) {
     test(`${route} 1068–1160 no overflow; tiles ≤ side edge`, async ({ page }) => {
+      // 24 widths, one full load each: about 25 s on an idle machine, so the 30 s default leaves no room under load.
+      test.setTimeout(90_000);
       for (let width = 1068; width <= 1160; width += 4) {
         await page.setViewportSize({ width, height: 900 });
         await page.goto(route, { waitUntil: 'networkidle' });
