@@ -1,10 +1,10 @@
 import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { join, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { awardSchema, resumeSchema, type ResumeData } from '../../src/content/schemas';
 import { parseYamlDocument, parseYamlList } from '../../src/content/yaml-loader';
+import { AWARD_LEVEL_MEDAL } from '../../src/data/award-levels';
 import {
-  AWARD_MEDAL,
   activityDate,
   awardItems,
   credentialItems,
@@ -95,11 +95,13 @@ describe('records helpers', () => {
     expect(todayIso()).toMatch(/^\d{4}-\d{2}-\d{2}$/);
   });
 
-  it('AWARD_MEDAL tiers', () => {
-    expect(Object.keys(AWARD_MEDAL).sort()).toEqual([...CERTIFICATE_IDS].sort());
-    expect(AWARD_MEDAL['busan-mayor-award']).toEqual({ tier: 'gold', label: { ko: '최우수', en: 'Top Excellence' } });
-    expect(AWARD_MEDAL['multicampus-grand-award']).toEqual({ tier: 'gold', label: { ko: '최우수', en: 'Top Excellence' } });
-    expect(AWARD_MEDAL['cds-encouragement-award']).toEqual({ tier: 'silver', label: { ko: '장려', en: 'Honorable Mention' } }); // P2-29
+  it('award medals come from the awards.yaml level (A-15)', () => {
+    const awards = parseYamlList(readFileSync(join(process.cwd(), 'src/data/awards.yaml'), 'utf8')).map((a) => awardSchema.parse(a));
+    const medal = Object.fromEntries(awards.map((a) => [a.id, AWARD_LEVEL_MEDAL[a.level]]));
+    expect(Object.keys(medal).sort()).toEqual([...CERTIFICATE_IDS].sort());
+    expect(medal['busan-mayor-award']).toEqual({ tier: 'gold', label: { ko: '최우수', en: 'Top Excellence' } });
+    expect(medal['multicampus-grand-award']).toEqual({ tier: 'gold', label: { ko: '최우수', en: 'Top Excellence' } });
+    expect(medal['cds-encouragement-award']).toEqual({ tier: 'silver', label: { ko: '장려', en: 'Honorable Mention' } }); // P2-29
   });
 
   it('educationLine separates school, degree and period (P2-29)', () => {

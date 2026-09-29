@@ -6,6 +6,7 @@ export type Localized<T = string> = { ko: T; en: T };
 export const LOCALES: readonly Lang[] = ['ko', 'en'];
 
 const MONTHS_EN = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'] as const;
+const MONTHS_EN_LONG = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'] as const;
 const EXPECTED_SUFFIX: Localized = { ko: ' (졸업 예정)', en: ' (expected)' };
 const PLACEHOLDER = /\{(\w+)\}/g;
 
@@ -78,6 +79,12 @@ function parseYm(ym: string): { year: string; month: number } {
 export function formatYm(ym: string, lang: Lang): string {
   const { year, month } = parseYm(ym);
   return lang === 'ko' ? `${year}.${String(month).padStart(2, '0')}` : `${MONTHS_EN[month - 1]} ${year}`;
+}
+
+/** '2027-02' -> ko '2027년 2월', en 'February 2027' (fact token {person.graduation}). */
+export function formatYmLong(ym: string, lang: Lang): string {
+  const { year, month } = parseYm(ym);
+  return lang === 'ko' ? `${year}년 ${month}월` : `${MONTHS_EN_LONG[month - 1]} ${year}`;
 }
 
 /** '2025-07-11' -> ko '2025.07.11', en 'Jul 11, 2025' (string parsing, no Date/time zone). */

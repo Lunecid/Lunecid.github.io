@@ -2,8 +2,8 @@
 // Plain module (no astro:* imports) so Vitest can import it; content.config.ts passes image() in,
 // tests pass z.string().
 import { z } from 'astro/zod';
-import { ACHIEVEMENT_TRIGGERS, CERTIFICATE_IDS, CHARACTER_IDS, GAME_IDS, JOBFIT_STATUSES, NOTICE_KEYS } from '../types';
-import { TAGS_EN, TAGS_KO } from './tags';
+import { ACHIEVEMENT_TRIGGERS, AWARD_LEVELS, CERTIFICATE_IDS, CHARACTER_IDS, GAME_IDS, JOBFIT_STATUSES, NOTICE_KEYS } from '../types';
+import { TAG_KEYS, TAGS_EN, TAGS_KO } from './tags';
 
 export const isoMonth = z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/, 'YYYY-MM, quoted');
 export const isoDate = z.string().regex(/^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/, 'YYYY-MM-DD, quoted');
@@ -11,6 +11,10 @@ export const localized = z.object({ ko: z.string().min(1), en: z.string().min(1)
 export const pdfFlags = z.object({ ko: z.boolean(), en: z.boolean(), academic: z.boolean() });
 const hexColor = z.string().regex(/^#[0-9A-Fa-f]{6}$/);
 const slug = z.string().regex(/^[a-z0-9-]+$/);
+/** A fact key inside `facts` (token segment grammar, contract §3.1): camelCase allowed, e.g. matchesShort. */
+const factKey = z.string().regex(/^[A-Za-z0-9][A-Za-z0-9-]*$/);
+/** Common-frame facts that copy reaches through {pub.<id>.fact.<key>} / {project.<slug>.fact.<key>} tokens (A-16). */
+const facts = z.record(factKey, localized);
 
 export function projectSchema<TImage extends z.ZodType>(image: TImage) {
   return z.object({
@@ -42,6 +46,7 @@ export function projectSchema<TImage extends z.ZodType>(image: TImage) {
       .object({ game: z.string().min(1).optional(), research: z.string().min(1).optional() })
       .refine((a) => a.game !== undefined || a.research !== undefined, { message: 'audience needs game or research' })
       .optional(),
+    facts: facts.optional(),
     featured: z.boolean(),
     order: z.number().int(),
     // published/summary: a case-study page at /projects/<slug>/. card: no page, only a short link-less card on
@@ -83,6 +88,9 @@ export function publicationSchema<TImage extends z.ZodType>(image: TImage) {
       keywords: z.array(z.string().min(1)).optional(),
       thumbnail: z.object({ src: image, alt: z.string(), altKo: z.string() }),
       highlight: z.boolean().default(false),
+      // The CoG card on home and /projects/ (A-16; was src/data/copy/home.ts cogCartridge): tag keys and the tool line.
+      card: z.object({ tags: z.array(z.enum(TAG_KEYS)).max(4), tools: z.array(z.string().min(1)).min(1) }).strict().optional(),
+      facts: facts.optional(),
     })
     .refine((d) => d.pdf === null || d.doi !== null, { message: 'pdf requires doi (spec §8)' });
 }
@@ -101,6 +109,7 @@ export const legalSchema = z.object({ title: z.string().min(1), lang: z.enum(['k
 
 export const awardSchema = z.object({
   id: z.enum(CERTIFICATE_IDS),
+  level: z.enum(AWARD_LEVELS), // A-15: medal and {awards.count:<level>} come from this
   name: localized, contest: localized, org: localized,
   date: isoDate,
   project: slug.nullable(), // project slug (lang-free); validated against PROJECT_SLUGS in tests
@@ -182,7 +191,7 @@ export const resumeSchema = z.object({
   activities: z.array(z.object({ id: slug, text: localized, date: z.string().regex(/^\d{4}(-(0[1-9]|1[0-2]))?$/), end: isoMonth.optional(), href: z.url().optional(), pdf: pdfFlags })
     .refine((a) => a.end === undefined || /^\d{4}-\d{2}$/.test(a.date), { message: 'end requires date YYYY-MM' })),
   // display: end ? formatPeriod(date, end) : date.length === 4 ? date : formatYm(date)
-  certifications: z.array(z.object({ id: slug, name: localized, issuer: localized, date: isoDate, pdf: pdfFlags })),
+  certifications: z.array(z.object({ id: slug, name: localized, short: localized.optional(), issuer: localized, date: isoDate, pdf: pdfFlags })),
   languages: z.array(z.object({
     id: slug, name: localized, level: localized, date: isoDate.optional(), validUntil: isoDate.optional(),
     onExpire: z.literal('mark').optional(), records: z.boolean().default(true), pdf: pdfFlags,

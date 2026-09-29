@@ -17,3 +17,5 @@ export const SFX_NAMES = ['move', 'select', 'open', 'close'] as const;
 export type SfxName = (typeof SFX_NAMES)[number];
 export const PAGE_IDS = ['home', 'research', 'research-story', 'projects', 'project', 'records', 'player-log', 'stats', 'privacy', 'credits', 'not-found', 'print'] as const;
 export type PageId = (typeof PAGE_IDS)[number];
+export const AWARD_LEVELS = ['top', 'encouragement'] as const;
+export type AwardLevel = (typeof AWARD_LEVELS)[number];

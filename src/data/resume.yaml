@@ -213,6 +213,7 @@ certifications:
     name:
       ko: 데이터분석 준전문가(ADsP)
       en: Advanced Data Analytics Semi-Professional (ADsP)
+    short: { ko: ADsP, en: ADsP }
     issuer:
       ko: 한국데이터산업진흥원
       en: Korea Data Agency
@@ -222,6 +223,7 @@ certifications:
     name:
       ko: CDS빅데이터 자격인증 2급
       en: CDS Big Data Certification, Level 2
+    short: { ko: CDS 빅데이터 2급, en: CDS Big Data Level 2 }
     issuer:
       ko: ㈜에스에스엠아이
       en: SSMI Co., Ltd.

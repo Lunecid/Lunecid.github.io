@@ -1,8 +1,9 @@
 // Helpers for /records/ (Tasks 23a/23b) and the résumé PDFs (Task 27 uses todayIso and isExpired).
 // Plain module: no astro:* imports, so Node tests and src/lib/resume-model.ts can import it.
 import type { AwardData, ProjectFrontmatter, ResumeData } from '../content/schemas';
+import { AWARD_LEVEL_MEDAL } from '../data/award-levels';
 import type { Lang } from '../i18n/ui';
-import { formatDate, formatPeriod, formatYm, localizeHref, t, type Localized } from '../i18n/utils';
+import { formatDate, formatPeriod, formatYm, localizeHref, t } from '../i18n/utils';
 import type { CertificateId } from '../types';
 
 /** Today's date as YYYY-MM-DD in Asia/Seoul (the build date: drives the TOEIC expiry badge and the PDFs). */
@@ -31,12 +32,6 @@ export function visibleOnRecords<T extends { records?: boolean }>(items: readonl
 export function evidenceHref(kind: 'project' | 'research', id: string, lang: Lang): string {
   return localizeHref(kind === 'project' ? `/projects/${id}/` : `/research/${id}/`, lang);
 }
-
-export const AWARD_MEDAL: Record<CertificateId, { tier: 'gold' | 'silver'; label: Localized }> = {
-  'busan-mayor-award': { tier: 'gold', label: { ko: '최우수', en: 'Top Excellence' } },
-  'multicampus-grand-award': { tier: 'gold', label: { ko: '최우수', en: 'Top Excellence' } },
-  'cds-encouragement-award': { tier: 'silver', label: { ko: '장려', en: 'Honorable Mention' } },
-};
 
 export interface ProjectSummaryItem {
   /** null for a status 'card' project: it has no page (D-4), so the title is not a link. */
@@ -190,7 +185,7 @@ export function awardItems(
   return refs.map(({ ref }) => {
     const award = awards.find((a) => a.id === ref);
     if (!award) throw new Error(`records: unknown award ref "${ref}"`);
-    const medal = AWARD_MEDAL[award.id];
+    const medal = AWARD_LEVEL_MEDAL[award.level];
     const cert = certs[award.id];
     const meta = typeof cert === 'string' ? { href: cert, width: null, height: null, srcSet: null, sizes: null, alt: null, caption: null } : cert ?? null;
     return {

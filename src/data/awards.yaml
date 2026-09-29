@@ -5,8 +5,10 @@
 # - redactionNote: 상장 이미지에서 가린 정보. 가린 것이 없으면 쓰지 않는다.
 # - project: 관련 프로젝트 slug. 상장만으로 프로젝트를 특정할 수 없으면 null로 둔다.
 # - 날짜는 상장에 적힌 수여일이다. 최신순으로 둔다.
+# - level: top(최우수상) | encouragement(장려상). 문구 속 수상 이름·횟수는 이 값에서 토큰으로 계산한다(R-4).
 
 - id: busan-mayor-award
+  level: top
   name:
     ko: 최우수상(부산광역시장상)
     en: Top Excellence Award (Mayor of Busan Award)
@@ -25,6 +27,7 @@
   # 가린 정보가 없어 redactionNote를 두지 않는다(P2-19: 캡션 불필요).
 
 - id: cds-encouragement-award
+  level: encouragement
   name:
     ko: 장려상
     en: Honorable Mention (Encouragement Award)
@@ -46,6 +49,7 @@
     en: Date of birth is hidden.
 
 - id: multicampus-grand-award
+  level: top
   name:
     ko: 최우수상
     en: Top Excellence Award

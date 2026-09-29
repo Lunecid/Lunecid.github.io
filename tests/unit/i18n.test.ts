@@ -7,6 +7,7 @@ import {
   formatNumber,
   formatPeriod,
   formatYm,
+  formatYmLong,
   hangulRuns,
   langPrefix,
   localizeHref,
@@ -147,6 +148,13 @@ describe('formatters', () => {
     expect(formatPeriod('2025-03', undefined, 'en')).toBe('Mar 2025 – Present');
     expect(formatPeriod('2025-03', '2027-02', 'ko', { expected: true })).toBe('2025.03 – 2027.02 (졸업 예정)');
     expect(formatPeriod('2025-03', '2027-02', 'en', { expected: true })).toBe('Mar 2025 – Feb 2027 (expected)');
+  });
+
+  it('formatYmLong: ko 2027년 2월, en February 2027', () => {
+    expect(formatYmLong('2027-02', 'ko')).toBe('2027년 2월');
+    expect(formatYmLong('2027-02', 'en')).toBe('February 2027');
+    expect(formatYmLong('2025-12', 'en')).toBe('December 2025');
+    expect(() => formatYmLong('2027-2', 'ko')).toThrow();
   });
 
   it('formatters reject malformed input instead of printing garbage', () => {

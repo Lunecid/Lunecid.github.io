@@ -81,4 +81,10 @@ thumbnail:
   alt: "Figure 1 of the paper. Top: champion-kill events and 60-second timeline frames pass through temporal clustering, spatial validation, and merging to produce a localized engagement. Bottom: the model observes six 5-second bins before onset and a label window of events decides whether the blue or red side gained."
   altKo: "논문 그림 1. 위: 킬 사건과 60초 타임라인 프레임이 시간 군집화, 공간 검증, 병합을 거쳐 하나의 교전이 됩니다. 아래: 교전 시작 전 5초 구간 6개를 관측하고, 라벨 창의 사건으로 블루 팀과 레드 팀 중 어느 쪽이 이득을 봤는지 정합니다."
 highlight: true
+card:
+  tags: [ml, collection]
+  tools: [Python, LightGBM, PyTorch]
+facts:
+  window: { ko: 30초, en: 30 seconds }
+  matchesShort: { ko: 20.6만 경기, en: 206K matches }
 ---

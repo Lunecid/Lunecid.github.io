@@ -169,15 +169,38 @@ describe('newsSchema', () => {
 });
 
 describe('awardSchema', () => {
-  it('awardSchema rejects an unknown certificate id', () => {
+  it('awardSchema requires a known level and rejects an unknown certificate id', () => {
     const award = {
-      id: 'busan-mayor-award', name: L('최우수상', 'Top Excellence Award'), contest: L('대회', 'Contest'), org: L('부산광역시', 'Busan Metropolitan City'),
+      id: 'busan-mayor-award', level: 'top', name: L('최우수상', 'Top Excellence Award'), contest: L('대회', 'Contest'), org: L('부산광역시', 'Busan Metropolitan City'),
       date: '2025-07-11', project: 'school-zone-blindspots', certificate: { alt: L('상장', 'Certificate') }, redactionNote: L('없음', 'None'),
     };
     expect(awardSchema.safeParse(award).success).toBe(true);
     expect(awardSchema.safeParse({ ...award, project: null }).success).toBe(true);
     expect(awardSchema.safeParse({ ...award, id: 'busan-2025' }).success).toBe(false);
     expect(awardSchema.safeParse({ ...award, project: 'ko/school-zone-blindspots' }).success).toBe(false);
+    const { level: _level, ...noLevel } = award;
+    expect(awardSchema.safeParse(noLevel).success).toBe(false);
+    expect(awardSchema.safeParse({ ...award, level: 'grand' }).success).toBe(false);
+  });
+});
+
+describe('common-frame fields for fact tokens (P1-4)', () => {
+  it('publication card is strict (tags ≤ 4 known keys, ≥ 1 tool) and facts are localized per key', () => {
+    const card = { tags: ['ml', 'collection'], tools: ['Python'] };
+    expect(publication.safeParse({ ...validPublication, card, facts: { window: L('30초', '30 seconds') } }).success).toBe(true);
+    expect(publication.safeParse({ ...validPublication, card: { ...card, tools: [] } }).success).toBe(false);
+    expect(publication.safeParse({ ...validPublication, card: { ...card, tags: ['ml', 'nope'] } }).success).toBe(false);
+    expect(publication.safeParse({ ...validPublication, card: { ...card, extra: 1 } }).success).toBe(false);
+    expect(publication.safeParse({ ...validPublication, facts: { 'bad key': L('a', 'b') } }).success).toBe(false);
+    expect(publication.safeParse({ ...validPublication, facts: { window: '30초' } }).success).toBe(false);
+    expect(project.safeParse({ ...validProject, facts: { tableauFigures: L('그림 1·2', 'Figures 1–2') } }).success).toBe(true);
+  });
+
+  it('certifications may carry a short localized name', () => {
+    const cert = { id: 'adsp', name: L('데이터분석 준전문가(ADsP)', 'ADsP'), issuer: L('한국데이터산업진흥원', 'Korea Data Agency'), date: '2024-09-06', pdf: flags };
+    expect(resumeSchema.safeParse({ ...validResume, certifications: [cert] }).success).toBe(true);
+    expect(resumeSchema.safeParse({ ...validResume, certifications: [{ ...cert, short: L('ADsP', 'ADsP') }] }).success).toBe(true);
+    expect(resumeSchema.safeParse({ ...validResume, certifications: [{ ...cert, short: 'ADsP' }] }).success).toBe(false);
   });
 });
 
