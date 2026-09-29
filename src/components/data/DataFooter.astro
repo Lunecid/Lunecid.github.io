@@ -2,7 +2,7 @@
 // General-version footer (spec §5.5, §8): the shared pages (R-2), the chooser link (?choose), the build date in
 // Asia/Seoul, the motion toggle (contract A-29: it stays on version pages) and any rights-holder notice the page
 // passes (e.g. the Riot notice on the paper page when Q19 enables it). Editorial colours only; no mono type.
-// P-04: a contact row (mailto + GitHub profile from getPerson()) and aria-current on the current footer link.
+// P-04: a contact row (mailto + GitHub profile, the values getPerson() returns) and aria-current on the current footer link.
 import type { Lang } from '../../i18n/ui';
 import { formatDate, t } from '../../i18n/utils';
 import { isCurrentPath } from '../../lib/footer-nav';
@@ -89,6 +89,8 @@ const pathname = Astro.url.pathname;
   .data-footer__notice { max-width: var(--measure); }
   @media (min-width: 1068px) {
     .data-footer__inner { grid-template-columns: auto 1fr auto auto; align-items: center; column-gap: 24px; }
+    /* P-04: the contact row gets its own row under copy, links, updated and the motion toggle. */
+    .data-footer__contact { grid-column: 1 / -1; grid-row: 2; }
     .data-footer__notices, .data-footer__motion-note { grid-column: 1 / -1; }
   }
 </style>

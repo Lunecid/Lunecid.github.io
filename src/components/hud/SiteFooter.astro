@@ -208,10 +208,15 @@ links.push({ href: chooserHref(lang, { choose: true }), label: t(lang, 'nav.choo
   }
   @media (min-width: 1068px) {
     .site-footer__inner {
-      /* P-04: copy, contact row, links, updated, motion toggle */
-      grid-template-columns: auto auto 1fr auto auto;
+      /* Row 1 as before P-04: copy, links, updated, motion toggle. The P-04 contact row sits on row 2 under
+         columns 1-3, beside the motion note (column 4), so the links keep their one-row width. */
+      grid-template-columns: auto 1fr auto auto;
       align-items: center;
       column-gap: 20px;
+    }
+    .site-footer__contact {
+      grid-column: 1 / 4;
+      grid-row: 2;
     }
     .site-footer__notices {
       grid-column: 1 / -1;
@@ -220,7 +225,7 @@ links.push({ href: chooserHref(lang, { choose: true }), label: t(lang, 'nav.choo
        row starting at column 1 — the far left, under .site-footer__copy, nowhere near the button it describes.
        Pin it under the motion button's own column instead. */
     .site-footer__motion-note {
-      grid-column: 5;
+      grid-column: 4;
       grid-row: 2;
       justify-self: start;
     }
