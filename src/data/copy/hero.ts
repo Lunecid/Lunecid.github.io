@@ -1,5 +1,6 @@
 // Home hero + MAIN MENU copy. Every href is Korean-based; HomeView applies localizeHref() on /en/.
-// The tagline/status/about text lives in resume.yaml (single source for site and PDFs, §5.18 #38).
+// The headline/tagline/status/about text lives in the version identity (src/variants/*.ts, resolved through fact
+// tokens; the same source feeds the site and the PDFs).
 import { t, type Localized } from '../../i18n/utils';
 
 export interface HeroCopy {
