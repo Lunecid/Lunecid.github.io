@@ -35,7 +35,10 @@ export function projectSchema<TImage extends z.ZodType>(image: TImage) {
     // text in both languages; a name for the figure, never a number headline (mockup-port §0 #17).
     // fit: 'contain' draws the whole figure on a white plate in the cartridge label (a chart with text, P1-6: never
     // cut mid-line); the default 'cover' fills the label (maps, photos).
-    cover: z.object({ src: image, alt: z.string().min(1), label: z.string().regex(/^[A-Z][A-Z ·&/-]{2,32}$/), fit: z.enum(['cover', 'contain']).optional() }).optional(),
+    // caption (P-07 F-042): the cover's caption sentence, both languages in each file (the page picks its own), shown
+    // under the "FIG · <label>" strip when the body does not cite the cover as a figure (a cited cover keeps the
+    // caption of its `figures` entry). Only facts already in the cover's alt text and the figure captions.
+    cover: z.object({ src: image, alt: z.string().min(1), label: z.string().regex(/^[A-Z][A-Z ·&/-]{2,32}$/), fit: z.enum(['cover', 'contain']).optional(), caption: localized.optional() }).optional(),
     // inlineAfter (P1-7): a snippet of the body text that first cites the figure ("그림 1" / "Figure 1"); the figure is
     // placed right after that paragraph, list or table (src/lib/figures.ts). Without it the figure stays in the list
     // after the body. A snippet the body does not contain fails the build.

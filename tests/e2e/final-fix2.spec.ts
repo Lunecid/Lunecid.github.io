@@ -1043,7 +1043,7 @@ test.describe('item 5 and round 2 item 2: a row of cartridges ends at one height
         expect(Math.max(...heights) - Math.min(...heights), `row at y ${y}: ${heights.map(Math.round).join('/')}`).toBeLessThanOrEqual(1);
       }
       const spread = (values: number[]): number => Math.max(...values) - Math.min(...values);
-      const byRow = new Map<number, { title: Box; meta: Box; tags: Box | null; label: Box }[]>();
+      const byRow = new Map<number, { title: Box; meta: Box; tags: Box | null; label: Box; foot: Box; linked: boolean }[]>();
       for (const { card, b } of cards) {
         const tags = card.locator('.cart__tags');
         const entry = {
@@ -1051,15 +1051,23 @@ test.describe('item 5 and round 2 item 2: a row of cartridges ends at one height
           meta: await box(card.locator('.cart__meta')),
           tags: (await tags.count()) ? await box(tags) : null,
           label: await box(card.locator('.cart__label')),
+          foot: await box(card.locator('.cart__foot')),
+          linked: (await card.locator('.cart__link').count()) > 0,
         };
         byRow.set(Math.round(b.y), [...(byRow.get(Math.round(b.y)) ?? []), entry]);
       }
       for (const [y, row] of byRow) {
         expect(spread(row.map((c) => c.title.y)), `row at y ${y}: title tops`).toBeLessThanOrEqual(2);
         expect(spread(row.map((c) => c.meta.y)), `row at y ${y}: meta tops`).toBeLessThanOrEqual(2);
-        const tagBottoms = row.flatMap((c) => (c.tags ? [c.tags.y + c.tags.height] : []));
-        if (tagBottoms.length > 1) expect(spread(tagBottoms), `row at y ${y}: the tags close every label at one height`).toBeLessThanOrEqual(2);
-        for (const c of row) if (c.tags) expect(c.label.y + c.label.height - (c.tags.y + c.tags.height), 'tags at the label\'s foot').toBeLessThanOrEqual(14);
+        // P-07 F-049 (owner decision 12 (b)): only page-less cards keep their tags at the foot, lined up across the row;
+        // a linked card's tags follow its meta line (the top of its foot), so the spare height falls to the card's bottom.
+        const tagBottoms = row.flatMap((c) => (c.tags && !c.linked ? [c.tags.y + c.tags.height] : []));
+        if (tagBottoms.length > 1) expect(spread(tagBottoms), `row at y ${y}: the tags close every page-less label at one height`).toBeLessThanOrEqual(2);
+        for (const c of row) {
+          if (!c.tags) continue;
+          if (c.linked) expect(c.tags.y - c.foot.y, 'F-049: a linked card\'s tags sit at the top of its foot').toBeLessThanOrEqual(1);
+          else expect(c.label.y + c.label.height - (c.tags.y + c.tags.height), 'tags at the label\'s foot').toBeLessThanOrEqual(14);
+        }
       }
     });
   }

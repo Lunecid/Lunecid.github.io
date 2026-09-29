@@ -5,6 +5,8 @@
 // presentation, status and links → BibTeX. Run-in labels are real <h2>s inside labelled <section>s.
 // When the end of the sheet (after the BibTeX) scrolls into view, the finish-cog-story achievement fires
 // (the trigger keeps its pre-D-15 name so stored progress stays valid; the CoG paper is the only paper page).
+// P-07 F-048 (owner decision 18): with `requestEmail` (the page passes getPerson().email) one more line under Code says
+// the full text is sent on request by e-mail; the author blocks still carry no e-mail.
 import BibtexBlock from './BibtexBlock.astro';
 import type { PaperPageData } from '../../lib/publications';
 import type { Lang } from '../../i18n/ui';
@@ -13,15 +15,18 @@ import { t } from '../../i18n/utils';
 interface Props {
   lang: Lang;
   paper: PaperPageData;
+  /** The address for full-text requests (P-07 F-048), shown as the line under Code. */
+  requestEmail?: string;
 }
 
-const { lang, paper } = Astro.props;
+const { lang, paper, requestEmail } = Astro.props;
 
 /** IEEE run-in labels of the English original (the same on both pages, so not in ui.ts). */
 const RUN_IN = { abstract: 'Abstract', indexTerms: 'Index Terms' } as const;
 
 const links = [
   paper.code ? { label: t(lang, 'research.code'), href: paper.code, text: paper.code.replace(/^https?:\/\//, '') } : null,
+  requestEmail ? { label: t(lang, 'paper.fullTextRequest'), href: `mailto:${requestEmail}`, text: requestEmail } : null,
   paper.doi ? { label: t(lang, 'research.doi'), href: `https://doi.org/${paper.doi}`, text: paper.doi } : null,
   paper.pdf ? { label: t(lang, 'research.pdf'), href: paper.pdf, text: paper.pdf.replace(/^https?:\/\//, '') } : null,
 ].filter((link): link is { label: string; href: string; text: string } => link !== null);

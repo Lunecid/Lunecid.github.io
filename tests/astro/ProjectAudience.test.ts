@@ -37,4 +37,12 @@ describe('ProjectAudience.astro (P1-8)', () => {
     expect(src).toMatch(/@media \(min-width: 1068px\) \{[\s\S]*?\.audience\s*\{[\s\S]*?max-width:\s*var\(--container-hud\)/);
     expect(src).toMatch(/@media \(min-width: 1068px\) \{[\s\S]*?\.audience__grid\s*\{[\s\S]*?align-items:\s*start/);
   });
+
+  it('general version (P2-6): plain blocks under a heavy rule, serif labels, no bracket panels', async () => {
+    const html = await renderAstro(ProjectAudience, { props: { variant: 'data', lang: 'ko', audience: { research: '연구 기여 문장입니다.' } } });
+    expect(html).toMatch(/<div class="ed-prose audience-ed"/);
+    expect(html).toMatch(/<section id="research-contribution" class="audience-ed__block"/);
+    expect(html).toMatch(/<h2 id="research-contribution-title" class="ed-item__title" data-serif[^>]*>연구 기여<\/h2>/);
+    expect(html).not.toMatch(/bracket|lh-frame|hud-label|for-game-teams/);
+  });
 });

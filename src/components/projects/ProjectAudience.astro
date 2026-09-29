@@ -2,6 +2,8 @@
 // "게임 팀에게 | 연구 기여" / "For game teams | Research contribution" after a case-study body (spec §3 case-study
 // order, §6 audience{game, research}; P1-8). Two light-HUD panels (square, corner marks, "[ ■ ] CAPTION" over the
 // title, P1-9) on the light reading band, in the same centred text column as the body above.
+// P2-6: the general version draws plain blocks under a heavy rule with serif labels (the for-game-teams block never
+// reaches a general page, P1-9).
 import SectionLabel from '../hud/SectionLabel.astro';
 import type { Lang } from '../../i18n/ui';
 import { t } from '../../i18n/utils';
@@ -20,19 +22,29 @@ const blocks = [
   { id: 'research-contribution', caption: captionFor(getVariant(variant), 'researchContribution', lang), label: t(lang, 'project.researchContribution'), text: audience.research },
 ].filter((block): block is { id: string; caption: string; label: string; text: string } => typeof block.text === 'string' && block.text.trim() !== '');
 ---
-{blocks.length > 0 && (
+{blocks.length > 0 && (variant === 'game' ? (
 <div class="audience read read-column">
   <div class:list={['audience__grid', { 'audience__grid--single': blocks.length === 1 }]}>
     {blocks.map((block) => (
       <section id={block.id} class="audience__block lh-frame bracket bracket--sm" aria-labelledby={`${block.id}-title`}>
-        <SectionLabel variant={variant} en={block.caption} />
+        <SectionLabel variant="game" en={block.caption} />
         <h2 id={`${block.id}-title`} class="audience__label">{block.label}</h2>
         <p class="audience__text">{block.text}</p>
       </section>
     ))}
   </div>
 </div>
-)}
+) : (
+<div class="ed-prose audience-ed">
+  {blocks.map((block) => (
+    <section id={block.id} class="audience-ed__block" aria-labelledby={`${block.id}-title`}>
+      <SectionLabel variant={variant} en={block.caption} />
+      <h2 id={`${block.id}-title`} class="ed-item__title" data-serif>{block.label}</h2>
+      <p class="ed-body">{block.text}</p>
+    </section>
+  ))}
+</div>
+))}
 
 <style>
   /* The centred reading column comes from .read-column (read.css), shared with the body above. */
@@ -56,4 +68,6 @@ const blocks = [
     }
     .audience__grid { align-items: start; }
   }
+  .audience-ed { display: grid; gap: 28px; }
+  .audience-ed__block { display: grid; gap: 6px; padding-top: 10px; border-top: var(--ed-rule-w-strong) solid var(--ed-rule-strong); }
 </style>

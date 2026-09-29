@@ -3,6 +3,7 @@ import { join } from 'node:path';
 import type { Page } from '@playwright/test';
 import { load } from 'js-yaml';
 import { test, expect } from './helpers';
+import { SITE } from '../../src/config';
 import { containsTrademark } from '../../src/lib/seo';
 
 // D-15: /research/cog-2026-engagement/ (+ /en/) is a paper-style, abstract-only page built from the publication.
@@ -56,7 +57,9 @@ for (const { lang, route } of ROUTES) {
         await expect(koAbstract).toHaveCount(0);
         await expect(page.locator('main')).not.toContainText(PUB.abstractKo.slice(0, 20));
       }
-      expect(await page.locator('main').innerText()).not.toMatch(/[a-z0-9._-]+@[a-z0-9.-]+\.[a-z]{2,}/i);
+      // P-07 F-048 (owner decision 18): the page's one e-mail is the school address in the full-text request line under
+      // Code; the author blocks still carry none (D-15), so a second or another address fails here.
+      expect((await page.locator('main').innerText()).match(/[a-z0-9._-]+@[a-z0-9.-]+\.[a-z]{2,}/gi)).toEqual([SITE.email]);
       const title = await page.title();
       expect(containsTrademark(title), title).toBe(false);
     });

@@ -131,9 +131,11 @@ const sizes = wide ? CARTRIDGE_SIZES.wide : CARTRIDGE_SIZES.normal;
   .cart__label > :global(:first-child) { grid-row: 1; min-width: 0; }
   .cart__title { grid-row: 2; }
   .cart__meta { grid-row: 3; }
-  /* the tags close the label like a footer: in a row where another card has a summary they line up at the bottom */
+  /* F-049 (P-07, owner decision 12 (b)): a linked card's tags follow its meta line, so the spare height of the row falls
+     to the bottom of the card; a page-less card (summary + tags) keeps its tags at the foot, lined up with the other
+     summaries of its row. */
   .cart__foot { grid-row: 4; min-width: 0; display: flex; flex-direction: column; }
-  .cart__foot > .cart__tags { margin-top: auto; }
+  .cart--static .cart__foot > .cart__tags { margin-top: auto; }
   .cart__label :global(.cart__img) { display: block; width: 100%; aspect-ratio: 16 / 9; height: auto; object-fit: cover; background: var(--read-card); }
   /* the CoG card's label (fix round 1): the paper's AUC result on a white plate, 16:9 on phones, a short strip from 734px;
      with a sticker the chart starts under the same 28px band as a stickered figure */

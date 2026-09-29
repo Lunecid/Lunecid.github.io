@@ -78,4 +78,19 @@ describe('src/styles/editorial.css (P2-1, spec §8)', () => {
     expect(outside.filter((s) => s.includes(':hover'))).toEqual([]);
     for (const s of hover.filter((h) => h.endsWith(':hover'))) expect(outside, s).toContain(s.replace(/:hover$/, ':active'));
   });
+
+  it('re-colours the tag filter and the image viewer on general pages (P2-6)', () => {
+    const selectors = rules.flatMap((r) => splitSelectors(r.selector));
+    for (const s of [
+      `${SCOPE} .tag-filter__btn`,
+      `${SCOPE} .tag-filter__btn[aria-pressed="true"]`,
+      `${SCOPE} .image-viewer__cap`,
+      `${SCOPE} .image-viewer__close`,
+      `${SCOPE} .image-viewer__close:focus-visible`,
+      `${SCOPE} .image-viewer__strip`,
+      `${SCOPE} .image-viewer__nav`,
+      `${SCOPE} .image-viewer__counter`,
+      `${SCOPE} .image-viewer__corner`,
+    ]) expect(selectors, s).toContain(s);
+  });
 });

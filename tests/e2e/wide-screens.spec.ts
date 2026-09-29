@@ -150,7 +150,7 @@ test.describe('P2-16: hero copy lines', () => {
 test.describe('P2-21: PROJECT DETAILS figure frame', () => {
   test('the FIG caption strip sits under the figure, and a short figure is centred beside the taller table', async ({ page }) => {
     await open(page, '/game/projects/school-zone-blindspots/', 1440);
-    await expect(page.locator('.pd__figcap')).toHaveText('FIG · RISK HEATMAP');
+    await expect(page.locator('.pd__figcap-strip')).toHaveText('FIG · RISK HEATMAP');
     const fig = await box(page.locator('.pd__fig'));
     const img = await box(page.locator('.pd__fig img'));
     const cap = await box(page.locator('.pd__figcap'));

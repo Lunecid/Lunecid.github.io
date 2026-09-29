@@ -1,0 +1,69 @@
+---
+// One project in the general version's lists (spec §8: lists and tables instead of cards): the title (the link, or plain
+// text for a project without a page, D-4), the tools line, the one-line summary of a page-less project, up to four tags,
+// and the project's real figure — its cover, or the paper's AUC chart for the CoG item — as a small figure. No cartridge
+// shell, sticker or lift. It takes ProjectCartridge's props, so a section only picks the component (contract §4.4).
+import { Picture } from 'astro:assets';
+import AucLabel from '../research/AucLabel.astro';
+import { CARD_FORMATS, fitWidths, sourceSize } from '../../lib/images';
+import type { CartridgeProps } from '../../lib/projects';
+
+type Props = CartridgeProps & {
+  /** The page's LCP image (the first item with a cover on /data/projects/): eager, fetchpriority high. */
+  priority?: boolean;
+  /** Eager at low priority (the first image item on the general home). */
+  eager?: boolean;
+};
+
+const { href, title, meta, summary, tagKeys, tags, cover, coverPosition = '50% 50%', coverFit = 'cover', chart, headingLevel = 3, priority = false, eager = false } = Astro.props;
+const Heading = headingLevel === 2 ? 'h2' : 'h3';
+const shownTags = tags.slice(0, 4);
+const widths = cover ? fitWidths([192, 288, 440], sourceSize(cover).width) : [];
+---
+<li class:list={['pli', 'ed-item', { 'pli--chart': !!chart, 'pli--text': !chart && !cover }]} data-tags={tagKeys.join(' ')}>
+  <div class="pli__text">
+    <Heading class="pli__title ed-item__title" data-serif>{href ? <a class="pli__link hit" href={href}>{title}</a> : title}</Heading>
+    <p class="ed-meta">{meta}</p>
+    {!href && summary && <p class="ed-body">{summary}</p>}
+    {shownTags.length > 0 && (
+      <ul class="pli__tags" role="list">
+        {shownTags.map((tag) => <li class="ed-tag">{tag}</li>)}
+      </ul>
+    )}
+  </div>
+  {chart ? (
+    <div class="pli__fig"><AucLabel lang={chart.lang} tone="editorial" /></div>
+  ) : cover ? (
+    <Picture
+      class:list={['pli__img', { 'pli__img--contain': coverFit === 'contain' }]}
+      src={cover}
+      alt=""
+      formats={CARD_FORMATS}
+      fallbackFormat="webp"
+      widths={widths}
+      sizes="(min-width: 734px) 220px, 96px"
+      priority={priority}
+      loading={!priority && eager ? 'eager' : undefined}
+      fetchpriority={!priority && eager ? 'low' : undefined}
+      style={`object-position: ${coverPosition}`}
+    />
+  ) : null}
+</li>
+
+<style>
+  .pli { display: grid; grid-template-columns: minmax(0, 1fr) 96px; gap: 16px; align-items: start; }
+  /* TagFilter hides items with the hidden attribute; display: grid would override the UA [hidden] rule (as .cart[hidden]). */
+  .pli[hidden] { display: none; }
+  .pli--chart, .pli--text { grid-template-columns: minmax(0, 1fr); }
+  .pli__link { text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: .2em; }
+  .pli__tags { display: flex; flex-wrap: wrap; gap: 0 12px; margin-top: 6px; }
+  .pli__img { width: 96px; height: 72px; object-fit: cover; }
+  .pli__img--contain { object-fit: contain; background: var(--ed-bg); }
+  /* AucLabel keeps its text ≥ 12px only at ≥ 0.84 of its viewBox width: the chart takes the full row, up to 480px. */
+  .pli__fig { width: 100%; max-width: 480px; aspect-ratio: 300 / 132; }
+  @media (min-width: 734px) {
+    .pli { grid-template-columns: minmax(0, 1fr) 220px; gap: 24px; }
+    .pli__img { width: 220px; height: 150px; }
+    .pli__fig { aspect-ratio: 480 / 112; }
+  }
+</style>

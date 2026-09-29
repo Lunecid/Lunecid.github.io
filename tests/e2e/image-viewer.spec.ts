@@ -12,6 +12,7 @@ const VIEWPORTS = [
 const PAGES = [
   { path: '/game/projects/school-zone-blindspots/', scope: 'main', label: 'case study' },
   { path: '/game/research/', scope: '#interests', label: 'research' },
+  { path: '/data/projects/school-zone-blindspots/', scope: 'main', label: 'general case study' },
 ] as const;
 
 /** data-state=open, full image decoded, and every dialog animation/transition finished. */

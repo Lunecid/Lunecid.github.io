@@ -59,6 +59,7 @@ describe('project case-study files', () => {
       expect(en.award?.certificate, slug).toBe(ko.award?.certificate);
       expect(en.cover?.src, slug).toBe(ko.cover?.src);
       expect(en.cover?.label, slug).toBe(ko.cover?.label); // P2-21 HUD caption: English in both languages
+      expect(en.cover?.caption, slug).toEqual(ko.cover?.caption); // P-07 F-042: one bilingual caption in both files
       expect(en.figures.map((f) => f.src), slug).toEqual(ko.figures.map((f) => f.src));
     }
   });
@@ -200,6 +201,7 @@ describe('project case-study files', () => {
         d.audience?.game,
         d.audience?.research,
         d.cover?.alt,
+        d.cover?.caption?.ko,
         ...d.figures.flatMap((f) => [f.alt, f.caption]),
         ...readBody(fileOf('ko', slug)).split('\n'),
       ].filter((text): text is string => typeof text === 'string');

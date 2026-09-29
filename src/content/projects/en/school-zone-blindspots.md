@@ -19,6 +19,10 @@ cover:
   src: '../../../assets/projects/school-zone-blindspots/risk-heatmap.webp'
   alt: 'Heatmap of predicted child-pedestrian accident probability across Busan road points. Colour: predicted accident probability (teal low → red/black high); red dots: recorded accidents; pink lines: existing school zones.'
   label: 'RISK HEATMAP'
+  # P-07 F-042: the alt's first sentence and the legend of the figure 2–4 captions, word for word (no new fact).
+  caption:
+    ko: '부산 전역 도로 지점의 어린이 보행자 사고 예측 확률 히트맵. 색: 예측 사고 확률(청록 낮음 → 빨강·검정 높음) · 빨간 점: 실제 사고 지점 · 분홍 선: 기존 어린이 보호구역.'
+    en: 'Heatmap of predicted child-pedestrian accident probability across Busan road points. Colour: predicted accident probability (teal low → red/black high) · red dots: recorded accidents · pink lines: existing school zones.'
 figures:
   - src: '../../../assets/projects/school-zone-blindspots/spatial-cv-blocks.webp'
     alt: 'Scatter plot of all analysis points in Busan, colored into 10 geographic blocks ordered by projected X (EPSG:5186, metres). Axes are metres, not latitude/longitude.'

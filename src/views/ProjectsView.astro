@@ -1,10 +1,12 @@
 ---
 // /projects/ (spec §3): SELECT YOUR PROJECT grid in the version's projectsOrder (game: CoG wide card first),
-// a tag filter, and the GitHub section when build-time GitHub data is usable.
+// a tag filter, and the GitHub section when build-time GitHub data is usable. P2-6: the general version lists the
+// projects as editorial rows (ProjectListItem) in an <ol>; TagFilter is unchanged.
 import type { PageLayout } from '../layouts/page-layout';
 import PageHeader from '../components/hud/PageHeader.astro';
 import TagFilter from '../components/projects/TagFilter.astro';
 import ProjectCartridge from '../components/projects/ProjectCartridge.astro';
+import ProjectListItem from '../components/data/ProjectListItem.astro';
 import GitHubSection from '../components/github/GitHubSection.astro';
 import type { Lang } from '../i18n/ui';
 import { t } from '../i18n/utils';
@@ -27,6 +29,7 @@ interface Props {
 const { lang, variant, layout: Layout } = Astro.props;
 const ctx = { lang, variant };
 const v = getVariant(variant);
+const editorial = v.theme === 'editorial';
 const facts = await getFactSource();
 const meta = pageMetaFor('projects', lang, variant, facts);
 const toCard = (item: Awaited<ReturnType<typeof resolveOrder>>[number]): CartridgeProps =>
@@ -44,13 +47,19 @@ const github = usableGitHub(generated.github());
 
 <Layout lang={lang} variant={variant} title={meta.title} description={meta.description} page="projects" section="projects" sectionIndex={true}>
   <PageHeader lang={lang} variant={variant} label={captionFor(v, 'pageProjects', lang)} title={t(lang, 'projects.title')} intro={meta.description} />
-  <section id="project-list" class="sec hud-grid" aria-labelledby="project-list-title">
-    <div class="container container--hud">
+  <section id="project-list" class:list={editorial ? 'ed-sec' : ['sec', 'hud-grid']} aria-labelledby="project-list-title">
+    <div class:list={['container', { 'container--hud': !editorial }]}>
       <h2 id="project-list-title" class="sr-only">{t(lang, 'projects.listLabel')}</h2>
       <TagFilter lang={lang} keys={filterKeys} controls="project-grid" />
-      <div id="project-grid" class="cart-grid">
-        {cards.map((card, i) => <ProjectCartridge {...card} priority={i === firstImage} />)}
-      </div>
+      {editorial ? (
+        <ol id="project-grid" class="ed-list" role="list">
+          {cards.map((card, i) => <ProjectListItem {...card} priority={i === firstImage} />)}
+        </ol>
+      ) : (
+        <div id="project-grid" class="cart-grid">
+          {cards.map((card, i) => <ProjectCartridge {...card} priority={i === firstImage} />)}
+        </div>
+      )}
     </div>
   </section>
   <GitHubSection lang={lang} variant={variant} data={github} />

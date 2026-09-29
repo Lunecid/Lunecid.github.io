@@ -20,6 +20,10 @@ cover:
   src: '../../../assets/projects/kickick-park/parking-stand-detection.webp'
   alt: '밤에 찍은 반납 사진. 모델이 주차구역을 parking으로, 서 있는 킥보드 두 대를 stand로 찾아 상자로 표시했습니다.'
   label: 'PARKING DETECTION'
+  # P-07 F-042: the alt's second sentence, word for word (no new fact).
+  caption:
+    ko: '모델이 주차구역을 parking으로, 서 있는 킥보드 두 대를 stand로 찾아 상자로 표시했습니다.'
+    en: 'The model boxes the parking zone as "parking" and two upright scooters as "stand".'
 figures:
   - src: '../../../assets/projects/kickick-park/dong-ranking.webp'
     alt: '강남구 행정동을 대시보드 합계로 나열한 가로 막대그래프. 가로축은 Tableau에서 내보낸 합계(단위 M=백만)입니다. 상위 5개 동은 빨강, 9위 역삼2동은 노랑으로 강조되어 있습니다.'

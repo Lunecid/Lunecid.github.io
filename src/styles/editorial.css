@@ -122,3 +122,35 @@
 :root[data-variant="data"] .bib__copy:focus-visible { outline-color: var(--ed-accent); }
 /* F-065 (P-06): a cited figure lands below the sticky nav */
 :root[data-variant="data"] .ed-figure { scroll-margin-top: calc(var(--nav-h) + 16px); }
+
+/* ── tag filter and image viewer on general pages: re-coloured, markup unchanged (P2-6) ── */
+:root[data-variant="data"] .tag-filter__btn { border-color: var(--ed-rule); background: var(--ed-bg); color: var(--ed-ink); }
+@media (hover: hover) {
+  :root[data-variant="data"] .tag-filter__btn:hover { border-color: var(--ed-ink); }
+}
+:root[data-variant="data"] .tag-filter__btn:active { border-color: var(--ed-ink); }
+:root[data-variant="data"] .tag-filter__btn[aria-pressed="true"] { border-color: var(--ed-fill); background: var(--ed-fill); color: var(--ed-fill-ink); }
+/* ImageViewer (src/islands/ImageViewer.*, 0b2d199/2ad74ff; the island is not edited in P2): HUD strip, caption and
+   counter, lime close and nav buttons (`cut cut--line` with inline --cut-line/--cut-fill) and lime corner marks become
+   ink on white. The rules work with and without hud.css (Task 9 drops it): the cut pseudo-elements are switched off
+   and the buttons get a plain ink border. */
+:root[data-variant="data"] .image-viewer { color: var(--ed-ink); }
+:root[data-variant="data"] .image-viewer__strip,
+:root[data-variant="data"] .image-viewer__cap,
+:root[data-variant="data"] .image-viewer__counter { color: var(--ed-ink); background: var(--ed-bg); border-color: var(--ed-rule); font-family: var(--font-sans); }
+:root[data-variant="data"] .image-viewer__close,
+:root[data-variant="data"] .image-viewer__nav { color: var(--ed-ink); background: var(--ed-bg); border: var(--ed-rule-w) solid var(--ed-ink); }
+:root[data-variant="data"] .image-viewer__close::before,
+:root[data-variant="data"] .image-viewer__close::after,
+:root[data-variant="data"] .image-viewer__nav::before,
+:root[data-variant="data"] .image-viewer__nav::after { content: none; }
+:root[data-variant="data"] .image-viewer__nav[aria-disabled="true"] { color: var(--ed-muted); border-color: var(--ed-rule); }
+:root[data-variant="data"] .image-viewer__close:focus-visible,
+:root[data-variant="data"] .image-viewer__nav:focus-visible { outline-color: var(--ed-accent); }
+:root[data-variant="data"] .image-viewer__corner { display: none; }
+@media (hover: hover) {
+  :root[data-variant="data"] .image-viewer__close:hover,
+  :root[data-variant="data"] .image-viewer__nav:hover { color: var(--ed-accent); }
+}
+:root[data-variant="data"] .image-viewer__close:active,
+:root[data-variant="data"] .image-viewer__nav:active { color: var(--ed-accent); }

@@ -1,7 +1,10 @@
 ---
 // Home "[ ■ ] SELECT YOUR PROJECT / 프로젝트 고르기": CoG wide card + 2 featured projects, one row (spec §3, §5, D-3).
+// P2-6: the general version lists the featured projects as editorial rows (ProjectListItem) under 대표 프로젝트, with
+// one underlined more link; the game markup is unchanged.
 import SectionHead from '../hud/SectionHead.astro';
 import ProjectCartridge from '../projects/ProjectCartridge.astro';
+import ProjectListItem from '../data/ProjectListItem.astro';
 import type { Lang } from '../../i18n/ui';
 import { t } from '../../i18n/utils';
 import type { CartridgeProps } from '../../lib/projects';
@@ -21,18 +24,31 @@ const { lang, variant, cartridges, moreHref, moreLabel } = Astro.props;
 const firstImage = cartridges.findIndex((cartridge) => cartridge.cover !== undefined);
 ---
 
-<section id="featured-projects" class="cart-sec sec hud-grid" aria-labelledby="featured-projects-title">
-  <div class="container container--hud">
-    <SectionHead variant={variant} id="featured-projects-title" caption={captionFor(getVariant(variant), 'selectProject', lang)} title={t(lang, 'section.selectProject.title')} captionOnly />
-    <div class="cart-grid">
-      {cartridges.map((cartridge, i) => <ProjectCartridge {...cartridge} eager={i === firstImage} />)}
+{variant === 'game' ? (
+  <section id="featured-projects" class="cart-sec sec hud-grid" aria-labelledby="featured-projects-title">
+    <div class="container container--hud">
+      <SectionHead variant="game" id="featured-projects-title" caption={captionFor(getVariant(variant), 'selectProject', lang)} title={t(lang, 'section.selectProject.title')} captionOnly />
+      <div class="cart-grid">
+        {cartridges.map((cartridge, i) => <ProjectCartridge {...cartridge} eager={i === firstImage} />)}
+      </div>
+      <p class="cart-sec__more">
+        <a class="sec-more" href={moreHref}>{moreLabel} <span aria-hidden="true">›</span></a>
+      </p>
     </div>
-    <p class="cart-sec__more">
-      <a class="sec-more" href={moreHref}>{moreLabel} <span aria-hidden="true">›</span></a>
-    </p>
-  </div>
-</section>
+  </section>
+) : (
+  <section id="featured-projects" class="ed-sec featured" aria-labelledby="featured-projects-title">
+    <div class="container">
+      <SectionHead variant={variant} id="featured-projects-title" caption={captionFor(getVariant(variant), 'selectProject', lang)} title={t(lang, 'projects.featured')} />
+      <ol class="ed-list" role="list">
+        {cartridges.map((cartridge, i) => <ProjectListItem {...cartridge} eager={i === firstImage} />)}
+      </ol>
+      <p class="featured__more"><a class="ed-link" href={moreHref}>{moreLabel} <span aria-hidden="true">→</span></a></p>
+    </div>
+  </section>
+)}
 
 <style>
   .cart-sec__more { margin-top: 28px; }
+  .featured__more { margin-top: 16px; }
 </style>

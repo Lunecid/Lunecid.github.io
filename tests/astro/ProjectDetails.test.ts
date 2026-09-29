@@ -86,8 +86,8 @@ describe('ProjectDetails.astro', () => {
     const html = await renderAstro(ProjectDetails, {
       props: { variant: 'game', lang: 'ko', title: 't', rows, figure: { src: cover, alt: '히트맵', label: 'CLUSTER PROFILES', number: 1, caption: '군집별 핵심 변수의 Z-score.' } },
     });
-    expect(html).toMatch(/<figcaption id="figure-1" class="pd__figcap pd__figcap--cited"/);
-    expect(html).toMatch(/<span class="pd__figcap-tag"[^>]*>FIG 1<\/span> · CLUSTER PROFILES/);
+    expect(html).toMatch(/<figure id="figure-1" class="pd__fig bracket"[\s\S]*<figcaption class="pd__figcap pd__figcap--cited"/);
+    expect(html).toMatch(/<span class="pd__figcap-tag"[^>]*>FIG<\/span> · CLUSTER PROFILES/);
     expect(html).toMatch(/<span class="pd__figcap-text"[^>]*><b[^>]*>그림 1<\/b> 군집별 핵심 변수의 Z-score\.<\/span>/);
   });
 
@@ -137,5 +137,45 @@ describe('ProjectDetails.astro', () => {
       props: { lang: 'ko', variant: 'game', title: 't', rows: [], figure: { src: cover, alt: 'alt', label: 'RISK HEATMAP', number: 1, caption: 'cap' } },
     });
     expect(none).not.toContain('chart__table');
+  });
+
+  it('P2-6 (P2-5 review carry): the general version\'s cover, when it is the body figure N, shows the same data table in the editorial tone', async () => {
+    const table = { columns: [{ ko: '변수', en: 'Feature' }, { ko: '군집 0', en: 'Cluster 0' }], rows: [['a', '-0.13']] };
+    const html = await renderAstro(ProjectDetails, {
+      props: { lang: 'ko', variant: 'data', title: 't', rows: [], figure: { src: cover, alt: 'alt', label: 'RISK HEATMAP', number: 1, caption: 'cap', table } },
+    });
+    expect(html).toMatch(/<figure id="figure-1" class="ed-figure pd-ed__fig"[\s\S]*<\/figcaption>\s*<details class="chart__table chart__table--editorial"[^>]*>\s*<summary class="chart__summary" id="figure-1-table"/);
+    expect(html).toMatch(/<table class="ed-table"[\s\S]*<td class="num"[^>]*>-0\.13<\/td>/);
+  });
+
+  it('P-07 F-042: an uncited cover with a caption shows the FIG strip and the caption sentence, without a figure number', async () => {
+    const html = await renderAstro(ProjectDetails, {
+      props: { variant: 'game', lang: 'ko', title: 't', rows, figure: { src: cover, alt: '히트맵', label: 'RISK HEATMAP', caption: '사고 위험도 지도.' } },
+    });
+    // Step 5b item 2's regex, with [^>]* for the scoped data-astro-cid-* attribute every element carries.
+    expect(html).toMatch(/<figcaption class="pd__figcap"[^>]*><span class="pd__figcap-strip" lang="en"[^>]*><span class="pd__figcap-tag"[^>]*>FIG<\/span> · RISK HEATMAP<\/span><span class="pd__figcap-text"[^>]*>/);
+    expect(html).not.toMatch(/<b[^>]*>그림/);
+  });
+
+  it('general version (P2-6): serif h1, an editorial table, the award as text with an underlined certificate link, the cited cover numbered', async () => {
+    const html = await renderAstro(ProjectDetails, {
+      props: {
+        variant: 'data', lang: 'ko', title: '사각지대를 예측하다', rows,
+        figure: { src: cover, alt: '히트맵', label: 'RISK HEATMAP', number: 1, caption: '사고 위험도 지도.' },
+        award: { name: '최우수상(부산광역시장상)', certificateId: 'busan-mayor-award', certificateHref: '/_astro/cert.webp', certificateWidth: 1280, certificateHeight: 1810, certificateSrcSet: '/_astro/cert-640.webp 640w', certificateSizes: '100vw', certificateAlt: '상장', certificateCaption: '상장 캡션' },
+      },
+    });
+    expect(html).toMatch(/<section[^>]*id="details"[^>]*class="pd-ed ed-sec"/);
+    expect(html).toMatch(/<h1 id="pd-title" class="pd-ed__title" data-serif[^>]*>사각지대를 예측하다<\/h1>/);
+    expect(html).toMatch(/<table class="ed-table pd-ed__table"/);
+    expect(html.match(/<th scope="row"/g)).toHaveLength(rows.length);
+    // The viewer trigger contract (0b2d199): a link with only data-cert-id is not intercepted.
+    expect(html).toMatch(/<a class="ed-link" href="\/_astro\/cert\.webp"[^>]*data-cert-id="busan-mayor-award"[^>]*data-viewer="certificates"[^>]*aria-haspopup="dialog"/);
+    expect(html).toMatch(/data-viewer-w="1280"[^>]*data-viewer-h="1810"/);
+    // F-065 (P-06): the id sits on the <figure>, not the figcaption.
+    expect(html).toMatch(/<figure id="figure-1" class="ed-figure pd-ed__fig"/);
+    expect(html).toMatch(/<figcaption class="ed-figcap"[^>]*><span class="ed-figcap__num"[^>]*>그림 1 —<\/span> 사고 위험도 지도\.<\/figcaption>/);
+    expect(html).toMatch(/<img[^>]*fetchpriority="high"/);
+    expect(html).not.toMatch(/badge|◆|FIG|RISK HEATMAP|hud-grid|bracket|\bcut\b/);
   });
 });

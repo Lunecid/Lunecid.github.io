@@ -5,12 +5,15 @@
 // centred reading column (--measure), so the page keeps one left edge; figures widen symmetrically to 760px.
 // P2-5: the general version sets the body on white (article.ed-prose) with its headings in the serif heading face;
 // P-06 F-065: in both versions the body's "그림 N" / "Figure N" citations link to the figure (#figure-N).
+// P-07: an uncited cover shows its own caption sentence (F-042, cover.caption); after the links, the next case study in
+// the version's projectsOrder (F-005): a "NEXT PROJECT ▶" cartridge in the game, an underlined link in the general version.
 import type { CollectionEntry } from 'astro:content';
 import type { PageLayout } from '../layouts/page-layout';
 import ProjectDetails from '../components/projects/ProjectDetails.astro';
 import FigureList from '../components/projects/FigureList.astro';
 import ProjectLinks from '../components/projects/ProjectLinks.astro';
 import ProjectAudience from '../components/projects/ProjectAudience.astro';
+import NextProject from '../components/projects/NextProject.astro';
 import Figure from '../components/common/Figure.astro';
 import ImageViewer from '../islands/ImageViewer';
 import type { Certificate } from '../lib/certificates';
@@ -18,8 +21,8 @@ import type { Lang } from '../i18n/ui';
 import { ui } from '../i18n/ui';
 import { t } from '../i18n/utils';
 import { projectPageMeta } from '../data/copy/pages';
-import { getAwards, getFactSource } from '../lib/portfolio';
-import { projectDetailRows } from '../lib/projects';
+import { getAwards, getFactSource, resolveOrder } from '../lib/portfolio';
+import { hasProjectPage, projectDetailRows, toCartridge } from '../lib/projects';
 import { buildCertificate } from '../lib/certificates';
 import { coverFigureIndex, linkFigureCitations, placeFigures, serifHeadings } from '../lib/figures';
 import type { VariantId } from '../variants/ids';
@@ -73,10 +76,25 @@ const award = awardRef
     }
   : undefined;
 const cited = coverIndex >= 0 ? numbered[coverIndex] : undefined;
+// P-07 F-042: a cited cover keeps its caption from `figures`; an uncited one shows its own cover.caption, if any.
 const figure = data.cover
-  ? { src: data.cover.src, alt: data.cover.alt, label: data.cover.label, ...(cited ? { number: cited.number, caption: cited.caption, ...(cited.table ? { table: cited.table } : {}) } : {}) }
+  ? {
+      src: data.cover.src,
+      alt: data.cover.alt,
+      label: data.cover.label,
+      ...(cited
+        ? { number: cited.number, caption: cited.caption, ...(cited.table ? { table: cited.table } : {}) }
+        : data.cover.caption
+          ? { caption: data.cover.caption[lang] }
+          : {}),
+    }
   : undefined;
 const hasViewer = certificate !== null || data.figures.some((_, i) => i !== coverIndex);
+// P-07 F-005: the next case study in the version's projectsOrder (projects with a page; after the last one, the first).
+const caseStudies = (await resolveOrder(v.orders.projectsOrder, lang)).flatMap((item) => (item.kind === 'project' && hasProjectPage(item.entry.data) ? [item.entry] : []));
+const at = caseStudies.findIndex((study) => study.id === entry.id);
+const nextEntry = at >= 0 && caseStudies.length > 1 ? caseStudies[(at + 1) % caseStudies.length] : undefined;
+const next = nextEntry ? toCartridge(nextEntry, { lang, variant }) : undefined;
 ---
 
 <Layout lang={lang} variant={variant} title={meta.title} description={meta.description} page="project" section="projects" sectionIndex={false}>
@@ -97,6 +115,7 @@ const hasViewer = certificate !== null || data.figures.some((_, i) => i !== cove
   {data.audience && <ProjectAudience lang={lang} variant={variant} audience={v.modules.includes('audienceGame') ? data.audience : { research: data.audience.research }} />}
   <FigureList lang={lang} variant={variant} figures={rest.map((index) => numbered[index]!)} />
   <ProjectLinks lang={lang} variant={variant} links={data.links} />
+  {next && <NextProject lang={lang} variant={variant} next={next} />}
   {hasViewer && (
     <ImageViewer
       client:idle

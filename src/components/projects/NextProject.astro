@@ -1,0 +1,40 @@
+---
+// P-07 F-005: after a case study's links, the next case study in the version's projectsOrder (ProjectView picks it:
+// projects with a page; after the last one, the first). Game: one "NEXT PROJECT ▶" cartridge in the centred reading
+// column (one left edge per page, P1-7), no wider than a card of the /projects/ shelf, under a visually hidden heading.
+// General: one underlined "다음 프로젝트 →" link on white, which names the project to screen readers.
+import SectionHead from '../hud/SectionHead.astro';
+import ProjectCartridge from './ProjectCartridge.astro';
+import type { Lang } from '../../i18n/ui';
+import { t } from '../../i18n/utils';
+import type { CartridgeProps } from '../../lib/projects';
+import type { VariantId } from '../../variants';
+
+interface Props {
+  lang: Lang;
+  variant: VariantId;
+  /** The next case study's cartridge (toCartridge of a project with a page, so it has an href). */
+  next: CartridgeProps;
+}
+
+const { lang, variant, next } = Astro.props;
+---
+
+{variant === 'game' ? (
+  <section class="pnext read read-section read-column" aria-labelledby="next-project-title">
+    <SectionHead variant="game" id="next-project-title" caption={`${t(lang, 'section.nextProject')} ▶`} title={t(lang, 'project.next')} captionOnly />
+    <div class="cart-grid pnext__grid">
+      <ProjectCartridge {...next} />
+    </div>
+  </section>
+) : (
+  <p class="pnext-ed">
+    <a class="ed-link" href={next.href}>{t(lang, 'project.next')} <span aria-hidden="true">→</span><span class="sr-only"> · {next.title}</span></a>
+  </p>
+)}
+
+<style>
+  .pnext { padding-block: 0 64px; }
+  .pnext__grid { grid-template-columns: minmax(0, 360px); }
+  .pnext-ed { padding: 0 max(var(--gutter), calc(50% - var(--measure) / 2)) var(--section-pad-y); background: var(--ed-bg); }
+</style>

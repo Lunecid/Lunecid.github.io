@@ -4,22 +4,33 @@
 // "FIG · <label>" caption strip (P2-21; a name, never a number headline). From 1068px the figure is centred beside
 // a taller table instead of leaving an empty block under it. Mobile order: head, table, award, figure. The default
 // slot (summary) sits under the <h1>.
+// P2-6: the general version (variant 'data') renders the same content as editorial markup: serif h1, an .ed-table, the
+// award as text with an underlined certificate link, the cover under a heavy rule, captioned "그림 N —" when the body
+// cites it. P-06 F-065: the cover's id="figure-N" sits on its <figure> in both versions. P-07: a back link to the
+// project list above the caption (F-005: '← 02 프로젝트' in the game, '← 프로젝트' in the general version); the game
+// strip reads "FIG · <label>" without a number (owner decision 10 (b)), and an uncited cover shows its own caption
+// sentence (F-042, cover.caption) under the strip.
 import type { ImageMetadata } from 'astro';
 import { Picture } from 'astro:assets';
 import FigureTable from '../common/FigureTable.astro';
 import SectionLabel from '../hud/SectionLabel.astro';
 import type { Lang } from '../../i18n/ui';
 import { t, type Localized } from '../../i18n/utils';
+import { editorialFigureLabel } from '../../lib/figures';
 import { DETAIL_FIGURE_SIZES, fitWidths, sourceSize } from '../../lib/images';
+import { pageHref } from '../../lib/links';
 import type { CertificateId } from '../../types';
-import { captionFor, getVariant, type VariantId } from '../../variants';
+import { BASE_PATH, captionFor, getVariant, type VariantId } from '../../variants';
 
 interface Props {
   lang: Lang;
   variant: VariantId;
   title: string;
   rows: { label: string; value: string }[];
-  /** number/caption: the cover is also the body's figure N (shown once, here; fix round 1). */
+  /**
+   * number/caption: the cover is also the body's figure N (shown once, here; fix round 1). caption without number: the
+   * uncited cover's own caption sentence (P-07 F-042, cover.caption).
+   */
   figure?: { src: ImageMetadata; alt: string; label?: string; number?: number; caption?: string; table?: { columns: Localized[]; rows: string[][] } };
   award?: {
     name: string;
@@ -39,43 +50,119 @@ const shownRows = rows.slice(0, 6);
 const figWidths = figure ? fitWidths([560, 840, 1120], sourceSize(figure.src).width) : [];
 const label = figure?.label?.trim() ?? '';
 const hasLead = Astro.slots.has('default');
+/** F-065 (P-06): the cover's id sits on its <figure> when the body cites it as figure N. */
+const figureId = figure?.number !== undefined ? `figure-${figure.number}` : undefined;
+// P-07 F-005: the way back to the project list; the game version numbers it as its nav does ('02', HudNav).
+const backHref = pageHref(BASE_PATH.projects, { lang, variant });
+const backNum = String(getVariant(variant).nav.findIndex((item) => item.key === 'projects') + 1).padStart(2, '0');
 ---
 
-<section id="details" class:list={['pd-sec', 'hud-grid', { 'pd-sec--nofig': !figure }]} aria-labelledby="pd-title">
-  <div class="container container--hud pd">
-    <div class="pd__head">
-      <SectionLabel variant={variant} en={captionFor(getVariant(variant), 'projectDetails', lang)} />
-      <h1 id="pd-title" class="pd__title">{title}</h1>
+{variant === 'game' ? (
+  <section id="details" class:list={['pd-sec', 'hud-grid', { 'pd-sec--nofig': !figure }]} aria-labelledby="pd-title">
+    <div class="container container--hud pd">
+      <div class="pd__head">
+        <a class="pd__back" href={backHref}><span aria-hidden="true">←</span> <span class="pd__back-num" aria-hidden="true">{backNum}</span> {t(lang, 'nav.projects').toUpperCase()}</a>
+        <SectionLabel variant={variant} en={captionFor(getVariant(variant), 'projectDetails', lang)} />
+        <h1 id="pd-title" class="pd__title">{title}</h1>
+        {
+          hasLead && (
+            <div class="pd__lead">
+              <slot />
+            </div>
+          )
+        }
+      </div>
+      <table class="pd__table">
+        <caption class="sr-only">{`${title} · ${t(lang, 'section.projectDetails.title')}`}</caption>
+        <tbody>
+          {
+            shownRows.map((row) => (
+              <tr>
+                <th scope="row">{row.label}</th>
+                <td>{row.value}</td>
+              </tr>
+            ))
+          }
+        </tbody>
+      </table>
       {
-        hasLead && (
-          <div class="pd__lead">
-            <slot />
+        award && (
+          <div class="pd__award">
+            {/* text on the same line as its tags: a line break inside would render as a leading/trailing space */}
+            <span class="badge badge--tier"><span aria-hidden="true">◆</span> {award.name}</span>
+            {/* P2-14/D-7: ↗ means "leaves the site"; a certificate button opens an in-page modal, so it gets no symbol. */}
+            {award.certificateId && award.certificateHref && (
+              <a
+                class="btn btn--line cut cut--line"
+                href={award.certificateHref}
+                data-cert-id={award.certificateId}
+                data-viewer="certificates"
+                data-viewer-w={award.certificateWidth}
+                data-viewer-h={award.certificateHeight}
+                data-viewer-srcset={award.certificateSrcSet}
+                data-viewer-sizes={award.certificateSizes}
+                data-viewer-label={t(lang, 'modal.certificate')}
+                data-viewer-caption={award.certificateCaption}
+                data-viewer-alt={award.certificateAlt}
+                aria-haspopup="dialog"
+              >{t(lang, 'action.viewCertificate')}</a>
+            )}
           </div>
         )
       }
+      {
+        figure && (
+          <figure id={figureId} class="pd__fig bracket">
+            <Picture class="pd__img" src={figure.src} alt={figure.alt} formats={['avif', 'webp']} fallbackFormat="webp" widths={figWidths} sizes={DETAIL_FIGURE_SIZES} priority />
+            {
+              label && figure.number !== undefined ? (
+                <figcaption class="pd__figcap pd__figcap--cited">
+                  <span class="pd__figcap-strip" lang="en"><span class="pd__figcap-tag">FIG</span> · {label}</span>
+                  {figure.caption && (
+                    <span class="pd__figcap-text"><b>{t(lang, 'project.figure', { n: figure.number })}</b> {figure.caption}</span>
+                  )}
+                </figcaption>
+              ) : label && figure.caption ? (
+                <figcaption class="pd__figcap"><span class="pd__figcap-strip" lang="en"><span class="pd__figcap-tag">FIG</span> · {label}</span><span class="pd__figcap-text">{figure.caption}</span></figcaption>
+              ) : (
+                label && <figcaption class="pd__figcap" lang="en"><span class="pd__figcap-tag">FIG</span> · {label}</figcaption>
+              )
+            }
+            {/* P-06 F-007 step 2 (P2-5 review): the cover is the body's figure N, so its data table shows here. */}
+            {figure.table && figure.number !== undefined && (
+              <FigureTable lang={lang} table={figure.table} summaryId={`figure-${figure.number}-table`} caption={figure.caption ?? figure.alt} tone="hud" />
+            )}
+          </figure>
+        )
+      }
     </div>
-    <table class="pd__table">
-      <caption class="sr-only">{`${title} · ${t(lang, 'section.projectDetails.title')}`}</caption>
-      <tbody>
-        {
-          shownRows.map((row) => (
+  </section>
+) : (
+  <section id="details" class="pd-ed ed-sec" aria-labelledby="pd-title">
+    <div class="container pd-ed__grid">
+      <div class="pd-ed__head">
+        <a class="ed-link" href={backHref}><span aria-hidden="true">←</span> {t(lang, 'nav.projects')}</a>
+        <SectionLabel variant={variant} en={captionFor(getVariant(variant), 'projectDetails', lang)} />
+        <h1 id="pd-title" class="pd-ed__title" data-serif>{title}</h1>
+        {hasLead && <div class="pd-ed__lead"><slot /></div>}
+      </div>
+      <table class="ed-table pd-ed__table">
+        <caption class="sr-only">{`${title} · ${t(lang, 'section.projectDetails.title')}`}</caption>
+        <tbody>
+          {shownRows.map((row) => (
             <tr>
               <th scope="row">{row.label}</th>
               <td>{row.value}</td>
             </tr>
-          ))
-        }
-      </tbody>
-    </table>
-    {
-      award && (
-        <div class="pd__award">
-          {/* text on the same line as its tags: a line break inside would render as a leading/trailing space */}
-          <span class="badge badge--tier"><span aria-hidden="true">◆</span> {award.name}</span>
-          {/* P2-14/D-7: ↗ means "leaves the site"; a certificate button opens an in-page modal, so it gets no symbol. */}
+          ))}
+        </tbody>
+      </table>
+      {award && (
+        <div class="pd-ed__award">
+          <p class="pd-ed__award-name">{award.name}</p>
           {award.certificateId && award.certificateHref && (
             <a
-              class="btn btn--line cut cut--line"
+              class="ed-link"
               href={award.certificateHref}
               data-cert-id={award.certificateId}
               data-viewer="certificates"
@@ -87,36 +174,25 @@ const hasLead = Astro.slots.has('default');
               data-viewer-caption={award.certificateCaption}
               data-viewer-alt={award.certificateAlt}
               aria-haspopup="dialog"
-            >{t(lang, 'action.viewCertificate')}</a>
+            >{t(lang, 'action.viewCertificate')}<span class="sr-only"> · {award.name}</span></a>
           )}
         </div>
-      )
-    }
-    {
-      figure && (
-        <figure class="pd__fig bracket">
-          <Picture class="pd__img" src={figure.src} alt={figure.alt} formats={['avif', 'webp']} fallbackFormat="webp" widths={figWidths} sizes={DETAIL_FIGURE_SIZES} priority />
-          {
-            label && figure.number !== undefined ? (
-              <figcaption id={`figure-${figure.number}`} class="pd__figcap pd__figcap--cited">
-                <span class="pd__figcap-strip" lang="en"><span class="pd__figcap-tag">{`FIG ${figure.number}`}</span> · {label}</span>
-                {figure.caption && (
-                  <span class="pd__figcap-text"><b>{t(lang, 'project.figure', { n: figure.number })}</b> {figure.caption}</span>
-                )}
-              </figcaption>
-            ) : (
-              label && <figcaption class="pd__figcap" lang="en"><span class="pd__figcap-tag">FIG</span> · {label}</figcaption>
-            )
-          }
-          {/* P-06 F-007 step 2 (P2-5 review): the cover is the body's figure N, so its data table shows here. */}
+      )}
+      {figure && (
+        <figure id={figure.number !== undefined ? `figure-${figure.number}` : undefined} class="ed-figure pd-ed__fig">
+          <Picture class="pd-ed__img" src={figure.src} alt={figure.alt} formats={['avif', 'webp']} fallbackFormat="webp" widths={figWidths} sizes={DETAIL_FIGURE_SIZES} priority />
+          {figure.number !== undefined && figure.caption && (
+            <figcaption class="ed-figcap"><span class="ed-figcap__num">{editorialFigureLabel(lang, figure.number)}</span> {figure.caption}</figcaption>
+          )}
+          {/* P-06 F-007 step 2 (P2-5 review): the same data table as the game cover, in the editorial tone. */}
           {figure.table && figure.number !== undefined && (
-            <FigureTable lang={lang} table={figure.table} summaryId={`figure-${figure.number}-table`} caption={figure.caption ?? figure.alt} tone="hud" />
+            <FigureTable lang={lang} table={figure.table} summaryId={`figure-${figure.number}-table`} caption={figure.caption ?? figure.alt} tone="editorial" />
           )}
         </figure>
-      )
-    }
-  </div>
-</section>
+      )}
+    </div>
+  </section>
+)}
 
 <style>
   .pd-sec { padding-block: var(--section-pad-y); border-top: 1px solid var(--hud-divider); }
@@ -125,13 +201,26 @@ const hasLead = Astro.slots.has('default');
   /* P1-7: without a figure, PROJECT DETAILS aligns to the reading column below it (one left edge per page): the box is
      the column's measure plus the gutters, centred like .prose.read. */
   .pd-sec--nofig .pd { max-width: calc(var(--measure) + 2 * var(--gutter)); }
+  /* P-07 F-005: a small HUD back link above the kicker, drawn like the HUD nav's links (muted, the number in tabular
+     figures). Its 44px box sits in the band's top padding, so the kicker, the details and the first body heading stay
+     where they were (N15: the first body h2 at 1024px within 1100px). */
+  .pd__back {
+    display: flex; width: fit-content; align-items: center; gap: 6px; min-height: var(--tap); margin-top: calc(-1 * var(--section-pad-y));
+    font-size: var(--fs-label); color: var(--hud-muted); text-decoration: none; transition: color var(--dur-hover) linear;
+  }
+  .pd__back-num { font-variant-numeric: tabular-nums; }
+  @media (hover: hover) {
+    .pd__back:hover { color: var(--hud-text); }
+  }
+  .pd__back:active { color: var(--hud-text); }
   .pd__title { margin-top: 8px; font-size: var(--fs-h2); font-weight: 900; line-height: var(--lh-h2); color: var(--hud-strong); }
   .pd__lead { margin-top: 12px; display: grid; gap: 8px; max-width: var(--measure); font-size: var(--fs-body); line-height: var(--lh-body); color: var(--hud-text); }
   .pd__table { grid-area: table; width: 100%; border-collapse: collapse; font-size: 15px; }
   .pd__table th, .pd__table td { padding: 10px 0; border-bottom: 1px dashed var(--hud-line-dash); vertical-align: top; text-align: left; }
   .pd__table th { width: 92px; padding-right: 12px; font-size: 14px; font-weight: 500; color: var(--hud-muted); }
   .pd__award { grid-area: award; display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
-  .pd__fig { grid-area: fig; margin: 0; }
+  /* F-065 (P-06): a cited cover (#figure-N) lands with its top below the sticky nav. */
+  .pd__fig { grid-area: fig; margin: 0; scroll-margin-top: calc(var(--nav-h) + 16px); }
   .pd__fig :global(img) { display: block; width: 100%; height: auto; background: var(--read-card); }
   /* F-006: on tablet widths the stacked cover was taller than a viewport; keep the phone full-bleed and the ≥1068 side-by-side layout. */
   @media (min-width: 734px) and (max-width: 1067.98px) {
@@ -155,5 +244,24 @@ const hasLead = Astro.slots.has('default');
     .pd-sec--nofig .pd { grid-template-columns: minmax(0, 1fr); grid-template-areas: "head" "table" "award"; }
     .pd__fig { align-self: center; }
     .pd__award { margin-top: 18px; }
+  }
+
+  /* General version (P2-6): head, table, award, figure; the figure beside the text from 1068px. */
+  .pd-ed__grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 20px; grid-template-areas: "head" "table" "award" "fig"; }
+  .pd-ed__head { grid-area: head; }
+  .pd-ed__title { margin-top: 6px; font-size: var(--fs-display); line-height: var(--lh-display); color: var(--ed-ink); }
+  .pd-ed__lead { margin-top: 12px; display: grid; gap: 8px; max-width: var(--measure); }
+  .pd-ed__table { grid-area: table; }
+  .pd-ed__table th { width: 92px; font-weight: 500; color: var(--ed-muted); }
+  .pd-ed__award { grid-area: award; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 16px; }
+  .pd-ed__award-name { font-weight: 700; }
+  .pd-ed__fig { grid-area: fig; scroll-margin-top: calc(var(--nav-h) + 16px); }
+  /* F-006 twin of the game rule: on tablet widths the stacked cover stays below a viewport. */
+  @media (min-width: 734px) and (max-width: 1067.98px) {
+    .pd-ed__fig { max-width: 600px; margin-inline: auto; }
+    .pd-ed__fig :global(img) { max-height: min(60vh, 300px); object-fit: contain; }
+  }
+  @media (min-width: 1068px) {
+    .pd-ed__grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); column-gap: 48px; grid-template-areas: "head fig" "table fig" "award fig"; align-items: start; }
   }
 </style>

@@ -2,6 +2,7 @@
 // Links at the end of a case study (spec §3: every case study ends with its GitHub link): repository, report and slides in
 // the same tab, as cut-corner outline buttons in the centred reading column shared with the body (P1-7).
 // No links → a short "저장소 비공개 / Private repository" note without the #links id (contract §5.4).
+// P2-6: the general version draws them as underlined text links with ↗ in the editorial reading column (.ed-prose).
 import SectionHead from '../hud/SectionHead.astro';
 import type { Lang } from '../../i18n/ui';
 import { t } from '../../i18n/utils';
@@ -23,19 +24,34 @@ const items = [
 
 {
   items.length > 0 ? (
-    <section id="links" class="plinks read read-section read-column" aria-labelledby="links-title">
-      <SectionHead variant={variant} id="links-title" caption={captionFor(getVariant(variant), 'links', lang)} title={t(lang, 'project.links')} />
-      <ul class="plinks__list" role="list">
-        {items.map((item) => (
-          <li>
-            <a class="plinks__link btn btn--line cut cut--line" href={item.href}>{item.label} <span aria-hidden="true">↗</span></a>
-          </li>
-        ))}
-      </ul>
-    </section>
-  ) : (
+    variant === 'game' ? (
+      <section id="links" class="plinks read read-section read-column" aria-labelledby="links-title">
+        <SectionHead variant="game" id="links-title" caption={captionFor(getVariant(variant), 'links', lang)} title={t(lang, 'project.links')} />
+        <ul class="plinks__list" role="list">
+          {items.map((item) => (
+            <li>
+              <a class="plinks__link btn btn--line cut cut--line" href={item.href}>{item.label} <span aria-hidden="true">↗</span></a>
+            </li>
+          ))}
+        </ul>
+      </section>
+    ) : (
+      <section id="links" class="ed-prose" aria-labelledby="links-title">
+        <SectionHead variant={variant} id="links-title" caption={captionFor(getVariant(variant), 'links', lang)} title={t(lang, 'project.links')} />
+        <ul class="ed-links plinks__list" role="list">
+          {items.map((item) => (
+            <li><a class="ed-link" href={item.href}>{item.label} <span aria-hidden="true">↗</span></a></li>
+          ))}
+        </ul>
+      </section>
+    )
+  ) : variant === 'game' ? (
     <div class="plinks read read-section read-column">
       <p class="plinks__private lh-tag">{t(lang, 'project.privateRepo')}</p>
+    </div>
+  ) : (
+    <div class="ed-prose">
+      <p class="ed-tag">{t(lang, 'project.privateRepo')}</p>
     </div>
   )
 }

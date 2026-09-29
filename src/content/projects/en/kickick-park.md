@@ -20,6 +20,10 @@ cover:
   src: '../../../assets/projects/kickick-park/parking-stand-detection.webp'
   alt: 'A return photo taken at night. The model boxes the parking zone as "parking" and two upright scooters as "stand".'
   label: 'PARKING DETECTION'
+  # P-07 F-042: the alt's second sentence, word for word (no new fact).
+  caption:
+    ko: '모델이 주차구역을 parking으로, 서 있는 킥보드 두 대를 stand로 찾아 상자로 표시했습니다.'
+    en: 'The model boxes the parking zone as "parking" and two upright scooters as "stand".'
 figures:
   - src: '../../../assets/projects/kickick-park/dong-ranking.webp'
     alt: 'Horizontal bar chart of Gangnam-gu administrative dongs ranked by the dashboard total (합계). The horizontal axis is that total as exported from Tableau (M = million). Top five in red; rank 9 Yeoksam 2-dong in yellow.'

@@ -105,6 +105,7 @@ export const ui = {
     'section.links': 'LINKS',
     'section.forGameTeams': 'FOR GAME TEAMS',
     'section.researchContribution': 'RESEARCH CONTRIBUTION',
+    'section.nextProject': 'NEXT PROJECT', // P-07 F-005: the game case study's "NEXT PROJECT ▶" cartridge
     'section.siteAchievements': 'SITE ACHIEVEMENTS',
     'section.siteAchievements.title': '사이트 업적',
     'section.gameAchievements': 'GAME ACHIEVEMENTS',
@@ -151,12 +152,14 @@ export const ui = {
     'paper.abstractKo': '국문 초록',
     'paper.bibtexCopied': 'BibTeX를 클립보드에 복사했습니다.',
     'paper.bibtexCopyFailed': '복사하지 못했습니다. BibTeX를 선택해 두었으니 Ctrl+C(⌘C)로 복사해 주세요.',
+    'paper.fullTextRequest': '전문은 이메일로 요청해 주세요', // P-07 F-048 (owner decision 18): the line under Code
 
     // 프로젝트
     'projects.title': '프로젝트',
     'projects.filterAll': '전체',
     'projects.filterLabel': '태그로 거르기',
     'projects.listLabel': '프로젝트 목록',
+    'projects.featured': '대표 프로젝트',
     'projects.count': '{n}개',
     'projects.countOne': '{n}개', // Korean has no singular/plural distinction
     'project.type': '유형',
@@ -185,6 +188,7 @@ export const ui = {
     'project.links': '링크',
     'project.report': '보고서 PDF',
     'project.slides': '발표자료 PDF',
+    'project.next': '다음 프로젝트', // P-07 F-005: the next case study (general link text; the game's sr-only title)
 
     // 최근 소식(PATCH NOTES) 종류
     'news.kind.research': '연구',
@@ -402,6 +406,7 @@ export const ui = {
     'section.links': 'LINKS',
     'section.forGameTeams': 'FOR GAME TEAMS',
     'section.researchContribution': 'RESEARCH CONTRIBUTION',
+    'section.nextProject': 'NEXT PROJECT',
     'section.siteAchievements': 'SITE ACHIEVEMENTS',
     'section.siteAchievements.title': 'Site achievements',
     'section.gameAchievements': 'GAME ACHIEVEMENTS',
@@ -448,12 +453,14 @@ export const ui = {
     'paper.abstractKo': 'Korean abstract',
     'paper.bibtexCopied': 'BibTeX copied to the clipboard.',
     'paper.bibtexCopyFailed': 'Could not copy. The BibTeX is selected; press Ctrl+C (⌘C) to copy it.',
+    'paper.fullTextRequest': 'Full text on request',
 
     // Projects
     'projects.title': 'Projects',
     'projects.filterAll': 'All',
     'projects.filterLabel': 'Filter by tag',
     'projects.listLabel': 'Project list',
+    'projects.featured': 'Selected projects',
     'projects.count': '{n} projects',
     'projects.countOne': '{n} project', // P2-8: proper singular ("1 project", not "1 projects")
     'project.type': 'Type',
@@ -482,6 +489,7 @@ export const ui = {
     'project.links': 'Links',
     'project.report': 'Report (PDF)',
     'project.slides': 'Slides (PDF)',
+    'project.next': 'Next project',
 
     // News (PATCH NOTES) kinds
     'news.kind.research': 'Research',

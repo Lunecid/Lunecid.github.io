@@ -34,8 +34,9 @@ describe('version order lists', () => {
     const data = getVariant('data').orders;
     expect(game.homeFeatured).toEqual(['pub:cog-2026-engagement', 'project:school-zone-blindspots', 'project:kickick-park']);
     expect(data.homeFeatured).toEqual(['project:school-zone-blindspots', 'project:youth-startup-location', 'project:kickick-park']);
-    // P1 keeps today's order; P2 Task 6 (P-07, owner decision 13, audit 2026-09-29) changes game.projectsOrder to ['pub:cog-2026-engagement','project:school-zone-blindspots','project:kickick-park','project:kbo-attendance','project:seoul-apartment-automl','project:youth-startup-location'] and this pin with it; the span-2 selector of ProjectCartridge stays.
-    expect(game.projectsOrder).toEqual(['pub:cog-2026-engagement', 'project:school-zone-blindspots', 'project:kickick-park', 'project:youth-startup-location', 'project:kbo-attendance', 'project:seoul-apartment-automl']);
+    // P2 Task 6 (P-07 F-062, owner decision 13, audit 2026-09-29): the two page-less cards move before youth-startup-location,
+    // so from 734px the double-width last cell holds a linked case study; the span-2 selector of ProjectCartridge stays.
+    expect(game.projectsOrder).toEqual(['pub:cog-2026-engagement', 'project:school-zone-blindspots', 'project:kickick-park', 'project:kbo-attendance', 'project:seoul-apartment-automl', 'project:youth-startup-location']);
     expect(data.projectsOrder).toEqual(['project:school-zone-blindspots', 'project:youth-startup-location', 'project:kickick-park', 'pub:cog-2026-engagement', 'project:kbo-attendance', 'project:seoul-apartment-automl']);
     expect(game.recordsProjectsOrder).toEqual(PROJECT_SLUGS.map((slug) => `project:${slug}`));
     expect(data.recordsProjectsOrder).toEqual(data.projectsOrder.filter((item) => item.startsWith('project:'))); // A-18

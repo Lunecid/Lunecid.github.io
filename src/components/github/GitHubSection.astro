@@ -5,6 +5,8 @@
 // P1-17: one list (pinned first, then recent; excluded repositories dropped; the CoG code first; site-side
 // descriptions from src/data/github-repos.ts so /en/ shows no Korean), star counts only above 0, and the list title
 // before the profile link.
+// P2-6: the general version draws editorial rows without the mono index, the calendar in black and grey, serif sub-heads
+// and the profile as an underlined link with ↗; it never draws the ghost art (the gate below stays in the game branch).
 import GhostArt from '../hud/GhostArt.astro';
 import SectionHead from '../hud/SectionHead.astro';
 import type { Lang } from '../../i18n/ui';
@@ -43,7 +45,7 @@ const repoMeta = (language: string | null, stars: number): string =>
 ---
 
 {
-  gh && (
+  gh && (variant === 'game' ? (
     <section id="github" class="gh read read-sec" aria-labelledby="github-title" data-fetched-at={gh.fetchedAt} data-max-age-days={gh.maxAgeDays}>
       {getVariant(variant).modules.includes('characterArt') && <GhostArt side="left" />}
       <div class="container">
@@ -96,7 +98,50 @@ const repoMeta = (language: string | null, stars: number): string =>
         </p>
       </div>
     </section>
-  )
+  ) : (
+    <section id="github" class="gh ed-sec" aria-labelledby="github-title" data-fetched-at={gh.fetchedAt} data-max-age-days={gh.maxAgeDays}>
+      <div class="container">
+        <SectionHead variant={variant} id="github-title" caption={captionFor(getVariant(variant), 'github', lang)} title={t(lang, 'section.github.title')} />
+        {repos.length > 0 && (
+          <>
+            <h3 class="gh__h" data-serif>{t(lang, 'github.repos')}</h3>
+            <ol class="ed-list" role="list">
+              {repos.map((r) => (
+                <li class="ed-item gh-ed__repo">
+                  <a class="gh-ed__name" href={r.url} lang="en">{r.name}</a>
+                  {r.description && <p class="ed-body">{r.description}</p>}
+                  {repoMeta(r.language, r.stars) && <p class="ed-meta">{repoMeta(r.language, r.stars)}</p>}
+                </li>
+              ))}
+            </ol>
+          </>
+        )}
+        {gh.calendar && (
+          <>
+            <h3 class="gh__h" data-serif>{t(lang, 'github.contributions')}</h3>
+            <figure class="ed-figure gh-ed__cal">
+              <p class="gh__total">{totalLabel}</p>
+              <div class="gh__cal-scroll" tabindex="0" role="region" aria-label={t(lang, 'github.contributions')}>
+                <svg class="gh__cal gh__cal--ed" viewBox={`0 0 ${calWidth} ${calHeight}`} width={calWidth} height={calHeight} role="img" aria-label={totalLabel}>
+                  {weeks.flatMap((week, wi) =>
+                    week.map((day) => (
+                      <rect class={`gh__day gh__day--l${day.level}`} x={wi * STEP} y={weekday(day.date) * STEP} width={CELL} height={CELL}>
+                        <title>{`${formatDate(day.date, lang)} · ${formatNumber(day.count, lang)}`}</title>
+                      </rect>
+                    )),
+                  )}
+                </svg>
+              </div>
+            </figure>
+          </>
+        )}
+        <ul class="ed-links gh-ed__foot" role="list">
+          <li><a class="ed-link" href={`https://github.com/${gh.login}`}>{`${t(lang, 'github.profile')} @${gh.login}`} <span aria-hidden="true">↗</span></a></li>
+        </ul>
+        <p class="ed-meta">{`${t(lang, 'github.fetchedAt')} `}<time datetime={gh.fetchedAt}>{formatDate(asOfDay, lang)}</time></p>
+      </div>
+    </section>
+  ))
 }
 
 <script>
@@ -133,4 +178,13 @@ const repoMeta = (language: string | null, stars: number): string =>
     .gh__repo { grid-template-columns: 4.5em minmax(0, 1fr) auto; }
     .gh__meta { grid-column: 3; margin-top: 10px; text-align: end; white-space: nowrap; }
   }
+  /* General version (P2-6): repo rows without the mono index; the calendar in black and grey. */
+  .gh-ed__name { display: inline-flex; align-items: center; min-height: var(--tap); font-weight: 700; overflow-wrap: anywhere; }
+  .gh-ed__cal { margin-top: 12px; }
+  .gh-ed__foot { margin-top: 16px; }
+  .gh__cal--ed .gh__day--l0 { fill: var(--ed-rule); }
+  .gh__cal--ed .gh__day--l1 { fill: var(--ed-ink); fill-opacity: .3; }
+  .gh__cal--ed .gh__day--l2 { fill: var(--ed-ink); fill-opacity: .55; }
+  .gh__cal--ed .gh__day--l3 { fill: var(--ed-ink); fill-opacity: .8; }
+  .gh__cal--ed .gh__day--l4 { fill: var(--ed-ink); fill-opacity: 1; }
 </style>

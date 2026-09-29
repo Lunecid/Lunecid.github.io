@@ -170,3 +170,17 @@ describe('GitHubSection.astro', () => {
     expect(data).not.toContain('ghost-art');
   });
 });
+
+describe('GitHubSection.astro on the general version (P2-6)', () => {
+  // The file-level hooks already fix Date to FIXED_NOW (vi.useFakeTimers({ now: FIXED_NOW, toFake: ['Date'] })); no
+  // nested fake timers here (full fake timers would also freeze setTimeout under the container render).
+  it('editorial rows without the mono index, a black-and-grey calendar, serif sub-heads, the profile link underlined with ↗', async () => {
+    const html = await renderAstro(GitHubSection, { props: { variant: 'data', lang: 'ko', data: fixture() } });
+    expect(html).toMatch(/<section id="github" class="gh ed-sec"/);
+    expect(html).toMatch(/<ol class="ed-list"/);
+    expect(html).toMatch(/<h3 class="gh__h" data-serif/);
+    expect(html).toMatch(/<svg class="gh__cal gh__cal--ed"/);
+    expect(html).toMatch(/<a class="ed-link" href="https:\/\/github\.com\/Lunecid"[^>]*>[^<]*@Lunecid <span aria-hidden="true"[^>]*>↗<\/span><\/a>/);
+    expect(html).not.toMatch(/lh-idx|lh-rows|lh-chip|bracket|ghost-art/);
+  });
+});

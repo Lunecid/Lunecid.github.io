@@ -122,6 +122,10 @@ describe('projectSchema', () => {
     expect(parsed.figures).toEqual([]);
     expect(parsed.links).toEqual({});
     expect(parsed.cover).toBeUndefined();
+    // P-07 F-042: the optional cover caption is bilingual (localized), like a figure table's column headers.
+    const cover = { src: 'a.webp', alt: 'alt', label: 'RISK HEATMAP' };
+    expect(project.safeParse({ ...validProject, cover: { ...cover, caption: { ko: '캡션입니다.', en: 'A caption.' } } }).success).toBe(true);
+    expect(project.safeParse({ ...validProject, cover: { ...cover, caption: { ko: '캡션입니다.' } } }).success).toBe(false);
     expect(project.parse({ ...validProject, featured: true, order: 1 })).not.toHaveProperty('order');
     expect(project.safeParse({ ...validProject, team: '4-person team', tags: ['Geospatial'] }).success).toBe(true);
   });

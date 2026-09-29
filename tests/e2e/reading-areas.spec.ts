@@ -167,7 +167,7 @@ test.describe('P1-7: case-study figures in one reading column, after the paragra
       expect(heatmaps).toBe(1);
       await expect(page.locator('.figure--inline')).toHaveCount(0);
       await expect(page.locator('#figures')).toHaveCount(0);
-      await expect(page.locator('.pd__figcap-tag')).toHaveText('FIG 1');
+      await expect(page.locator('.pd__figcap-tag')).toHaveText('FIG');
       await expect(page.locator('.pd__figcap-text')).toContainText(route.startsWith('/en/') ? 'Figure 1' : '그림 1');
       await expect(page.locator('.prose.read')).toContainText(route.startsWith('/en/') ? '(Figure 1)' : '(그림 1)');
     });

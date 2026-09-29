@@ -19,6 +19,10 @@ cover:
   src: '../../../assets/projects/school-zone-blindspots/risk-heatmap.webp'
   alt: '부산 전역 도로 지점의 어린이 보행자 사고 예측 확률 히트맵. 색은 예측 사고 확률(청록 낮음 → 빨강·검정 높음), 빨간 점은 실제 사고 지점, 분홍 선은 기존 어린이 보호구역입니다.'
   label: 'RISK HEATMAP'
+  # P-07 F-042: the alt's first sentence and the legend of the figure 2–4 captions, word for word (no new fact).
+  caption:
+    ko: '부산 전역 도로 지점의 어린이 보행자 사고 예측 확률 히트맵. 색: 예측 사고 확률(청록 낮음 → 빨강·검정 높음) · 빨간 점: 실제 사고 지점 · 분홍 선: 기존 어린이 보호구역.'
+    en: 'Heatmap of predicted child-pedestrian accident probability across Busan road points. Colour: predicted accident probability (teal low → red/black high) · red dots: recorded accidents · pink lines: existing school zones.'
 figures:
   - src: '../../../assets/projects/school-zone-blindspots/spatial-cv-blocks.webp'
     alt: '부산 전역의 분석 지점을 투영 좌표(EPSG:5186, m) X축 순으로 10개 지리 블록으로 나눠 색으로 구분한 산점도. 축은 경도·위도가 아니라 미터 단위 투영 좌표입니다.'
