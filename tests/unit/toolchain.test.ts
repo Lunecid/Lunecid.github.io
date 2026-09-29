@@ -141,6 +141,21 @@ describe('toolchain', () => {
     expect(out.trim()).toBe(`/en/game/ ${legacyRedirects().length}`);
   });
 
+  it('P1-3: Markdown links go through rehype-base-links, and plain Node loads the plugin', async () => {
+    const { default: config } = await import('../../astro.config.mjs');
+    const { baseLinksHastPlugin } = await import('../../scripts/markdown/rehype-base-links.mjs');
+    // Astro 7 renders Markdown with Sätteri: the plugin is registered as a Sätteri hast plugin.
+    const processor = config.markdown?.processor as { name: string; options: { hastPlugins: unknown[] } } | undefined;
+    expect(processor?.name).toBe('satteri');
+    expect(processor?.options.hastPlugins).toEqual([baseLinksHastPlugin]);
+    const out = execFileSync(
+      process.execPath,
+      ['--input-type=module', '-e', "const m = await import('./scripts/markdown/rehype-base-links.mjs'); console.log(m.markdownHref('/stats/', 'en'))"],
+      { encoding: 'utf8' },
+    );
+    expect(out.trim()).toBe('/en/stats/');
+  });
+
   it('shared id lists', async () => {
     const types = await import('../../src/types');
     expect(types.CHARACTER_IDS).toEqual(['remielle', 'eula', 'mona']);

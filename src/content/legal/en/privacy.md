@@ -19,7 +19,7 @@ GoatCounter stores the following. Each item is kept only as totals per day or pe
 
 GoatCounter does not store IP addresses, the full User-Agent string, or any ID that identifies a visitor. To count a reload by the same person as one visit, it keeps a site + IP + User-Agent combination in server memory for up to eight hours, but it never writes this to its database. This site does not turn on the optional collection of individual pageviews.
 
-The aggregated statistics are public on the [Visitor stats](/en/stats/) page. GoatCounter data is stored on Hetzner servers in Finland and Germany. See the [GoatCounter privacy policy](https://www.goatcounter.com/privacy) for details.
+The aggregated statistics are public on the [Visitor stats](/stats/) page. GoatCounter data is stored on Hetzner servers in Finland and Germany. See the [GoatCounter privacy policy](https://www.goatcounter.com/privacy) for details.
 
 ## Hosting
 

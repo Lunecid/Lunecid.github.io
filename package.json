@@ -25,6 +25,7 @@
     "verify": "npm run check && npm test && npm run build && npm run build:pdf && npm run test:ops && npm run test:e2e && npm run test:links"
   },
   "dependencies": {
+    "@astrojs/markdown-satteri": "^0.4.2",
     "@astrojs/react": "^7.0.0",
     "@astrojs/sitemap": "^3.7.4",
     "@fontsource-variable/jetbrains-mono": "^5.3.0",

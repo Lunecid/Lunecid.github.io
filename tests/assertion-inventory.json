@@ -82,6 +82,7 @@
   "tests/ops/font-coverage.test.mjs": 27,
   "tests/ops/image-metadata.test.mjs": 5,
   "tests/ops/import-assets.test.mjs": 47,
+  "tests/ops/markdown-links.test.mjs": 6,
   "tests/ops/og-images.test.mjs": 9,
   "tests/ops/pdf-headroom.test.mjs": 18,
   "tests/ops/pdf.test.mjs": 32,
@@ -120,6 +121,7 @@
   "tests/unit/i18n.test.ts": 68,
   "tests/unit/images.test.ts": 23,
   "tests/unit/konami.test.ts": 9,
+  "tests/unit/links.test.ts": 32,
   "tests/unit/news-lib.test.ts": 14,
   "tests/unit/og-pages.test.ts": 31,
   "tests/unit/og.test.ts": 17,
@@ -128,6 +130,7 @@
   "tests/unit/public-assets.test.ts": 10,
   "tests/unit/publications-lib.test.ts": 56,
   "tests/unit/records-lib.test.ts": 68,
+  "tests/unit/rehype-base-links.test.ts": 19,
   "tests/unit/resume-model.test.ts": 76,
   "tests/unit/robots.test.ts": 6,
   "tests/unit/routes.test.ts": 110,
@@ -135,6 +138,6 @@
   "tests/unit/stats-hygiene.test.ts": 26,
   "tests/unit/style-rules.test.ts": 31,
   "tests/unit/tokens.test.ts": 55,
-  "tests/unit/toolchain.test.ts": 73,
+  "tests/unit/toolchain.test.ts": 76,
   "tests/unit/yaml-loader.test.ts": 28
 }

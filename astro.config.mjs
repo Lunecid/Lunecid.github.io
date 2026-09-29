@@ -3,6 +3,8 @@ import { defineConfig, fontProviders } from 'astro/config';
 import react from '@astrojs/react';
 import sitemap from '@astrojs/sitemap';
 import { fontSubsets } from './scripts/fonts/build.mjs';
+import { satteri } from '@astrojs/markdown-satteri';
+import { baseLinksHastPlugin } from './scripts/markdown/rehype-base-links.mjs';
 
 /** Print routes are PDF sources only: keep them out of the sitemap. @param {string} page absolute URL */
 export function sitemapFilter(page) {
@@ -24,6 +26,10 @@ export function sitemapSerialize(item) {
 export default defineConfig({
   site: 'https://lunecid.github.io',
   trailingSlash: 'always',
+  // P1-3 (R-5, A-5): Markdown links are base form; the plugin localizes shared pages and the chooser and fails the
+  // build on a version link (a collection entry renders once for both versions). Astro 7's Markdown processor is
+  // Sätteri, so the plugin is a Sätteri hast plugin (satteri() without options is Astro's default processor).
+  markdown: { processor: satteri({ hastPlugins: [baseLinksHastPlugin] }) },
   compressHTML: true, // Astro 7 default 'jsx' drops spaces between inline elements (stack-core G1)
   // 'always': every page's CSS is inlined into <head> instead of <link rel="stylesheet">. Measured after the
   // batch 2 font subsetting (the @font-face rules are now a few hundred bytes): 22.2-42.9 KB of inline CSS per
