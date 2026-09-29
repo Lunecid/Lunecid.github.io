@@ -14,7 +14,7 @@ Portfolio of **백성은 · Seongeun Baek**, game data analyst and researcher �
 | Home: HUD hero, main menu, featured projects, research highlight, patch notes, profile | `/game/` |
 | Research: publications, ongoing work, and the IEEE CoG 2026 paper page (abstract) | `/game/research/` |
 | Projects: three case studies and two project cards with a tag filter, plus public repositories | `/game/projects/` |
-| Records & CV: education, awards, certifications, skills, a job-requirements fit table, three résumé PDFs | `/game/records/` |
+| Records & CV: education, awards, certifications, skills, a job-requirements fit table, résumé PDFs (each version lists its own two résumés and the shared academic CV; five PDFs in all) | `/game/records/` |
 | Player log: favorite games and site achievements | `/game/player-log/` |
 | General version: the same home, research, projects and records pages without the game modules | `/data/`, `/data/research/`, `/data/projects/`, `/data/records/` |
 | Visitor stats (GoatCounter, no cookies), privacy policy, credits | `/stats/`, `/privacy/`, `/credits/` |
@@ -49,7 +49,7 @@ Lighthouse budgets (performance ≥ 0.90, accessibility ≥ 0.95, mobile and des
 - Project case studies: `src/content/projects/{ko,en}/*.md`
 - Research: `src/content/publications/`, `src/content/research/{ko,en}/`, `src/data/research-page.ts`, `src/data/research/cog-2026.ts`
 - Patch notes: `src/content/news/*.md` (dates are quoted `'YYYY-MM-DD'` strings)
-- Résumé data for the site and all three PDFs: `src/data/resume.yaml`; job-fit tables `src/data/jobfit.<id>.yaml` (one per version: `jobfit.game.yaml`; `jobfit.data.yaml` once the P3 survey lands); awards, favorites and achievements in `src/data/*.yaml`
+- Résumé data for the site and all five PDFs: `src/data/resume.yaml`; job-fit tables `src/data/jobfit.<id>.yaml` (one per version: `jobfit.game.yaml`; `jobfit.data.yaml` once the P3 survey lands); awards, favorites and achievements in `src/data/*.yaml`
 - UI strings: `src/i18n/ui.ts` (Korean and English keys must match; a test checks it)
 - Images: converted once into `src/assets/**` by `npm run assets` (sharp, WebP, metadata stripped) from a staging folder outside the repository (`ASSET_STAGING`, `LOL_ROOT`)
 

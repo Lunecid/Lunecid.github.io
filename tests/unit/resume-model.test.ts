@@ -2,14 +2,13 @@ import { readFileSync } from 'node:fs';
 import { basename, join } from 'node:path';
 import { z } from 'astro/zod';
 import { describe, expect, it } from 'vitest';
-import { SITE, type DocumentId } from '../../src/config';
+import { DOCUMENTS, SITE, type DocumentId } from '../../src/config';
 import { awardSchema, projectSchema, publicationSchema, resumeSchema } from '../../src/content/schemas';
 import { parseYamlDocument, parseYamlList } from '../../src/content/yaml-loader';
 import { formatPeriod } from '../../src/i18n/utils';
-import { ACADEMIC_EXTRAS, DOC_FLAG, DOC_LANG, buildResumeModel, type ResumeInputs } from '../../src/lib/resume-model';
+import { ACADEMIC_EXTRAS, DOC_FLAG, DOC_LANG, DOC_PROFILE, buildResumeModel, type ResumeInputs } from '../../src/lib/resume-model';
 import { listMarkdown, readFrontmatter } from '../content/helpers';
-import { getVariant, resolveIdentity } from '../../src/variants';
-import { gameVariant } from '../../src/variants/game';
+import { NEUTRAL_IDENTITY, getVariant, parseOrderItem, resolveIdentity, type OrderItem } from '../../src/variants';
 import { loadFactSource } from '../helpers/fact-source';
 
 const root = process.cwd();
@@ -23,21 +22,19 @@ const publications = listMarkdown(join(root, 'src/content/publications')).map((f
   id: basename(file, '.md'),
   data: publicationSchema(z.string()).parse(readFrontmatter(file)),
 }));
-const DOCS: DocumentId[] = ['resume-ko', 'resume-en', 'cv-academic'];
+const DOCS = Object.keys(DOCUMENTS) as DocumentId[];
+const facts = loadFactSource();
 
+function identityOf(doc: DocumentId): { headline: string; tagline: string } {
+  const profile = DOC_PROFILE[doc];
+  const lang = DOC_LANG[doc];
+  const game = resolveIdentity(getVariant('game'), lang, facts);
+  if (profile.identity === 'academic') return { headline: NEUTRAL_IDENTITY.headline[lang], tagline: game.tagline };
+  const own = resolveIdentity(getVariant(profile.identity), lang, facts);
+  return { headline: own.headline, tagline: own.tagline };
+}
 function inputs(doc: DocumentId, over: Partial<ResumeInputs> = {}): ResumeInputs {
-  return {
-    resume,
-    projects,
-    publications,
-    awards,
-    doc,
-    today: '2026-09-26',
-    academicExtras: ACADEMIC_EXTRAS,
-    identity: (() => { const i = resolveIdentity(gameVariant, DOC_LANG[doc], loadFactSource()); return { headline: i.headline, tagline: i.tagline }; })(),
-    order: getVariant('game').orders.pdfProjectOrder,
-    ...over,
-  };
+  return { resume, projects, publications, awards, doc, today: '2026-09-26', academicExtras: ACADEMIC_EXTRAS, identity: identityOf(doc), order: getVariant(DOC_PROFILE[doc].order).orders.pdfProjectOrder, ...over };
 }
 
 describe('buildResumeModel', () => {
@@ -83,7 +80,7 @@ describe('buildResumeModel', () => {
     expect(cv.projects[0]?.title).toBe(projects.find((p) => p.slug === 'youth-startup-location' && p.lang === 'en')?.data.title);
   });
 
-  it('A-17: the game pdfProjectOrder yields exactly the old end-month (newest first) order in every document', () => {
+  it('A-17: the game pdfProjectOrder yields exactly the old end-month (newest first) order in every game document', () => {
     const endOf = (title: string, lang: 'ko' | 'en'): string => {
       const pub = publications.find((x) => (x.data.shortTitle?.[lang] ?? x.data.title) === title);
       if (pub && resume.publicationProject?.pub === pub.id) return resume.publicationProject.period.end;
@@ -91,11 +88,34 @@ describe('buildResumeModel', () => {
       if (!p) throw new Error(title);
       return p.data.period.end;
     };
-    for (const doc of DOCS) {
+    for (const doc of DOCS.filter((d) => DOC_PROFILE[d].order === 'game')) {
       const m = buildResumeModel(inputs(doc));
       const lang = DOC_LANG[doc];
       const ends = m.projects.map((p) => endOf(p.title, lang));
       expect(ends, doc).toEqual([...ends].sort((a, b) => (a < b ? 1 : a > b ? -1 : 0)));
+    }
+  });
+
+  it('data documents follow the data pdfProjectOrder, flagged rows only (spec §4.2)', () => {
+    const dataDocs = DOCS.filter((d) => DOC_PROFILE[d].order === 'data');
+    expect(dataDocs).toEqual(['resume-data-ko', 'resume-data-en']);
+    const titleOf = (item: OrderItem, lang: 'ko' | 'en'): string | undefined => {
+      const ref = parseOrderItem(item);
+      if (ref.kind === 'pub') {
+        const d = publications.find((x) => x.id === ref.id)?.data;
+        return d ? (d.shortTitle?.[lang] ?? d.title) : undefined;
+      }
+      return projects.find((p) => p.slug === ref.slug && p.lang === lang)?.data.title;
+    };
+    const flagged = (item: OrderItem, flag: 'ko' | 'en' | 'academic'): boolean => {
+      const ref = parseOrderItem(item);
+      if (ref.kind === 'pub') return resume.publicationProject?.pub === ref.id && resume.publicationProject.pdf[flag];
+      return resume.projects.find((r) => r.ref === ref.slug)?.pdf[flag] === true;
+    };
+    for (const doc of dataDocs) {
+      const expected = getVariant('data').orders.pdfProjectOrder.filter((item) => flagged(item, DOC_FLAG[doc])).map((item) => titleOf(item, DOC_LANG[doc]));
+      expect(expected.length, doc).toBeGreaterThan(0);
+      expect(buildResumeModel(inputs(doc)).projects.map((p) => p.title), doc).toEqual(expected);
     }
   });
 
@@ -162,12 +182,43 @@ describe('buildResumeModel', () => {
     expect(buildResumeModel(inputs('resume-en')).education.map((e) => e.gpa)).toEqual(resume.education.filter((e) => e.pdf.en).map((e) => `${e.gpa.value}/${e.gpa.scale}`));
   });
 
-  it('tagline in all three docs', () => {
+  it('tagline in every document comes from the document\'s identity', () => {
     for (const doc of DOCS) {
       const m = buildResumeModel(inputs(doc));
-      expect(m.tagline).toBe(resolveIdentity(gameVariant, DOC_LANG[doc], loadFactSource()).tagline);
+      expect(m.tagline, doc).toBe(identityOf(doc).tagline);
       expect(m.tagline.length).toBeGreaterThan(10);
     }
+  });
+
+  it('§1.10: DOC_PROFILE per document and the header site link (A-11, A-12)', () => {
+    expect(DOC_PROFILE).toEqual({
+      'resume-ko': { identity: 'game', order: 'game', site: { variant: 'game', base: '/' } },
+      'resume-en': { identity: 'game', order: 'game', site: { variant: 'game', base: '/' } },
+      'cv-academic': { identity: 'academic', order: 'game', site: { variant: 'game', base: '/research/' } },
+      'resume-data-ko': { identity: 'data', order: 'data', site: { variant: 'data', base: '/' } },
+      'resume-data-en': { identity: 'data', order: 'data', site: { variant: 'data', base: '/' } },
+    });
+    expect(DOC_LANG['resume-data-ko']).toBe('ko');
+    expect(DOC_FLAG['resume-data-en']).toBe('en');
+    const site = (doc: DocumentId) => buildResumeModel(inputs(doc)).header.site;
+    expect(site('resume-ko')).toEqual({ href: `${SITE.url}/game/`, label: 'lunecid.github.io/game' });
+    expect(site('resume-en')).toEqual({ href: `${SITE.url}/en/game/`, label: 'lunecid.github.io/en/game' });
+    expect(site('cv-academic')).toEqual({ href: `${SITE.url}/en/game/research/`, label: 'lunecid.github.io/en/game/research' });
+    expect(site('resume-data-ko')).toEqual({ href: `${SITE.url}/data/`, label: 'lunecid.github.io/data' });
+    expect(site('resume-data-en')).toEqual({ href: `${SITE.url}/en/data/`, label: 'lunecid.github.io/en/data' });
+  });
+
+  it('data résumés: data headline and tagline (B-12), data order, case-study links stay in the data version', () => {
+    const ko = buildResumeModel(inputs('resume-data-ko'));
+    expect(ko.header.headline).toBe('데이터 분석가');
+    expect(ko.tagline).toBe('질문을 데이터로 바꾸고, 결과를 결정으로 잇습니다.');
+    expect(ko.projects[0]?.title).toBe(projects.find((p) => p.slug === 'school-zone-blindspots' && p.lang === 'ko')?.data.title);
+    const en = buildResumeModel(inputs('resume-data-en'));
+    expect(en.header.headline).toBe('Data Analyst');
+    for (const p of en.projects) if (p.caseStudyHref) expect(p.caseStudyHref, p.title).toMatch(new RegExp(`^${SITE.url}/en/data/`));
+    const academic = buildResumeModel(inputs('cv-academic'));
+    expect(academic.header.headline).toBe('Researcher · Data Analyst'); // B-11
+    expect(academic.tagline).toBe(resolveIdentity(getVariant('game'), 'en', facts).tagline); // A-11
   });
 
   it('resume-en fits ≤4 projects; the CoG paper (first) has 2–3 bullets, every other project has ≤2', () => {

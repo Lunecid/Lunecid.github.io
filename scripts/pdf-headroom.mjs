@@ -7,6 +7,8 @@
 export const HEADROOM_BUDGETS = /** @type {Readonly<Record<string, HeadroomBudget>>} */ ({
   'resume-en': { pages: 1, minFreePercent: 8 },
   'resume-ko': { pages: 2, minFreePercent: 5 },
+  'resume-data-en': { pages: 1, minFreePercent: 8 },
+  'resume-data-ko': { pages: 2, minFreePercent: 5 },
 });
 
 /**

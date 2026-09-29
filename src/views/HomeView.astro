@@ -13,7 +13,7 @@ import type { Lang } from '../i18n/ui';
 import { t } from '../i18n/utils';
 import { homeHref, pageHref } from '../lib/links';
 import { educationLine } from '../lib/records';
-import { CV_HREF, SITE } from '../config';
+import { DOCUMENTS, SITE } from '../config';
 import { heroCopy, mainMenuCopy, splitTagline } from '../data/copy/hero';
 import { homeCopy } from '../data/copy/home';
 import { HERO_SIZES, characterCredit, characters, getStageCharacters } from '../lib/characters';
@@ -100,7 +100,7 @@ const location = lang === 'ko' ? `${profile.location.ko} · ${profile.location.e
     contact={{
       email: SITE.email,
       github: SITE.githubUrl,
-      cvHref: CV_HREF[lang],
+      cvHref: DOCUMENTS[v.documents.resume[lang]],
       cvLabel: hero.contact.cvLabel,
       cvDocLabel: t(lang, 'nav.cvResume'),
       jobFitHref: pageHref(hero.contact.jobFitHref, ctx),
@@ -130,7 +130,7 @@ const location = lang === 'ko' ? `${profile.location.ko} · ${profile.location.e
     education={education}
     skills={resumeData.skills.primary.map((skill) => skill.name)}
     records={home.helloRecords}
-    contact={{ email: SITE.email, github: SITE.githubUrl, cvHref: CV_HREF[lang], cvDocLabel: t(lang, 'nav.cvResume') }}
+    contact={{ email: SITE.email, github: SITE.githubUrl, cvHref: DOCUMENTS[v.documents.resume[lang]], cvDocLabel: t(lang, 'nav.cvResume') }}
     ids={resumeData.researchIds}
   />
 </VariantLayout>

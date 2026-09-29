@@ -7,7 +7,7 @@ import { resumeSchema } from '../../src/content/schemas';
 import { parseYamlDocument } from '../../src/content/yaml-loader';
 import type { Lang } from '../../src/i18n/ui';
 import { readSource, renderAstro } from './helpers';
-import { resolveIdentity } from '../../src/variants';
+import { getVariant, resolveIdentity } from '../../src/variants';
 import { gameVariant } from '../../src/variants/game';
 import { loadFactSource } from '../helpers/fact-source';
 import type { VariantId } from '../../src/variants/ids';
@@ -15,6 +15,11 @@ import type { VariantId } from '../../src/variants/ids';
 const HAS_GHOST = existsSync(join(process.cwd(), 'src/assets/ghost/miku-v6.webp')); // GhostArt renders nothing without its asset
 const resume = resumeSchema.parse(parseYamlDocument(readFileSync(resolve(process.cwd(), 'src/data/resume.yaml'), 'utf8'), 'resume'));
 const identity = (lang: Lang) => resolveIdentity(gameVariant, lang, loadFactSource());
+const gameDocs = getVariant('game').documents.list.map((id) => {
+  const d = resume.documents.find((x) => x.id === id);
+  if (!d) throw new Error(`no document ${id}`);
+  return d;
+});
 const render = (lang: Lang, variant: VariantId = 'game') =>
   renderAstro(RecordsHead, {
     props: {
@@ -24,7 +29,8 @@ const render = (lang: Lang, variant: VariantId = 'game') =>
       headline: identity(lang).headline,
       status: identity(lang).status,
       tagline: identity(lang).tagline,
-      documents: resume.documents.map((d) => ({ id: d.id, label: d.label[lang], href: DOCUMENTS[d.id] })),
+      documents: gameDocs.map((d) => ({ id: d.id, label: d.label[lang], href: DOCUMENTS[d.id] })),
+      primary: getVariant('game').documents.resume[lang], // = lang === 'ko' ? resume-ko : resume-en
       contact: { email: SITE.email, github: SITE.githubUrl, dacon: SITE.daconUrl },
       ids: resume.researchIds,
     },
@@ -51,13 +57,13 @@ describe('RecordsHead.astro (P2-19: a short head, not the home profile again)', 
   it('the three PDFs as cut-corner buttons with D-7 labels, the page-language résumé filled', async () => {
     const ko = await render('ko');
     const buttons = [...ko.matchAll(/<a class="([^"]+)" href="([^"]+)" type="application\/pdf" title="([^"]+)"/g)];
-    expect(buttons.map((m) => m[2])).toEqual(Object.values(DOCUMENTS));
+    expect(buttons.map((m) => m[2])).toEqual(getVariant('game').documents.list.map((id) => DOCUMENTS[id]));
     for (const [, cls] of buttons) expect(cls).toMatch(/\bbtn\b.*\bcut\b/);
     expect(buttons.map((m) => m[1].includes('btn--fill'))).toEqual([true, false, false]);
     expect(buttons.slice(1).every((m) => m[1].includes('btn--line'))).toBe(true);
     const en = await render('en');
     expect([...en.matchAll(/<a class="([^"]+)" href="[^"]+" type="application\/pdf"/g)].map((m) => m[1].includes('btn--fill'))).toEqual([false, true, false]);
-    expect(buttons.map((m) => m[3])).toEqual(resume.documents.map((d) => `${d.label.ko} · PDF`));
+    expect(buttons.map((m) => m[3])).toEqual(gameDocs.map((d) => `${d.label.ko} · PDF`));
   });
 
   it('an in-page bar: 학력 · 논문 · 수상 · 기술 · 지원 요건 대응 · PDF', async () => {

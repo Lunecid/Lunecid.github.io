@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import Hero from '../../src/components/hud/Hero.astro';
-import { CV_HREF, SITE } from '../../src/config';
+import { DOCUMENTS, SITE } from '../../src/config';
 import { awardSchema } from '../../src/content/schemas';
 import { parseYamlList } from '../../src/content/yaml-loader';
 import { heroCopy, mainMenuCopy, splitTagline } from '../../src/data/copy/hero';
@@ -55,7 +55,7 @@ function props(overrides: Record<string, unknown> = {}): Record<string, unknown>
     contact: {
       email: SITE.email,
       github: SITE.githubUrl,
-      cvHref: CV_HREF.ko,
+      cvHref: DOCUMENTS['resume-ko'],
       cvLabel: copy.contact.cvLabel,
       cvDocLabel: t('ko', 'nav.cvResume'),
       jobFitHref: built(copy.contact.jobFitHref),
@@ -145,7 +145,7 @@ describe('Hero.astro', () => {
         contact: {
           email: SITE.email,
           github: SITE.githubUrl,
-          cvHref: CV_HREF.en,
+          cvHref: DOCUMENTS['resume-en'],
           cvLabel: 'CV (PDF)',
           cvDocLabel: t('en', 'nav.cvResume'),
           jobFitHref: '/en/game/records/#job-fit',

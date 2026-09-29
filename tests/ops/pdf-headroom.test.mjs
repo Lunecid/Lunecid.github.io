@@ -38,8 +38,10 @@ test('assertMinFree with CI floor (0) only rejects real overflow', () => {
   assert.doesNotThrow(() => assertMinFree('resume-en', 3, 0));
 });
 
-test('HEADROOM_BUDGETS cover the two résumés', () => {
+test('HEADROOM_BUDGETS cover the four résumés', () => {
   assert.deepEqual(HEADROOM_BUDGETS['resume-en'], { pages: 1, minFreePercent: 8 });
   assert.deepEqual(HEADROOM_BUDGETS['resume-ko'], { pages: 2, minFreePercent: 5 });
+  assert.deepEqual(HEADROOM_BUDGETS['resume-data-en'], { pages: 1, minFreePercent: 8 });
+  assert.deepEqual(HEADROOM_BUDGETS['resume-data-ko'], { pages: 2, minFreePercent: 5 });
   assert.equal(HEADROOM_BUDGETS['cv-academic'], undefined);
 });

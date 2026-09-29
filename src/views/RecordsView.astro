@@ -16,11 +16,11 @@ import DocumentList from '../components/records/DocumentList.astro';
 import ImageViewer from '../islands/ImageViewer';
 import { buildCertificate } from '../lib/certificates';
 import type { Certificate } from '../lib/certificates';
-import { getAwards, getFactSource, getJobfit, getProjects, getPublications, getResume } from '../lib/portfolio';
+import { getAwards, getDocuments, getFactSource, getJobfit, getProjects, getPublications, getResume } from '../lib/portfolio';
 import { projectSlug } from '../lib/projects';
 import { toPaperCard } from '../lib/publications';
 import { awardItems, credentialItems, projectSummaryItems, skillGroups, todayIso, type AwardCertMeta } from '../lib/records';
-import { DOCUMENTS, SITE } from '../config';
+import { SITE } from '../config';
 import type { Lang } from '../i18n/ui';
 import { ui } from '../i18n/ui';
 import { t } from '../i18n/utils';
@@ -77,7 +77,12 @@ const titles = {
 };
 const credentials = credentialItems(resume, lang, todayIso());
 const skills = skillGroups(resume.skills, ctx, titles);
-const documents = resume.documents.map((doc) => ({ id: doc.id, label: doc.label[lang], href: DOCUMENTS[doc.id] }));
+const all = await getDocuments();
+const documents = v.documents.list.map((id) => {
+  const d = all.find((x) => x.id === id);
+  if (!d) throw new Error(`records: no document ${id}`);
+  return { id: d.id, label: d.label[lang], href: d.href };
+});
 const meta = pageMetaFor('records', lang, variant, facts);
 ---
 <VariantLayout lang={lang} variant={variant} title={meta.title} description={meta.description} page="records" section="records" sectionIndex>
@@ -91,6 +96,7 @@ const meta = pageMetaFor('records', lang, variant, facts);
     status={identity.status}
     tagline={identity.tagline}
     documents={documents}
+    primary={v.documents.resume[lang]}
     contact={{ email: SITE.email, github: SITE.githubUrl, dacon: SITE.daconUrl }}
     ids={resume.researchIds}
   />

@@ -4,7 +4,7 @@ import '../styles/base.css';
 import '../styles/hud.css';
 import '../styles/read.css';
 import { getCollection } from 'astro:content';
-import { ACADEMIC_CV_HREF, CV_HREF } from '../config';
+import { DOCUMENTS } from '../config';
 import type { NavSection, NoticeKey, PageId } from '../types';
 import type { Lang } from '../i18n/ui';
 import { otherLang, switchLocalePath, t } from '../i18n/utils';
@@ -64,8 +64,8 @@ const sfx = sound.sfx && on('sfx');
 // everywhere else the résumé in the page language.
 const cv =
   section === 'research'
-    ? { href: ACADEMIC_CV_HREF, label: t(lang, 'nav.cvAcademic') }
-    : { href: CV_HREF[lang], label: t(lang, 'nav.cvResume') };
+    ? { href: DOCUMENTS[v.documents.academic], label: t(lang, 'nav.cvAcademic') }
+    : { href: DOCUMENTS[v.documents.resume[lang]], label: t(lang, 'nav.cvResume') };
 const defs: AchievementDef[] = on('achievements') ? availableAchievements((await getCollection('achievements')).map((e) => e.data), { bgm }) : [];
 const achievementLabels = {
   region: t(lang, 'achievement.region'),

@@ -1,7 +1,8 @@
-import { test, expect, gamePath } from './helpers';
+import { test, expect, dataPath, gamePath } from './helpers';
 import { DOCUMENTS } from '../../src/config';
+import { getVariant } from '../../src/variants';
 
-test('every DOCUMENTS PDF is served as application/pdf and linked from /game/records/', async ({ page, request }) => {
+test('every DOCUMENTS PDF is served as application/pdf and each records page links its version\'s documents', async ({ page, request }) => {
   const hrefs = Object.values(DOCUMENTS);
   expect(hrefs).toHaveLength(Object.keys(DOCUMENTS).length);
   for (const href of hrefs) {
@@ -10,10 +11,16 @@ test('every DOCUMENTS PDF is served as application/pdf and linked from /game/rec
     expect(res.headers()['content-type'], href).toContain('application/pdf');
     expect((await res.body()).subarray(0, 5).toString('latin1'), `${href} starts with %PDF-`).toBe('%PDF-');
   }
-  for (const records of [gamePath('/records/'), gamePath('/records/', 'en')]) {
+  const listed = [
+    { variant: 'game', routes: [gamePath('/records/'), gamePath('/records/', 'en')] },
+    { variant: 'data', routes: [dataPath('/records/'), dataPath('/records/', 'en')] },
+  ] as const;
+  for (const { variant, routes } of listed) for (const records of routes) {
     const response = await page.goto(records);
     expect(response?.status(), records).toBe(200);
-    for (const href of hrefs) {
+    const own = getVariant(variant).documents.list.map((id) => DOCUMENTS[id]);
+    expect(own, variant).toHaveLength(3);
+    for (const href of own) {
       await expect(page.locator(`#documents a[href="${href}"]`).first(), `${records} links ${href}`).toBeVisible();
     }
   }

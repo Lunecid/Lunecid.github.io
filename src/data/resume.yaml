@@ -33,6 +33,7 @@ profile:
 
 # 이력서 PDF 파일. CV 버튼과 기록 페이지의 PDF 목록이 이 값을 쓴다.
 # 라벨은 어떤 언어·쪽수의 문서인지 분명히 밝힌다(batch 3b P2-32: "Résumé (1 page)"는 국문 이력서와 헷갈렸다).
+# 게임 버전은 resume-ko/-en, 일반 버전은 resume-data-ko/-en을 쓴다(src/variants/*.ts documents).
 documents:
   - id: resume-ko
     label: { ko: 국문 이력서 (2쪽), en: Korean résumé (2 pages) }
@@ -43,6 +44,12 @@ documents:
   - id: cv-academic
     label: { ko: Academic CV, en: Academic CV }
     href: /cv/seongeun-baek-cv-academic.pdf
+  - id: resume-data-ko
+    label: { ko: 국문 이력서 (2쪽), en: Korean résumé (2 pages) }
+    href: /cv/seongeun-baek-resume-data-ko.pdf
+  - id: resume-data-en
+    label: { ko: 영문 이력서 (1쪽), en: English résumé (1 page) }
+    href: /cv/seongeun-baek-resume-data-en.pdf
 
 education:
   - id: ms-pnu

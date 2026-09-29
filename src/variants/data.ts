@@ -31,8 +31,7 @@ export const dataVariant: Variant = {
     pdfProjectOrder: ['project:school-zone-blindspots', 'project:youth-startup-location', 'project:kickick-park', 'pub:cog-2026-engagement'],
   },
   jobfit: 'data',
-  // CA-16: resume-data-ko/-en become DocumentIds in P1-17, which switches these.
-  documents: gameVariant.documents,
+  documents: { resume: { ko: 'resume-data-ko', en: 'resume-data-en' }, academic: 'cv-academic', list: ['resume-data-ko', 'resume-data-en', 'cv-academic'] },
   nav: [
     { key: 'research', base: BASE_PATH.research },
     { key: 'projects', base: BASE_PATH.projects },

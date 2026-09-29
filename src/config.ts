@@ -13,15 +13,17 @@ export const DOCUMENTS = {
   'resume-ko': '/cv/seongeun-baek-resume-ko.pdf',
   'resume-en': '/cv/seongeun-baek-resume-en.pdf',
   'cv-academic': '/cv/seongeun-baek-cv-academic.pdf',
+  // P1-17 (§10.4): the general version's résumés; file names keep the version apart (links already sent stay valid).
+  'resume-data-ko': '/cv/seongeun-baek-resume-data-ko.pdf',
+  'resume-data-en': '/cv/seongeun-baek-resume-data-en.pdf',
 } as const;
 export type DocumentId = keyof typeof DOCUMENTS;
-export const CV_HREF: { readonly ko: string; readonly en: string } = { ko: DOCUMENTS['resume-ko'], en: DOCUMENTS['resume-en'] };
-/** D-7: the CV button on the research pages (/research/, the paper page and their /en/ mirrors) opens this PDF. */
-export const ACADEMIC_CV_HREF: string = DOCUMENTS['cv-academic'];
 export const PRINT_ROUTES: Readonly<Record<DocumentId, string>> = {
   'resume-ko': '/print/resume-ko/',
   'resume-en': '/print/resume-en/',
   'cv-academic': '/print/cv-academic/',
+  'resume-data-ko': '/print/resume-data-ko/',
+  'resume-data-en': '/print/resume-data-en/',
 };
 
 export const MEDIA = {

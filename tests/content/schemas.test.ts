@@ -70,6 +70,8 @@ const validResume = {
     { id: 'resume-ko', label: L('국문 이력서', 'Korean résumé'), href: '/cv/seongeun-baek-resume-ko.pdf' },
     { id: 'resume-en', label: L('영문 Resume', 'Résumé'), href: '/cv/seongeun-baek-resume-en.pdf' },
     { id: 'cv-academic', label: L('Academic CV', 'Academic CV'), href: '/cv/seongeun-baek-cv-academic.pdf' },
+    { id: 'resume-data-ko', label: L('국문 이력서', 'Korean résumé'), href: '/cv/seongeun-baek-resume-data-ko.pdf' },
+    { id: 'resume-data-en', label: L('영문 Resume', 'Résumé'), href: '/cv/seongeun-baek-resume-data-en.pdf' },
   ],
   education: [{ id: 'ms-pnu', school: L('부산대학교', 'Pusan National University'), degree: L('석사', 'M.S.'), start: '2025-03', end: '2027-02', expected: true, gpa: { value: '4.0', scale: '4.5' }, pdf: flags }],
   publications: [{ ref: 'cog-2026-engagement', pdf: flags }],
@@ -215,10 +217,12 @@ describe('favoriteGameSchema', () => {
 });
 
 describe('resumeSchema', () => {
-  it('resumeSchema requires school email and 3 documents with /cv/*.pdf hrefs', () => {
+  it('resumeSchema requires school email and one document per DOCUMENTS key with /cv/*.pdf hrefs', () => {
     expect(resumeSchema.safeParse(validResume).success).toBe(true);
     expect(resumeSchema.safeParse({ ...validResume, profile: { ...validResume.profile, email: 'someone@example.com' } }).success).toBe(false);
-    expect(resumeSchema.safeParse({ ...validResume, documents: validResume.documents.slice(0, 2) }).success).toBe(false);
+    expect(resumeSchema.safeParse({ ...validResume, documents: validResume.documents.slice(0, 4) }).success).toBe(false);
+    const unknownId = validResume.documents.map((d) => (d.id === 'resume-data-en' ? { ...d, id: 'resume-xx' } : d));
+    expect(resumeSchema.safeParse({ ...validResume, documents: unknownId }).success).toBe(false);
     const wrongHref = validResume.documents.map((d) => (d.id === 'resume-en' ? { ...d, href: '/files/resume.pdf' } : d));
     expect(resumeSchema.safeParse({ ...validResume, documents: wrongHref }).success).toBe(false);
     expect(resumeSchema.parse({ ...validResume, profile: { ...validResume.profile, tagline: L('x', 'y') } }).profile).not.toHaveProperty('tagline');

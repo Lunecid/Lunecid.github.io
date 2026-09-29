@@ -3,12 +3,14 @@
 // tests pass z.string().
 import { z } from 'astro/zod';
 import { ACHIEVEMENT_TRIGGERS, AWARD_LEVELS, CERTIFICATE_IDS, CHARACTER_IDS, GAME_IDS, JOBFIT_IDS, JOBFIT_STATUSES, NOTICE_KEYS, type JobfitId } from '../types';
+import { DOCUMENTS, type DocumentId } from '../config';
 import { TAG_KEYS, TAGS_EN, TAGS_KO } from './tags';
 
 export const isoMonth = z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/, 'YYYY-MM, quoted');
 export const isoDate = z.string().regex(/^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/, 'YYYY-MM-DD, quoted');
 export const localized = z.object({ ko: z.string().min(1), en: z.string().min(1) });
 export const pdfFlags = z.object({ ko: z.boolean(), en: z.boolean(), academic: z.boolean() });
+const DOCUMENT_IDS = Object.keys(DOCUMENTS) as [DocumentId, ...DocumentId[]];
 const hexColor = z.string().regex(/^#[0-9A-Fa-f]{6}$/);
 const slug = z.string().regex(/^[a-z0-9-]+$/);
 /** A fact key inside `facts` (token segment grammar, contract §3.1): camelCase allowed, e.g. matchesShort. */
@@ -155,7 +157,7 @@ export const resumeSchema = z.object({
     site: z.url(),
     researchInterests: z.object({ pdf: pdfFlags, items: z.array(localized).min(1) }),
   }),
-  documents: z.array(z.object({ id: z.enum(['resume-ko', 'resume-en', 'cv-academic']), label: localized, href: z.string().regex(/^\/cv\/[a-z0-9-]+\.pdf$/) })).length(3),
+  documents: z.array(z.object({ id: z.enum(DOCUMENT_IDS), label: localized, href: z.string().regex(/^\/cv\/[a-z0-9-]+\.pdf$/) })).length(DOCUMENT_IDS.length),
   education: z.array(z.object({
     id: slug, school: localized, degree: localized, start: isoMonth, end: isoMonth, expected: z.boolean(),
     gpa: z.object({ value: z.string(), scale: z.string() }),

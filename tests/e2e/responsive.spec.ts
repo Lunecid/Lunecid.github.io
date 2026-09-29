@@ -1,5 +1,6 @@
-import { test, expect, builtRoutes, horizontalOverflow, settle, textBelow12px } from './helpers';
-import { CV_HREF } from '../../src/config';
+import { test, expect, basePathOf, builtRoutes, horizontalOverflow, settle, textBelow12px } from './helpers';
+import { DOCUMENTS } from '../../src/config';
+import { getVariant } from '../../src/variants';
 
 test.describe('no horizontal overflow on every route', () => {
   for (const route of builtRoutes()) {
@@ -23,10 +24,11 @@ test.describe('no rendered text below 12px', () => {
 });
 
 test.describe('identity, CV link and evidence within two screens', () => {
-  for (const route of ['/game/', '/en/game/']) {
+  for (const route of ['/game/', '/en/game/', '/data/', '/en/data/']) {
     test(route, async ({ page }, testInfo) => {
       test.skip(testInfo.project.name === 'mobile-320', 'the two-screen rule is asserted at 375 px and wider');
-      const cv = route === '/en/game/' ? CV_HREF.en : CV_HREF.ko;
+      const { lang, variant } = basePathOf(route);
+      const cv = DOCUMENTS[getVariant(variant!).documents.resume[lang]];
       await page.goto(route, { waitUntil: 'networkidle' });
       await settle(page);
       await page.evaluate(() => window.scrollTo(0, 0));

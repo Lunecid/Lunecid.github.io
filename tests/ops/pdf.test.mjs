@@ -6,7 +6,7 @@ import { join } from 'node:path';
 import { test } from 'node:test';
 import yaml from 'js-yaml';
 import { PDFDocument, PDFName } from 'pdf-lib';
-import { DOCUMENTS, SITE } from '../../src/config.ts';
+import { DOCUMENTS, PRINT_ROUTES, SITE } from '../../src/config.ts';
 
 const IDS = /** @type {(keyof typeof DOCUMENTS)[]} */ (Object.keys(DOCUMENTS));
 const pdfPath = (id) => join('dist', ...DOCUMENTS[id].split('/').filter(Boolean));
@@ -32,6 +32,8 @@ const DOC = {
   'resume-ko': { lang: 'ko', flag: 'ko', records: 'dist/game/records/index.html' },
   'resume-en': { lang: 'en', flag: 'en', records: 'dist/en/game/records/index.html' },
   'cv-academic': { lang: 'en', flag: 'academic', records: 'dist/en/game/records/index.html' },
+  'resume-data-ko': { lang: 'ko', flag: 'ko', records: 'dist/data/records/index.html' },
+  'resume-data-en': { lang: 'en', flag: 'en', records: 'dist/en/data/records/index.html' },
 };
 
 /** Every /URI action of every /Link annotation on every page, in reading order (pdf-lib low-level API). */
@@ -61,14 +63,15 @@ test('importing build-pdfs performs no work', async () => {
   const mod = await import('../../scripts/build-pdfs.mjs');
   assert.ok(Date.now() - started < 5000, 'import must not start a server or a browser');
   assert.deepEqual(mtimes(), before);
-  assert.deepEqual(mod.pdfJobs('dist').map((j) => j.route), ['/print/resume-ko/', '/print/resume-en/', '/print/cv-academic/']);
+  assert.deepEqual(mod.pdfJobs('dist').map((j) => j.route), Object.keys(DOCUMENTS).map((id) => PRINT_ROUTES[id]));
   assert.deepEqual(
     mod.pdfJobs('dist').map((j) => j.out.replace(/\\/g, '/')),
-    ['dist/cv/seongeun-baek-resume-ko.pdf', 'dist/cv/seongeun-baek-resume-en.pdf', 'dist/cv/seongeun-baek-cv-academic.pdf'],
+    Object.values(DOCUMENTS).map((h) => `dist${h}`),
   );
+  assert.equal(mod.pdfJobs('dist').length, Object.keys(DOCUMENTS).length);
 });
 
-test('all three PDFs exist after build:pdf', () => {
+test('every document PDF exists after build:pdf', () => {
   for (const id of IDS) {
     const file = pdfPath(id);
     assert.ok(existsSync(file), `${file} missing: run npm run build && npm run build:pdf first`);
@@ -76,16 +79,11 @@ test('all three PDFs exist after build:pdf', () => {
   }
 });
 
-test('page counts: resume-en 1, resume-ko 2, cv-academic 1–4 (console warning below 2)', () => {
-  const en = pageCount(pdfPath('resume-en'));
-  const ko = pageCount(pdfPath('resume-ko'));
+test('page counts: both Korean résumés 2 pages, both English résumés 1 page, the Academic CV 1–4', () => {
+  for (const id of ['resume-ko', 'resume-data-ko']) assert.equal(pageCount(pdfPath(id)), 2, `${id} has ${pageCount(pdfPath(id))} pages`);
+  for (const id of ['resume-en', 'resume-data-en']) assert.equal(pageCount(pdfPath(id)), 1, `${id} has ${pageCount(pdfPath(id))} pages`);
   const cv = pageCount(pdfPath('cv-academic'));
-  assert.equal(en, 1, `resume-en has ${en} pages`);
-  // batch 3b P1-20/P2-32: exactly 2, not "at most 2" — the CoG paper is now the first project, and kbo-attendance/
-  // seoul-apartment-automl are merged into one line specifically to keep this at 2 pages.
-  assert.equal(ko, 2, `resume-ko has ${ko} pages`);
   assert.ok(cv >= 1 && cv <= 4, `cv-academic has ${cv} pages`);
-  if (cv < 2) console.warn(`warning: cv-academic renders ${cv} page (spec §2 asks for 2–4; accepted per §8 #21 — record it in the answers file)`);
 });
 
 test('PDF metadata: Author is set, Creator/Producer do not advertise HeadlessChrome (batch 3b P2-32)', { skip: popplerSkip }, () => {
@@ -128,7 +126,7 @@ test('↗ page links (paper page, case study, project summary; resume-en, cv-aca
   const en = await extractLinks(pdfPath('resume-en'));
   const academic = await extractLinks(pdfPath('cv-academic'));
   const ko = await extractLinks(pdfPath('resume-ko'));
-  const caseStudyLinks = [...en, ...academic].filter((href) => href.startsWith(SITE.url) && !href.includes('/records/') && href !== `${SITE.url}/`);
+  const caseStudyLinks = [...en, ...academic].filter((href) => href.startsWith(SITE.url) && !href.includes('/records/') && !/^https:\/\/lunecid\.github\.io\/(en\/)?(game|data)\/$/.test(href) && !href.endsWith('/game/research/'));
   assert.ok(caseStudyLinks.length >= 6, `expected several case-study links, got ${caseStudyLinks.length}`);
   for (const href of caseStudyLinks) {
     const pathname = href.slice(SITE.url.length);
@@ -137,6 +135,29 @@ test('↗ page links (paper page, case study, project summary; resume-en, cv-aca
   }
   // resume-ko never renders a case-study link (P2-32 scopes it to English résumé + Academic CV).
   assert.ok(ko.every((href) => !href.startsWith(`${SITE.url}/en/`) && !href.startsWith(`${SITE.url}/game/projects/`) && !href.startsWith(`${SITE.url}/game/research/`)));
+});
+
+test('§1.10 / A-12: the header site link of every PDF goes to its version (the Academic CV to the game research page)', async () => {
+  const expected = {
+    'resume-ko': `${SITE.url}/game/`, 'resume-en': `${SITE.url}/en/game/`, 'cv-academic': `${SITE.url}/en/game/research/`,
+    'resume-data-ko': `${SITE.url}/data/`, 'resume-data-en': `${SITE.url}/en/data/`,
+  };
+  for (const [id, href] of Object.entries(expected)) {
+    const links = await extractLinks(pdfPath(id));
+    assert.ok(links.includes(href), `${id}: header link ${href} missing (${links.join(', ')})`);
+    assert.ok(!links.includes(`${SITE.url}/`), `${id}: still links the site root`);
+  }
+});
+
+test('case-study links resolve to built pages and stay in the document version', async () => {
+  const version = { 'resume-en': 'game', 'cv-academic': 'game', 'resume-data-en': 'data' };
+  for (const [id, v] of Object.entries(version)) {
+    for (const href of (await extractLinks(pdfPath(id))).filter((h) => h.startsWith(SITE.url) && /\/(projects|research)\/[a-z0-9-]+\/$/.test(h))) {
+      assert.match(href, new RegExp(`^${SITE.url.replace(/[.]/g, '\\.')}/(en/)?${v}/`), `${id}: ${href} leaves the ${v} version`);
+      const file = join('dist', ...href.slice(SITE.url.length).split('/').filter(Boolean), 'index.html');
+      assert.ok(existsSync(file), `${id}: ${href} -> ${file} missing`);
+    }
+  }
 });
 
 test('A4 page size', { skip: popplerSkip }, () => {

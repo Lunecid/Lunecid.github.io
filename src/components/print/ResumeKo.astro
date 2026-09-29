@@ -17,7 +17,7 @@ const h = model.header;
     <ul class="print__contact">
       <li><a href={`mailto:${h.email}`}>{h.email}</a></li>
       <li><a href={`https://${h.github}`}>{h.github}</a></li>
-      <li><a href={`https://${h.site}/`}>{h.site}</a></li>
+      <li><a href={h.site.href}>{h.site.label}</a></li>
       <li>{h.location}</li>
     </ul>
     <p class="print__affil">{h.affiliation}</p>

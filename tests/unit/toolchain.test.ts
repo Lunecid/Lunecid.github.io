@@ -96,11 +96,16 @@ describe('toolchain', () => {
   });
 
   it('config constants match the spec', async () => {
-    const { SITE, CV_HREF, DOCUMENTS, PRINT_ROUTES, STORAGE_KEYS, GOATCOUNTER, MEDIA, NAV_HEIGHT_PX, HUD_LABEL_LIME, RIOT_NOTICE_ON_PAGES } = await import('../../src/config');
+    const config = await import('../../src/config');
+    const { SITE, DOCUMENTS, PRINT_ROUTES, STORAGE_KEYS, GOATCOUNTER, MEDIA, NAV_HEIGHT_PX, HUD_LABEL_LIME, RIOT_NOTICE_ON_PAGES } = config;
     expect(SITE.email).toBe('todtjddms104204@pusan.ac.kr');
     expect(SITE.githubLogin).toBe('Lunecid');
-    expect(CV_HREF.ko).toBe('/cv/seongeun-baek-resume-ko.pdf');
-    expect(CV_HREF.en).toBe('/cv/seongeun-baek-resume-en.pdf');
+    expect(Object.keys(DOCUMENTS)).toEqual(['resume-ko', 'resume-en', 'cv-academic', 'resume-data-ko', 'resume-data-en']);
+    expect(DOCUMENTS['resume-data-ko']).toBe('/cv/seongeun-baek-resume-data-ko.pdf');
+    expect(DOCUMENTS['resume-data-en']).toBe('/cv/seongeun-baek-resume-data-en.pdf');
+    expect(PRINT_ROUTES['resume-data-en']).toBe('/print/resume-data-en/');
+    expect(config).not.toHaveProperty('CV_HREF');
+    expect(config).not.toHaveProperty('ACADEMIC_CV_HREF');
     expect(Object.keys(DOCUMENTS)).toEqual(Object.keys(PRINT_ROUTES));
     expect(Object.values(PRINT_ROUTES).every((r) => /^\/print\/[a-z-]+\/$/.test(r))).toBe(true);
     expect(STORAGE_KEYS.motion).toBe('sb:motion');

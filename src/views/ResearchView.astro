@@ -15,7 +15,7 @@ import { toPaperCard } from '../lib/publications';
 import type { Lang } from '../i18n/ui';
 import { ui } from '../i18n/ui';
 import { t } from '../i18n/utils';
-import { ACADEMIC_CV_HREF, SITE } from '../config';
+import { DOCUMENTS, SITE } from '../config';
 import type { VariantId } from '../variants/ids';
 import { getVariant, pageMetaFor, resolveIdentity } from '../variants';
 
@@ -36,7 +36,7 @@ const ids = (await getPerson()).researchIds;
 <VariantLayout lang={lang} variant={variant} title={meta.title} description={meta.description} page="research" section="research" sectionIndex>
   <PageHeader lang={lang} label="RESEARCH" title={t(lang, 'research.title')} intro={resolveFacts(researchPage.intro[lang], lang, facts)}>
     {/* D-7: professors reach the Academic CV from the research page header (and from #for-labs below). */}
-    <p class="research-cv"><a class="btn btn--line cut cut--line" href={ACADEMIC_CV_HREF} title={t(lang, 'nav.cvAcademic')} download>{t(lang, 'nav.cvAcademic')} <span aria-hidden="true">↓</span></a></p>
+    <p class="research-cv"><a class="btn btn--line cut cut--line" href={DOCUMENTS[v.documents.academic]} title={t(lang, 'nav.cvAcademic')} download>{t(lang, 'nav.cvAcademic')} <span aria-hidden="true">↓</span></a></p>
   </PageHeader>
   <InterestCards lang={lang} interests={resolveLocalizedDeep(researchPage.interests, facts)} />
   <section id="publications" class="pub__section read read-sec" aria-labelledby="publications-title">
@@ -64,7 +64,7 @@ const ids = (await getPerson()).researchIds;
         <p class="for-labs__body">{labNote.body}</p>
         <ul class="for-labs__links lh-chips" role="list">
           <li><a class="lh-chip lh-chip--mono" href={`mailto:${SITE.email}`}>{SITE.email}</a></li>
-          <li><a class="lh-chip" href={ACADEMIC_CV_HREF} title={t(lang, 'nav.cvAcademic')} download>{t(lang, 'nav.cvAcademic')} <span aria-hidden="true">↓</span></a></li>
+          <li><a class="lh-chip" href={DOCUMENTS[v.documents.academic]} title={t(lang, 'nav.cvAcademic')} download>{t(lang, 'nav.cvAcademic')} <span aria-hidden="true">↓</span></a></li>
           {ids.scholar && <li><a class="lh-chip" href={ids.scholar}>Google Scholar</a></li>}
           {ids.orcid && <li><a class="lh-chip" href={ids.orcid}>ORCID</a></li>}
         </ul>

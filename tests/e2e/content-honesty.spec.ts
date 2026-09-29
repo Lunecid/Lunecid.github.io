@@ -1,11 +1,12 @@
-import { ACADEMIC_CV_HREF, CV_HREF, GOATCOUNTER } from '../../src/config';
+import { DOCUMENTS, GOATCOUNTER } from '../../src/config';
+import { getVariant } from '../../src/variants';
 import { STATS_META } from '../../src/data/copy/pages';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { load } from 'js-yaml';
 import { availableAchievements, type AchievementDef } from '../../src/lib/achievements';
 import { soundAvailability } from '../../src/lib/public-assets';
-import { test, expect } from './helpers';
+import { test, expect, basePathOf } from './helpers';
 
 /** achievements.yaml minus bgm-on when the BGM file is absent: the same rule as the Player Log list (availableAchievements). */
 const ACHIEVEMENT_COUNT = availableAchievements(
@@ -16,14 +17,20 @@ const ACHIEVEMENT_COUNT = availableAchievements(
 // Batch 3a (content facts): what the built pages show must match the owner decisions D-4, D-7, D-13 and P2-33.
 
 test.describe('D-7: the nav CV button opens the document that fits the page', () => {
-  const academic = ['/game/research/', '/en/game/research/', '/game/research/cog-2026-engagement/', '/en/game/research/cog-2026-engagement/'];
-  const resume = ['/game/', '/en/game/', '/game/projects/', '/en/game/projects/', '/game/records/', '/en/game/records/', '/game/player-log/', '/en/game/player-log/'];
+  const academic = [
+    '/game/research/', '/en/game/research/', '/game/research/cog-2026-engagement/', '/en/game/research/cog-2026-engagement/',
+    '/data/research/', '/en/data/research/cog-2026-engagement/',
+  ];
+  const resume = [
+    '/game/', '/en/game/', '/game/projects/', '/en/game/projects/', '/game/records/', '/en/game/records/', '/game/player-log/', '/en/game/player-log/',
+    '/data/', '/en/data/', '/data/projects/', '/data/records/',
+  ];
 
   for (const route of academic) {
     test(`${route} → Academic CV`, async ({ page }) => {
       await page.goto(route);
       const cv = page.locator('a.hud-nav__cv');
-      await expect(cv).toHaveAttribute('href', ACADEMIC_CV_HREF);
+      await expect(cv).toHaveAttribute('href', DOCUMENTS['cv-academic']);
       await expect(cv).toHaveAttribute('title', 'Academic CV (PDF)');
       await expect(cv).toHaveAccessibleName(/^CV\s*—\s*Academic CV \(PDF\)$/);
       await expect(cv.locator('[aria-hidden="true"]')).toHaveText('↓');
@@ -34,8 +41,9 @@ test.describe('D-7: the nav CV button opens the document that fits the page', ()
     test(`${route} → résumé in the page language`, async ({ page }) => {
       await page.goto(route);
       const en = route.startsWith('/en/');
+      const { lang, variant } = basePathOf(route);
       const cv = page.locator('a.hud-nav__cv');
-      await expect(cv).toHaveAttribute('href', en ? CV_HREF.en : CV_HREF.ko);
+      await expect(cv).toHaveAttribute('href', DOCUMENTS[getVariant(variant!).documents.resume[lang]]);
       await expect(cv).toHaveAttribute('title', en ? 'Résumé (PDF)' : '이력서 (PDF)');
     });
   }
@@ -43,8 +51,8 @@ test.describe('D-7: the nav CV button opens the document that fits the page', ()
   for (const route of ['/game/research/', '/en/game/research/']) {
     test(`${route} links the Academic CV under the header and in #for-labs`, async ({ page }) => {
       await page.goto(route);
-      const headerCv = page.locator(`.page-head a[href="${ACADEMIC_CV_HREF}"]`);
-      const forLabsCv = page.locator(`#for-labs a[href="${ACADEMIC_CV_HREF}"]`);
+      const headerCv = page.locator(`.page-head a[href="${DOCUMENTS['cv-academic']}"]`);
+      const forLabsCv = page.locator(`#for-labs a[href="${DOCUMENTS['cv-academic']}"]`);
       await expect(headerCv).toHaveText(/Academic CV \(PDF\)/);
       await expect(forLabsCv).toHaveText(/Academic CV \(PDF\)/);
       // D-7: a real download, not a same-tab navigation to the PDF viewer.

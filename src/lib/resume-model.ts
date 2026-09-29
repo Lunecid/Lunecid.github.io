@@ -2,13 +2,30 @@ import type { DocumentId } from '../config';
 import type { AwardData, ProjectFrontmatter, PublicationFrontmatter, ResumeData } from '../content/schemas';
 import type { Lang } from '../i18n/ui';
 import { formatDate, formatDateSpan, formatPeriod, formatYm, t } from '../i18n/utils';
+import { BASE_PATH, type VariantId } from '../variants/ids';
 import { pageHref, projectBase } from './links';
 import { isExpired } from './records';
+import { routePath } from './routes';
 import { canonicalUrl } from './seo';
 import { parseOrderItem, type OrderItem } from '../variants/types';
 
-export const DOC_LANG: Record<DocumentId, Lang> = { 'resume-ko': 'ko', 'resume-en': 'en', 'cv-academic': 'en' };
-export const DOC_FLAG: Record<DocumentId, 'ko' | 'en' | 'academic'> = { 'resume-ko': 'ko', 'resume-en': 'en', 'cv-academic': 'academic' };
+export const DOC_LANG: Record<DocumentId, Lang> = { 'resume-ko': 'ko', 'resume-en': 'en', 'cv-academic': 'en', 'resume-data-ko': 'ko', 'resume-data-en': 'en' };
+export const DOC_FLAG: Record<DocumentId, 'ko' | 'en' | 'academic'> = { 'resume-ko': 'ko', 'resume-en': 'en', 'cv-academic': 'academic', 'resume-data-ko': 'ko', 'resume-data-en': 'en' };
+
+export interface DocProfile {
+  identity: VariantId | 'academic'; // headline/tagline source: academic = NEUTRAL_IDENTITY.headline + the game tagline (A-11)
+  order: VariantId; // pdfProjectOrder source (and the version of case-study links): academic uses 'game'
+  site: { variant: VariantId; base: string }; // header link (A-12)
+}
+// Bases by name (CA-1): the P1-11 path lint (tests/unit/path-literals.test.ts, BASE_LITERAL) allows base-form literals
+// such as '/research/' only in src/data, src/content, src/variants and routes/links/og-pages, not in this file.
+export const DOC_PROFILE: Record<DocumentId, DocProfile> = {
+  'resume-ko': { identity: 'game', order: 'game', site: { variant: 'game', base: BASE_PATH.home } },
+  'resume-en': { identity: 'game', order: 'game', site: { variant: 'game', base: BASE_PATH.home } },
+  'cv-academic': { identity: 'academic', order: 'game', site: { variant: 'game', base: BASE_PATH.research } },
+  'resume-data-ko': { identity: 'data', order: 'data', site: { variant: 'data', base: BASE_PATH.home } },
+  'resume-data-en': { identity: 'data', order: 'data', site: { variant: 'data', base: BASE_PATH.home } },
+};
 /** Task 0 Q20: (a) paper abstract, (b) Presentations section on the Academic CV. Facts only, never filler (§8 #21). */
 export const ACADEMIC_EXTRAS: { abstract: boolean; presentations: boolean } = { abstract: true, presentations: true };
 
@@ -29,7 +46,7 @@ export const PAGE_LINK_LABEL: Record<Lang, Record<PageKind, string>> = {
 
 export interface ResumeModel {
   doc: DocumentId; lang: Lang; builtOn: string;
-  header: { name: string; headline: string; email: string; github: string; site: string; location: string; affiliation: string };
+  header: { name: string; headline: string; email: string; github: string; site: { href: string; label: string }; location: string; affiliation: string };
   tagline: string;
   researchInterests: string[];
   education: { school: string; degree: string; period: string; gpa: string; lab: string | null; thesis: string | null }[];
@@ -72,6 +89,7 @@ export function buildResumeModel(input: ResumeInputs): ResumeModel {
   const { resume, doc, today, academicExtras } = input;
   const lang = DOC_LANG[doc];
   const flag = DOC_FLAG[doc];
+  const profile = DOC_PROFILE[doc];
   const academic = doc === 'cv-academic';
   const flagged = <T extends { pdf: Flags }>(items: readonly T[]): T[] => items.filter((item) => item.pdf[flag]);
 
@@ -96,7 +114,7 @@ export function buildResumeModel(input: ResumeInputs): ResumeModel {
 
   // Projects section (batch 3b P1-20/P2-32): the CoG paper (if flagged for this doc) plus every flagged
   // projects-collection ref.
-  const caseStudyLink = (href: string | undefined | null): string | null => (href ? canonicalUrl(pageHref(href, { lang, variant: 'game' })) : null);
+  const caseStudyLink = (href: string | undefined | null): string | null => (href ? canonicalUrl(pageHref(href, { lang, variant: profile.order })) : null);
   // A-17: the version's pdfProjectOrder decides the order (the game list equals the old end-month sort); a row appears
   // when its pdf flag is set for this document, and every flagged row must be in the order list.
   const refRow = (r: ResumeData['projects'][number]): ResumeModel['projects'][number] => {
@@ -139,6 +157,8 @@ export function buildResumeModel(input: ResumeInputs): ResumeModel {
     return r.pdf[flag] ? [refRow(r)] : [];
   });
 
+  const siteHref = canonicalUrl(routePath(profile.site.base, lang, profile.site.variant));
+
   return {
     doc,
     lang,
@@ -148,7 +168,7 @@ export function buildResumeModel(input: ResumeInputs): ResumeModel {
       headline: input.identity.headline,
       email: p.email,
       github: `github.com/${p.github}`,
-      site: p.site.replace(/^https?:\/\//, '').replace(/\/$/, ''),
+      site: { href: siteHref, label: siteHref.replace(/^https?:\/\//, '').replace(/\/$/, '') },
       location: p.location[lang],
       affiliation: p.affiliation[lang],
     },

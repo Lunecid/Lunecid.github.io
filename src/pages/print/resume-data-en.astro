@@ -2,8 +2,8 @@
 import ResumeEn from '../../components/print/ResumeEn.astro';
 import PrintLayout from '../../layouts/PrintLayout.astro';
 import { printModel } from '../../lib/print-inputs';
-const model = await printModel('resume-en');
+const model = await printModel('resume-data-en');
 ---
-<PrintLayout lang={model.lang} title="Seongeun Baek — English Résumé">
+<PrintLayout lang={model.lang} title="Seongeun Baek — English Résumé · Data Analyst">
   <ResumeEn model={model} />
 </PrintLayout>
