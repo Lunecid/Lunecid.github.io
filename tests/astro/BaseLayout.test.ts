@@ -160,9 +160,10 @@ describe('BaseLayout.astro', () => {
     expect(html).toMatch(/<main id="main" tabindex="-1"/);
   });
 
-  it('AchievementHost island is present', async () => {
+  it('the achievement host (server markup + script, P1-9b) is present once, and no island hydrates', async () => {
     const html = await render();
-    expect(html.match(/<astro-island[^>]*client="idle"/g)).toHaveLength(1); // no BGM island: bgm unavailable
+    expect(html.match(/data-achievement-host/g)).toHaveLength(1); // no BGM button either: bgm unavailable
+    expect(html).not.toContain('<astro-island');
     expect(html).toMatch(/class="ach-toast-region"/);
     expect(html).toMatch(/aria-live="polite"/);
     expect(html.indexOf('ach-toast-region')).toBeGreaterThan(html.indexOf('</footer>'));
@@ -188,8 +189,8 @@ describe('BaseLayout.astro', () => {
     expect(firstTag(game, /<html[^>]*>/)).toContain('data-variant="game"');
     expect(firstTag(game, /<html[^>]*>/)).toContain('data-sfx="on"');
     expect(game).toMatch(/<div[^>]*class="crt"/);
-    expect(game).toMatch(/component-url="[^"]*AchievementHost/);
-    expect(game).toMatch(/component-url="[^"]*BgmToggle/);
+    expect(game.match(/data-achievement-host/g)).toHaveLength(1);
+    expect(game.match(/data-bgm-toggle/g)).toHaveLength(1);
     const data = await render({ variant: 'data', page: 'home', section: undefined }, '/');
     const root = firstTag(data, /<html[^>]*>/);
     expect(root).toContain('data-variant="data"');
@@ -197,8 +198,10 @@ describe('BaseLayout.astro', () => {
     expect(data).not.toMatch(/<div[^>]*class="crt"/);
     expect(data).not.toContain('AchievementHost');
     expect(data).not.toContain('ach-toast-region');
+    expect(data).not.toContain('data-achievement-host');
     expect(data).not.toContain('BgmToggle');
     expect(data).not.toContain('class="bgm"');
+    expect(data).not.toContain('data-bgm-toggle');
     expect(data).toContain('<meta property="og:site_name" content="백성은 · 데이터 분석가"');
   });
 });

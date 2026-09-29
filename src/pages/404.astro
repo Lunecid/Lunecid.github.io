@@ -33,11 +33,11 @@ const meta = PAGE_META['not-found'].ko;
 
 <script>
   import { emitTrigger } from '../lib/achievements';
-  // AchievementHost (client:idle) maps visit-404 → the hidden achievement "game-over". Kept as a normal (deferred)
-  // module script: unlike the language swap, its timing does not matter (no visible flash risk), and it needs
-  // the shared trigger-queue helper. EN_404_SCRIPT (below) independently patches the achievement island's own
-  // serialized props to English before it hydrates, so this call's ko/en makes no difference to what the toast
-  // eventually shows.
+  // AchievementHost (BaseLayout; its script drains the trigger queue) maps visit-404 → the hidden achievement
+  // "game-over". Kept as a normal (deferred) module script: unlike the language swap, its timing does not matter
+  // (no visible flash risk), and it needs the shared trigger-queue helper. EN_404_SCRIPT (below) independently
+  // patches the host's language and labels to English before the host's own script starts, so this call's ko/en
+  // makes no difference to what the toast eventually shows.
   emitTrigger('visit-404');
 </script>
 

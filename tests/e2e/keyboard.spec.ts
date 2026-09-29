@@ -253,7 +253,8 @@ test('focusing or using the nav controls never scrolls the page', async ({ page 
   test.skip(!['desktop', 'mobile-375'].includes(testInfo.project.name), 'desktop and phone only');
   await page.goto('/records/', { waitUntil: 'load' });
   await settle(page);
-  // Wait for the BGM island (client:idle) so its button is the real, hydrated one.
+  // P1-9b: the BGM button is server markup whose module script has run by 'load' (no island to wait for); the
+  // check stays so a reintroduced island in the nav is still awaited.
   await page.waitForFunction(() => !document.querySelector('.hud-nav astro-island[ssr]'));
   await page.evaluate(() => window.scrollTo(0, 1200));
   const scrollY = () => page.evaluate(() => Math.round(window.scrollY));

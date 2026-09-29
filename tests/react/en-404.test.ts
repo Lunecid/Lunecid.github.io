@@ -44,4 +44,22 @@ describe('EN_404_SCRIPT', () => {
     expect(EN_404_SCRIPT).toContain(ui.ko['achievement.dismiss']);
     expect(EN_404_SCRIPT).toContain(JSON.stringify(CV_HREF.en));
   });
+
+  it('P1-9b: on /en/ it switches the achievement host (data-lang, close label, region name) before the host script runs', () => {
+    document.body.innerHTML = `<div class="ach-toast-region" role="status" aria-label="${ui.ko['achievement.region']}" data-achievement-host data-lang="ko" data-close-label="${ui.ko['achievement.dismiss']}" data-defs="[]"></div>`;
+    window.history.replaceState(null, '', '/en/zzz-missing/');
+    new Function(EN_404_SCRIPT)();
+    const host = document.querySelector('[data-achievement-host]') as HTMLElement;
+    expect(host.dataset.lang).toBe('en');
+    expect(host.dataset.closeLabel).toBe(ui.en['achievement.dismiss']);
+    expect(host.getAttribute('aria-label')).toBe(ui.en['achievement.region']);
+    expect(EN_404_SCRIPT).not.toContain('astro-island');
+  });
+
+  it('P1-9b: a Korean-path 404 leaves the achievement host in Korean', () => {
+    document.body.innerHTML = `<div aria-label="${ui.ko['achievement.region']}" data-achievement-host data-lang="ko" data-close-label="${ui.ko['achievement.dismiss']}"></div>`;
+    window.history.replaceState(null, '', '/zzz-missing/');
+    new Function(EN_404_SCRIPT)();
+    expect((document.querySelector('[data-achievement-host]') as HTMLElement).dataset.lang).toBe('ko');
+  });
 });

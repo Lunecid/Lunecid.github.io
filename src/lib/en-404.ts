@@ -8,18 +8,15 @@
 // placed at the end of body executes synchronously, in place, before that first paint. Strings and paths are
 // interpolated from ui.ts / config.ts at build time so they cannot drift from the rest of the site.
 //
-// The achievement toast (AchievementHost, client:idle) is a React island: astro-island only reads its `props`
-// attribute lazily inside hydrate(), well after requestIdleCallback fires (see astro-island.js), so patching that
-// attribute's serialized "lang" and "labels" strings here — before hydration — lets it mount already in English,
-// with no risk of a later React re-render reverting a post-hydration DOM patch.
+// The achievement toast host (src/components/hud/AchievementHost.astro, P1-9b) reads data-lang, data-close-label
+// and its aria-label when its deferred module script starts, after this script, so patching those attributes here
+// lets it show its toasts in English.
 import { CV_HREF } from '../config';
 import { ui } from '../i18n/ui';
 
 const en = ui.en;
 const ko = ui.ko;
 const j = (value: string) => JSON.stringify(value);
-const propPatch = (key: string, from: string, to: string) =>
-  `.replace(${j(`"${key}":[0,${JSON.stringify(from)}]`)}, ${j(`"${key}":[0,${JSON.stringify(to)}]`)})`;
 
 export const EN_404_SCRIPT = `(function () {
   if (location.pathname.indexOf('/en/') !== 0) return;
@@ -160,25 +157,16 @@ export const EN_404_SCRIPT = `(function () {
   var motionNote = document.getElementById('motion-os-note');
   if (motionNote) motionNote.textContent = ${j(en['action.motionOsOff'])};
 
-  var achIsland = document.querySelector('astro-island[component-url*="AchievementHost"]');
-  if (achIsland) {
-    var props = achIsland.getAttribute('props');
-    if (props) {
-      // "lang" drives the achievement title/description, which only render later (inside {def && (…)}, once an
-      // achievement actually unlocks) — a genuine first mount, not hydration re-using existing markup, so the
-      // patched prop reaches it correctly. "region"/"close" are also patched here for the same later re-render.
-      props = props.replace('"lang":[0,"ko"]', '"lang":[0,"en"]');
-      props = props${propPatch('region', ko['achievement.region'], en['achievement.region'])};
-      props = props${propPatch('close', ko['achievement.dismiss'], en['achievement.dismiss'])};
-      achIsland.setAttribute('props', props);
-    }
+  // P1-9b (P-03): the achievement host is server markup plus a deferred module script
+  // (src/scripts/achievement-host.ts) that reads its language and close label from the host's own attributes when it
+  // starts, which is after this inline script. Patching those attributes here (only where they still hold the
+  // Korean values) makes the toast render in English; the region name is the live aria-label.
+  var achHost = document.querySelector('[data-achievement-host]');
+  if (achHost) {
+    if (achHost.getAttribute('data-lang') === 'ko') achHost.setAttribute('data-lang', 'en');
+    if (achHost.getAttribute('data-close-label') === ${j(ko['achievement.dismiss'])}) achHost.setAttribute('data-close-label', ${j(en['achievement.dismiss'])});
+    if (achHost.getAttribute('aria-label') === ${j(ko['achievement.region'])}) achHost.setAttribute('aria-label', ${j(en['achievement.region'])});
   }
-  // The outer .ach-toast-region wrapper (aria-label={labels.region}) is already in the server-rendered HTML
-  // before any trigger fires, so React hydration *adopts* it as-is instead of writing fresh attributes to it
-  // (unlike the toast itself, which only mounts later, from scratch, once an achievement unlocks) — the props
-  // patch above never reaches this specific attribute. Patch the live DOM node directly instead.
-  var toastRegion = document.querySelector('.ach-toast-region');
-  if (toastRegion) toastRegion.setAttribute('aria-label', ${j(en['achievement.region'])});
 
   var actions = document.querySelector('[data-go-actions]');
   if (actions) {

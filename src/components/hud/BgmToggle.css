@@ -1,4 +1,4 @@
-/* src/islands/BgmToggle.css — HUD nav BGM toggle (mockup-port §12). ≥44×44 hit area, state via aria-pressed;
+/* src/components/hud/BgmToggle.css — HUD nav BGM toggle (mockup-port §12). ≥44×44 hit area, state via aria-pressed;
    waiting (remembered on, not yet playing) keeps the ON label and width, dimmed, with no looping animation (N20). */
 .bgm {
   position: relative;

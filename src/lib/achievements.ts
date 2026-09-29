@@ -1,5 +1,5 @@
 // src/lib/achievements.ts — site achievements runtime (spec §5 사이트 업적; trigger bus D13).
-// Content code only calls emitTrigger(trigger). AchievementHost (one island per page) drains the queue, maps
+// Content code only calls emitTrigger(trigger). AchievementHost (one host per game page) drains the queue, maps
 // triggers to achievement ids (achievements.yaml) and calls unlock(). State lives only in this browser
 // (localStorage 'sb:achievements' and 'sb:visits'); every storage access is wrapped, with an in-memory fallback.
 import { STORAGE_KEYS } from '../config';

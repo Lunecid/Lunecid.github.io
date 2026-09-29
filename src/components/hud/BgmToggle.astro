@@ -1,0 +1,25 @@
+---
+/**
+ * HUD nav BGM button (spec §4 소리, §5 BGM 버튼; mockup-port §12). P1-9b (P-03): server markup plus a plain script
+ * (src/scripts/bgm-toggle.ts) in place of the former React island; the button is the component root and carries the
+ * binding marker `data-bgm-toggle` (contract §1.8). The server always renders it off (aria-pressed="false"): the
+ * remembered choice is read by the script. The sr-only waiting hint is added by the script after the button.
+ * Rendered by HudNav only where the version has `bgm` and the track exists (BaseLayout's gate, P1-9).
+ */
+import './BgmToggle.css';
+
+interface Props {
+  src: string;
+  label?: string;
+}
+const { src, label = 'BGM' } = Astro.props;
+---
+<button type="button" class="bgm" aria-label={label} aria-pressed="false" data-bgm-toggle data-src={src}><span class="bgm__glyph" aria-hidden="true">♪</span> <span aria-hidden="true">{label}</span> <span class="bgm__state" aria-hidden="true">OFF</span></button>
+
+<script>
+  import { initBgmToggle } from '../../scripts/bgm-toggle';
+
+  document.querySelectorAll<HTMLButtonElement>('button[data-bgm-toggle]').forEach((button) => {
+    initBgmToggle(button);
+  });
+</script>

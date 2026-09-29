@@ -1,0 +1,31 @@
+---
+/**
+ * Achievement toast host, one per game page (BaseLayout, behind the `achievements` module gate of P1-9).
+ * P1-9b (P-03): server markup plus a plain script (src/scripts/achievement-host.ts) in place of the former React
+ * island. The polite status region is the component root and carries the binding marker `data-achievement-host`
+ * (contract §1.8); it renders empty and the script adds one toast at a time. Its strings travel with it: the
+ * achievement titles and descriptions as JSON in data-defs (only the fields a toast shows), the page language in
+ * data-lang and the close label in data-close-label.
+ */
+import './AchievementHost.css';
+import type { Lang } from '../../i18n/ui';
+import type { AchievementDef } from '../../lib/achievements';
+
+interface Props {
+  lang: Lang;
+  defs: AchievementDef[];
+  /** unlocked is not a prop: the toast kicker is the fixed HUD caption "ACHIEVEMENT UNLOCKED" (controller ruling 1). */
+  labels: { region: string; close: string };
+}
+const { lang, defs, labels } = Astro.props;
+const defsJson = JSON.stringify(defs.map(({ id, trigger, title, description }) => ({ id, trigger, title, description })));
+---
+<div class="ach-toast-region" role="status" aria-live="polite" aria-atomic="true" aria-label={labels.region} data-achievement-host data-lang={lang} data-close-label={labels.close} data-defs={defsJson}></div>
+
+<script>
+  import { initAchievementHost } from '../../scripts/achievement-host';
+
+  document.querySelectorAll<HTMLElement>('[data-achievement-host]').forEach((region) => {
+    initAchievementHost(region);
+  });
+</script>

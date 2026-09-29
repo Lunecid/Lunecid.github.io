@@ -1,4 +1,4 @@
-/* src/islands/AchievementHost.css — achievement toast (P2-2, controller ruling 1). A dark HUD panel, never a
+/* src/components/hud/AchievementHost.css — achievement toast (P2-2, controller ruling 1). A dark HUD panel, never a
    generic web-notification pill: --hud-panel fill, a 1px --gold-line cut corner (the .cut/.cut--line mechanic
    shared with buttons), a mono "ACHIEVEMENT UNLOCKED" kicker in gold, and a gold ◆ mark.
    Position: right:24px/bottom:24px on desktop/tablet (clear of page titles, which sit at the top); below 734px it

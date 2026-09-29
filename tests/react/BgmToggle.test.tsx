@@ -1,8 +1,10 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+// P1-9b (P-03): dom tests of the BGM button's plain script (src/scripts/bgm-toggle.ts) on the server markup of
+// src/components/hud/BgmToggle.astro (tests/helpers/hud-markup.ts; tests/astro/BgmToggle.test.ts pins that markup).
+// Ported one-for-one from the former React island tests; the helpers now live in src/lib/bgm.ts.
+import { fireEvent, screen } from '@testing-library/dom';
 import userEvent from '@testing-library/user-event';
-import { renderToString } from 'react-dom/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import BgmToggle, {
+import {
   BGM_FADE_IN,
   BGM_FADE_OUT,
   BGM_NAV_FADE_OUT,
@@ -14,8 +16,10 @@ import BgmToggle, {
   isSameOriginLeave,
   readBgmTime,
   saveBgmTime,
-} from '../../src/islands/BgmToggle';
+} from '../../src/lib/bgm';
+import { initBgmToggle } from '../../src/scripts/bgm-toggle';
 import { STORAGE_KEYS } from '../../src/config';
+import { bgmToggleMarkup } from '../helpers/hud-markup';
 
 const SRC = '/audio/bgm/everything-you-ever-dreamed.mp3';
 
@@ -75,6 +79,17 @@ function lastGain(): FakeGain {
   return gain;
 }
 
+const teardowns: Array<() => void> = [];
+
+/** Mounts the server markup (plus `extra` siblings) and runs the component script on it, as the page does. */
+function mount(extra = ''): HTMLButtonElement {
+  document.body.innerHTML = `${bgmToggleMarkup(SRC)}${extra}`;
+  const button = document.querySelector<HTMLButtonElement>('button[data-bgm-toggle]');
+  if (!button) throw new Error('no BGM button');
+  teardowns.push(initBgmToggle(button));
+  return button;
+}
+
 function setHidden(hidden: boolean): void {
   Object.defineProperty(document, 'hidden', { configurable: true, get: () => hidden });
   Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => (hidden ? 'hidden' : 'visible') });
@@ -110,6 +125,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  for (const teardown of teardowns.splice(0)) teardown();
   Reflect.deleteProperty(document, 'hidden');
   Reflect.deleteProperty(document, 'visibilityState');
 });
@@ -167,7 +183,7 @@ describe('bgm time helpers', () => {
 
 describe('BgmToggle', () => {
   it("renders an off BGM button named 'BGM'", () => {
-    render(<BgmToggle src={SRC} />);
+    mount();
     const button = screen.getByRole('button', { name: 'BGM' });
     expect(button).toHaveAttribute('type', 'button');
     expect(button).toHaveAttribute('aria-pressed', 'false');
@@ -176,9 +192,9 @@ describe('BgmToggle', () => {
     expect(FakeAudio.instances).toHaveLength(0); // nothing loads before a click
   });
 
-  it('SSR markup is aria-pressed=false even when sb:sound is on', () => {
+  it('server markup is aria-pressed=false even when sb:sound is on (the script reads the choice)', () => {
     localStorage.setItem(STORAGE_KEYS.sound, 'on');
-    const html = renderToString(<BgmToggle src={SRC} />);
+    const html = bgmToggleMarkup(SRC);
     expect(html).toMatch(/<button[^>]*aria-pressed="false"/);
     expect(html).toContain('OFF');
     expect(html).not.toMatch(/>ON</);
@@ -186,7 +202,7 @@ describe('BgmToggle', () => {
 
   it("click turns it on, stores 'on', emits bgm-on and starts playback", async () => {
     const user = userEvent.setup();
-    render(<BgmToggle src={SRC} />);
+    mount();
     const button = screen.getByRole('button', { name: 'BGM' });
     expect(FakeAudio.instances, 'nothing loads before the visitor turns music on').toHaveLength(0);
     await user.click(button);
@@ -204,7 +220,7 @@ describe('BgmToggle', () => {
 
   it('second click fades out and pauses', async () => {
     const user = userEvent.setup();
-    render(<BgmToggle src={SRC} />);
+    mount();
     const button = screen.getByRole('button', { name: 'BGM' });
     await user.click(button);
     const audio = lastAudio();
@@ -220,7 +236,7 @@ describe('BgmToggle', () => {
   it("remembered 'on' tries play on mount and clears waiting when it succeeds", async () => {
     localStorage.setItem(STORAGE_KEYS.sound, 'on');
     sessionStorage.setItem(BGM_TIME_KEY, JSON.stringify({ t: 33, at: Date.now() }));
-    render(<BgmToggle src={SRC} />);
+    mount();
     const button = document.querySelector('.bgm') as HTMLButtonElement;
     expect(button).toHaveAttribute('aria-pressed', 'true');
     await vi.waitFor(() => expect(FakeAudio.instances).toHaveLength(1));
@@ -238,13 +254,7 @@ describe('BgmToggle', () => {
     FakeAudio.playImpl = async () => {
       throw new DOMException('NotAllowedError');
     };
-    render(
-      <>
-        <BgmToggle src={SRC} />
-        <p>outside</p>
-        <a href="/projects/">leave</a>
-      </>,
-    );
+    mount('<p>outside</p><a href="/projects/">leave</a>');
     const button = await screen.findByRole('button', { name: 'BGM' });
     await vi.waitFor(() => expect(button).toHaveAttribute('data-state', 'waiting'));
     expect(button).toHaveAttribute('aria-pressed', 'true');
@@ -270,7 +280,7 @@ describe('BgmToggle', () => {
       throw new DOMException('NotAllowedError');
     };
     const user = userEvent.setup();
-    render(<BgmToggle src={SRC} />);
+    mount();
     const button = await screen.findByRole('button', { name: 'BGM' });
     await vi.waitFor(() => expect(button).toHaveAttribute('data-state', 'waiting'));
     FakeAudio.playImpl = async () => undefined;
@@ -282,15 +292,7 @@ describe('BgmToggle', () => {
 
   it('pagehide saves currentTime and a same-origin leave click starts the nav fade', async () => {
     const user = userEvent.setup();
-    render(
-      <>
-        <BgmToggle src={SRC} />
-        <a href="/records/">records</a>
-        <a href="/cv.pdf" download>
-          cv
-        </a>
-      </>,
-    );
+    mount('<a href="/records/">records</a><a href="/cv.pdf" download>cv</a>');
     await user.click(screen.getByRole('button', { name: 'BGM' }));
     const audio = lastAudio();
     await vi.waitFor(() => expect(audio.play).toHaveBeenCalled());
@@ -306,7 +308,7 @@ describe('BgmToggle', () => {
 
   it('hidden tab pauses and visible tab resumes when on', async () => {
     const user = userEvent.setup();
-    render(<BgmToggle src={SRC} />);
+    mount();
     await user.click(screen.getByRole('button', { name: 'BGM' }));
     const audio = lastAudio();
     await vi.waitFor(() => expect(audio.play).toHaveBeenCalledTimes(1));
@@ -318,5 +320,24 @@ describe('BgmToggle', () => {
     setHidden(false);
     document.dispatchEvent(new Event('visibilitychange'));
     expect(audio.play).toHaveBeenCalledTimes(2);
+  });
+
+  it('the waiting hint is a sr-only sibling after the button, in the page language, and goes away once playing', async () => {
+    document.documentElement.lang = 'ko';
+    localStorage.setItem(STORAGE_KEYS.sound, 'on');
+    FakeAudio.playImpl = async () => {
+      throw new DOMException('NotAllowedError');
+    };
+    const button = mount('<p>outside</p>');
+    await vi.waitFor(() => expect(button).toHaveAttribute('data-state', 'waiting'));
+    const hint = button.nextElementSibling as HTMLElement;
+    expect(hint).toHaveClass('sr-only');
+    expect(button.getAttribute('aria-describedby')).toBe(hint.id);
+    expect(hint).toHaveTextContent('배경음악이 켜져 있습니다. 화면을 누르거나 키를 누르면 이어서 재생됩니다.');
+    await new Promise((resolve) => setTimeout(resolve, 0)); // the failed first play() arms the gesture listeners
+    FakeAudio.playImpl = async () => undefined;
+    fireEvent.keyDown(screen.getByText('outside'), { key: 'a' });
+    await vi.waitFor(() => expect(button).not.toHaveAttribute('aria-describedby'));
+    expect(document.querySelector('.sr-only')).toBeNull();
   });
 });

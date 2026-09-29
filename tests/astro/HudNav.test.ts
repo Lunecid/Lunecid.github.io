@@ -83,14 +83,17 @@ describe('HudNav.astro', () => {
     expect(html).toMatch(/<nav[^>]*id="hud-menu"/);
   });
 
-  it('BGM island rendered only when bgmAvailable', async () => {
+  it('BGM button (server markup + script, P1-9b) rendered only when bgmAvailable', async () => {
     const withBgm = await renderAstro(HudNav, { props: { ...KO, bgmAvailable: true } });
-    expect(withBgm).toMatch(/<astro-island[^>]*client="idle"/);
+    expect(withBgm).not.toContain('<astro-island'); // P-03: no React island for the BGM button
+    expect(withBgm.match(/data-bgm-toggle/g)).toHaveLength(1);
     expect(firstTag(withBgm, /<button[^>]*class="bgm"[^>]*>/)).toContain('aria-pressed="false"');
+    expect(firstTag(withBgm, /<button[^>]*class="bgm"[^>]*>/)).toContain('data-src="/audio/bgm/');
 
     const without = await renderAstro(HudNav, { props: KO });
     expect(without).not.toContain('<astro-island');
     expect(without).not.toContain('class="bgm"');
+    expect(without).not.toContain('data-bgm-toggle');
   });
 
   it('mobile panel is hidden only under html.js', async () => {

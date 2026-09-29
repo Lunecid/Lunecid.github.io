@@ -1,6 +1,6 @@
 ---
 import SectionHead from '../hud/SectionHead.astro';
-import StatsLiveTotal from '../../islands/StatsLiveTotal';
+import StatsLiveTotal from './StatsLiveTotal.astro';
 import type { Lang } from '../../i18n/ui';
 import { formatDate, formatNumber, localizeHref, t } from '../../i18n/utils';
 import { goatcounterDashboardUrl } from '../../lib/analytics';
@@ -44,9 +44,8 @@ function asOf(iso: string): string {
             <p class="stats__asof">{t(lang, 'stats.fetchedAt')} <time datetime={usable.fetchedAt}>{asOf(usable.fetchedAt)}</time></p>
           </div>
         ) : null}
-        {/* F-014: one reserved live slot; unavailable/starting live only inside the island (no paired contradiction). */}
+        {/* F-014: one reserved live slot; unavailable/starting live only inside it (no paired contradiction). */}
         <StatsLiveTotal
-          client:idle
           code={code}
           initialTotal={usable?.total ?? null}
           lang={lang}

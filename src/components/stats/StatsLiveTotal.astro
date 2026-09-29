@@ -1,0 +1,47 @@
+---
+/**
+ * One reserved slot for the live visit total (F-014) on /stats/ (StatsSummary, only with a GoatCounter code).
+ * P1-9b (P-03): server markup plus a plain script (src/scripts/stats-live-total.ts) in place of the former React
+ * island; the slot is the component root and carries the binding marker `data-stats-live-total` (contract §1.8).
+ * - 0 → "starting" (do not show a large 0 or pair it with "unavailable")
+ * - null after a failed/empty fetch with no build data → unavailable only
+ * - a positive count → the live total
+ * The build total (initialTotal) stays when the live fetch fails. The server renders the state before the fetch.
+ */
+import type { Lang } from '../../i18n/ui';
+import { formatNumber } from '../../i18n/utils';
+
+interface Props {
+  code: string;
+  initialTotal: number | null;
+  lang: Lang;
+  label: string;
+  startingLabel: string;
+  unavailableLabel: string;
+}
+const { code, initialTotal, lang, label, startingLabel, unavailableLabel } = Astro.props;
+---
+<div
+  class="stats__live-slot"
+  data-stats-live-total
+  data-code={code}
+  data-total={initialTotal === null ? undefined : String(initialTotal)}
+  data-lang={lang}
+  data-label={label}
+  data-starting-label={startingLabel}
+  data-unavailable-label={unavailableLabel}
+>{initialTotal === 0 ? (
+  <p class="stats__note stats__live-note">{startingLabel}</p>
+) : initialTotal !== null ? (
+  <p class="stats__live"><span class="stats__live-label">{label}</span> <strong class="stats__live-num tnum">{formatNumber(initialTotal, lang)}</strong></p>
+) : (
+  <p class="stats__live stats__live--pending" aria-hidden="true"></p>
+)}</div>
+
+<script>
+  import { initStatsLiveTotal } from '../../scripts/stats-live-total';
+
+  document.querySelectorAll<HTMLElement>('[data-stats-live-total]').forEach((slot) => {
+    initStatsLiveTotal(slot);
+  });
+</script>

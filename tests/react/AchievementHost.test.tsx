@@ -1,9 +1,14 @@
-import { act, fireEvent, render, screen } from '@testing-library/react';
+// P1-9b (P-03): dom tests of the achievement host's plain script (src/scripts/achievement-host.ts) on the server
+// markup of src/components/hud/AchievementHost.astro (tests/helpers/hud-markup.ts; tests/astro/AchievementHost.test.ts
+// pins that markup). Ported one-for-one from the former React island tests: `act` is gone (the script updates the
+// DOM synchronously) and `container` is the page body the host is mounted in.
+import { fireEvent, screen } from '@testing-library/dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import AchievementHost, { TOAST_MS } from '../../src/islands/AchievementHost';
+import { ENTRANCE_HOLD_MS as HOST_ENTRANCE_HOLD_MS, OUT_MS, TOAST_MS, initAchievementHost } from '../../src/scripts/achievement-host';
 import { STORAGE_KEYS } from '../../src/config';
 import { KONAMI_SEQUENCE } from '../../src/lib/konami';
 import { __resetAchievementMemory, emitTrigger, isUnlocked, unlock, type AchievementDef } from '../../src/lib/achievements';
+import { achievementHostMarkup } from '../helpers/hud-markup';
 
 const DEFS: AchievementDef[] = [
   {
@@ -36,8 +41,17 @@ const LABELS_KO = { region: '업적 알림', close: '알림 닫기' };
 /** Must match AchievementHost ENTRANCE_HOLD_MS (F-028). */
 const ENTRANCE_HOLD_MS = 950;
 
-const renderHost = (lang: 'ko' | 'en' = 'en') =>
-  render(<AchievementHost lang={lang} defs={DEFS} labels={lang === 'ko' ? LABELS_KO : LABELS} />);
+const teardowns: Array<() => void> = [];
+const act = (fn: () => void) => fn();
+
+/** Mounts the server markup (after `before`) and runs the host script on it, as the page does. */
+function renderHost(lang: 'ko' | 'en' = 'en', before = ''): { container: HTMLElement } {
+  document.body.innerHTML = `${before}${achievementHostMarkup(lang, DEFS, lang === 'ko' ? LABELS_KO : LABELS)}`;
+  const region = document.querySelector<HTMLElement>('[data-achievement-host]');
+  if (!region) throw new Error('no achievement host');
+  teardowns.push(initAchievementHost(region));
+  return { container: document.body };
+}
 
 /** Full-motion host: advance past the F-028 entrance hold so the toast can appear. */
 function renderHostFull(lang: 'ko' | 'en' = 'en') {
@@ -60,6 +74,8 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  for (const teardown of teardowns.splice(0)) teardown();
+  document.body.innerHTML = '';
   vi.useRealTimers();
   document.documentElement.removeAttribute('data-section');
   document.documentElement.removeAttribute('data-intro');
@@ -67,6 +83,12 @@ afterEach(() => {
 });
 
 describe('AchievementHost', () => {
+  it('keeps the island timings (TOAST_MS 6000, OUT_MS 200, ENTRANCE_HOLD_MS 950)', () => {
+    expect(TOAST_MS).toBe(6000);
+    expect(OUT_MS).toBe(200);
+    expect(HOST_ENTRANCE_HOLD_MS).toBe(ENTRANCE_HOLD_MS);
+  });
+
   it('renders a polite status region', () => {
     renderHost();
     const region = screen.getByRole('status');
@@ -175,12 +197,7 @@ describe('AchievementHost', () => {
   });
 
   it('konami keys typed into an input unlock nothing', () => {
-    render(
-      <>
-        <input aria-label="search" />
-        <AchievementHost lang="en" defs={DEFS} labels={LABELS} />
-      </>,
-    );
+    renderHost('en', '<input aria-label="search" />');
     const input = screen.getByRole('textbox', { name: 'search' });
     for (const key of KONAMI_SEQUENCE) fireEvent.keyDown(input, { key });
     expect(isUnlocked('konami')).toBe(false);
@@ -237,5 +254,58 @@ describe('AchievementHost', () => {
       vi.advanceTimersByTime(1);
     });
     expect(container.querySelector('.ach-toast')).toHaveAttribute('data-state', 'in');
+  });
+
+  it('F-028: holds the toast while a dialog is open, and Escape then leaves it alone', async () => {
+    const { container } = renderHost('en', '<dialog open><p>viewer</p></dialog>');
+    act(() => emitTrigger('bgm-on'));
+    expect(container.querySelector('.ach-toast')).toBeNull();
+    const dialog = container.querySelector('dialog') as HTMLDialogElement;
+    dialog.removeAttribute('open');
+    await vi.waitFor(() => expect(container.querySelector('.ach-toast')).toHaveAttribute('data-state', 'in'));
+    dialog.setAttribute('open', '');
+    await vi.waitFor(() => expect(container.querySelector('.ach-toast')).toBeNull());
+    dialog.removeAttribute('open');
+    await vi.waitFor(() => expect(container.querySelector('.ach-toast')).not.toBeNull());
+    // a dialog opened without hiding the toast yet (same tick): Escape belongs to the dialog
+    const other = document.createElement('dialog');
+    other.setAttribute('open', '');
+    document.body.append(other);
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    expect(container.querySelector('.ach-toast')).toHaveAttribute('data-state', 'in');
+  });
+
+  it('F-004: focus landing on an element under the toast dismisses it; focus elsewhere does not', () => {
+    const { container } = renderHost('en', '<a id="under" href="#a">under</a><a id="away" href="#b">away</a>');
+    act(() => emitTrigger('bgm-on'));
+    const toast = container.querySelector('.ach-toast') as HTMLElement;
+    const rect = (left: number, top: number, w: number, h: number) =>
+      ({ left, top, right: left + w, bottom: top + h, width: w, height: h, x: left, y: top, toJSON: () => ({}) }) as DOMRect;
+    toast.getBoundingClientRect = () => rect(600, 700, 360, 80);
+    (document.getElementById('away') as HTMLElement).getBoundingClientRect = () => rect(0, 0, 100, 40);
+    (document.getElementById('under') as HTMLElement).getBoundingClientRect = () => rect(620, 720, 100, 40);
+    (document.getElementById('away') as HTMLElement).focus();
+    expect(toast).toHaveAttribute('data-state', 'in');
+    (document.getElementById('under') as HTMLElement).focus();
+    expect(container.querySelector('.ach-toast')).toBeNull(); // reduced motion: gone at once
+  });
+
+  it('turning reduced motion on while holding shows the queued toast at once', () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    document.documentElement.setAttribute('data-motion', 'full');
+    const { container } = renderHost();
+    act(() => emitTrigger('bgm-on'));
+    expect(container.querySelector('.ach-toast')).toBeNull();
+    document.documentElement.setAttribute('data-motion', 'reduce');
+    window.dispatchEvent(new Event('sb:motion-change'));
+    expect(container.querySelector('.ach-toast')).toHaveAttribute('data-state', 'in');
+  });
+
+  it('reads its language and close label from the host attributes (the /en/ 404 patches them)', () => {
+    const { container } = renderHost('ko');
+    act(() => emitTrigger('bgm-on'));
+    expect(container.querySelector('.ach-toast__text')).toHaveTextContent('소리 켜짐');
+    expect(screen.getByRole('button', { name: '알림 닫기' })).toBeInTheDocument();
+    expect(screen.getByRole('status')).toHaveAccessibleName('업적 알림');
   });
 });

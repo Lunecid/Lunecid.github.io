@@ -18,7 +18,7 @@ import { availableAchievements, type AchievementDef } from '../lib/achievements'
 import HudNav from '../components/hud/HudNav.astro';
 import SiteFooter from '../components/hud/SiteFooter.astro';
 import CrtIntro from '../components/hud/CrtIntro.astro';
-import AchievementHost from '../islands/AchievementHost';
+import AchievementHost from '../components/hud/AchievementHost.astro';
 import { getVariant } from '../variants';
 import type { ModuleId, VariantId } from '../variants/ids';
 
@@ -130,6 +130,6 @@ const achievementLabels = {
     <HudNav lang={lang} variant={variant} current={section} exact={sectionIndex} altLangHref={altHref} cvHref={cv.href} cvLabel={cv.label} bgmAvailable={bgm} />
     <main id="main" tabindex="-1"><slot /></main>
     <SiteFooter lang={lang} notices={notices} builtAt={new Date()} />
-    {on('achievements') && <AchievementHost client:idle lang={lang} defs={defs} labels={achievementLabels} />}
+    {on('achievements') && <AchievementHost lang={lang} defs={defs} labels={achievementLabels} />}
   </body>
 </html>
