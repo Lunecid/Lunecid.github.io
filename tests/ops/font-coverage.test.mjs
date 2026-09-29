@@ -14,6 +14,7 @@ import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { dirname, join, relative, sep } from 'node:path';
 import { JSDOM } from 'jsdom';
+import { isHangul } from '../../scripts/fonts/glyphs.mjs';
 import { cmapCodePoints, parseName, woff2Tables } from '../../scripts/fonts/sfnt.mjs';
 import { SANS_FAMILY, SERIF_KO_FAMILY, SERIF_KO_HEAD_FAMILY } from '../../src/lib/fonts.ts';
 
@@ -195,9 +196,10 @@ export function checkPage(html, scriptText) {
     }
   }
   if (faces.some((f) => f.family === SERIF_KO_HEAD_FAMILY)) {
-    // P2-3: the heading face must draw every Hangul inside [data-serif] (the only text the build subsets it for).
+    // P2-3: the heading face must draw every Hangul it is asked to draw: the text inside [data-serif], in the face's
+    // own ranges (isHangul, as the build). Attribute values are not drawn in the face (a title shows in the system UI).
     const hangul = [...doc.querySelectorAll('[data-serif]')]
-      .map((el) => [...renderableText(el)].filter((ch) => /\p{Script=Hangul}/u.test(ch)).join(''))
+      .map((el) => [...(el.textContent ?? '')].filter((ch) => isHangul(/** @type {number} */ (ch.codePointAt(0)))).join(''))
       .join('');
     check(hangul, faces, SERIF_KO_HEAD_FAMILY, problems, warnings);
   }
@@ -237,10 +239,43 @@ test('general-version pages declare the Korean heading face, no other page does,
   assert.deepEqual(wrong, []);
 });
 
-test('the Korean heading face ships as one static file (no fvar)', () => {
+test('the Korean heading face ships as one static file (no fvar), weight 700, with its license records', () => {
   const files = walk(join(DIST, '_astro')).filter((f) => /[\\/]sb-serif-kr-head\.[\w-]+\.woff2$/.test(f));
   assert.equal(files.length, 1);
-  assert.equal(woff2Tables(readFileSync(files[0])).has('fvar'), false);
+  const tables = woff2Tables(readFileSync(files[0]));
+  assert.equal(tables.has('fvar'), false);
+  const os2 = tables.get('OS/2');
+  assert.ok(os2, 'OS/2 table');
+  assert.equal(new DataView(os2.buffer, os2.byteOffset, os2.byteLength).getUint16(4), 700, 'usWeightClass');
+  const name = tables.get('name');
+  assert.ok(name, 'name table');
+  const records = parseName(name);
+  // The fontsource source keeps the copyright (0) and the license URL (14) but no license text (13): both survive.
+  assert.match(records.find((r) => r.nameID === 0)?.value ?? '', /Adobe/, 'copyright');
+  assert.match(records.find((r) => r.nameID === 14)?.value ?? '', /openfontlicense\.org|scripts\.sil\.org/i, 'license URL');
+});
+
+test('self-test: the heading face fails on a [data-serif] Hangul it lacks, and only there', () => {
+  const html = readFileSync(join(DIST, 'data', 'index.html'), 'utf8');
+  const cmapOf = (/** @type {RegExp} */ re) => {
+    const file = walk(join(DIST, '_astro')).find((f) => re.test(f));
+    assert.ok(file, String(re));
+    const cmap = woff2Tables(readFileSync(file)).get('cmap');
+    assert.ok(cmap);
+    return cmapCodePoints(cmap);
+  };
+  const sansKo = cmapOf(/[\\/]sb-sans-ko\.[\w-]+\.woff2$/);
+  const head = cmapOf(/[\\/]sb-serif-kr-head\.[\w-]+\.woff2$/);
+  // A syllable the sans subset draws (so only the heading check can fail) that the heading subset lacks.
+  const cp = [...sansKo].filter((c) => c >= 0xac00 && c <= 0xd7a3 && !head.has(c) && SOURCE[SERIF_KO_HEAD_FAMILY]().has(c)).sort((a, b) => a - b)[0];
+  assert.ok(cp !== undefined, 'a probe syllable');
+  const probe = String.fromCodePoint(cp);
+  const inHead = checkPage(html.replace('</main>', `<h2 data-serif>${probe}</h2></main>`), '');
+  assert.deepEqual(inHead.problems.length, 1, inHead.problems.join('\n'));
+  assert.match(inHead.problems[0] ?? '', new RegExp(`"${SERIF_KO_HEAD_FAMILY}" lacks ${probe}`));
+  assert.deepEqual(checkPage(html.replace('</main>', `<h2>${probe}</h2></main>`), '').problems, []);
+  // an attribute of a [data-serif] element is not drawn in the face
+  assert.deepEqual(checkPage(html.replace('</main>', `<h2 data-serif title="${probe}">Data</h2></main>`), '').problems, []);
 });
 
 test('self-test: a character the source font has but the subset lacks fails, named', () => {

@@ -151,7 +151,7 @@ export async function subsetSerifKo(text, { format = 'woff2', wght, latin = fals
   for (const [name, chars] of bySlice) {
     const source = readFileSync(join(SOURCES.serifKoDir, name));
     try {
-      slices.push(await subsetFont(source, chars, { targetFormat: 'sfnt', dropTables: SERIF_DROP, noLayoutClosure: true, keepFeatures: [], ...pin }));
+      slices.push(await subsetFont(source, chars, { targetFormat: 'sfnt', dropTables: SERIF_DROP, noLayoutClosure: true, keepFeatures: [], preserveNameIds: [0, 13, 14], ...pin }));
     } catch (error) {
       throw new Error(`subsetting the Noto Serif KR slice ${name} to "${chars}" failed: ${errorMessage(error)}`, { cause: error });
     }

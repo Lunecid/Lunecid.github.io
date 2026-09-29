@@ -83,6 +83,8 @@ describe('subsets from the real font packages', () => {
     const tables = woff2Tables(data!);
     expect(tables.has('fvar')).toBe(false);
     expect(tables.has('gvar')).toBe(false);
+    const os2 = tables.get('OS/2')!;
+    expect(new DataView(os2.buffer, os2.byteOffset, os2.byteLength).getUint16(4)).toBe(700); // usWeightClass (P2-3 review)
     const cps = cmapCodePoints(tables.get('cmap')!);
     for (const ch of '데이터분석가') expect(cps.has(cp(ch))).toBe(true);
     expect(cps.has(cp('D'))).toBe(false);
