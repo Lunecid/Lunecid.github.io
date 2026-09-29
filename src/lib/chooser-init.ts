@@ -8,15 +8,20 @@ import type { Lang } from '../i18n/ui';
 import { LEGACY_HOME_ANCHORS, LEGACY_VARIANT, VARIANT_IDS, VARIANT_PREFIX } from '../variants/ids';
 import { LANG_PREFIX } from './routes';
 
+/** JSON for an inline <script>: '<' escaped so a value can never close the script element. */
+function inlineJson(value: unknown): string {
+  return JSON.stringify(value).replace(/</g, '\\u003c');
+}
+
 export function chooserInitScript(lang: Lang): string {
   const homes = Object.fromEntries(VARIANT_IDS.map((variant) => [variant, `${LANG_PREFIX[lang]}${VARIANT_PREFIX[variant]}/`]));
   return `(function () {
   if (/[?&]choose(?:[=&]|$)/.test(location.search)) return;
-  var KEY = ${JSON.stringify(STORAGE_KEYS.variant)};
-  var ANCHORS = ${JSON.stringify(LEGACY_HOME_ANCHORS)};
-  var IDS = ${JSON.stringify(VARIANT_IDS)};
-  var HOMES = ${JSON.stringify(homes)};
-  var LEGACY = ${JSON.stringify(homes[LEGACY_VARIANT])};
+  var KEY = ${inlineJson(STORAGE_KEYS.variant)};
+  var ANCHORS = ${inlineJson(LEGACY_HOME_ANCHORS)};
+  var IDS = ${inlineJson(VARIANT_IDS)};
+  var HOMES = ${inlineJson(homes)};
+  var LEGACY = ${inlineJson(homes[LEGACY_VARIANT])};
   var hash = location.hash.replace(/^#/, '');
   if (hash && ANCHORS.indexOf(hash) !== -1) {
     window.__sbRedirect = true;

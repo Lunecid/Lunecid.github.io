@@ -33,6 +33,11 @@ export function parseCount(value: string): number | null {
   return digits === '' ? null : Number(digits);
 }
 
+/** JSON for an inline <script>: '<' escaped so a value can never close the script element. */
+function inlineJson(value: unknown): string {
+  return JSON.stringify(value).replace(/</g, '\\u003c');
+}
+
 /**
  * CA-25: the chooser's counter loader (analytics="unless-redirecting"). A classic inline script that appends the
  * GoatCounter tag only when chooser-init did not start a redirect, so a returning visitor is counted once, on the page
@@ -44,9 +49,9 @@ export function goatcounterLoaderScript(attrs: GoatcounterScriptAttrs): string {
   if (window.__sbRedirect === true) return;
   var s = document.createElement('script');
   s.async = true;
-  s.src = ${JSON.stringify(attrs.src)};
-  s.setAttribute('data-goatcounter', ${JSON.stringify(attrs['data-goatcounter'])});
-  s.setAttribute('integrity', ${JSON.stringify(attrs.integrity)});
+  s.src = ${inlineJson(attrs.src)};
+  s.setAttribute('data-goatcounter', ${inlineJson(attrs['data-goatcounter'])});
+  s.setAttribute('integrity', ${inlineJson(attrs.integrity)});
   s.setAttribute('crossorigin', 'anonymous');
   document.head.appendChild(s);
 })();`;
