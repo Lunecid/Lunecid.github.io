@@ -97,7 +97,7 @@ export function parseRoute(pathname: string): RouteInfo | null {
   return null;
 }
 
-/** For the [variant] pages' getStaticPaths: the versions that have `base`. */
+/** The versions that have `base` (contract §1.3; the [variant] pages it served were split per version in P2-2a). */
 export function variantParamsFor(base: string): { params: { variant: VariantId } }[] {
   return VARIANT_IDS.filter((variant) => variantBasePaths(variant).includes(base)).map((variant) => ({ params: { variant } }));
 }

@@ -207,13 +207,13 @@ export function getFactSource(): Promise<FactSource> {
   return factSource;
 }
 
-/** getStaticPaths helper for [variant]/research/[slug] pages (version × paper page). */
+/** Every (version × paper page) pair; paperPathsFor filters it for one version's page module (P2-2a). */
 export async function variantPaperPaths(): Promise<{ params: { variant: VariantId; slug: string }; props: { entry: PublicationEntry } }[]> {
   const papers = await getPaperPages();
   return VARIANT_IDS.flatMap((variant) => papers.map((entry) => ({ params: { variant, slug: entry.id }, props: { entry } })));
 }
 
-/** getStaticPaths helper for [variant]/projects/[slug] pages (version × project with a page, in one language). */
+/** Every (version × project with a page) pair in one language; projectPathsFor filters it for one version (P2-2a). */
 export async function variantProjectPaths(lang: Lang): Promise<{ params: { variant: VariantId; slug: string }; props: { entry: ProjectEntry } }[]> {
   const entries = (await getProjects(lang)).filter((entry) => hasProjectPage(entry.data));
   return VARIANT_IDS.flatMap((variant) => entries.map((entry) => ({ params: { variant, slug: projectSlug(entry) }, props: { entry } })));
