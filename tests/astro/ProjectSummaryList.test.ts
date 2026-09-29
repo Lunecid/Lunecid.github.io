@@ -24,11 +24,11 @@ const teamsOf = (html: string): string[] =>
   [...html.matchAll(/<span(?=[^>]*class="psum__team")[^>]*>([^<]*)<\/span>/g)].map((m) => m[1]);
 
 describe('ProjectSummaryList.astro', () => {
-  it("5 projects in resume.yaml order, localized links for projects with a page, 'N인 팀' text", async () => {
+  it("5 projects in the order passed in, localized links for projects with a page, 'N인 팀' text", async () => {
     const ko = await render('ko');
     expect(ko).toMatch(/<section(?=[^>]*\bid="projects")[^>]*>/);
     expect(ko).toMatch(/<h2[^>]*>프로젝트<\/h2>/);
-    // resume.yaml order (school-zone, youth-startup, kickick, …) differs from PROJECT_SLUGS order.
+    // The rows follow the refs passed in (here resume.yaml's list; the page passes recordsProjectsOrder).
     const withPage = resume.projects.filter((p) => (PROJECT_PAGE_SLUGS as readonly string[]).includes(p.ref));
     expect(hrefsOf(ko)).toEqual(withPage.map((p) => `/projects/${p.ref}/`));
     expect(hrefsOf(ko)).toHaveLength(3);

@@ -119,7 +119,7 @@ describe('toPaperPage', () => {
 });
 
 describe('toPaperCartridge', () => {
-  it('builds the CoG card exactly as HomeView/ProjectsView build it by hand today', () => {
+  it('builds the CoG card as the old hand-built HomeView/ProjectsView card (tags, tools, sticker)', () => {
     for (const lang of ['ko', 'en'] as const) {
       const card = toPaperCartridge(entry(), lang, '/x/');
       expect(card).toEqual({

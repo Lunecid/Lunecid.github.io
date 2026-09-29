@@ -44,7 +44,8 @@ export interface ProjectSummaryItem {
 }
 
 /**
- * Rows of the /records/ project summary in resume.yaml `projects[]` order (all items; pdf flags ignored).
+ * Rows of the /records/ project summary in the order of `refs` (RecordsView passes the version's
+ * recordsProjectsOrder, P1-7b; all items, pdf flags ignored).
  * `projects` are the page language's collection entries (ids `<lang>/<slug>`).
  */
 export function projectSummaryItems(
