@@ -32,6 +32,7 @@ describe('docs-free (contract §0.3 prerequisite 2)', () => {
           // Allowed: .gitignore guard, final fix 3; asserts the folder is ignored, never reads it
           if (
             rel === 'tests/unit/toolchain.test.ts' &&
+            (line.match(new RegExp(PATTERN.source, 'g')) ?? []).length === 1 &&
             /'docs\/superpowers\/'/.test(line) &&
             line.includes("'.superpowers/'") &&
             line.includes("'.cursor-handoff/'")
