@@ -1,6 +1,6 @@
 ---
-// General-version layout (spec §5.2, §8; contract §1.1, §4): the common <head> (HeadMeta), the sans face only (no mono
-// preload; the Korean heading face arrives in P2-3 and is never preloaded), the editorial sheet, DataNav and
+// General-version layout (spec §5.2, §8; contract §1.1, §4): the common <head> (HeadMeta), the sans face (only its
+// core preloaded; no mono) and the Korean heading face (P2-3: swap, never preloaded), the editorial sheet, DataNav and
 // DataFooter. No game module: no CRT intro, AchievementHost, BGM or data-sfx (§4.3), and no GhostArt (the game's Miku
 // watermark; the shared components render it on the game version only).
 // The two TRANSITIONAL imports (P2 Appendix A D-7) serve the HUD markup that Tasks 4–8 replace; Task 9 removes them.
@@ -44,7 +44,7 @@ const altHref = altLangHref === undefined ? langSwitchHref(Astro.url.pathname, o
     <script is:inline set:html={VIEWER_QUEUE_SCRIPT} />
     <HeadMeta lang={lang} title={title} description={description} siteName={siteTitle} ogSlug={ogSlug} noindex={noindex} alternates={altHref !== null} jsonLd={jsonLd} analytics="always">
       <Fragment slot="fonts">
-        <style is:inline set:html={fontFaceCss(['sans'])}></style>
+        <style is:inline set:html={fontFaceCss(['sans', 'serifKoHead'])}></style>
         <link rel="preload" href={FONT_URL.sans} as="font" type="font/woff2" crossorigin />
       </Fragment>
     </HeadMeta>

@@ -10,6 +10,7 @@
 //   serifKo Noto Serif KR (fontsource ships it in ~120 unicode-range slices) → the Hangul inside the paper sheet
 //           of the pages that load it (the Korean paper page). The needed slices are subset and merged into one
 //           file. OFL 1.1 without a Reserved Font Name (fontsource LICENSE: "Google Inc."; name ID 0: Adobe).
+//   serifKoHead  Noto Serif KR, static wght 700 → the Hangul inside [data-serif] on the general version's pages (P2-3).
 import { createHash } from 'node:crypto';
 import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
@@ -22,10 +23,13 @@ import {
   clientScripts,
   htmlText,
   isHangul,
+  isIgnorable,
   paperHangul,
   paperSheetHtml,
   sansCharacters,
   scriptText,
+  serifHeadHangul,
+  serifHeadHtml,
   setText,
   shownText,
   sitePages,
@@ -95,11 +99,14 @@ export async function subsetSans(text) {
 
 /** @type {Map<string, Set<number>> | null} */
 let serifSliceCmaps = null;
-/** Code points per fontsource slice file, read from each slice's cmap. */
+/** The fontsource latin slice: the OG title instance takes Latin from it when no numbered slice has the character. */
+const SERIF_LATIN_SLICE = 'noto-serif-kr-latin-wght-normal.woff2';
+/** Code points per fontsource slice file (numbered slices in name order, then the latin slice), read from each cmap. */
 function serifSlices() {
   if (!serifSliceCmaps) {
     serifSliceCmaps = new Map();
-    for (const name of readdirSync(SOURCES.serifKoDir).filter((f) => /^noto-serif-kr-\d+-wght-normal\.woff2$/.test(f)).sort()) {
+    const names = readdirSync(SOURCES.serifKoDir).filter((f) => /^noto-serif-kr-\d+-wght-normal\.woff2$/.test(f)).sort();
+    for (const name of [...names, SERIF_LATIN_SLICE]) {
       const cmap = fontTables(readFileSync(join(SOURCES.serifKoDir, name))).get('cmap');
       if (cmap) serifSliceCmaps.set(name, cmapCodePoints(cmap));
     }
@@ -107,35 +114,44 @@ function serifSlices() {
   return serifSliceCmaps;
 }
 
-/** Tables the slices carry that one merged, horizontal, Hangul-only file does not need. */
+/** Tables the slices carry that one merged, horizontal file does not need. */
 const SERIF_DROP = ['GSUB', 'GPOS', 'GDEF', 'BASE', 'HVAR', 'VVAR', 'MVAR', 'vhea', 'vmtx', 'VORG'];
 
 /**
- * One WOFF2 with the given Hangul from Noto Serif KR: subset each slice that has some of them, merge the
- * slices, then let harfbuzz re-encode the merged font. Characters Noto Serif KR does not have (archaic jamo,
- * say) are returned in `missing` instead of failing the build: the browser draws them with the next font of
- * the stack. `data` is null when none of the characters exists in the font.
+ * One font with the given characters from Noto Serif KR: subset each slice that has some of them, merge the slices,
+ * then let harfbuzz re-encode the merged font. Characters Noto Serif KR does not have (archaic jamo, say) are returned
+ * in `missing` instead of failing the build. `data` is null when none of the characters exists in the font.
+ * - default: variable WOFF2 over the Hangul of `text` (the paper page's "SB Serif KR", unchanged since batch 2);
+ * - wght: the weight axis pinned to that value in every slice (a static instance, no fvar/gvar): 700 for the general
+ *   version's heading face (P2-3) and the OG title instance (P2-12);
+ * - format 'sfnt': a TrueType file (satori reads TTF/OTF/WOFF, not WOFF2);
+ * - latin: every printable character of `text`, not only Hangul (the OG title instance).
  * @param {string} text
+ * @param {{ format?: 'woff2' | 'sfnt'; wght?: number; latin?: boolean }} [options]
  * @returns {Promise<{ data: Buffer | null; missing: string[] }>}
  */
-export async function subsetSerifKo(text) {
-  const wanted = [...new Set(text)].filter((ch) => isHangul(/** @type {number} */ (ch.codePointAt(0))));
+export async function subsetSerifKo(text, { format = 'woff2', wght, latin = false } = {}) {
+  const wanted = [...new Set(text)].filter((ch) => {
+    const cp = /** @type {number} */ (ch.codePointAt(0));
+    return isHangul(cp) || (latin && cp >= 0x20 && !isIgnorable(ch));
+  });
   /** @type {Map<string, string>} */
   const bySlice = new Map();
   /** @type {string[]} */
   const missing = [];
   for (const ch of wanted) {
     const cp = /** @type {number} */ (ch.codePointAt(0));
-    const slice = [...serifSlices()].find(([, cps]) => cps.has(cp))?.[0];
+    const slice = [...serifSlices()].find(([name, cps]) => (latin || name !== SERIF_LATIN_SLICE) && cps.has(cp))?.[0];
     if (!slice) missing.push(ch);
     else bySlice.set(slice, (bySlice.get(slice) ?? '') + ch);
   }
   if (bySlice.size === 0) return { data: null, missing };
+  const pin = wght === undefined ? {} : { variationAxes: { wght } };
   const slices = [];
   for (const [name, chars] of bySlice) {
     const source = readFileSync(join(SOURCES.serifKoDir, name));
     try {
-      slices.push(await subsetFont(source, chars, { targetFormat: 'sfnt', dropTables: SERIF_DROP, noLayoutClosure: true, keepFeatures: [] }));
+      slices.push(await subsetFont(source, chars, { targetFormat: 'sfnt', dropTables: SERIF_DROP, noLayoutClosure: true, keepFeatures: [], ...pin }));
     } catch (error) {
       throw new Error(`subsetting the Noto Serif KR slice ${name} to "${chars}" failed: ${errorMessage(error)}`, { cause: error });
     }
@@ -148,7 +164,7 @@ export async function subsetSerifKo(text) {
   }
   const kept = [...bySlice.values()].join('');
   const data = await subsetFont(merged, kept, {
-    targetFormat: 'woff2',
+    targetFormat: format,
     dropTables: SERIF_DROP,
     noLayoutClosure: true,
     keepFeatures: [],
@@ -289,6 +305,19 @@ export async function buildFonts(distDir, { warn = (message) => console.warn(mes
     }
   }
 
+  // ── Korean heading serif (general version, P2-3): one static wght-700 file for the Hangul inside [data-serif] of the
+  //    pages that declare it; never preloaded (font-display: swap). English pages declare it but never download it. ──
+  const headPages = pages.filter((p) => p.html.includes(FONT_URL.serifKoHead));
+  if (headPages.length > 0) {
+    const head = await step('collecting the Hangul of the [data-serif] headings', () => serifHeadHangul(headPages.map((p) => p.file)));
+    const { data, missing } = await step(`building the Noto Serif KR heading instance (${head.size} characters)`, () => subsetSerifKo(setText(head), { wght: 700 }));
+    if (missing.length > 0) {
+      warnLacking('Noto Serif KR', new Set(missing), headPages.map((p) => ({ label: p.route, text: htmlText(serifHeadHtml(p.html)) })));
+    }
+    if (data) replace.set(FONT_URL.serifKoHead, write('serifKoHead', 'sb-serif-kr-head', data, head.size - missing.length));
+    else replace.set(fontFaceRule('serifKoHead'), ''); // no Hangul heading at all: the Times stack and the system serif draw them
+  }
+
   // ── pages ──
   for (const page of pages) {
     await step(`rewriting ${page.route}`, () => {
@@ -312,6 +341,8 @@ export async function buildFonts(distDir, { warn = (message) => console.warn(mes
 
 /** @type {Promise<Buffer | null> | null} */
 let devSerif = null;
+/** @type {Promise<Buffer | null> | null} */
+let devSerifHead = null;
 
 /** Every Hangul syllable in src/ (a superset of what the paper page shows), for the dev-server serif. */
 function sourceHangul() {
@@ -332,6 +363,7 @@ export async function devFont(url) {
   if (url === FONT_URL.sans) return readFileSync(SOURCES.sans);
   if (url === FONT_URL.mono) return readFileSync(SOURCES.mono);
   if (url === FONT_URL.serifKo) return (devSerif ??= subsetSerifKo(sourceHangul()).then((r) => r.data));
+  if (url === FONT_URL.serifKoHead) return (devSerifHead ??= subsetSerifKo(sourceHangul(), { wght: 700 }).then((r) => r.data));
   return null;
 }
 

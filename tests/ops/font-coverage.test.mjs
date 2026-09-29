@@ -15,7 +15,7 @@ import { createRequire } from 'node:module';
 import { dirname, join, relative, sep } from 'node:path';
 import { JSDOM } from 'jsdom';
 import { cmapCodePoints, parseName, woff2Tables } from '../../scripts/fonts/sfnt.mjs';
-import { SANS_FAMILY, SERIF_KO_FAMILY } from '../../src/lib/fonts.ts';
+import { SANS_FAMILY, SERIF_KO_FAMILY, SERIF_KO_HEAD_FAMILY } from '../../src/lib/fonts.ts';
 
 const DIST = process.env.DIST_DIR ?? 'dist';
 
@@ -126,19 +126,21 @@ const cached = (key, load) => {
 };
 /** @param {string} file */
 const fileCmap = (file) => cmapCodePoints(/** @type {Buffer} */ (woff2Tables(readFileSync(file)).get('cmap')));
+const notoSerifKr = () =>
+  cached('serif', () => {
+    const dir = dirname(require.resolve('@fontsource-variable/noto-serif-kr/files/noto-serif-kr-0-wght-normal.woff2'));
+    /** @type {Set<number>} */
+    const all = new Set();
+    for (const f of readdirSync(dir).filter((f) => /^noto-serif-kr-\d+-wght-normal\.woff2$/.test(f))) for (const cp of fileCmap(join(dir, f))) all.add(cp);
+    return all;
+  });
 /** Code points of the source of each subset family: Pretendard Variable, and every Noto Serif KR slice. */
 const SOURCE = {
   [SANS_FAMILY]: () => cached('sans', () => fileCmap(require.resolve('pretendard/dist/web/variable/woff2/PretendardVariable.woff2'))),
-  [SERIF_KO_FAMILY]: () =>
-    cached('serif', () => {
-      const dir = dirname(require.resolve('@fontsource-variable/noto-serif-kr/files/noto-serif-kr-0-wght-normal.woff2'));
-      /** @type {Set<number>} */
-      const all = new Set();
-      for (const f of readdirSync(dir).filter((f) => /^noto-serif-kr-\d+-wght-normal\.woff2$/.test(f))) for (const cp of fileCmap(join(dir, f))) all.add(cp);
-      return all;
-    }),
+  [SERIF_KO_FAMILY]: notoSerifKr,
+  [SERIF_KO_HEAD_FAMILY]: notoSerifKr,
 };
-const SOURCE_NAME = { [SANS_FAMILY]: 'Pretendard Variable', [SERIF_KO_FAMILY]: 'Noto Serif KR' };
+const SOURCE_NAME = { [SANS_FAMILY]: 'Pretendard Variable', [SERIF_KO_FAMILY]: 'Noto Serif KR', [SERIF_KO_HEAD_FAMILY]: 'Noto Serif KR' };
 
 /** "똠 (U+B620)" @param {string[]} chars */
 const describe = (chars) => chars.map((ch) => `${ch} (U+${ch.codePointAt(0)?.toString(16).toUpperCase().padStart(4, '0')})`).join(' ');
@@ -192,6 +194,13 @@ export function checkPage(html, scriptText) {
       check(hangul, faces, SERIF_KO_FAMILY, problems, warnings);
     }
   }
+  if (faces.some((f) => f.family === SERIF_KO_HEAD_FAMILY)) {
+    // P2-3: the heading face must draw every Hangul inside [data-serif] (the only text the build subsets it for).
+    const hangul = [...doc.querySelectorAll('[data-serif]')]
+      .map((el) => [...renderableText(el)].filter((ch) => /\p{Script=Hangul}/u.test(ch)).join(''))
+      .join('');
+    check(hangul, faces, SERIF_KO_HEAD_FAMILY, problems, warnings);
+  }
   if (/\/_fonts\//.test(html)) problems.push('an unresolved /_fonts/ placeholder is left in the page');
   return { problems, warnings };
 }
@@ -213,6 +222,25 @@ test('the Korean paper page loads the Korean serif and no other page does', () =
     .filter((p) => fontFaces(new JSDOM(readFileSync(p.file, 'utf8')).window.document).some((f) => f.family === SERIF_KO_FAMILY))
     .map((p) => p.route);
   assert.deepEqual(withSerif.sort(), ['/data/research/cog-2026-engagement/', '/game/research/cog-2026-engagement/']);
+});
+
+test('general-version pages declare the Korean heading face, no other page does, and no page preloads it (P2-3)', () => {
+  /** @type {string[]} */
+  const wrong = [];
+  for (const p of builtPages()) {
+    const html = readFileSync(p.file, 'utf8');
+    const declares = fontFaces(new JSDOM(html).window.document).some((f) => f.family === SERIF_KO_HEAD_FAMILY);
+    const general = /^\/(en\/)?data\//.test(p.route);
+    if (declares !== general) wrong.push(`${p.route}: declares=${declares}`);
+    if (/<link rel="preload"[^>]*sb-serif-kr-head/.test(html)) wrong.push(`${p.route}: preloads the heading face`);
+  }
+  assert.deepEqual(wrong, []);
+});
+
+test('the Korean heading face ships as one static file (no fvar)', () => {
+  const files = walk(join(DIST, '_astro')).filter((f) => /[\\/]sb-serif-kr-head\.[\w-]+\.woff2$/.test(f));
+  assert.equal(files.length, 1);
+  assert.equal(woff2Tables(readFileSync(files[0])).has('fvar'), false);
 });
 
 test('self-test: a character the source font has but the subset lacks fails, named', () => {

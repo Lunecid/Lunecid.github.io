@@ -11,14 +11,18 @@ export const SANS_FAMILY = 'SB Sans';
 export const MONO_FAMILY = 'JetBrains Mono Variable';
 /** The Korean text of the paper page: a subset of Noto Serif KR (OFL 1.1, no Reserved Font Name). */
 export const SERIF_KO_FAMILY = 'SB Serif KR';
+/** The general version's Korean headings (P2-3): a static wght-700 subset of Noto Serif KR over the Hangul inside
+ * [data-serif]; separate from the paper's variable "SB Serif KR". Declared by DataLayout, never preloaded (§9). */
+export const SERIF_KO_HEAD_FAMILY = 'SB Serif KR Head';
 
-export type FontFace = 'sans' | 'mono' | 'serifKo';
+export type FontFace = 'sans' | 'mono' | 'serifKo' | 'serifKoHead';
 
 /** Placeholder URL per face (replaced by the hashed file in dist). */
 export const FONT_URL: Record<FontFace, string> = {
   sans: '/_fonts/sb-sans.woff2',
   mono: '/_fonts/jetbrains-mono.woff2',
   serifKo: '/_fonts/sb-serif-kr.woff2',
+  serifKoHead: '/_fonts/sb-serif-kr-head.woff2',
 };
 
 /** The Hangul blocks (Jamo, Compatibility Jamo, Jamo Extended-A, Syllables, Jamo Extended-B). */
@@ -28,10 +32,11 @@ const DESCRIPTORS: Record<FontFace, string> = {
   sans: `font-family:"${SANS_FAMILY}";font-style:normal;font-weight:400 900;font-display:swap`,
   mono: `font-family:"${MONO_FAMILY}";font-style:normal;font-weight:100 800;font-display:swap`,
   serifKo: `font-family:"${SERIF_KO_FAMILY}";font-style:normal;font-weight:200 900;font-display:swap`,
+  serifKoHead: `font-family:"${SERIF_KO_HEAD_FAMILY}";font-style:normal;font-weight:700;font-display:swap`,
 };
 
-/** The Korean serif draws Hangul only, so Latin text on the paper keeps its Times face. */
-const DEFAULT_RANGE: Partial<Record<FontFace, string>> = { serifKo: HANGUL_UNICODE_RANGE };
+/** The Korean serifs draw Hangul only, so Latin text keeps its Times face. */
+const DEFAULT_RANGE: Partial<Record<FontFace, string>> = { serifKo: HANGUL_UNICODE_RANGE, serifKoHead: HANGUL_UNICODE_RANGE };
 
 /** One @font-face rule; by default for the face's placeholder URL. */
 export function fontFaceRule(face: FontFace, url: string = FONT_URL[face], unicodeRange: string | undefined = DEFAULT_RANGE[face]): string {

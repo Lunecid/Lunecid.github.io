@@ -1,8 +1,8 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import type { Page } from '@playwright/test';
-import { test, expect } from './helpers';
-import { MONO_FAMILY, SANS_FAMILY, SERIF_KO_FAMILY } from '../../src/lib/fonts';
+import { test, expect, dataPath } from './helpers';
+import { MONO_FAMILY, SANS_FAMILY, SERIF_KO_FAMILY, SERIF_KO_HEAD_FAMILY } from '../../src/lib/fonts';
 import { cmapCodePoints, woff2Tables } from '../../scripts/fonts/sfnt.mjs';
 
 // Batch 2: the page fonts are build-time subsets. Body text renders in the sans subset, HUD labels in the mono
@@ -101,4 +101,25 @@ test('the Korean paper page sets its Korean text in the Korean serif; the Englis
 
   await open(page, '/en/game/research/cog-2026-engagement/');
   expect(await faceStatus(page, SERIF_KO_FAMILY)).toEqual([]);
+});
+
+test(`general home: [data-serif] text is set in the Times stack with "${SERIF_KO_HEAD_FAMILY}" for Hangul; the face loads, nothing falls back, nothing preloads it`, async ({ page }) => {
+  await open(page, dataPath('/'));
+  const serif = page.locator('[data-serif]');
+  const family = await serif.first().evaluate((el) => getComputedStyle(el).fontFamily);
+  expect(family).toMatch(/^"Times New Roman"/);
+  expect(family).toContain(SERIF_KO_HEAD_FAMILY);
+  const hangul = [...(await serif.allTextContents()).join('')].filter((ch) => /\p{Script=Hangul}/u.test(ch)).join('');
+  expect(hangul.length).toBeGreaterThan(0);
+  expect(await faceStatus(page, SERIF_KO_HEAD_FAMILY)).toContain('loaded');
+  expect(await fallbackChars(page, SERIF_KO_HEAD_FAMILY, inSource(hangul, NOTO_SERIF_KR))).toEqual([]);
+  await expect(page.locator('link[rel="preload"][href*="sb-serif-kr-head"]')).toHaveCount(0);
+});
+
+test('English general home: the heading face is declared but never downloaded (its headings hold no Hangul)', async ({ page }) => {
+  const requested: string[] = [];
+  page.on('request', (request) => requested.push(request.url()));
+  await open(page, dataPath('/', 'en'));
+  expect(await faceStatus(page, SERIF_KO_HEAD_FAMILY)).toEqual(['unloaded']); // declared once, not loaded (red before Step 6)
+  expect(requested.filter((url) => url.includes('sb-serif-kr-head'))).toEqual([]);
 });

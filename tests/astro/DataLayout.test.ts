@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import BaseLayout from '../../src/layouts/BaseLayout.astro';
 import DataLayout from '../../src/layouts/DataLayout.astro';
-import { FONT_URL, MONO_FAMILY, SANS_FAMILY } from '../../src/lib/fonts';
+import { FONT_URL, HANGUL_UNICODE_RANGE, MONO_FAMILY, SANS_FAMILY, SERIF_KO_HEAD_FAMILY } from '../../src/lib/fonts';
 import { HEAD_INIT_SCRIPT } from '../../src/lib/head-init';
 import { VIEWER_QUEUE_SCRIPT } from '../../src/lib/viewer-queue';
 import { renderAstro, type AstroComponent } from './helpers';
@@ -39,9 +39,10 @@ describe('DataLayout.astro (P2-1)', () => {
     expect(scripts[1]).toBe(VIEWER_QUEUE_SCRIPT);
   });
 
-  it('declares the sans face only and preloads only the sans core', async () => {
+  it('declares the sans face and the Korean heading face (Hangul range, weight 700), no mono face, and preloads only the sans core', async () => {
     const head = headOf(await render(DataLayout));
     expect(head).toContain(`font-family:"${SANS_FAMILY}"`);
+    expect(head).toContain(`@font-face{font-family:"${SERIF_KO_HEAD_FAMILY}";font-style:normal;font-weight:700;font-display:swap;src:url(${FONT_URL.serifKoHead}) format("woff2");unicode-range:${HANGUL_UNICODE_RANGE}}`);
     expect(head).not.toContain(MONO_FAMILY);
     expect([...head.matchAll(/<link rel="preload" href="([^"]+)"/g)].map((m) => m[1])).toEqual([FONT_URL.sans]);
   });
