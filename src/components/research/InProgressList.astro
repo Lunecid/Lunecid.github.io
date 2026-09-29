@@ -8,6 +8,7 @@ import type { Lang } from '../../i18n/ui';
 import { t } from '../../i18n/utils';
 import { pageHref } from '../../lib/links';
 import type { VariantId } from '../../variants/ids';
+import { captionFor, getVariant } from '../../variants';
 
 interface Props {
   lang: Lang;
@@ -26,7 +27,7 @@ const rows = items.map((item) => ({
 ---
 <section id="in-progress" class="progress-list read read-sec" aria-labelledby="in-progress-title">
   <div class="container">
-    <SectionHead id="in-progress-title" caption={t(lang, 'section.inProgress')} title={t(lang, 'research.inProgress')} />
+    <SectionHead variant={variant} id="in-progress-title" caption={captionFor(getVariant(variant), 'inProgress', lang)} title={t(lang, 'research.inProgress')} />
     <ol class="progress-list__items lh-rows" role="list">
       {rows.map((row, i) => (
         <li class="progress-list__item lh-row" data-item={row.id}>

@@ -1,32 +1,47 @@
 ---
-// The three résumé PDFs as cut-corner buttons (P2-19): used in the /records/ head and in #documents. D-7: each label
-// names its document ("국문 이력서 (2쪽)", "Academic CV"), the title repeats it with the file type, and ↓ marks a
-// download. File links are never language-prefixed.
+// The résumé PDFs (P2-19, D-7 labels: each names its document; the title repeats it with the file type; ↓ = download;
+// never language-prefixed). Game version: cut-corner buttons. General version (P2-4, spec §8): the primary PDF is the
+// view's one filled button, the others underlined links.
+import type { VariantId } from '../../variants';
+
 interface Props {
+  variant: VariantId;
   documents: { id: string; label: string; href: string }[];
-  /** id of the filled (primary) button, e.g. the page-language résumé in the /records/ head; none: all outlined. */
+  /** id of the filled (primary) button, e.g. the page-language résumé in the /records/ head; none: no filled button. */
   primary?: string;
 }
 
-const { documents, primary } = Astro.props;
+const { variant, documents, primary } = Astro.props;
 ---
-<ul class="doc-btns" role="list">
-  {documents.map((doc) => (
-    <li data-document={doc.id}>
-      <a
-        class:list={['btn', 'cut', doc.id === primary ? 'btn--fill' : ['btn--line', 'cut--line'], 'doc-btns__btn']}
-        href={doc.href}
-        type="application/pdf"
-        title={`${doc.label} · PDF`}
-        download
-      ><span class="doc-btns__label">{doc.label}</span> <span class="doc-btns__kind" lang="en">PDF</span> <span aria-hidden="true">↓</span></a>
-    </li>
-  ))}
-</ul>
+{variant === 'game' ? (
+  <ul class="doc-btns" role="list">
+    {documents.map((doc) => (
+      <li data-document={doc.id}>
+        <a
+          class:list={['btn', 'cut', doc.id === primary ? 'btn--fill' : ['btn--line', 'cut--line'], 'doc-btns__btn']}
+          href={doc.href}
+          type="application/pdf"
+          title={`${doc.label} · PDF`}
+          download
+        ><span class="doc-btns__label">{doc.label}</span> <span class="doc-btns__kind" lang="en">PDF</span> <span aria-hidden="true">↓</span></a>
+      </li>
+    ))}
+  </ul>
+) : (
+  <ul class="ed-docs" role="list">
+    {documents.map((doc) => (
+      <li data-document={doc.id}>
+        <a class:list={[doc.id === primary ? ['ed-btn', 'ed-btn--fill'] : 'ed-link', 'ed-docs__link']} href={doc.href} type="application/pdf" title={`${doc.label} · PDF`} download><span>{doc.label}</span> <span class="ed-docs__kind" lang="en">PDF</span> <span aria-hidden="true">↓</span></a>
+      </li>
+    ))}
+  </ul>
+)}
 
 <style>
   .doc-btns { display: flex; flex-wrap: wrap; gap: 10px; }
   .doc-btns__btn { gap: 6px; }
   /* the button's own colour at full strength (accent-deep 6.1:1 on white, white 6.1:1 on accent-deep): no opacity */
   .doc-btns__kind { font: 700 var(--fs-label)/1 var(--font-mono); letter-spacing: .08em; }
+  .ed-docs { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 24px; }
+  .ed-docs__kind { font-size: var(--fs-caption); letter-spacing: .04em; }
 </style>

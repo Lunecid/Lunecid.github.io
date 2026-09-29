@@ -23,7 +23,7 @@ const EULA: StageCharacter = {
 function props(lang: 'ko' | 'en', side: StageCharacter[] = []): Record<string, unknown> {
   const copy = resolveDeep(mainMenuCopy[lang], lang, loadFactSource());
   // As HomeView builds them (P1-11): the game version's links.
-  return { lang, items: copy.items.map((item) => ({ ...item, href: pageHref(item.href, { lang, variant: 'game' }) })), hint: copy.hint, side };
+  return { variant: 'game', lang, items: copy.items.map((item) => ({ ...item, href: pageHref(item.href, { lang, variant: 'game' }) })), hint: copy.hint, side };
 }
 
 describe('MainMenu.astro', () => {

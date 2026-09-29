@@ -8,7 +8,7 @@ import photo from '../../assets/photo/photo-id.webp';
 import type { Lang } from '../../i18n/ui';
 import { t } from '../../i18n/utils';
 import { fitWidths, sourceSize } from '../../lib/images';
-import { getVariant } from '../../variants';
+import { captionFor, getVariant } from '../../variants';
 import type { VariantId } from '../../variants/ids';
 
 interface Props {
@@ -62,7 +62,7 @@ const heads = {
       alt={t(lang, 'card.photoAlt')}
     />
     <div class="hello__intro">
-      <SectionLabel en={t(lang, 'section.profile')} />
+      <SectionLabel variant={variant} en={captionFor(getVariant(variant), 'profile', lang)} />
       <Title id={titleId} class="hello__title">{`${t(lang, 'section.hello')}!`}</Title>
       {tagline && <p class="hello__tagline">{tagline}</p>}
       {status && <p class="hello__status">{status}</p>}

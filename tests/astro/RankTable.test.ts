@@ -7,6 +7,7 @@ describe('RankTable', () => {
   it('column headers and rows; direct referrer label; data-fetched-at present', async () => {
     const html = await renderAstro(RankTable, {
       props: {
+        variant: 'neutral',
         lang: 'ko', id: 'referrers', title: t('ko', 'stats.referrers'),
         rows: [{ label: t('ko', 'stats.direct'), count: 1500 }, { label: 'github.com', count: 20 }],
         fetchedAt: '2026-09-30T18:00:00.000Z', maxAgeDays: 7,
@@ -26,7 +27,7 @@ describe('RankTable', () => {
     expect(html.match(/<tr[\s>]/g)).toHaveLength(3);
     expect(html).toMatch(/<script[^>]*type="module"/);
 
-    const empty = await renderAstro(RankTable, { props: { lang: 'en', id: 'top-pages', title: 'Top pages', rows: [], fetchedAt: '2026-09-30T18:00:00.000Z', maxAgeDays: 7 } });
+    const empty = await renderAstro(RankTable, { props: { variant: 'neutral', lang: 'en', id: 'top-pages', title: 'Top pages', rows: [], fetchedAt: '2026-09-30T18:00:00.000Z', maxAgeDays: 7 } });
     expect(empty).not.toContain('id="top-pages"');
   });
 });

@@ -19,13 +19,13 @@ const FEED: AccountFeed = {
 
 describe('GameAchievements', () => {
   it('D-13: renders nothing (no #game-achievements) while no account feed exists', async () => {
-    const html = await renderAstro(GameAchievements, { props: { lang: 'ko', platforms: playerLogCopy.ko.gamePlatforms, accounts: {} } });
+    const html = await renderAstro(GameAchievements, { props: { variant: 'game', lang: 'ko', platforms: playerLogCopy.ko.gamePlatforms, accounts: {} } });
     expect(html.trim()).toBe('');
   });
 
   it('once an account feed exists: section#game-achievements lists the platforms and the note, no numbers', async () => {
     const accounts = { 'enka-zzz': FEED };
-    const html = await renderAstro(GameAchievements, { props: { lang: 'ko', platforms: playerLogCopy.ko.gamePlatforms, accounts } });
+    const html = await renderAstro(GameAchievements, { props: { variant: 'game', lang: 'ko', platforms: playerLogCopy.ko.gamePlatforms, accounts } });
     expect(html).toMatch(/<section[^>]*id="game-achievements"/);
     expect(html.match(/class="game-ach__item"/g)).toHaveLength(5);
     for (const name of ['League of Legends', 'Dungeon & Fighter', 'Steam', 'Genshin Impact', 'Zenless Zone Zero']) {
@@ -36,7 +36,7 @@ describe('GameAchievements', () => {
     expect(html).toContain('계정을 연동하면 게임 업적이 여기에 표시됩니다.');
     expect(text(html)).not.toMatch(/\d/); // no invented levels, counts or rates
 
-    const en = await renderAstro(GameAchievements, { props: { lang: 'en', platforms: playerLogCopy.en.gamePlatforms, accounts } });
+    const en = await renderAstro(GameAchievements, { props: { variant: 'game', lang: 'en', platforms: playerLogCopy.en.gamePlatforms, accounts } });
     expect(en).toContain('Game achievements appear here once an account is linked.');
     expect(text(en)).not.toMatch(/\d/);
   });

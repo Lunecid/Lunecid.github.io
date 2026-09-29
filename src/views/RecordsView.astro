@@ -26,7 +26,7 @@ import { ui } from '../i18n/ui';
 import { t } from '../i18n/utils';
 import type { CertificateId } from '../types';
 import type { VariantId } from '../variants/ids';
-import { getVariant, pageMetaFor, resolveIdentity } from '../variants';
+import { captionFor, getVariant, pageMetaFor, resolveIdentity } from '../variants';
 
 interface Props {
   lang: Lang;
@@ -88,7 +88,7 @@ const documents = v.documents.list.map((id) => {
 const meta = pageMetaFor('records', lang, variant, facts);
 ---
 <Layout lang={lang} variant={variant} title={meta.title} description={meta.description} page="records" section="records" sectionIndex>
-  <PageHeader lang={lang} label="RECORDS" title={t(lang, 'records.title')} />
+  <PageHeader lang={lang} variant={variant} label={captionFor(v, 'pageRecords', lang)} title={t(lang, 'records.title')} />
   {/* P2-19: a short head (photo, name, status, one line, the three PDFs, an in-page bar), not the home profile again */}
   <RecordsHead
     lang={lang}
@@ -103,10 +103,10 @@ const meta = pageMetaFor('records', lang, variant, facts);
     ids={resume.researchIds}
   />
   <div class="read">
-    <EducationTimeline lang={lang} items={resume.education} />
+    <EducationTimeline lang={lang} variant={variant} items={resume.education} />
     <section id="publications" class="rec read-sec" aria-labelledby="publications-title">
       <div class="container">
-        <SectionHead id="publications-title" caption={t(lang, 'section.publications')} title={t(lang, 'records.publications')} />
+        <SectionHead variant={variant} id="publications-title" caption={captionFor(getVariant(variant), 'publications', lang)} title={t(lang, 'records.publications')} />
         <ol class="rec__pubs" role="list">
           {papers.map((paper) => (
             <li><PublicationItem lang={lang} paper={paper} headingLevel={3} compact /></li>
@@ -114,10 +114,11 @@ const meta = pageMetaFor('records', lang, variant, facts);
         </ol>
       </div>
     </section>
-    <ProjectSummaryList lang={lang} items={projectSummaryItems(v.orders.recordsProjectsOrder.map((item) => ({ ref: item.slice('project:'.length) })), projects, ctx)} />
-    <AwardList lang={lang} awards={awardItems(resume.awards, awards, ctx, certMeta)} />
+    <ProjectSummaryList lang={lang} variant={variant} items={projectSummaryItems(v.orders.recordsProjectsOrder.map((item) => ({ ref: item.slice('project:'.length) })), projects, ctx)} />
+    <AwardList lang={lang} variant={variant} awards={awardItems(resume.awards, awards, ctx, certMeta)} />
     <CredentialList
       lang={lang}
+      variant={variant}
       groups={[
         { id: 'activities', title: t(lang, 'records.activities'), items: credentials.activities },
         { id: 'certifications', title: t(lang, 'records.certifications'), items: credentials.certifications },
@@ -125,9 +126,9 @@ const meta = pageMetaFor('records', lang, variant, facts);
         { id: 'training', title: t(lang, 'records.training'), items: credentials.training },
       ]}
     />
-    <SkillList lang={lang} primary={skills.primary} familiar={skills.familiar} />
+    <SkillList lang={lang} variant={variant} primary={skills.primary} familiar={skills.familiar} />
     <JobFitTable lang={lang} variant={variant} data={jobfit} facts={facts} />
-    <DocumentList lang={lang} documents={documents} />
+    <DocumentList lang={lang} variant={variant} documents={documents} />
   </div>
   <ImageViewer
     client:idle

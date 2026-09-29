@@ -18,6 +18,7 @@ import { formatDate, t, type UiKey } from '../../i18n/utils';
 import { pageHref } from '../../lib/links';
 import type { JobfitStatus } from '../../types';
 import type { VariantId } from '../../variants/ids';
+import { captionFor, getVariant } from '../../variants';
 
 interface Props {
   lang: Lang;
@@ -50,7 +51,7 @@ const title = t(lang, 'jobfit.title');
 ---
 <section id="job-fit" class="jobfit read-sec" aria-labelledby="job-fit-title">
   <div class="container">
-    <SectionHead id="job-fit-title" caption={t(lang, 'section.jobFit')} title={title} />
+    <SectionHead variant={variant} id="job-fit-title" caption={captionFor(getVariant(variant), 'jobFit', lang)} title={title} />
     {data ? (
       <Fragment>
         <p class="jobfit__intro">{r(data.intro[lang])}</p>

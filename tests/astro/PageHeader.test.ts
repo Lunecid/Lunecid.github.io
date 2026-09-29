@@ -6,6 +6,7 @@ describe('PageHeader.astro', () => {
   it('renders exactly one h1 with the title and the HUD label', async () => {
     const html = await renderAstro(PageHeader, {
       props: {
+        variant: 'game',
         lang: 'ko',
         label: 'SELECT YOUR PROJECT',
         title: '프로젝트',
@@ -23,8 +24,24 @@ describe('PageHeader.astro', () => {
   });
 
   it('omits the intro paragraph when it is not given', async () => {
-    const html = await renderAstro(PageHeader, { props: { lang: 'en', label: 'RECORDS', title: 'Records' } });
+    const html = await renderAstro(PageHeader, { props: { variant: 'game', lang: 'en', label: 'RECORDS', title: 'Records' } });
     expect(html).not.toContain('page-head__intro');
     expect(html).toMatch(/<h1[^>]*>Records<\/h1>/);
+  });
+
+  it('general version (P2-4): one serif h1, a plain caption, the intro, no HUD grid or mark', async () => {
+    const html = await renderAstro(PageHeader, { props: { variant: 'data', lang: 'ko', label: '포트폴리오', title: '프로젝트', intro: '소개 문장입니다.' } });
+    expect(html.match(/<h1[\s>]/g)).toHaveLength(1);
+    expect(html).toMatch(/<section[^>]*class="ed-page-head"[^>]*aria-labelledby="page-head-title"/);
+    expect(html).toMatch(/<h1 id="page-head-title" class="ed-page-head__title" data-serif[^>]*>프로젝트<\/h1>/);
+    expect(html).toMatch(/<p class="ed-label"[^>]*>포트폴리오<\/p>/);
+    expect(html).toMatch(/<p class="ed-page-head__intro"[^>]*>소개 문장입니다\.<\/p>/);
+    expect(html).not.toMatch(/hud-grid|hud-label/);
+  });
+
+  it('neutral pages (P2-4): the same head in sans (no data-serif)', async () => {
+    const html = await renderAstro(PageHeader, { props: { variant: 'neutral', lang: 'en', label: 'Visitor stats', title: 'Visitor stats' } });
+    expect(html).toMatch(/<h1 id="page-head-title" class="ed-page-head__title"[^>]*>Visitor stats<\/h1>/);
+    expect(html).not.toContain('data-serif');
   });
 });

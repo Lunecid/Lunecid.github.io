@@ -6,13 +6,15 @@ import SectionHead from '../hud/SectionHead.astro';
 import type { ResumeData } from '../../content/schemas';
 import type { Lang } from '../../i18n/ui';
 import { formatPeriod, t } from '../../i18n/utils';
+import { captionFor, getVariant, type VariantId } from '../../variants';
 
 interface Props {
   lang: Lang;
+  variant: VariantId;
   items: ResumeData['education'];
 }
 
-const { lang, items } = Astro.props;
+const { lang, variant, items } = Astro.props;
 const rows = items.map((e) => ({
   id: e.id,
   period: formatPeriod(e.start, e.end, lang, { expected: e.expected }),
@@ -25,7 +27,7 @@ const rows = items.map((e) => ({
 ---
 <section id="education" class="rec read-sec" aria-labelledby="education-title">
   <div class="container">
-    <SectionHead id="education-title" caption={t(lang, 'section.questLog')} title={t(lang, 'records.education')} />
+    <SectionHead variant={variant} id="education-title" caption={captionFor(getVariant(variant), 'questLog', lang)} title={t(lang, 'records.education')} />
     <ol class="timeline lh-rows" role="list">
       {rows.map((row) => (
         <li class="timeline__item" data-education={row.id}>

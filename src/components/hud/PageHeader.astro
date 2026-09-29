@@ -1,28 +1,43 @@
 ---
 /**
- * Dark header of every index page (research, projects, records, player log, stats, legal): the "[ ■ ] LABEL" caption
- * over the page title (D-8: no [ NN ] numbers outside the nav).
- * It owns the page's only <h1>. The default slot (optional) sits under the intro, e.g. the Academic CV link on /research/.
+ * Header of every index page; it owns the page's only <h1>. Game version: the dark HUD header with the "[ ■ ] LABEL"
+ * caption (D-8). General and neutral pages (P2-4): caption + title (serif on the general version) + intro over a heavy
+ * rule, on the page background. The default slot (optional) sits under the intro.
  */
 import type { Lang } from '../../i18n/ui';
+import type { PageVariant } from '../../variants';
 import SectionLabel from './SectionLabel.astro';
 
 interface Props {
+  variant: PageVariant;
   lang: Lang;
   label: string;
   title: string;
   intro?: string;
 }
-const { label, title, intro } = Astro.props;
+const { variant, label, title, intro } = Astro.props;
 ---
-<section class="page-head hud-grid" aria-labelledby="page-head-title">
-  <div class="container container--hud page-head__inner">
-    <SectionLabel en={label} />
-    <h1 id="page-head-title" class="page-head__title">{title}</h1>
-    {intro && <p class="page-head__intro">{intro}</p>}
-    <slot />
-  </div>
-</section>
+{variant === 'game' ? (
+  <section class="page-head hud-grid" aria-labelledby="page-head-title">
+    <div class="container container--hud page-head__inner">
+      <SectionLabel variant="game" en={label} />
+      <h1 id="page-head-title" class="page-head__title">{title}</h1>
+      {intro && <p class="page-head__intro">{intro}</p>}
+      <slot />
+    </div>
+  </section>
+) : (
+  <section class="ed-page-head" aria-labelledby="page-head-title">
+    <div class="container">
+      <div class="ed-page-head__box">
+        <SectionLabel variant={variant} en={label} />
+        <h1 id="page-head-title" class="ed-page-head__title" data-serif={variant === 'data' ? true : undefined}>{title}</h1>
+        {intro && <p class="ed-page-head__intro">{intro}</p>}
+        <slot />
+      </div>
+    </div>
+  </section>
+)}
 
 <style>
   .page-head {
@@ -43,9 +58,22 @@ const { label, title, intro } = Astro.props;
     line-height: var(--lh-body);
     color: var(--hud-muted);
   }
+  /* General and neutral pages (P2-4) */
+  .ed-page-head { padding-block: 40px 8px; background: var(--page-bg); color: var(--page-ink); }
+  .ed-page-head__box { padding-bottom: 24px; border-bottom: var(--ed-rule-w-strong) solid var(--page-rule-strong); }
+  .ed-page-head__title { margin-top: 8px; font-size: var(--fs-display); font-weight: 700; line-height: var(--lh-display); color: var(--page-ink); }
+  .ed-page-head__intro { margin-top: 12px; max-width: var(--measure); font-size: var(--fs-body); line-height: var(--lh-body); color: var(--page-muted); }
   @media (min-width: 1068px) {
     .page-head {
       padding-block: 64px 48px;
     }
+    .ed-page-head { padding-block: 56px 8px; }
+  }
+  /* G-018 (owner decision 8 (a); fix-brief N02 step 5 leaves the .page-head part to P2-4): landscape phones get
+     less spacing only; nothing is hidden. */
+  @media (min-width: 734px) and (max-height: 500px) {
+    .page-head { padding-block: 24px 20px; }
+    .ed-page-head { padding-block: 20px 8px; }
+    .page-head__title, .ed-page-head__title { font-size: min(var(--fs-display), 12svh); }
   }
 </style>

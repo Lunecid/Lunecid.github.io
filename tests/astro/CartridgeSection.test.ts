@@ -12,7 +12,7 @@ const cartridges: CartridgeProps[] = [
 describe('CartridgeSection.astro', () => {
   it('section#featured-projects with SELECT YOUR PROJECT label and a more link', async () => {
     const html = await renderAstro(CartridgeSection, {
-      props: { lang: 'ko', cartridges, moreHref: '/game/projects/', moreLabel: '프로젝트 전체 보기' },
+      props: { variant: 'game', lang: 'ko', cartridges, moreHref: '/game/projects/', moreLabel: '프로젝트 전체 보기' },
     });
     expect(html).toMatch(/<section[^>]*id="featured-projects"[^>]*class="cart-sec sec hud-grid"[^>]*aria-labelledby="featured-projects-title"/);
     // fix round 1: caption-only on the dark band; the Korean title is the visually hidden heading
@@ -27,11 +27,11 @@ describe('CartridgeSection.astro', () => {
 
   it('the title is ui section.selectProject.title in the page language', async () => {
     const ko = await renderAstro(CartridgeSection, {
-      props: { lang: 'ko', cartridges, moreHref: '/game/projects/', moreLabel: '프로젝트 전체 보기' },
+      props: { variant: 'game', lang: 'ko', cartridges, moreHref: '/game/projects/', moreLabel: '프로젝트 전체 보기' },
     });
     expect(ko).toContain(t('ko', 'section.selectProject.title'));
     const en = await renderAstro(CartridgeSection, {
-      props: { lang: 'en', cartridges, moreHref: '/en/game/projects/', moreLabel: 'See all projects' },
+      props: { variant: 'game', lang: 'en', cartridges, moreHref: '/en/game/projects/', moreLabel: 'See all projects' },
     });
     expect(en).not.toContain(t('ko', 'section.selectProject.title'));
     expect(en).toContain(t('en', 'section.selectProject.title'));

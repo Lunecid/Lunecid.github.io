@@ -6,17 +6,19 @@ import type { ProjectSummaryItem } from '../../lib/records';
 import SectionHead from '../hud/SectionHead.astro';
 import type { Lang } from '../../i18n/ui';
 import { t } from '../../i18n/utils';
+import { captionFor, getVariant, type VariantId } from '../../variants';
 
 interface Props {
   lang: Lang;
+  variant: VariantId;
   items: ProjectSummaryItem[];
 }
 
-const { lang, items } = Astro.props;
+const { lang, variant, items } = Astro.props;
 ---
 <section id="projects" class="rec read-sec" aria-labelledby="projects-title">
   <div class="container">
-    <SectionHead id="projects-title" caption={t(lang, 'section.projects')} title={t(lang, 'records.projects')} />
+    <SectionHead variant={variant} id="projects-title" caption={captionFor(getVariant(variant), 'projects', lang)} title={t(lang, 'records.projects')} />
     <ol class="psum lh-rows" role="list">
       {items.map((item, i) => (
         <li class="psum__item lh-row">

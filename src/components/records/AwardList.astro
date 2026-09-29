@@ -7,17 +7,19 @@ import SectionHead from '../hud/SectionHead.astro';
 import type { AwardItem } from '../../lib/records';
 import type { Lang } from '../../i18n/ui';
 import { t } from '../../i18n/utils';
+import { captionFor, getVariant, type VariantId } from '../../variants';
 
 interface Props {
   lang: Lang;
+  variant: VariantId;
   awards: AwardItem[];
 }
 
-const { lang, awards } = Astro.props;
+const { lang, variant, awards } = Astro.props;
 ---
 <section id="awards" class="rec read-sec" aria-labelledby="awards-title">
   <div class="container">
-    <SectionHead id="awards-title" caption={t(lang, 'section.achievements')} title={t(lang, 'records.awards')} />
+    <SectionHead variant={variant} id="awards-title" caption={captionFor(getVariant(variant), 'achievements', lang)} title={t(lang, 'records.awards')} />
     <ul class="award__list lh-rows" role="list">
       {awards.map((award) => (
         <li class="award" data-award={award.id}>

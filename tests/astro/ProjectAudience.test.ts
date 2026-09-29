@@ -6,7 +6,7 @@ const audience = { game: '게임 팀에게 주는 한 문장입니다.', researc
 
 describe('ProjectAudience.astro (P1-8)', () => {
   it('two labelled blocks: 게임 팀에게 | 연구 기여, in that order', async () => {
-    const ko = await renderAstro(ProjectAudience, { props: { lang: 'ko', audience } });
+    const ko = await renderAstro(ProjectAudience, { props: { variant: 'game', lang: 'ko', audience } });
     const labels = [...ko.matchAll(/<h2[^>]*class="audience__label"[^>]*>([^<]*)<\/h2>/g)].map((m) => m[1]);
     expect(labels).toEqual(['게임 팀에게', '연구 기여']);
     expect(ko).toMatch(/<section(?=[^>]*id="for-game-teams")(?=[^>]*aria-labelledby="for-game-teams-title")[^>]*>/);
@@ -16,18 +16,18 @@ describe('ProjectAudience.astro (P1-8)', () => {
   });
 
   it('English labels on /en/', async () => {
-    const en = await renderAstro(ProjectAudience, { props: { lang: 'en', audience: { game: 'For teams.', research: 'Method.' } } });
+    const en = await renderAstro(ProjectAudience, { props: { variant: 'game', lang: 'en', audience: { game: 'For teams.', research: 'Method.' } } });
     const labels = [...en.matchAll(/<h2[^>]*class="audience__label"[^>]*>([^<]*)<\/h2>/g)].map((m) => m[1]);
     expect(labels).toEqual(['For game teams', 'Research contribution']);
   });
 
   it('renders only the parts present (e.g. research only), and nothing without parts', async () => {
-    const one = await renderAstro(ProjectAudience, { props: { lang: 'ko', audience: { research: '방법만 있습니다.' } } });
+    const one = await renderAstro(ProjectAudience, { props: { variant: 'game', lang: 'ko', audience: { research: '방법만 있습니다.' } } });
     expect(one).not.toContain('for-game-teams');
     expect(one).not.toContain('게임 팀에게');
     expect(one).toMatch(/<section[^>]*id="research-contribution"/);
     expect(one).toMatch(/class="audience__grid audience__grid--single"/);
-    const none = await renderAstro(ProjectAudience, { props: { lang: 'ko', audience: {} } });
+    const none = await renderAstro(ProjectAudience, { props: { variant: 'game', lang: 'ko', audience: {} } });
     expect(none.trim()).toBe('');
   });
 

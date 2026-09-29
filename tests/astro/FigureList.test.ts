@@ -6,13 +6,14 @@ import { renderAstro } from './helpers';
 
 describe('FigureList.astro', () => {
   it('renders nothing for an empty list', async () => {
-    const html = await renderAstro(FigureList, { props: { lang: 'ko', figures: [] } });
+    const html = await renderAstro(FigureList, { props: { variant: 'game', lang: 'ko', figures: [] } });
     expect(html.trim()).toBe('');
   });
 
   it('numbers the figures 1…N under a Figures heading', async () => {
     const html = await renderAstro(FigureList, {
       props: {
+        variant: 'game',
         lang: 'en',
         figures: [
           { src: ranking, alt: 'Bar chart', caption: 'First caption.' },

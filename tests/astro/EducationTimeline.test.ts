@@ -8,7 +8,7 @@ import type { Lang } from '../../src/i18n/ui';
 import { renderAstro } from './helpers';
 
 const resume = resumeSchema.parse(parseYamlDocument(readFileSync(resolve(process.cwd(), 'src/data/resume.yaml'), 'utf8'), 'resume'));
-const render = (lang: Lang) => renderAstro(EducationTimeline, { props: { lang, items: resume.education } });
+const render = (lang: Lang) => renderAstro(EducationTimeline, { props: { variant: 'game', lang, items: resume.education } });
 
 describe('EducationTimeline.astro', () => {
   it('GPA and expected graduation; period keeps tabular-nums after the font shorthand', async () => {

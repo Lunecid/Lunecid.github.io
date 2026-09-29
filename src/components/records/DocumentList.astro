@@ -1,22 +1,23 @@
 ---
-// The three résumé PDFs (spec §2 PDF 3종) at the end of /records/: the same cut-corner buttons as the page head
-// (DocButtons.astro, P2-19).
+// The résumé PDFs at the end of the records page (spec §2), the same buttons as the page head (DocButtons).
 import SectionHead from '../hud/SectionHead.astro';
 import DocButtons from './DocButtons.astro';
 import type { Lang } from '../../i18n/ui';
 import { t } from '../../i18n/utils';
+import { captionFor, getVariant, type VariantId } from '../../variants';
 
 interface Props {
+  variant: VariantId;
   lang: Lang;
   documents: { id: string; label: string; href: string }[];
 }
 
-const { lang, documents } = Astro.props;
+const { variant, lang, documents } = Astro.props;
 ---
-<section id="documents" class="rec read-sec" aria-labelledby="documents-title">
+<section id="documents" class:list={['rec', variant === 'game' ? 'read-sec' : 'ed-sec']} aria-labelledby="documents-title">
   <div class="container">
-    <SectionHead id="documents-title" caption={t(lang, 'section.documents')} title={t(lang, 'records.resumes')} />
-    <div class="docs"><DocButtons documents={documents} /></div>
+    <SectionHead variant={variant} id="documents-title" caption={captionFor(getVariant(variant), 'documents', lang)} title={t(lang, 'records.resumes')} />
+    <div class="docs"><DocButtons variant={variant} documents={documents} /></div>
   </div>
 </section>
 

@@ -24,7 +24,7 @@ const { lang, items, hint, side } = Astro.props;
 ---
 <section id="main-menu" class:list={['mm-sec', 'hud-grid', side.length > 0 ? 'mm-sec--art' : 'mm-sec--no-art']}>
   <div class="container container--hud mm-sec__inner">
-    <SectionHead id="main-menu-title" caption={t(lang, 'section.mainMenu')} title={t(lang, 'section.mainMenu.title')} captionOnly />
+    <SectionHead variant="game" id="main-menu-title" caption={t(lang, 'section.mainMenu')} title={t(lang, 'section.mainMenu.title')} captionOnly />
     <nav class="mm" aria-labelledby="main-menu-title" data-main-menu>
       <ol class="mm__list" role="list">
         {items.map((item, index) => (

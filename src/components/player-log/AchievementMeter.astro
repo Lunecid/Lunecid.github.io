@@ -18,7 +18,7 @@ const { lang, defs } = Astro.props;
 const progressTemplate = ui[lang]['achievement.progress'];
 ---
 <div class="ach-meter bracket" data-ach-meter data-ids={defs.map((d) => d.id).join(' ')}>
-  <SectionLabel en={t(lang, 'section.siteAchievements')} />
+  <SectionLabel variant="game" en={t(lang, 'section.siteAchievements')} />
   <p class="ach-meter__count tnum" data-ach-meter-count data-template={progressTemplate}>{t(lang, 'achievement.progress', { n: 0, total: defs.length })}</p>
   <div class="ach-meter__track" aria-hidden="true"><i class="ach-meter__fill"></i></div>
   <ol class="ach-meter__slots" role="list" aria-hidden="true">

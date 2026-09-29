@@ -17,7 +17,7 @@ import { ui } from '../i18n/ui';
 import { t } from '../i18n/utils';
 import { DOCUMENTS, SITE } from '../config';
 import type { VariantId } from '../variants/ids';
-import { getVariant, pageMetaFor, resolveIdentity } from '../variants';
+import { captionFor, getVariant, pageMetaFor, resolveIdentity } from '../variants';
 
 interface Props {
   lang: Lang;
@@ -36,15 +36,15 @@ const years = [...new Set(papers.map((paper) => paper.year))].sort((a, b) => b -
 const ids = (await getPerson()).researchIds;
 ---
 <Layout lang={lang} variant={variant} title={meta.title} description={meta.description} page="research" section="research" sectionIndex>
-  <PageHeader lang={lang} label="RESEARCH" title={t(lang, 'research.title')} intro={resolveFacts(researchPage.intro[lang], lang, facts)}>
+  <PageHeader lang={lang} variant={variant} label={captionFor(v, 'pageResearch', lang)} title={t(lang, 'research.title')} intro={resolveFacts(researchPage.intro[lang], lang, facts)}>
     {/* D-7: professors reach the Academic CV from the research page header (and from #for-labs below). */}
     <p class="research-cv"><a class="btn btn--line cut cut--line" href={DOCUMENTS[v.documents.academic]} title={t(lang, 'nav.cvAcademic')} download>{t(lang, 'nav.cvAcademic')} <span aria-hidden="true">↓</span></a></p>
   </PageHeader>
-  <InterestCards lang={lang} interests={resolveLocalizedDeep(researchPage.interests, facts)} />
+  <InterestCards lang={lang} variant={variant} interests={resolveLocalizedDeep(researchPage.interests, facts)} />
   <section id="publications" class="pub__section read read-sec" aria-labelledby="publications-title">
     {getVariant(variant).modules.includes('characterArt') && <GhostArt side="left" />}
     <div class="container">
-      <SectionHead id="publications-title" caption={t(lang, 'section.publications')} title={t(lang, 'research.publications')} />
+      <SectionHead variant={variant} id="publications-title" caption={captionFor(getVariant(variant), 'publications', lang)} title={t(lang, 'research.publications')} />
       {years.map((year) => (
         <div class="pub__year">
           <h3 class="pub__year-title tnum"><span class="lh-idx">{year}</span></h3>
@@ -62,7 +62,7 @@ const ids = (await getPerson()).researchIds;
     <div class="container">
       {/* light HUD panel with corner marks, like [ NOW PLAYING ] (P1-9) */}
       <div class="for-labs__card lh-frame bracket bracket--sm">
-        <SectionHead id="for-labs-title" caption={t(lang, 'section.forLabs')} title={labNote.title} />
+        <SectionHead variant={variant} id="for-labs-title" caption={captionFor(getVariant(variant), 'forLabs', lang)} title={labNote.title} />
         <p class="for-labs__body">{labNote.body}</p>
         <ul class="for-labs__links lh-chips" role="list">
           <li><a class="lh-chip lh-chip--mono" href={`mailto:${SITE.email}`}>{SITE.email}</a></li>

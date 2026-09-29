@@ -59,7 +59,7 @@ describe('MembershipRow (Player Log first row)', () => {
 
 describe('AchievementMeter', () => {
   it('SSR shows the 0-unlocked count with the client template, one slot per achievement, the storage note and a link to the list', async () => {
-    const html = await renderAstro(AchievementMeter, { props: { lang: 'ko', defs } });
+    const html = await renderAstro(AchievementMeter, { props: { variant: 'game', lang: 'ko', defs } });
     expect(html).toMatch(/<div class="ach-meter bracket"[^>]*data-ach-meter/);
     expect(html).toContain(`data-ids="${defs.map((d) => d.id).join(' ')}"`);
     expect(html).toMatch(new RegExp(`data-ach-meter-count[^>]*>0 \\/ ${defs.length} 달성<`));
@@ -69,7 +69,7 @@ describe('AchievementMeter', () => {
     expect(html).toContain('달성 기록은 이 브라우저에만 저장됩니다.');
     expect(html).toMatch(/<a class="sec-more" href="#site-achievements"[^>]*>업적 목록 보기 /);
     expect(html).toMatch(/<script[^>]*type="module"/);
-    const en = await renderAstro(AchievementMeter, { props: { lang: 'en', defs }, url: '/en/game/player-log/' });
+    const en = await renderAstro(AchievementMeter, { props: { variant: 'game', lang: 'en', defs }, url: '/en/game/player-log/' });
     expect(en).toMatch(new RegExp(`data-ach-meter-count[^>]*>0 \\/ ${defs.length} unlocked<`));
     expect(en).toContain('See all achievements');
   });

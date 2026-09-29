@@ -9,22 +9,24 @@ import { figureCopy, overallAuc } from '../../data/research/cog-2026';
 import type { Lang } from '../../i18n/ui';
 import { t } from '../../i18n/utils';
 import type { PaperCardData } from '../../lib/publications';
+import { captionFor, getVariant, type VariantId } from '../../variants';
 
 interface Props {
   lang: Lang;
+  variant: VariantId;
   paper: PaperCardData;
   nowPlaying: string;
   /** The resolved hero artifact label, e.g. 'FIG · CoG 2026 · AUC BY MODEL' (contract §3.3). */
   figureLabel: string;
 }
 
-const { lang, paper, nowPlaying, figureLabel } = Astro.props;
+const { lang, variant, paper, nowPlaying, figureLabel } = Astro.props;
 const [figTag, ...figRest] = figureLabel.split(' · ');
 ---
 
 <section id="research-highlight" class="rh read read-sec" aria-labelledby="rh-title">
   <div class="container">
-    <SectionHead id="rh-title" caption={t(lang, 'section.research')} title={t(lang, 'hero.researchHighlight')} />
+    <SectionHead variant={variant} id="rh-title" caption={captionFor(getVariant(variant), 'research', lang)} title={t(lang, 'hero.researchHighlight')} />
     <article class="paper lh-frame bracket bracket--sm">
       <div class="paper__body">
         <p class="paper__venue">

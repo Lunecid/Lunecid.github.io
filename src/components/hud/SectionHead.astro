@@ -1,43 +1,48 @@
 ---
 /**
- * One heading pattern for every section (D-8, P2-17): the numberless "[ ■ ] CAPTION" HUD line (SectionLabel)
- * over the section title. Korean pages: a Korean title under the small English caption; English pages: the English
- * title under the same caption. The caption is English HUD text on both; the title is the heading element.
- * Colours follow the band: .sec-head__title is --hud-strong on the dark HUD and --read-text on light bands (hud.css).
- *
- * captionOnly (fix round 1): the dark HUD bands of the approved v4 mockup (MAIN MENU, SELECT YOUR PROJECT) show the
- * caption alone. The title stays the section's heading for assistive technology (visually hidden), and the visible
- * caption is hidden from it so the section is announced once, in the page language.
+ * One heading pattern for every section (D-8, P2-17). Game version: the "[ ■ ] CAPTION" HUD line over the title
+ * (captionOnly: the caption alone, the title a visually hidden heading). General and neutral pages (P2-4, spec §8):
+ * small caption + title + heavy top rule (.ed-head in base.css); the general version's title is set in the serif
+ * heading face (data-serif, P2-3); neutral titles stay sans; captionOnly is a HUD choice and is ignored there.
  */
 import SectionLabel from './SectionLabel.astro';
+import type { PageVariant } from '../../variants';
 
 interface Props {
-  /** English HUD caption, e.g. "PATCH NOTES". */
+  variant: PageVariant;
+  /** Game: the English HUD caption ("PATCH NOTES"); general/neutral: captionFor(…) in the page language. */
   caption: string;
-  /** The heading text in the page language, e.g. "최근 소식" / "Recent news". */
+  /** The heading text in the page language. */
   title: string;
   /** id of the heading element (the section's aria-labelledby target). */
   id?: string;
   as?: 'h1' | 'h2' | 'h3';
-  /** Show only the caption; the title stays the (visually hidden) heading. */
   captionOnly?: boolean;
   class?: string;
 }
 
-const { caption, title, id, as: Tag = 'h2', captionOnly = false, class: className } = Astro.props;
+const { variant, caption, title, id, as: Tag = 'h2', captionOnly = false, class: className } = Astro.props;
 const hasIntro = Astro.slots.has('default');
 ---
-<header class:list={['sec-head', { 'sec-head--caption': captionOnly }, className]}>
-  {captionOnly ? (
-    <Fragment>
-      <Tag id={id} class="sr-only">{title}</Tag>
-      <SectionLabel en={caption} ariaHidden />
-    </Fragment>
-  ) : (
-    <Fragment>
-      <SectionLabel en={caption} />
-      <Tag id={id} class="sec-head__title">{title}</Tag>
-    </Fragment>
-  )}
-  {hasIntro && <div class="sec-head__intro"><slot /></div>}
-</header>
+{variant === 'game' ? (
+  <header class:list={['sec-head', { 'sec-head--caption': captionOnly }, className]}>
+    {captionOnly ? (
+      <Fragment>
+        <Tag id={id} class="sr-only">{title}</Tag>
+        <SectionLabel variant="game" en={caption} ariaHidden />
+      </Fragment>
+    ) : (
+      <Fragment>
+        <SectionLabel variant="game" en={caption} />
+        <Tag id={id} class="sec-head__title">{title}</Tag>
+      </Fragment>
+    )}
+    {hasIntro && <div class="sec-head__intro"><slot /></div>}
+  </header>
+) : (
+  <header class:list={['ed-head', className]}>
+    <SectionLabel variant={variant} en={caption} />
+    <Tag id={id} class="ed-head__title" data-serif={variant === 'data' ? true : undefined}>{title}</Tag>
+    {hasIntro && <div class="ed-head__intro"><slot /></div>}
+  </header>
+)}

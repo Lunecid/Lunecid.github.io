@@ -11,7 +11,7 @@ import type { Lang } from '../../i18n/ui';
 import { formatDate, formatNumber, t } from '../../i18n/utils';
 import { usableGitHub, type GitHubData, type GitHubDay } from '../../lib/generated';
 import { githubRepoList } from '../../lib/github';
-import { getVariant } from '../../variants';
+import { captionFor, getVariant } from '../../variants';
 import type { VariantId } from '../../variants/ids';
 
 interface Props {
@@ -47,7 +47,7 @@ const repoMeta = (language: string | null, stars: number): string =>
     <section id="github" class="gh read read-sec" aria-labelledby="github-title" data-fetched-at={gh.fetchedAt} data-max-age-days={gh.maxAgeDays}>
       {getVariant(variant).modules.includes('characterArt') && <GhostArt side="left" />}
       <div class="container">
-        <SectionHead id="github-title" caption={t(lang, 'section.github')} title={t(lang, 'section.github.title')} />
+        <SectionHead variant={variant} id="github-title" caption={captionFor(getVariant(variant), 'github', lang)} title={t(lang, 'section.github.title')} />
 
         {repos.length > 0 && (
           <>

@@ -7,7 +7,7 @@ const fetchedAt = '2026-09-30T18:00:00.000Z';
 
 describe('DailyChart', () => {
   it('one bar per day plus a table fallback, inside a scroll wrapper', async () => {
-    const html = await renderAstro(DailyChart, { props: { lang: 'ko', daily, fetchedAt, maxAgeDays: 7 } });
+    const html = await renderAstro(DailyChart, { props: { variant: 'neutral', lang: 'ko', daily, fetchedAt, maxAgeDays: 7 } });
     expect(html).toMatch(/<section[^>]*id="daily"[^>]*data-fetched-at="2026-09-30T18:00:00.000Z"[^>]*data-max-age-days="7"/);
     expect(html).toMatch(/class="stats__chart-scroll"[^>]*>\s*<svg[^>]*role="img"/);
     // Every horizontal scroller is a keyboard-reachable, named region (axe scrollable-region-focusable).
@@ -30,7 +30,7 @@ describe('DailyChart', () => {
     expect(html).toContain('2026.09.01');
     expect(html).toMatch(/<script[^>]*type="module"/); // stale-guard
 
-    const empty = await renderAstro(DailyChart, { props: { lang: 'ko', daily: [], fetchedAt, maxAgeDays: 7 } });
+    const empty = await renderAstro(DailyChart, { props: { variant: 'neutral', lang: 'ko', daily: [], fetchedAt, maxAgeDays: 7 } });
     expect(empty).not.toContain('id="daily"');
   });
 });

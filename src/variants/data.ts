@@ -1,7 +1,7 @@
 // src/variants/data.ts — the general data analyst version (B-1, B-2, B-6, B-10, B-12). P1: same views and HUD layout with
 // the game modules off; P2 designs it. Copy is fact-free apart from tokens (R-4). P2-9 may reword `about`, never add facts.
 import { BASE_PATH, VARIANT_MODULES, VARIANT_PREFIX } from './ids';
-import { GAME_CAPTIONS, gameVariant } from './game';
+import { gameVariant } from './game';
 import type { Variant } from './types';
 
 export const dataVariant: Variant = {
@@ -37,7 +37,34 @@ export const dataVariant: Variant = {
     { key: 'projects', base: BASE_PATH.projects },
     { key: 'records', base: BASE_PATH.records },
   ],
-  captions: GAME_CAPTIONS, // A-30: P2-4 replaces with the §8 editorial table
+  // Spec §8 editorial caption table: a quiet caption in the page language over each title (never the title again).
+  captions: {
+    research: { ko: '연구', en: 'Research' },
+    publications: { ko: '연구 성과', en: 'Research output' },
+    projects: { ko: '작업', en: 'Work' },
+    selectProject: { ko: '작업', en: 'Work' },
+    patchNotes: { ko: '소식', en: 'News' },
+    profile: { ko: '프로필', en: 'Profile' },
+    questLog: { ko: '이력', en: 'Background' },
+    achievements: { ko: '성과', en: 'Recognition' },
+    inventory: { ko: '이력', en: 'Background' },
+    skills: { ko: '역량', en: 'Capabilities' },
+    jobFit: { ko: '직무 적합성', en: 'Role fit' },
+    documents: { ko: '문서', en: 'Documents' },
+    interests: { ko: '연구', en: 'Research' },
+    inProgress: { ko: '연구', en: 'Research' },
+    forLabs: { ko: '연락', en: 'Contact' },
+    github: { ko: '코드', en: 'Code' },
+    figures: { ko: '자료', en: 'Materials' },
+    links: { ko: '자료', en: 'Materials' },
+    projectDetails: { ko: '프로젝트', en: 'Project' },
+    researchContribution: { ko: '의의', en: 'Significance' },
+    pageResearch: { ko: '포트폴리오', en: 'Portfolio' },
+    pageProjects: { ko: '포트폴리오', en: 'Portfolio' },
+    pageRecords: { ko: '포트폴리오', en: 'Portfolio' },
+    heroLabel: { ko: '포트폴리오', en: 'Portfolio' },
+    nowPlaying: { ko: '진행 중', en: 'Ongoing' },
+  },
   pageMeta: {
     home: {
       ko: { title: '백성은 · 데이터 분석가', description: '데이터 분석가 백성은의 포트폴리오. 연구, 프로젝트, 이력서.' },

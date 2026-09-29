@@ -11,9 +11,11 @@ import type { Lang } from '../../i18n/ui';
 import { t } from '../../i18n/utils';
 import { DETAIL_FIGURE_SIZES, fitWidths, sourceSize } from '../../lib/images';
 import type { CertificateId } from '../../types';
+import { captionFor, getVariant, type VariantId } from '../../variants';
 
 interface Props {
   lang: Lang;
+  variant: VariantId;
   title: string;
   rows: { label: string; value: string }[];
   /** number/caption: the cover is also the body's figure N (shown once, here; fix round 1). */
@@ -31,7 +33,7 @@ interface Props {
   };
 }
 
-const { lang, title, rows, figure, award } = Astro.props;
+const { lang, variant, title, rows, figure, award } = Astro.props;
 const shownRows = rows.slice(0, 6);
 const figWidths = figure ? fitWidths([560, 840, 1120], sourceSize(figure.src).width) : [];
 const label = figure?.label?.trim() ?? '';
@@ -41,7 +43,7 @@ const hasLead = Astro.slots.has('default');
 <section id="details" class:list={['pd-sec', 'hud-grid', { 'pd-sec--nofig': !figure }]} aria-labelledby="pd-title">
   <div class="container container--hud pd">
     <div class="pd__head">
-      <SectionLabel en={t(lang, 'section.projectDetails')} />
+      <SectionLabel variant={variant} en={captionFor(getVariant(variant), 'projectDetails', lang)} />
       <h1 id="pd-title" class="pd__title">{title}</h1>
       {
         hasLead && (

@@ -5,13 +5,15 @@
 import SectionHead from '../hud/SectionHead.astro';
 import type { Lang } from '../../i18n/ui';
 import { t } from '../../i18n/utils';
+import { captionFor, getVariant, type VariantId } from '../../variants';
 
 interface Props {
   lang: Lang;
+  variant: VariantId;
   links: { github?: string; report?: string; slides?: string };
 }
 
-const { lang, links } = Astro.props;
+const { lang, variant, links } = Astro.props;
 const items = [
   links.github ? { href: links.github, label: t(lang, 'project.repo') } : null,
   links.report ? { href: links.report, label: t(lang, 'project.report') } : null,
@@ -22,7 +24,7 @@ const items = [
 {
   items.length > 0 ? (
     <section id="links" class="plinks read read-section read-column" aria-labelledby="links-title">
-      <SectionHead id="links-title" caption={t(lang, 'section.links')} title={t(lang, 'project.links')} />
+      <SectionHead variant={variant} id="links-title" caption={captionFor(getVariant(variant), 'links', lang)} title={t(lang, 'project.links')} />
       <ul class="plinks__list" role="list">
         {items.map((item) => (
           <li>

@@ -52,7 +52,7 @@ const labels = {
 ---
 <BaseLayout lang={lang} variant="game" title={meta.title} description={meta.description} page="player-log" section="player-log" sectionIndex notices={notices}>
   <Font cssVariable="--font-anton" slot="head" />
-  <PageHeader lang={lang} label="PLAYER LOG" title={t(lang, 'playerLog.title')} intro={t(lang, 'playerLog.intro')} />
+  <PageHeader lang={lang} variant="game" label="PLAYER LOG" title={t(lang, 'playerLog.title')} intro={t(lang, 'playerLog.intro')} />
   <MembershipRow
     lang={lang}
     membership={membershipCard(copy.membership, identity.headline)}

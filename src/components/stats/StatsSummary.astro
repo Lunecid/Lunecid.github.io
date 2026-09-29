@@ -7,13 +7,15 @@ import { pageHref } from '../../lib/links';
 import { BASE_PATH } from '../../variants/ids';
 import { goatcounterDashboardUrl } from '../../lib/analytics';
 import { usableStats, type StatsData } from '../../lib/generated';
+import type { PageVariant } from '../../variants';
 
 interface Props {
   lang: Lang;
+  variant: PageVariant;
   stats: StatsData | undefined;
   code: string | null;
 }
-const { lang, stats, code } = Astro.props;
+const { lang, variant, stats, code } = Astro.props;
 const usable = code === null ? undefined : usableStats(stats);
 const days = usable?.range ? Math.round((Date.parse(usable.range.end) - Date.parse(usable.range.start)) / 86_400_000) : null;
 
@@ -27,7 +29,7 @@ function asOf(iso: string): string {
 ---
 <section id="summary" class="stats read" aria-labelledby="stats-summary-title">
   <div class="container">
-    <SectionHead id="stats-summary-title" caption={t(lang, 'section.visits')} title={t(lang, 'stats.visits')} />
+    <SectionHead variant={variant} id="stats-summary-title" caption={t(lang, 'section.visits')} title={t(lang, 'stats.visits')} />
     {code === null ? (
       /* P2-33: while GOATCOUNTER.code is null the page says plainly that nothing is collected yet. */
       <div class="stats__offline bracket bracket--sm" data-stats-offline>

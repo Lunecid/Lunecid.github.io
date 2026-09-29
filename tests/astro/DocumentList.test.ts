@@ -21,7 +21,7 @@ const documentsFor = (lang: Lang) =>
 
 describe('DocumentList.astro', () => {
   it('3 PDF links to /cv/*.pdf', async () => {
-    const ko = await renderAstro(DocumentList, { props: { lang: 'ko', documents: documentsFor('ko') } });
+    const ko = await renderAstro(DocumentList, { props: { variant: 'game', lang: 'ko', documents: documentsFor('ko') } });
     expect(ko).toMatch(/<section(?=[^>]*\bid="documents")[^>]*>/);
     expect(ko).toMatch(/<h2[^>]*>이력서 PDF<\/h2>/);
     const hrefs = [...ko.matchAll(/<a\b[^>]*href="([^"]+)"/g)].map((m) => m[1]);
@@ -30,7 +30,7 @@ describe('DocumentList.astro', () => {
     expect(ko).toContain('국문 이력서');
     expect(ko.match(/type="application\/pdf"/g)).toHaveLength(3);
 
-    const en = await renderAstro(DocumentList, { props: { lang: 'en', documents: documentsFor('en') } });
+    const en = await renderAstro(DocumentList, { props: { variant: 'game', lang: 'en', documents: documentsFor('en') } });
     expect(en).toMatch(/<h2[^>]*>Résumé PDFs<\/h2>/);
     expect(en).toContain('Korean résumé');
     expect(en).toContain('English résumé');
@@ -39,12 +39,20 @@ describe('DocumentList.astro', () => {
   });
 
   it('labels state language and page count, never the ambiguous "Résumé (1 page)" (batch 3b P2-32)', async () => {
-    const en = await renderAstro(DocumentList, { props: { lang: 'en', documents: documentsFor('en') } });
+    const en = await renderAstro(DocumentList, { props: { variant: 'game', lang: 'en', documents: documentsFor('en') } });
     expect(en).not.toMatch(/>\s*Résumé \(1 page\)\s*</);
     expect(en).toContain('Korean résumé (2 pages)');
     expect(en).toContain('English résumé (1 page)');
-    const ko = await renderAstro(DocumentList, { props: { lang: 'ko', documents: documentsFor('ko') } });
+    const ko = await renderAstro(DocumentList, { props: { variant: 'game', lang: 'ko', documents: documentsFor('ko') } });
     expect(ko).toContain('국문 이력서 (2쪽)');
     expect(ko).toContain('영문 이력서 (1쪽)');
+  });
+
+  it('general version (P2-4): editorial head and links, still one #documents section', async () => {
+    const html = await renderAstro(DocumentList, { props: { variant: 'data', lang: 'ko', documents: documentsFor('ko') } });
+    expect(html).toMatch(/<section(?=[^>]*\bid="documents")[^>]*>/);
+    expect(html).toMatch(/<h2[^>]*class="ed-head__title" data-serif[^>]*>이력서 PDF<\/h2>/);
+    expect(html).toMatch(/<p class="ed-label"[^>]*>문서<\/p>/);
+    expect(html).not.toMatch(/hud-label|\bcut\b/);
   });
 });

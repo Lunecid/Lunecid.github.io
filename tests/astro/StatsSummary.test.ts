@@ -16,7 +16,7 @@ function stats(over: Partial<StatsData> = {}): StatsData {
 
 describe('StatsSummary', () => {
   it('P2-33: an OFFLINE panel (stats open after GoatCounter is connected, link to privacy) when code is null', async () => {
-    const html = await renderAstro(StatsSummary, { props: { lang: 'ko', stats: stats(), code: null } });
+    const html = await renderAstro(StatsSummary, { props: { variant: 'neutral', lang: 'ko', stats: stats(), code: null } });
     expect(html).toMatch(/<section[^>]*id="summary"/);
     expect(html).toMatch(/<div[^>]*class="stats__offline bracket bracket--sm"[^>]*data-stats-offline/);
     expect(html).toMatch(/<p[^>]*class="stats__offline-tag"[^>]*lang="en"[^>]*>\[ OFFLINE \]<\/p>/);
@@ -25,18 +25,18 @@ describe('StatsSummary', () => {
     expect(html).not.toContain('<astro-island');
     expect(html).not.toContain('goatcounter.com');
     expect(html).not.toContain('data-fetched-at');
-    const en = await renderAstro(StatsSummary, { props: { lang: 'en', stats: stats(), code: null } });
+    const en = await renderAstro(StatsSummary, { props: { variant: 'neutral', lang: 'en', stats: stats(), code: null } });
     expect(en).toContain('[ OFFLINE ]');
     expect(en).toContain('Visitor statistics will be published on this page once GoatCounter is connected.');
     expect(en).toMatch(/<a href="\/en\/privacy\/"[^>]*>What would be collected \(privacy policy\)<\/a>/);
     // with a code there is no OFFLINE panel
-    const on = await renderAstro(StatsSummary, { props: { lang: 'ko', stats: stats(), code: 'lunecid' } });
+    const on = await renderAstro(StatsSummary, { props: { variant: 'neutral', lang: 'ko', stats: stats(), code: 'lunecid' } });
     expect(on).not.toContain('OFFLINE');
   });
 
   it('stats.unavailable with a code but no usable stats is owned by the live slot (F-014)', async () => {
     for (const s of [undefined, stats({ status: 'error' }), stats({ fetchedAt: '2026-01-01T00:00:00.000Z' })]) {
-      const html = await renderAstro(StatsSummary, { props: { lang: 'ko', stats: s, code: 'lunecid' } });
+      const html = await renderAstro(StatsSummary, { props: { variant: 'neutral', lang: 'ko', stats: s, code: 'lunecid' } });
       // No contradictory SSR pair: unavailable lives in the live slot's script; build numbers are absent.
       expect(html).not.toContain('data-fetched-at');
       expect(html).not.toMatch(/stats__total-num/);
@@ -50,7 +50,7 @@ describe('StatsSummary', () => {
 
   it('total, range and as-of with stats, inside a data-fetched-at element', async () => {
     const s = stats();
-    const html = await renderAstro(StatsSummary, { props: { lang: 'ko', stats: s, code: 'lunecid' } });
+    const html = await renderAstro(StatsSummary, { props: { variant: 'neutral', lang: 'ko', stats: s, code: 'lunecid' } });
     const m = html.match(/class="stats__numbers"[^>]*data-fetched-at="([^"]+)"[^>]*data-max-age-days="7"/);
     expect(m?.[1]).toBe(s.fetchedAt);
     expect(html).toContain('최근 30일');
@@ -59,18 +59,18 @@ describe('StatsSummary', () => {
     expect(html).toContain(`<time datetime="${s.fetchedAt}"`);
     expect(html).toMatch(/<script[^>]*type="module"/); // stale-guard
     expect(html).toMatch(/data-stats-live-total[^>]*data-total="1234"/);
-    const en = await renderAstro(StatsSummary, { props: { lang: 'en', stats: s, code: 'lunecid' } });
+    const en = await renderAstro(StatsSummary, { props: { variant: 'neutral', lang: 'en', stats: s, code: 'lunecid' } });
     expect(en).toContain('Last 30 days');
     expect(en).toContain('As of');
   });
 
   it('live total slot and dashboard link only with a code', async () => {
-    const withCode = await renderAstro(StatsSummary, { props: { lang: 'ko', stats: stats(), code: 'lunecid' } });
+    const withCode = await renderAstro(StatsSummary, { props: { variant: 'neutral', lang: 'ko', stats: stats(), code: 'lunecid' } });
     // P1-9b: server markup + script own the live slot (min-height reserved); initialTotal comes from build data.
     expect(withCode.match(/<div class="stats__live-slot" data-stats-live-total/g)).toHaveLength(1);
     expect(withCode).toContain('data-code="lunecid"');
     expect(withCode).toMatch(/<a[^>]*href="https:\/\/lunecid\.goatcounter\.com\/"[^>]*>GoatCounter 전체 대시보드 보기<\/a>/);
-    const without = await renderAstro(StatsSummary, { props: { lang: 'ko', stats: stats(), code: null } });
+    const without = await renderAstro(StatsSummary, { props: { variant: 'neutral', lang: 'ko', stats: stats(), code: null } });
     expect(without).not.toContain('<astro-island');
     expect(without).not.toContain('data-stats-live-total');
     expect(without).not.toContain('대시보드');

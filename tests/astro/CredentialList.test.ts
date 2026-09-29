@@ -44,7 +44,7 @@ function groupsOf(fixture: ResumeData, lang: 'ko' | 'en', today: string) {
 describe('CredentialList.astro: one INVENTORY table (P1-9)', () => {
   it('one table, the four kinds as row groups whose ids are the records anchors, an expired badge', async () => {
     const fixture = { ...resume, languages: LANGUAGES };
-    const expired = await renderAstro(CredentialList, { props: { lang: 'ko', groups: groupsOf(fixture, 'ko', '2026-12-16') } });
+    const expired = await renderAstro(CredentialList, { props: { variant: 'game', lang: 'ko', groups: groupsOf(fixture, 'ko', '2026-12-16') } });
     expect(expired).toMatch(/<section(?=[^>]*\bid="inventory")[^>]*>/);
     expect(expired).toContain('INVENTORY');
     expect(expired).toMatch(/<h2[^>]*>대외활동·자격·어학·교육<\/h2>/);
@@ -55,18 +55,18 @@ describe('CredentialList.astro: one INVENTORY table (P1-9)', () => {
     expect(expired).toMatch(/<span class="creds__badge lh-tag"[^>]*>만료<\/span>/);
     expect(expired).not.toContain('한국어'); // records: false stays PDF-only
 
-    const valid = await renderAstro(CredentialList, { props: { lang: 'ko', groups: groupsOf(fixture, 'ko', '2026-12-15') } });
+    const valid = await renderAstro(CredentialList, { props: { variant: 'game', lang: 'ko', groups: groupsOf(fixture, 'ko', '2026-12-15') } });
     expect(valid).not.toContain('creds__badge');
     expect(valid).toContain('2026.12.15까지 유효');
   });
 
   it('an activity with an end month renders a period in the date column', async () => {
     const fixture = { ...resume, activities: ACTIVITIES };
-    const ko = await renderAstro(CredentialList, { props: { lang: 'ko', groups: groupsOf(fixture, 'ko', '2026-01-01') } });
+    const ko = await renderAstro(CredentialList, { props: { variant: 'game', lang: 'ko', groups: groupsOf(fixture, 'ko', '2026-01-01') } });
     expect(ko).toContain('LG Aimers 7기 온라인 해커톤(리조트 식음업장 메뉴 수요 예측) 817팀 중 32위 · 상위 4%');
     expect(ko).toMatch(/<a class="creds__ev"[^>]*href="https:\/\/dacon\.io\/myprofile\/530929\/competition"[^>]*>\s*DACON 기록<span class="creds__ev-arrow"[^>]*>↗<\/span>\s*<\/a>/);
     expect(ko).toMatch(/<td class="creds__meta"[^>]*>2025\.07 – 2025\.09<\/td>/);
-    const en = await renderAstro(CredentialList, { props: { lang: 'en', groups: groupsOf(fixture, 'en', '2026-01-01') } });
+    const en = await renderAstro(CredentialList, { props: { variant: 'game', lang: 'en', groups: groupsOf(fixture, 'en', '2026-01-01') } });
     expect(en).toMatch(/<a class="creds__ev"[^>]*href="https:\/\/dacon\.io\/myprofile\/530929\/competition"[^>]*>\s*DACON record<span class="creds__ev-arrow"[^>]*>↗<\/span>\s*<\/a>/);
     expect(en).toMatch(/<td class="creds__meta"[^>]*>Jul 2025 – Sep 2025<\/td>/);
     expect(en).toMatch(/<h2[^>]*>Activities, certificates, languages and training<\/h2>/);
@@ -75,13 +75,13 @@ describe('CredentialList.astro: one INVENTORY table (P1-9)', () => {
   it('activities without href render text only (no DACON evidence link)', async () => {
     const { href: _omit, ...withoutHref } = ACTIVITIES[0];
     const fixture = { ...resume, activities: [withoutHref] };
-    const ko = await renderAstro(CredentialList, { props: { lang: 'ko', groups: groupsOf(fixture, 'ko', '2026-01-01') } });
+    const ko = await renderAstro(CredentialList, { props: { variant: 'game', lang: 'ko', groups: groupsOf(fixture, 'ko', '2026-01-01') } });
     expect(ko).not.toContain('creds__ev');
     expect(ko).not.toContain('DACON 기록');
   });
 
   it('CDS and CCAIM training show name, organiser, period, and no hours text', async () => {
-    const ko = await renderAstro(CredentialList, { props: { lang: 'ko', groups: groupsOf(resume, 'ko', '2026-01-01') } });
+    const ko = await renderAstro(CredentialList, { props: { variant: 'game', lang: 'ko', groups: groupsOf(resume, 'ko', '2026-01-01') } });
     expect(ko).toContain('CDS빅데이터 교육');
     expect(ko).toContain('부산대학교');
     expect(ko).toMatch(/<td class="creds__meta"[^>]*>2024\.07 – 2024\.08<\/td>/);
@@ -95,7 +95,7 @@ describe('CredentialList.astro: one INVENTORY table (P1-9)', () => {
     expect(positionsKo.every((i) => i >= 0)).toBe(true);
     expect([...positionsKo].sort((a, b) => a - b)).toEqual(positionsKo);
 
-    const en = await renderAstro(CredentialList, { props: { lang: 'en', groups: groupsOf(resume, 'en', '2026-01-01') } });
+    const en = await renderAstro(CredentialList, { props: { variant: 'game', lang: 'en', groups: groupsOf(resume, 'en', '2026-01-01') } });
     expect(en).toContain('CDS Big Data Training');
     expect(en).toContain('Pusan National University');
     expect(en).toMatch(/<td class="creds__meta"[^>]*>Jul 2024 – Aug 2024<\/td>/);

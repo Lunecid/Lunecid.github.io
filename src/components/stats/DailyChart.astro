@@ -2,14 +2,16 @@
 import SectionHead from '../hud/SectionHead.astro';
 import type { Lang } from '../../i18n/ui';
 import { formatDate, formatNumber, t } from '../../i18n/utils';
+import type { PageVariant } from '../../variants';
 
 interface Props {
   lang: Lang;
+  variant: PageVariant;
   daily: { day: string; count: number }[];
   fetchedAt: string;
   maxAgeDays: number;
 }
-const { lang, daily, fetchedAt, maxAgeDays } = Astro.props;
+const { lang, variant, daily, fetchedAt, maxAgeDays } = Astro.props;
 const DATE_HEADER = { ko: '날짜', en: 'Date' } as const;
 const W = 600;
 const H = 160;
@@ -26,7 +28,7 @@ const last = bars[bars.length - 1]?.day ?? '';
 {bars.length > 0 && (
   <section id="daily" class="stats read" aria-labelledby="stats-daily-title" data-fetched-at={fetchedAt} data-max-age-days={maxAgeDays}>
     <div class="container">
-      <SectionHead id="stats-daily-title" caption={t(lang, 'section.dailyVisits')} title={t(lang, 'stats.daily')} />
+      <SectionHead variant={variant} id="stats-daily-title" caption={t(lang, 'section.dailyVisits')} title={t(lang, 'stats.daily')} />
       <div class="stats__chart-wrap">
         <p class="stats__chart-max tnum" aria-hidden="true">{formatNumber(max, lang)}</p>
         <div class="stats__chart-scroll" tabindex="0" role="region" aria-labelledby="stats-daily-title">

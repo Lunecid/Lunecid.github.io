@@ -17,7 +17,7 @@ const progressTemplate = ui[lang]['achievement.progress'];
 ---
 <section id="site-achievements" class="site-ach read read-sec" aria-labelledby="site-ach-title" data-site-ach>
   <div class="container">
-    <SectionHead id="site-ach-title" caption={t(lang, 'section.siteAchievements')} title={t(lang, 'section.siteAchievements.title')} />
+    <SectionHead variant="game" id="site-ach-title" caption={t(lang, 'section.siteAchievements')} title={t(lang, 'section.siteAchievements.title')} />
     <p class="site-ach__progress tnum" data-ach-progress data-template={progressTemplate}>{t(lang, 'achievement.progress', { n: 0, total: defs.length })}</p>
     {/* light HUD rows (P1-9): a square star slot (gold once unlocked), title and text, the state as a square tag */}
     <ol class="site-ach__list" role="list">

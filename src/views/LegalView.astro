@@ -17,7 +17,7 @@ const meta = PAGE_META[doc][lang];
 // shared page: NeutralLayout (P1-10)
 ---
 <NeutralLayout lang={lang} title={meta.title} description={meta.description} page={doc}>
-  <PageHeader lang={lang} label={doc === 'privacy' ? 'PRIVACY' : 'CREDITS'} title={entry.data.title} />
+  <PageHeader lang={lang} variant="neutral" label={doc === 'privacy' ? 'PRIVACY' : 'CREDITS'} title={entry.data.title} />
   {/* article.prose.read (contract §5.14): read.css spans the light band across the page and centres the text column */}
   <article class="legal prose read">
     <Content />

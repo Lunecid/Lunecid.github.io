@@ -13,7 +13,7 @@ const withoutTemplate = (s: string) => s.replace(/<template[\s\S]*?<\/template>/
 
 describe('SiteAchievementList', () => {
   it('one item per achievement; hidden ones show ??? and keep real text in a template; progress counter and storage note', async () => {
-    const html = await renderAstro(SiteAchievementList, { props: { lang: 'ko', defs } });
+    const html = await renderAstro(SiteAchievementList, { props: { variant: 'game', lang: 'ko', defs } });
     expect(html).toMatch(/<section[^>]*id="site-achievements"/);
     expect(html.match(/data-ach-id="/g)).toHaveLength(defs.length);
 
@@ -51,7 +51,7 @@ describe('SiteAchievementList', () => {
   });
 
   it('final review fix 1 item 20: Hangul inside English achievement text is marked lang="ko"', async () => {
-    const html = await renderAstro(SiteAchievementList, { props: { lang: 'en', defs } });
+    const html = await renderAstro(SiteAchievementList, { props: { variant: 'game', lang: 'en', defs } });
     expect(item(html, 'bilingual')).toMatch(/<span(?=[^>]*\blang="ko")[^>]*>한국어<\/span>/);
     const untagged = html
       .replace(/<span(?=[^>]*\blang="ko")[^>]*>[^<]*<\/span>/g, '')
@@ -59,12 +59,12 @@ describe('SiteAchievementList', () => {
       .replace(/<style[\s\S]*?<\/style>/g, '');
     expect(untagged.match(/\p{Script=Hangul}+/gu)).toBeNull();
     // Korean pages are lang="ko" already: no extra spans there.
-    const ko = await renderAstro(SiteAchievementList, { props: { lang: 'ko', defs } });
+    const ko = await renderAstro(SiteAchievementList, { props: { variant: 'game', lang: 'ko', defs } });
     expect(ko).not.toMatch(/<span(?=[^>]*\blang="ko")/);
   });
 
   it('English page uses English copy', async () => {
-    const html = await renderAstro(SiteAchievementList, { props: { lang: 'en', defs } });
+    const html = await renderAstro(SiteAchievementList, { props: { variant: 'game', lang: 'en', defs } });
     expect(html).toContain('Abstract Opened');
     expect(html).toMatch(new RegExp(`data-ach-progress[^>]*>0 \\/ ${defs.length} unlocked<`));
     expect(html).toContain('Progress is saved only in this browser.');

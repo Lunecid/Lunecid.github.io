@@ -10,7 +10,7 @@ const notes: PatchNoteItem[] = [
 
 describe('PatchNotes.astro (P1-9: a dark hud-grid band)', () => {
   it('a dark HUD band: version tag, time, HUD chip, and only the short title is the link', async () => {
-    const html = await renderAstro(PatchNotes, { props: { lang: 'ko', notes } });
+    const html = await renderAstro(PatchNotes, { props: { variant: 'game', lang: 'ko', notes } });
     expect(html).toMatch(/<section[^>]*id="patch-notes"[^>]*class="pn sec hud-grid"/);
     expect(html).not.toMatch(/class="pn read"/);
     expect(html).toMatch(/<h2[^>]*>최근 소식<\/h2>/);
@@ -30,7 +30,7 @@ describe('PatchNotes.astro (P1-9: a dark hud-grid band)', () => {
   });
 
   it('English page: the English title under the same caption', async () => {
-    const html = await renderAstro(PatchNotes, { props: { lang: 'en', notes } });
+    const html = await renderAstro(PatchNotes, { props: { variant: 'game', lang: 'en', notes } });
     expect(html).toContain('PATCH NOTES');
     expect(html).toMatch(/<h2[^>]*>Recent news<\/h2>/);
     expect(html).not.toContain('최근 소식');

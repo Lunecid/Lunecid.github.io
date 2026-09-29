@@ -18,7 +18,7 @@ const projectsFor = (lang: Lang) =>
     data: readFrontmatter(abs(`src/content/projects/${lang}/${slug}.md`)) as ProjectFrontmatter,
   }));
 const itemsFor = (lang: Lang) => projectSummaryItems(resume.projects, projectsFor(lang), { lang, variant: 'game' });
-const render = (lang: Lang) => renderAstro(ProjectSummaryList, { props: { lang, items: itemsFor(lang) } });
+const render = (lang: Lang) => renderAstro(ProjectSummaryList, { props: { variant: 'game', lang, items: itemsFor(lang) } });
 const hrefsOf = (html: string): string[] => [...html.matchAll(/<a\b[^>]*href="([^"]+)"/g)].map((m) => m[1]);
 const teamsOf = (html: string): string[] =>
   [...html.matchAll(/<span(?=[^>]*class="psum__team")[^>]*>([^<]*)<\/span>/g)].map((m) => m[1]);

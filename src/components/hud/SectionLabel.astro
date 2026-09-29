@@ -1,20 +1,27 @@
 ---
 /**
- * The small "[ ■ ] ENGLISH" HUD caption (mockup-port §1.4, D-8). Numbers are the nav's alone (D-8): every other
- * label carries the numberless square mark, drawn in CSS (hud.css .hud-label__sq), never a glyph.
- * `ko` is kept for panel labels that name themselves in both languages; section headings use SectionHead.astro
- * (this caption over a title in the page language). Styling: the global .hud-label classes in src/styles/hud.css.
+ * The small caption over a heading. Game version: the "[ ■ ] ENGLISH" HUD caption (mockup-port §1.4, D-8) — the
+ * numberless square mark drawn in CSS (hud.css .hud-label__sq). General and neutral pages (P2-4): a plain caption in the
+ * page language (`en` then carries that caption, e.g. captionFor(variant, key, lang)), styled by .ed-label in base.css
+ * (italic only on English pages). No scoped <style> here, so game markup carries no extra attribute.
  */
+import type { PageVariant } from '../../variants';
+
 interface Props {
+  variant: PageVariant;
   ko?: string;
   en: string;
   as?: 'h1' | 'h2' | 'h3' | 'p';
   id?: string;
-  /** false: the caption without the [ ■ ] mark (e.g. inside a bracketed panel that is its own mark). */
+  /** false: the caption without the [ ■ ] mark (game only). */
   mark?: boolean;
   /** true: a visual caption only; a visually hidden heading names the section (SectionHead captionOnly). */
   ariaHidden?: boolean;
 }
-const { ko, en, as: Tag = 'p', id, mark = true, ariaHidden = false } = Astro.props;
+const { variant, ko, en, as: Tag = 'p', id, mark = true, ariaHidden = false } = Astro.props;
 ---
+{variant === 'game' ? (
 <Tag id={id} class="hud-label" aria-hidden={ariaHidden ? 'true' : undefined}>{mark && <span class="hud-label__mark" aria-hidden="true" lang="en">[<i class="hud-label__sq"></i>]</span>}{ko && <span class="hud-label__ko">{ko}</span>}<span class="hud-label__en" lang="en">{en}</span></Tag>
+) : (
+<Tag id={id} class="ed-label" aria-hidden={ariaHidden ? 'true' : undefined}>{en}</Tag>
+)}

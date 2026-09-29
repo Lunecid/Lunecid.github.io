@@ -6,14 +6,16 @@ import SectionHead from '../hud/SectionHead.astro';
 import type { SkillItem } from '../../lib/records';
 import type { Lang } from '../../i18n/ui';
 import { t } from '../../i18n/utils';
+import { captionFor, getVariant, type VariantId } from '../../variants';
 
 interface Props {
   lang: Lang;
+  variant: VariantId;
   primary: SkillItem[];
   familiar: SkillItem[];
 }
 
-const { lang, primary, familiar } = Astro.props;
+const { lang, variant, primary, familiar } = Astro.props;
 const groups = [
   { key: 'primary', title: t(lang, 'records.skillsPrimary'), items: primary },
   { key: 'familiar', title: t(lang, 'records.skillsFamiliar'), items: familiar },
@@ -22,7 +24,7 @@ const title = t(lang, 'records.skills');
 ---
 <section id="skills" class="rec read-sec" aria-labelledby="skills-title">
   <div class="container">
-    <SectionHead id="skills-title" caption={t(lang, 'section.skills')} title={title} />
+    <SectionHead variant={variant} id="skills-title" caption={captionFor(getVariant(variant), 'skills', lang)} title={title} />
     <table class="skills__table lh-table">
       <caption class="sr-only">{title}</caption>
       <colgroup><col class="skills__col-name" /><col /></colgroup>

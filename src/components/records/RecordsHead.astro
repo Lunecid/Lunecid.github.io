@@ -11,7 +11,7 @@ import DocButtons from './DocButtons.astro';
 import type { Lang } from '../../i18n/ui';
 import { t } from '../../i18n/utils';
 import { fitWidths, sourceSize } from '../../lib/images';
-import { getVariant } from '../../variants';
+import { captionFor, getVariant } from '../../variants';
 import type { VariantId } from '../../variants/ids';
 
 interface Props {
@@ -60,7 +60,7 @@ const jumps = [
         alt={t(lang, 'card.photoAlt')}
       />
       <div class="rhead__intro">
-        <SectionLabel en={t(lang, 'section.profile')} />
+        <SectionLabel variant={variant} en={captionFor(getVariant(variant), 'profile', lang)} />
         <h2 id="profile-title" class="rhead__hello">{`${t(lang, 'section.hello')}!`}</h2>
         <p class="rhead__name">{name}</p>
         <p class="rhead__role">{headline}</p>
@@ -68,7 +68,7 @@ const jumps = [
       </div>
       <div class="rhead__more">
         <p class="rhead__tagline">{tagline}</p>
-        <div class="rhead__docs"><DocButtons documents={documents} primary={primary} /></div>
+        <div class="rhead__docs"><DocButtons variant={variant} documents={documents} primary={primary} /></div>
         <ul class="rhead__contact" role="list">
           <li><a href={`mailto:${contact.email}`}>{contact.email}</a></li>
           <li><a href={contact.github}>GitHub</a></li>

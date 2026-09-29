@@ -121,9 +121,9 @@ const location = lang === 'ko' ? `${profile.location.ko} · ${profile.location.e
       side={sideChars}
     />
   )}
-  <CartridgeSection lang={lang} cartridges={featured} moreHref={pageHref(BASE_PATH.projects, ctx)} moreLabel={home.moreProjects} />
-  <ResearchHighlight lang={lang} paper={paper} nowPlaying={home.researchNowPlaying} figureLabel={hero.artifact.label} />
-  <PatchNotes lang={lang} notes={notes} />
+  <CartridgeSection lang={lang} variant={variant} cartridges={featured} moreHref={pageHref(BASE_PATH.projects, ctx)} moreLabel={home.moreProjects} />
+  <ResearchHighlight lang={lang} variant={variant} paper={paper} nowPlaying={home.researchNowPlaying} figureLabel={hero.artifact.label} />
+  <PatchNotes lang={lang} variant={variant} notes={notes} />
   <HelloProfile
     lang={lang}
     variant={variant}

@@ -7,6 +7,7 @@ import {
 import { dataVariant } from '../../src/variants/data';
 import { gameVariant } from '../../src/variants/game';
 import { resolveFacts } from '../../src/lib/facts';
+import { t, type UiKey } from '../../src/i18n/utils';
 import { loadFactSource } from '../helpers/fact-source';
 
 const facts = loadFactSource();
@@ -77,7 +78,7 @@ describe('versions (spec §4.2, contract §1.6–§1.7)', () => {
     expect(en.about).toContain('as an oral paper at IEEE CoG 2026.');
     expect([ko.labNote.title, en.labNote.title]).toEqual(['연구실 안내', 'For research labs']);
     expect(dataVariant.identity.labNote.body).toBe(gameVariant.identity.labNote.body);
-    expect(dataVariant.captions).toBe(gameVariant.captions); // A-30: P2-4 replaces
+    expect(Object.keys(dataVariant.captions)).toEqual([...CAPTION_KEYS]); // A-30 replaced by the §8 table (P2-4)
     expect(Object.keys(gameVariant.captions)).toEqual([...CAPTION_KEYS]);
     expect(captionFor(gameVariant, 'selectProject', 'ko')).toBe('SELECT YOUR PROJECT');
   });
@@ -108,5 +109,38 @@ describe('versions (spec §4.2, contract §1.6–§1.7)', () => {
     expect(() => pageMetaFor('home', 'ko', null, facts)).toThrow(/no meta for 'home'/);
     expect(Object.keys(PAGE_META)).not.toContain('home');
     expect(Object.keys(PAGE_META)).not.toContain('records');
+  });
+});
+
+describe('captions (P2-4, spec §8 editorial table)', () => {
+  const TWINS: Partial<Record<(typeof CAPTION_KEYS)[number], UiKey>> = {
+    research: 'section.research', publications: 'section.publications', projects: 'section.projects', selectProject: 'section.selectProject',
+    patchNotes: 'section.patchNotes', profile: 'section.profile', questLog: 'section.questLog', achievements: 'section.achievements',
+    inventory: 'section.inventory', skills: 'section.skills', jobFit: 'section.jobFit', documents: 'section.documents',
+    interests: 'section.interests', inProgress: 'section.inProgress', forLabs: 'section.forLabs', github: 'section.github',
+    figures: 'section.figures', links: 'section.links', projectDetails: 'section.projectDetails', researchContribution: 'section.researchContribution',
+  };
+
+  it('game captions are today\'s HUD strings (game output unchanged)', () => {
+    for (const lang of ['ko', 'en'] as const) {
+      for (const [key, uiKey] of Object.entries(TWINS)) expect(captionFor(gameVariant, key as (typeof CAPTION_KEYS)[number], lang), key).toBe(t(lang, uiKey!));
+      expect(captionFor(gameVariant, 'pageResearch', lang)).toBe('RESEARCH');
+      expect(captionFor(gameVariant, 'pageProjects', lang)).toBe('SELECT YOUR PROJECT');
+      expect(captionFor(gameVariant, 'pageRecords', lang)).toBe('RECORDS');
+    }
+  });
+
+  it('general captions: every key, in the page language, no game vocabulary, no digits, no HUD capitals', () => {
+    const GAME_WORDS = /PLAYER|PATCH|SELECT|QUEST|INVENTORY|MODE|GAME|NOW PLAYING|MAIN MENU|ACHIEVEMENT|게임|\[|\]|■/;
+    for (const key of CAPTION_KEYS) {
+      for (const lang of ['ko', 'en'] as const) {
+        const caption = captionFor(dataVariant, key, lang);
+        expect(caption.trim(), `${key}.${lang}`).not.toBe('');
+        expect(caption, `${key}.${lang}`).not.toMatch(GAME_WORDS);
+        expect(caption, `${key}.${lang}`).not.toMatch(/\d/);
+        expect(caption, `${key}.${lang}`).not.toMatch(/^[A-Z][A-Z ]+$/);
+      }
+      expect(captionFor(dataVariant, key, 'ko'), key).toMatch(/[가-힣]/);
+    }
   });
 });

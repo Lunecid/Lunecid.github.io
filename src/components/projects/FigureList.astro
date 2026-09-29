@@ -6,20 +6,22 @@ import Figure from '../common/Figure.astro';
 import SectionHead from '../hud/SectionHead.astro';
 import type { Lang } from '../../i18n/ui';
 import { t } from '../../i18n/utils';
+import { captionFor, getVariant, type VariantId } from '../../variants';
 
 interface Props {
   lang: Lang;
+  variant: VariantId;
   /** `number` is the figure's number in the case study ("그림 N"); defaults to the position in this list. */
   figures: { src: ImageMetadata; alt: string; caption: string; number?: number }[];
 }
 
-const { lang, figures } = Astro.props;
+const { lang, variant, figures } = Astro.props;
 ---
 
 {
   figures.length > 0 && (
     <section id="figures" class="figs read read-section read-column" aria-labelledby="figures-title">
-      <SectionHead id="figures-title" caption={t(lang, 'section.figures')} title={t(lang, 'project.figures')} />
+      <SectionHead variant={variant} id="figures-title" caption={captionFor(getVariant(variant), 'figures', lang)} title={t(lang, 'project.figures')} />
       <ol class="figs__list" role="list">
         {figures.map((fig, i) => (
           <li>

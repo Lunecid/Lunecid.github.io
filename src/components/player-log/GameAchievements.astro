@@ -17,7 +17,7 @@ const hasFeed = Object.keys(accounts).length > 0;
 {hasFeed && (
 <section id="game-achievements" class="game-ach read read-sec" aria-labelledby="game-ach-title">
   <div class="container">
-    <SectionHead id="game-ach-title" caption={t(lang, 'section.gameAchievements')} title={t(lang, 'playerLog.gameAchievements')} />
+    <SectionHead variant="game" id="game-ach-title" caption={t(lang, 'section.gameAchievements')} title={t(lang, 'playerLog.gameAchievements')} />
     <ul class="game-ach__list" role="list">
       {platforms.map((p) => (
         <li class="game-ach__item">

@@ -15,7 +15,7 @@ import { toCartridge, type CartridgeProps } from '../lib/projects';
 import { toPaperCartridge } from '../lib/publications';
 import { generated, usableGitHub } from '../lib/generated';
 import type { VariantId } from '../variants/ids';
-import { getVariant, pageMetaFor } from '../variants';
+import { captionFor, getVariant, pageMetaFor } from '../variants';
 
 interface Props {
   lang: Lang;
@@ -43,7 +43,7 @@ const github = usableGitHub(generated.github());
 ---
 
 <Layout lang={lang} variant={variant} title={meta.title} description={meta.description} page="projects" section="projects" sectionIndex={true}>
-  <PageHeader lang={lang} label="SELECT YOUR PROJECT" title={t(lang, 'projects.title')} intro={meta.description} />
+  <PageHeader lang={lang} variant={variant} label={captionFor(v, 'pageProjects', lang)} title={t(lang, 'projects.title')} intro={meta.description} />
   <section id="project-list" class="sec hud-grid" aria-labelledby="project-list-title">
     <div class="container container--hud">
       <h2 id="project-list-title" class="sr-only">{t(lang, 'projects.listLabel')}</h2>

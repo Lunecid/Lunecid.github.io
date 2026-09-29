@@ -26,13 +26,14 @@ const referrers = usable ? cleanReferrers(usable.referrers) : [];
 // shared page: NeutralLayout (P1-10)
 ---
 <NeutralLayout lang={lang} title={meta.title} description={meta.description} page="stats">
-  <PageHeader lang={lang} label="STATS" title={t(lang, 'stats.title')} />
-  <StatsSummary lang={lang} stats={stats} code={GOATCOUNTER.code} />
+  <PageHeader lang={lang} variant="neutral" label="STATS" title={t(lang, 'stats.title')} />
+  <StatsSummary lang={lang} variant="neutral" stats={stats} code={GOATCOUNTER.code} />
   {usable && (
     <Fragment>
-      <DailyChart lang={lang} daily={usable.daily} fetchedAt={usable.fetchedAt} maxAgeDays={usable.maxAgeDays} />
+      <DailyChart lang={lang} variant="neutral" daily={usable.daily} fetchedAt={usable.fetchedAt} maxAgeDays={usable.maxAgeDays} />
       <RankTable
         lang={lang}
+        variant="neutral"
         id="top-pages"
         title={t(lang, 'stats.topPages')}
         rows={pages.map((p) => ({ label: p.path, count: p.count }))}
@@ -41,6 +42,7 @@ const referrers = usable ? cleanReferrers(usable.referrers) : [];
       />
       <RankTable
         lang={lang}
+        variant="neutral"
         id="referrers"
         title={t(lang, 'stats.referrers')}
         rows={referrers.map((r) => ({ label: r.name ?? t(lang, 'stats.direct'), count: r.count }))}

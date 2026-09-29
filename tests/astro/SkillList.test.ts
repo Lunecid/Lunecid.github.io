@@ -36,7 +36,7 @@ const linkTexts = (html: string): Map<string, string> =>
 describe('SkillList.astro', () => {
   it('primary and familiar with evidence links labelled by title, no bars', async () => {
     const titles = titlesFor('ko');
-    const html = await renderAstro(SkillList, { props: { lang: 'ko', ...skillGroups(resume.skills, { lang: 'ko', variant: 'game' }, titles) } });
+    const html = await renderAstro(SkillList, { props: { variant: 'game', lang: 'ko', ...skillGroups(resume.skills, { lang: 'ko', variant: 'game' }, titles) } });
     expect(html).toMatch(/<section(?=[^>]*\bid="skills")[^>]*>/);
     expect(html).toMatch(/<h2[^>]*>기술<\/h2>/);
     // P1-9: one two-column table, "skill | evidence chips", primary / also-used as row groups
@@ -60,7 +60,7 @@ describe('SkillList.astro', () => {
     expect(html).not.toMatch(/>SQL</); // SQL waits for the certificate (spec §2 later #7)
 
     const enTitles = titlesFor('en');
-    const en = await renderAstro(SkillList, { props: { lang: 'en', ...skillGroups(resume.skills, { lang: 'en', variant: 'game' }, enTitles) } });
+    const en = await renderAstro(SkillList, { props: { variant: 'game', lang: 'en', ...skillGroups(resume.skills, { lang: 'en', variant: 'game' }, enTitles) } });
     expect(linkTexts(en).get('/en/game/research/cog-2026-engagement/')).toBe(enTitles.stories['cog-2026-engagement']);
     expect(en).toMatch(/<th colspan="2" scope="rowgroup"[^>]*>Primary<\/th>/);
   });
@@ -68,7 +68,7 @@ describe('SkillList.astro', () => {
   it('omits an empty familiar group', async () => {
     const titles = titlesFor('ko');
     const groups = skillGroups(resume.skills, { lang: 'ko', variant: 'game' }, titles);
-    const html = await renderAstro(SkillList, { props: { lang: 'ko', primary: groups.primary, familiar: [] } });
+    const html = await renderAstro(SkillList, { props: { variant: 'game', lang: 'ko', primary: groups.primary, familiar: [] } });
     expect(html).toMatch(/scope="rowgroup"[^>]*>주력<\/th>/);
     expect(html).not.toContain('사용해 본 기술');
   });

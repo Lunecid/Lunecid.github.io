@@ -12,13 +12,15 @@ import { figureCopy, overallAuc } from '../../data/research/cog-2026';
 import type { Lang } from '../../i18n/ui';
 import { t } from '../../i18n/utils';
 import { INTEREST_FIGURE_SIZES, fitWidths, sourceSize } from '../../lib/images';
+import { captionFor, getVariant, type VariantId } from '../../variants';
 
 interface Props {
   lang: Lang;
+  variant: VariantId;
   interests: typeof researchPage.interests;
 }
 
-const { lang, interests } = Astro.props;
+const { lang, variant, interests } = Astro.props;
 const IMAGES = {
   'kill-gap': { src: killGap, copy: figureCopy.killGap, label: 'KILL-GAP KDE' },
   'label-horizon': { src: labelHorizon, copy: figureCopy.labelHorizon, label: 'ENGAGEMENT WINDOWS' },
@@ -39,7 +41,7 @@ const firstImageFigure = interests.find((item) => item.figure !== 'auc')?.figure
 ---
 <section id="interests" class="interests read read-sec" aria-labelledby="interests-title">
   <div class="container">
-    <SectionHead id="interests-title" caption={t(lang, 'section.interests')} title={t(lang, 'research.interests')} />
+    <SectionHead variant={variant} id="interests-title" caption={captionFor(getVariant(variant), 'interests', lang)} title={t(lang, 'research.interests')} />
     <ol class="interests__rows lh-rows" role="list">
       {interests.map((item, i) => (
         <li class="interests__row lh-row" data-interest={item.id}>

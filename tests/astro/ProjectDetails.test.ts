@@ -16,6 +16,7 @@ describe('ProjectDetails.astro', () => {
   it('one h1 and ≤6 row headers with scope=row', async () => {
     const html = await renderAstro(ProjectDetails, {
       props: {
+        variant: 'game',
         lang: 'ko',
         title: '사각지대를 예측하다',
         rows: [...rows, { label: '데이터', value: '공공데이터 16종' }, { label: '추가', value: '일곱 번째 행' }],
@@ -34,6 +35,7 @@ describe('ProjectDetails.astro', () => {
   it('award badge and a certificate link with data-cert-id and aria-haspopup=dialog', async () => {
     const html = await renderAstro(ProjectDetails, {
       props: {
+        variant: 'game',
         lang: 'ko',
         title: '사각지대를 예측하다',
         rows,
@@ -48,12 +50,12 @@ describe('ProjectDetails.astro', () => {
     // P2-14/D-7: a certificate button opens an in-page modal, not a symbol reserved for links that leave the site.
     expect(html).not.toContain('↗');
     const noImage = await renderAstro(ProjectDetails, {
-      props: { lang: 'ko', title: '사각지대를 예측하다', rows, award: { name: '최우수상(부산광역시장상)' } },
+      props: { variant: 'game', lang: 'ko', title: '사각지대를 예측하다', rows, award: { name: '최우수상(부산광역시장상)' } },
     });
     expect(noImage).toContain('최우수상(부산광역시장상)');
     expect(noImage).not.toContain('data-cert-id');
     const en = await renderAstro(ProjectDetails, {
-      props: { lang: 'en', title: 'Predicting the Blind Spots', rows, award: { name: 'Top Excellence Award', certificateId: 'busan-mayor-award', certificateHref: '/x.webp' } },
+      props: { variant: 'game', lang: 'en', title: 'Predicting the Blind Spots', rows, award: { name: 'Top Excellence Award', certificateId: 'busan-mayor-award', certificateHref: '/x.webp' } },
     });
     expect(en).toMatch(/>View certificate/);
     expect(en).not.toContain('프로젝트 개요');
@@ -61,7 +63,7 @@ describe('ProjectDetails.astro', () => {
 
   it('P2-21: the bracketed figure carries a "FIG · <label>" HUD caption strip when a label is given', async () => {
     const withCaption = await renderAstro(ProjectDetails, {
-      props: { lang: 'ko', title: 't', rows, figure: { src: cover, alt: '부산 전역 사고 예측 히트맵', label: 'RISK HEATMAP' } },
+      props: { variant: 'game', lang: 'ko', title: 't', rows, figure: { src: cover, alt: '부산 전역 사고 예측 히트맵', label: 'RISK HEATMAP' } },
     });
     expect(withCaption).toMatch(/<figure[^>]*class="pd__fig bracket"/);
     expect(withCaption).toMatch(/<picture\b/);
@@ -71,18 +73,18 @@ describe('ProjectDetails.astro', () => {
     expect(withCaption).toMatch(/<figcaption class="pd__figcap" lang="en"[^>]*><span class="pd__figcap-tag"[^>]*>FIG<\/span> · RISK HEATMAP<\/figcaption>/);
     expect(withCaption.indexOf('<figcaption')).toBeGreaterThan(withCaption.indexOf('<picture')); // under the figure
     const noLabel = await renderAstro(ProjectDetails, {
-      props: { lang: 'ko', title: 't', rows, figure: { src: cover, alt: '히트맵' } },
+      props: { variant: 'game', lang: 'ko', title: 't', rows, figure: { src: cover, alt: '히트맵' } },
     });
     expect(noLabel).toMatch(/<figure\b/);
     expect(noLabel).not.toMatch(/<figcaption\b/);
-    const none = await renderAstro(ProjectDetails, { props: { lang: 'ko', title: 't', rows } });
+    const none = await renderAstro(ProjectDetails, { props: { variant: 'game', lang: 'ko', title: 't', rows } });
     expect(none).not.toMatch(/<figure\b/);
     expect(none).toMatch(/<section[^>]*class="pd-sec hud-grid pd-sec--nofig"/);
   });
 
   it('fix round 1: a cover that is also the body figure N carries its number and caption (shown once, here)', async () => {
     const html = await renderAstro(ProjectDetails, {
-      props: { lang: 'ko', title: 't', rows, figure: { src: cover, alt: '히트맵', label: 'CLUSTER PROFILES', number: 1, caption: '군집별 핵심 변수의 Z-score.' } },
+      props: { variant: 'game', lang: 'ko', title: 't', rows, figure: { src: cover, alt: '히트맵', label: 'CLUSTER PROFILES', number: 1, caption: '군집별 핵심 변수의 Z-score.' } },
     });
     expect(html).toMatch(/<figcaption id="figure-1" class="pd__figcap pd__figcap--cited"/);
     expect(html).toMatch(/<span class="pd__figcap-tag"[^>]*>FIG 1<\/span> · CLUSTER PROFILES/);
@@ -98,19 +100,19 @@ describe('ProjectDetails.astro', () => {
 
   it('default slot renders inside the head', async () => {
     const html = await renderAstro(ProjectDetails, {
-      props: { lang: 'ko', title: '사각지대를 예측하다', rows },
+      props: { variant: 'game', lang: 'ko', title: '사각지대를 예측하다', rows },
       slots: { default: '<p>보호구역 밖 사고 위험을 예측했다.</p>' },
     });
     expect(html).toMatch(/<div[^>]*class="pd__lead"[^>]*>\s*<p>보호구역 밖 사고 위험을 예측했다\.<\/p>\s*<\/div>/);
     expect(html.indexOf('보호구역 밖')).toBeGreaterThan(html.indexOf('id="pd-title"'));
     expect(html.indexOf('보호구역 밖')).toBeLessThan(html.indexOf('<table'));
-    const noSlot = await renderAstro(ProjectDetails, { props: { lang: 'ko', title: 't', rows } });
+    const noSlot = await renderAstro(ProjectDetails, { props: { variant: 'game', lang: 'ko', title: 't', rows } });
     expect(noSlot).not.toContain('pd__lead');
   });
 
   it('P2-38/P2-39: the cover keeps its own width between ladder steps, WebP fallback, real column sizes', async () => {
     expect(parking.width).toBe(762);
-    const html = await renderAstro(ProjectDetails, { props: { lang: 'ko', title: 't', rows, figure: { src: parking, alt: 'a' } } });
+    const html = await renderAstro(ProjectDetails, { props: { variant: 'game', lang: 'ko', title: 't', rows, figure: { src: parking, alt: 'a' } } });
     expect(html).toMatch(/\b560w\b/);
     expect(html).toMatch(/\b762w\b/);
     expect(html).not.toMatch(/\b840w\b/);

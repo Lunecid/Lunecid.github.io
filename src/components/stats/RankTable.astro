@@ -2,21 +2,23 @@
 import SectionHead from '../hud/SectionHead.astro';
 import type { Lang } from '../../i18n/ui';
 import { formatNumber, t } from '../../i18n/utils';
+import type { PageVariant } from '../../variants';
 
 interface Props {
   lang: Lang;
+  variant: PageVariant;
   id: 'top-pages' | 'referrers';
   title: string;
   rows: { label: string; count: number }[];
   fetchedAt: string;
   maxAgeDays: number;
 }
-const { lang, id, title, rows, fetchedAt, maxAgeDays } = Astro.props;
+const { lang, variant, id, title, rows, fetchedAt, maxAgeDays } = Astro.props;
 ---
 {rows.length > 0 && (
   <section id={id} class="stats read" aria-labelledby={`${id}-title`} data-fetched-at={fetchedAt} data-max-age-days={maxAgeDays}>
     <div class="container">
-      <SectionHead id={`${id}-title`} caption={t(lang, id === 'top-pages' ? 'section.topPages' : 'section.referrers')} title={title} />
+      <SectionHead variant={variant} id={`${id}-title`} caption={t(lang, id === 'top-pages' ? 'section.topPages' : 'section.referrers')} title={title} />
       <div class="stats__table-scroll" tabindex="0" role="region" aria-labelledby={`${id}-title`}>
         <table class="stats__table">
           <thead><tr><th scope="col">{title}</th><th scope="col">{t(lang, 'stats.visits')}</th></tr></thead>
