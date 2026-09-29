@@ -5,9 +5,12 @@
  * for what this page shows (always rendered in NOTICE_KEYS order).
  */
 import type { Lang } from '../../i18n/ui';
-import { formatDate, t, type UiKey } from '../../i18n/utils';
+import { formatDate, t } from '../../i18n/utils';
+import { isCurrentPath } from '../../lib/footer-nav';
 import { chooserHref, pageHref } from '../../lib/links';
-import { NOTICE_KEYS, type NoticeKey } from '../../types';
+import { noticeLines as linesFor } from '../../lib/notices';
+import { SITE } from '../../config';
+import type { NoticeKey } from '../../types';
 import { SHARED_NAV } from '../../variants/neutral';
 
 interface Props {
@@ -26,17 +29,11 @@ const parts = new Intl.DateTimeFormat('en-CA', {
 const part = (type: 'year' | 'month' | 'day'): string => parts.find((p) => p.type === type)?.value ?? '';
 const builtIso = `${part('year')}-${part('month')}-${part('day')}`;
 
-// notice.* are verbatim English rights-holder texts; footer.fanContent is in the page language.
-const NOTICE_LINES: Record<NoticeKey, { key: UiKey; english: boolean }[]> = {
-  cognosphere: [{ key: 'notice.cognosphere', english: true }],
-  'zzz-fan-guide': [
-    { key: 'notice.zzzCopyright', english: true },
-    { key: 'notice.zzzLegalStatement', english: true },
-  ],
-  'fan-content': [{ key: 'footer.fanContent', english: false }],
-  riot: [{ key: 'notice.riot', english: true }],
-};
-const noticeLines = NOTICE_KEYS.filter((key) => notices.includes(key)).flatMap((key) => NOTICE_LINES[key]);
+const noticeLines = linesFor(notices);
+// P-04: getPerson() reads the resume collection, which the vitest container does not load; its email and github
+// are SITE.email and SITE.githubUrl, read here directly (as HomeView and RecordsView do).
+const person = { email: SITE.email, github: SITE.githubUrl };
+const pathname = Astro.url.pathname;
 
 const links = SHARED_NAV.map((item) => ({ href: pageHref(item.base, { lang, variant: null }), label: t(lang, item.label) }));
 links.push({ href: chooserHref(lang, { choose: true }), label: t(lang, 'nav.chooser') });
@@ -44,9 +41,13 @@ links.push({ href: chooserHref(lang, { choose: true }), label: t(lang, 'nav.choo
 <footer class="site-footer">
   <div class="container container--hud site-footer__inner">
     <p class="site-footer__copy">{t(lang, 'footer.copyright', { year: part('year') })}</p>
+    <ul class="site-footer__contact" role="list">
+      <li><a class="site-footer__chip" href={`mailto:${person.email}`}><span class="site-footer__chip-face cut cut--line"><svg class="site-footer__icon" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M1.5 3.5h13v9h-13z M1.5 3.5 8 8.5l6.5-5" /></svg>{person.email}</span></a></li>
+      <li><a class="site-footer__chip" href={person.github}><span class="site-footer__chip-face cut cut--line" lang="en">{t(lang, 'action.github')} <span aria-hidden="true">↗</span></span></a></li>
+    </ul>
     <nav class="site-footer__nav" aria-label={t(lang, 'footer.siteInfo')}>
       <ul class="site-footer__links" role="list">
-        {links.map((link) => <li><a href={link.href}>{link.label}</a></li>)}
+        {links.map((link) => <li><a href={link.href} aria-current={isCurrentPath(link.href, pathname) ? 'page' : undefined}>{link.label}</a></li>)}
       </ul>
     </nav>
     <p class="site-footer__updated">{t(lang, 'footer.lastUpdated')} <time datetime={builtIso}>{formatDate(builtIso, lang)}</time></p>
@@ -82,34 +83,8 @@ links.push({ href: chooserHref(lang, { choose: true }), label: t(lang, 'nav.choo
 </footer>
 
 <script>
-  import { isMotionOffStored, osPrefersReduce, setMotionOff } from '../../lib/motion-pref';
-
-  // Fix round 2 item 1: the button's own text never changes now (WCAG 2.5.3) — only aria-pressed, the aria-hidden
-  // ON/OFF chip, and the OS-note's visibility track state. Fix round 3 item 1: aria-describedby is set/removed
-  // here too, present only while the OS itself already forces reduced motion (the only state the note describes)
-  // — never left pointing at the note in the ordinary, not-OS-forced states, where it isn't true.
-  document.querySelectorAll<HTMLButtonElement>('[data-motion-toggle]').forEach((button) => {
-    const chip = button.querySelector<HTMLElement>('[data-motion-chip]');
-    const note = document.getElementById('motion-os-note') as HTMLElement | null;
-    const sync = () => {
-      const osForced = osPrefersReduce();
-      const off = osForced || isMotionOffStored();
-      button.setAttribute('aria-pressed', String(off));
-      button.disabled = osForced;
-      if (chip) chip.textContent = off ? 'ON' : 'OFF';
-      if (note) note.hidden = !osForced;
-      if (osForced) button.setAttribute('aria-describedby', 'motion-os-note');
-      else button.removeAttribute('aria-describedby');
-    };
-    sync();
-    button.addEventListener('click', () => {
-      setMotionOff(button.getAttribute('aria-pressed') !== 'true');
-      sync();
-    });
-    if (typeof window.matchMedia === 'function') {
-      window.matchMedia('(prefers-reduced-motion: reduce)').addEventListener('change', sync);
-    }
-  });
+  import { initMotionToggles } from '../../scripts/motion-toggle';
+  initMotionToggles();
 </script>
 
 <style>
@@ -152,6 +127,40 @@ links.push({ href: chooserHref(lang, { choose: true }), label: t(lang, 'nav.choo
     .site-footer a:hover { color: var(--accent); }
   }
   .site-footer a:active { color: var(--accent); }
+  /* P-04 (F-001): the contact row in the hero envelope chip style (Hero.astro .hero__chip). */
+  .site-footer__contact {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0 12px;
+  }
+  .site-footer__chip {
+    text-decoration: none;
+  }
+  .site-footer__chip-face {
+    --c: var(--cut-chip);
+    --cut-line: var(--hud-line);
+    --cut-fill: var(--hud-panel);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 12px;
+    font: 600 var(--fs-caption)/1.4 var(--font-mono);
+    letter-spacing: .02em;
+  }
+  @media (hover: hover) {
+    .site-footer__chip:hover .site-footer__chip-face { --cut-line: var(--accent); }
+  }
+  .site-footer__chip:active .site-footer__chip-face { --cut-line: var(--accent); }
+  .site-footer__icon {
+    flex: none;
+    width: 14px;
+    height: 14px;
+    fill: none;
+    stroke: var(--accent);
+    stroke-width: 1.3;
+    stroke-linejoin: round;
+    stroke-linecap: round;
+  }
   .site-footer__motion {
     justify-self: start;
     min-height: var(--tap);
@@ -199,7 +208,8 @@ links.push({ href: chooserHref(lang, { choose: true }), label: t(lang, 'nav.choo
   }
   @media (min-width: 1068px) {
     .site-footer__inner {
-      grid-template-columns: auto 1fr auto auto;
+      /* P-04: copy, contact row, links, updated, motion toggle */
+      grid-template-columns: auto auto 1fr auto auto;
       align-items: center;
       column-gap: 20px;
     }
@@ -210,7 +220,7 @@ links.push({ href: chooserHref(lang, { choose: true }), label: t(lang, 'nav.choo
        row starting at column 1 — the far left, under .site-footer__copy, nowhere near the button it describes.
        Pin it under the motion button's own column instead. */
     .site-footer__motion-note {
-      grid-column: 4;
+      grid-column: 5;
       grid-row: 2;
       justify-self: start;
     }

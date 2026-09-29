@@ -1,0 +1,94 @@
+---
+// General-version footer (spec §5.5, §8): the shared pages (R-2), the chooser link (?choose), the build date in
+// Asia/Seoul, the motion toggle (contract A-29: it stays on version pages) and any rights-holder notice the page
+// passes (e.g. the Riot notice on the paper page when Q19 enables it). Editorial colours only; no mono type.
+// P-04: a contact row (mailto + GitHub profile from getPerson()) and aria-current on the current footer link.
+import type { Lang } from '../../i18n/ui';
+import { formatDate, t } from '../../i18n/utils';
+import { isCurrentPath } from '../../lib/footer-nav';
+import { chooserHref, pageHref } from '../../lib/links';
+import { noticeLines } from '../../lib/notices';
+import { SITE } from '../../config';
+import { todayIso } from '../../lib/records';
+import type { NoticeKey } from '../../types';
+import { SHARED_NAV } from '../../variants/neutral';
+
+interface Props {
+  lang: Lang;
+  notices: NoticeKey[];
+  builtAt: Date;
+}
+const { lang, notices, builtAt } = Astro.props;
+const builtIso = todayIso(builtAt);
+// CA-21 SHARED_NAV: stats → privacy → credits, the order of SiteFooter and NeutralFooter (no path literal here).
+const links = [
+  ...SHARED_NAV.map((item) => ({ href: pageHref(item.base, { lang, variant: null }), label: t(lang, item.label) })),
+  { href: chooserHref(lang, { choose: true }), label: t(lang, 'nav.chooser') },
+];
+const lines = noticeLines(notices);
+// P-04: getPerson() reads the resume collection, which the vitest container does not load; its email and github
+// are SITE.email and SITE.githubUrl, read here directly (as HomeView and RecordsView do).
+const person = { email: SITE.email, github: SITE.githubUrl };
+const pathname = Astro.url.pathname;
+---
+<footer class="data-footer">
+  <div class="container data-footer__inner">
+    <p class="data-footer__copy">{t(lang, 'footer.copyright', { year: builtIso.slice(0, 4) })}</p>
+    <ul class="data-footer__contact" role="list">
+      <li><a class="ed-link" href={`mailto:${person.email}`}>{person.email}</a></li>
+      <li><a class="ed-link" href={person.github} lang="en">{t(lang, 'action.github')} <span aria-hidden="true">↗</span></a></li>
+    </ul>
+    <nav class="data-footer__nav" aria-label={t(lang, 'footer.siteInfo')}>
+      <ul class="data-footer__links" role="list">
+        {links.map((link) => <li><a href={link.href} aria-current={isCurrentPath(link.href, pathname) ? 'page' : undefined}>{link.label}</a></li>)}
+      </ul>
+    </nav>
+    <p class="data-footer__updated">{t(lang, 'footer.lastUpdated')} <time datetime={builtIso}>{formatDate(builtIso, lang)}</time></p>
+    <button type="button" class="data-footer__motion" aria-pressed="false" data-motion-toggle>{t(lang, 'action.reduceMotion')} <span class="data-footer__motion-chip" lang="en" aria-hidden="true" data-motion-chip>OFF</span></button>
+    <p id="motion-os-note" class="data-footer__motion-note" data-motion-os-note hidden>{t(lang, 'action.motionOsOff')}</p>
+    {lines.length > 0 && (
+      <div class="data-footer__notices">
+        {lines.map((line) => <p class="data-footer__notice" lang={line.english ? 'en' : undefined}>{t(lang, line.key)}</p>)}
+      </div>
+    )}
+  </div>
+</footer>
+
+<script>
+  import { initMotionToggles } from '../../scripts/motion-toggle';
+  initMotionToggles();
+</script>
+
+<style>
+  .data-footer {
+    margin-top: var(--section-pad-y);
+    padding-block: 20px 28px;
+    border-top: var(--ed-rule-w-strong) solid var(--ed-rule-strong);
+    background: var(--ed-bg);
+    font-size: var(--fs-caption);
+    line-height: 1.6;
+    color: var(--ed-muted);
+  }
+  .data-footer__inner { display: grid; gap: 8px; }
+  .data-footer__links { display: flex; flex-wrap: wrap; gap: 0 16px; }
+  .data-footer__links a { display: inline-flex; align-items: center; min-height: var(--tap); color: var(--ed-accent); }
+  .data-footer__links a[aria-current] { color: var(--ed-ink); text-decoration-thickness: 2px; }
+  .data-footer__contact { display: flex; flex-wrap: wrap; gap: 0 20px; }
+  .data-footer__motion {
+    justify-self: start;
+    min-height: var(--tap);
+    padding: 0 12px;
+    border: var(--ed-rule-w) solid var(--ed-rule);
+    background: none;
+    color: var(--ed-ink);
+    cursor: pointer;
+    transition: border-color var(--dur-hover) linear;
+  }
+  .data-footer__motion[aria-pressed="true"] { border-color: var(--ed-ink); }
+  .data-footer__motion-chip { margin-left: .4em; font-weight: 700; }
+  .data-footer__notice { max-width: var(--measure); }
+  @media (min-width: 1068px) {
+    .data-footer__inner { grid-template-columns: auto 1fr auto auto; align-items: center; column-gap: 24px; }
+    .data-footer__notices, .data-footer__motion-note { grid-column: 1 / -1; }
+  }
+</style>

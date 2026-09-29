@@ -95,3 +95,13 @@ describe('SiteFooter.astro', () => {
     expect(en).toMatch(/<button[^>]*data-motion-toggle[^>]*>\s*Reduce motion\s*<span[^>]*class="site-footer__motion-chip"[^>]*>OFF<\/span><\/button>/);
   });
 });
+
+describe('SiteFooter.astro — P-04 contact row and aria-current', () => {
+  const builtAt = new Date('2026-09-25T16:30:00Z');
+  it('renders the mailto and GitHub profile before the links and marks the current footer link', async () => {
+    const html = await renderAstro(SiteFooter, { props: { lang: 'ko', notices: [], builtAt }, url: '/stats/' });
+    expect(html).toMatch(/<ul class="site-footer__contact" role="list"[^>]*>[\s\S]*href="mailto:[^"]+"[\s\S]*href="https:\/\/github\.com\/Lunecid"[\s\S]*<ul class="site-footer__links"/);
+    expect(html).toMatch(/<a href="\/stats\/" aria-current="page"/);
+    expect(html).not.toContain('dacon.io');
+  });
+});

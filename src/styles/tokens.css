@@ -58,17 +58,39 @@
      the Korean paper page) first — Windows ships no Korean serif — then the stack above for everything else. */
   --font-paper-ko: "SB Serif KR", var(--font-paper);
 
-  /* Neutral pages (chooser, shared pages, 404; spec §7, contract §4.2). Literals here only; P2-1 aliases them to --ed-*. */
-  --nt-bg: #FFFFFF;
-  --nt-ink: #141414;      /* 18.4:1 on --nt-bg */
-  --nt-muted: #6B6B6B;    /* 5.3:1 on --nt-bg */
-  --nt-rule: #E5E5E5;
-  --nt-accent: #1E3A8A;   /* links and focus only (B-14), 10.4:1 */
+  /* ── editorial (general version, spec §8 · contract §4.2): new names only; no HUD, read or paper token is redefined ── */
+  --ed-bg: #FFFFFF;
+  --ed-ink: #141414;            /* 18.4:1 on --ed-bg: body, heavy rules, the filled button */
+  --ed-muted: #6B6B6B;          /*  5.3:1 on --ed-bg: secondary text */
+  --ed-rule: #E5E5E5;           /* thin rules */
+  --ed-rule-strong: var(--ed-ink);
+  --ed-accent: #1E3A8A;         /* 10.4:1 on --ed-bg: links and focus only (B-14); the one chart accent (§8) */
+  --ed-fill: var(--ed-ink);
+  --ed-fill-ink: #FFFFFF;
+  --ed-rule-w: 1px;
+  --ed-rule-w-strong: 2px;
+  /* Latin headings in the system Times stack (as on the paper page); Korean headings in "SB Serif KR Head", the
+     build-time static wght-700 subset of Noto Serif KR over the Hangul inside [data-serif] (scripts/fonts/build.mjs). */
+  --font-ed-serif: "Times New Roman", Times, "TeX Gyre Termes", "Nimbus Roman", "Liberation Serif", serif;
+  --font-ed-head: "Times New Roman", Times, "TeX Gyre Termes", "Nimbus Roman", "Liberation Serif", "SB Serif KR Head", serif;
+
+  /* ── neutral (chooser, shared pages, 404; §7): aliases of the editorial palette ── */
+  --nt-bg: var(--ed-bg);
+  --nt-ink: var(--ed-ink);
+  --nt-muted: var(--ed-muted);
+  --nt-rule: var(--ed-rule);
+  --nt-accent: var(--ed-accent);
   /* Role tokens: base.css paints the page with these; they switch by <html data-variant>. */
   --page-bg: var(--hud-bg);
   --page-ink: var(--hud-text);
   --page-muted: var(--hud-muted);
   --page-focus: var(--accent);
+  /* P2 role tokens (Appendix A): shared components colour links, rules and the filled button with these. */
+  --page-link: var(--accent);
+  --page-rule: var(--hud-divider);
+  --page-rule-strong: var(--hud-line-strong);
+  --page-fill: var(--accent);
+  --page-fill-ink: var(--accent-ink);
 
   /* ── HUD labels (D8 / Task 0 Q13). Accent means "clickable" only, so labels are muted.
         Q13 = lime flips both lines: --hud-label: var(--accent); --read-label: var(--accent-deep). ── */
@@ -136,7 +158,11 @@
   --bracket: 26px;
   --bracket-sm: 14px;
 }
-:root[data-variant="neutral"] { --page-bg: var(--nt-bg); --page-ink: var(--nt-ink); --page-muted: var(--nt-muted); --page-focus: var(--nt-accent); }
+:root[data-variant="neutral"] {
+  --page-bg: var(--nt-bg); --page-ink: var(--nt-ink); --page-muted: var(--nt-muted); --page-focus: var(--nt-accent);
+  --page-link: var(--nt-accent); --page-rule: var(--nt-rule); --page-rule-strong: var(--nt-ink);
+  --page-fill: var(--nt-ink); --page-fill-ink: var(--nt-bg);
+}
 @media (min-width: 734px) {
   :root { --fs-name: 60px; --fs-display: 48px; --fs-h2: 28px; --fs-sub: 21px; --gutter: 32px; --section-pad-y: 44px; }
 }

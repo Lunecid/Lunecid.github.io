@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import NeutralFooter from '../../src/components/neutral/NeutralFooter.astro';
 import NeutralLayout from '../../src/layouts/NeutralLayout.astro';
 import { HEAD_INIT_SCRIPT } from '../../src/lib/head-init';
 import { renderAstro } from './helpers';
@@ -57,5 +58,17 @@ describe('NeutralLayout (§7, contract §4.1)', () => {
     expect(html).toMatch(/<a href="\/en\/" hreflang="en" lang="en" data-nt-lang/);
     const none = await render({ altLangHref: null });
     expect(none).not.toContain('data-nt-lang');
+  });
+});
+
+describe('NeutralFooter — P-04 contact row (not on the 404, R-1, decision 19)', () => {
+  it('shows the contact row on shared pages and marks the current footer link', async () => {
+    const stats = await renderAstro(NeutralFooter, { props: { lang: 'ko' }, url: '/stats/' });
+    expect(stats).toMatch(/<ul class="nt-footer__contact"[\s\S]*mailto:[\s\S]*href="https:\/\/github\.com\/Lunecid"/);
+    expect(stats).toMatch(/data-nt-footer-link="stats" aria-current="page"/);
+  });
+  it('has no contact row on the 404', async () => {
+    const nf = await renderAstro(NeutralFooter, { props: { lang: 'ko', contact: false }, url: '/404.html' });
+    expect(nf).not.toContain('mailto:');
   });
 });

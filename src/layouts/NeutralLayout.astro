@@ -50,6 +50,6 @@ const altHref = altLangHref === undefined ? switchLocalePath(Astro.url.pathname,
     <a class="skip-link" href="#main">{t(lang, 'site.skipToContent')}</a>
     <NeutralHeader lang={lang} altLangHref={altHref} />
     <main id="main" tabindex="-1"><slot /></main>
-    <NeutralFooter lang={lang} />
+    <NeutralFooter lang={lang} contact={page !== 'not-found'} />
   </body>
 </html>

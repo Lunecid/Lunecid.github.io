@@ -1,14 +1,23 @@
 ---
 // Neutral footer: copyright, the shared pages and the chooser link (/?choose, A-23). No motion toggle (A-29).
+// P-04: a contact row (mailto + GitHub profile from getPerson()) unless `contact` is false (the 404, R-1, owner
+// decision 19), and aria-current on the current footer link.
 import type { Lang } from '../../i18n/ui';
 import { t } from '../../i18n/utils';
+import { isCurrentPath } from '../../lib/footer-nav';
 import { chooserHref, pageHref } from '../../lib/links';
+import { SITE } from '../../config';
 import { SHARED_NAV } from '../../variants/neutral';
 
 interface Props {
   lang: Lang;
+  contact?: boolean;
 }
-const { lang } = Astro.props;
+const { lang, contact = true } = Astro.props;
+// P-04: getPerson() reads the resume collection, which the vitest container does not load; its email and github
+// are SITE.email and SITE.githubUrl, read here directly (as HomeView and RecordsView do).
+const person = { email: SITE.email, github: SITE.githubUrl };
+const pathname = Astro.url.pathname;
 const year = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Seoul', year: 'numeric' }).format(new Date());
 const links = [
   ...SHARED_NAV.map((item) => ({ key: item.key, href: pageHref(item.base, { lang, variant: null }), label: t(lang, item.label) })),
@@ -18,9 +27,15 @@ const links = [
 <footer class="nt-footer">
   <div class="nt-footer__inner">
     <p class="nt-footer__copy" data-year={year}>{t(lang, 'footer.copyright', { year })}</p>
+    {contact && (
+      <ul class="nt-footer__contact" role="list">
+        <li><a href={`mailto:${person.email}`}>{person.email}</a></li>
+        <li><a href={person.github} lang="en">{t(lang, 'action.github')} <span aria-hidden="true">↗</span></a></li>
+      </ul>
+    )}
     <nav class="nt-footer__nav" aria-label={t(lang, 'footer.siteInfo')}>
       <ul class="nt-footer__links" role="list">
-        {links.map((link) => <li><a href={link.href} data-nt-footer-link={link.key}>{link.label}</a></li>)}
+        {links.map((link) => <li><a href={link.href} data-nt-footer-link={link.key} aria-current={isCurrentPath(link.href, pathname) ? 'page' : undefined}>{link.label}</a></li>)}
       </ul>
     </nav>
   </div>

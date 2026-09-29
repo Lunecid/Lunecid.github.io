@@ -1,0 +1,47 @@
+---
+// General-version layout (spec §5.2, §8; contract §1.1, §4): the common <head> (HeadMeta), the sans face only (no mono
+// preload; the Korean heading face arrives in P2-3 and is never preloaded), the editorial sheet, DataNav (P2-2) and
+// DataFooter. No game module: no CRT intro, AchievementHost, BGM or data-sfx (§4.3), and no GhostArt (the game's Miku
+// watermark; the shared components render it on the game version only).
+import '../styles/tokens.css';
+import '../styles/base.css';
+import '../styles/editorial.css';
+import type { ComponentProps } from 'astro/types';
+import type BaseLayout from './BaseLayout.astro';
+import HeadMeta from './partials/HeadMeta.astro';
+import DataFooter from '../components/data/DataFooter.astro';
+import { otherLang, t } from '../i18n/utils';
+import { VIEWER_QUEUE_SCRIPT } from '../lib/viewer-queue';
+import { FONT_URL, fontFaceCss } from '../lib/fonts';
+import { HEAD_INIT_SCRIPT } from '../lib/head-init';
+import { langSwitchHref } from '../lib/links';
+import { getVariant } from '../variants';
+
+type Props = ComponentProps<typeof BaseLayout>;
+const { lang, variant, title, description, page, section, ogSlug, noindex = false, notices = [], altLangHref, jsonLd } = Astro.props;
+// og:site_name as BaseLayout reads it (P1-10): getFactSource() needs the content collections, which the vitest
+// container does not load, and the data siteTitle carries no fact token.
+const siteTitle = getVariant(variant).identity.siteTitle[lang];
+// The other-language twin, as BaseLayout computes it (P1-10): null = no twin, no hreflang links, no language switch.
+const altHref = altLangHref === undefined ? langSwitchHref(Astro.url.pathname, otherLang(lang)) : altLangHref;
+---
+<!doctype html>
+<html lang={lang} data-variant="data" data-page={page} data-section={section} data-motion="full">
+  <head>
+    <meta charset="utf-8" />
+    <script is:inline set:html={HEAD_INIT_SCRIPT} />
+    <script is:inline set:html={VIEWER_QUEUE_SCRIPT} />
+    <HeadMeta lang={lang} title={title} description={description} siteName={siteTitle} ogSlug={ogSlug} noindex={noindex} alternates={altHref !== null} jsonLd={jsonLd} analytics="always">
+      <Fragment slot="fonts">
+        <style is:inline set:html={fontFaceCss(['sans'])}></style>
+        <link rel="preload" href={FONT_URL.sans} as="font" type="font/woff2" crossorigin />
+      </Fragment>
+    </HeadMeta>
+    <slot name="head" />
+  </head>
+  <body>
+    <a class="skip-link" href="#main">{t(lang, 'site.skipToContent')}</a>
+    <main id="main" tabindex="-1"><slot /></main>
+    <DataFooter lang={lang} notices={notices} builtAt={new Date()} />
+  </body>
+</html>

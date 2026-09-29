@@ -1,0 +1,98 @@
+/* src/styles/editorial.css — the general version's editorial layer (spec §8, contract §4.2). Imported only by
+   DataLayout, which only the data page modules import (Task 2a); every selector is still scoped, as defence in depth,
+   to :root[data-variant="data"] (tests/unit/editorial-css.test.ts). Colours only through tokens.css (--ed-*). Editorial
+   markup uses these ed-* blocks and never a HUD (hud.css) or light-HUD (read.css) class. */
+
+/* ── page ── */
+:root[data-variant="data"] body { font-variant-numeric: tabular-nums; }
+:root[data-variant="data"] [data-serif] { font-family: var(--font-ed-head); font-weight: 700; }
+:root[data-variant="data"] .skip-link { background: var(--ed-fill); color: var(--ed-fill-ink); }
+/* The sticky nav keeps scroll-margin 0, like .hud-nav in base.css (focus inside it never scrolls the page). */
+:root[data-variant="data"] body > .data-nav,
+:root[data-variant="data"] body > .data-nav * { scroll-margin-top: 0; }
+
+/* ── bands: white; sections are told apart by space and their head's heavy rule ── */
+:root[data-variant="data"] .ed-sec { padding-block: var(--section-pad-y); background: var(--ed-bg); color: var(--ed-ink); }
+:root[data-variant="data"] .ed-sec a:not(.ed-btn) { color: var(--ed-accent); }
+
+/* ── lists instead of cards ── */
+:root[data-variant="data"] .ed-list { margin-top: 8px; }
+:root[data-variant="data"] .ed-item { padding-block: 16px; border-bottom: var(--ed-rule-w) solid var(--ed-rule); }
+:root[data-variant="data"] .ed-item__title { font-size: var(--fs-sub); font-weight: 700; line-height: var(--lh-sub); }
+:root[data-variant="data"] .ed-meta { margin-top: 4px; font-size: var(--fs-small); line-height: var(--lh-caption); color: var(--ed-muted); }
+:root[data-variant="data"] .ed-body { margin-top: 6px; max-width: var(--measure); }
+:root[data-variant="data"] .ed-tag { font-size: var(--fs-caption); line-height: var(--lh-caption); color: var(--ed-muted); }
+
+/* ── links and buttons: underlined text links with an arrow; one filled button per view ── */
+:root[data-variant="data"] .ed-links { display: flex; flex-wrap: wrap; gap: 0 20px; }
+:root[data-variant="data"] .ed-link {
+  display: inline-flex; align-items: center; gap: .35em; min-height: var(--tap);
+  color: var(--ed-accent); font-weight: 600;
+  text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: .2em;
+  transition: text-decoration-color var(--dur-hover) linear;
+}
+:root[data-variant="data"] .ed-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: .4em;
+  min-height: var(--tap); padding: 0 18px;
+  border: var(--ed-rule-w) solid var(--ed-ink); background: var(--ed-bg); color: var(--ed-ink);
+  font-weight: 700; text-decoration: none;
+  transition: background-color var(--dur-hover) linear;
+}
+:root[data-variant="data"] .ed-btn--fill { border-color: var(--ed-fill); background: var(--ed-fill); color: var(--ed-fill-ink); }
+/* colour hovers only where a pointer can hover (N13: no sticky hover on touch); press states for every device */
+@media (hover: hover) {
+  :root[data-variant="data"] .ed-link:hover { text-decoration-color: var(--ed-ink); }
+  :root[data-variant="data"] .ed-btn:hover { background: var(--ed-rule); }
+  :root[data-variant="data"] .ed-btn--fill:hover { background: var(--ed-fill); text-decoration: underline; }
+}
+:root[data-variant="data"] .ed-link:active { text-decoration-color: var(--ed-ink); }
+:root[data-variant="data"] .ed-btn:active { background: var(--ed-rule); }
+:root[data-variant="data"] .ed-btn--fill:active { background: var(--ed-fill); text-decoration: underline; }
+
+/* ── figures: a heavy top rule instead of a frame; captions "그림 n —" / "Fig. n —" ── */
+:root[data-variant="data"] .ed-figure { margin: 0; padding-top: 10px; border-top: var(--ed-rule-w-strong) solid var(--ed-rule-strong); }
+:root[data-variant="data"] .ed-figure img { display: block; width: 100%; height: auto; }
+:root[data-variant="data"] .ed-figcap { margin-top: 8px; font-size: var(--fs-small); line-height: 1.6; color: var(--ed-muted); }
+:root[data-variant="data"] .ed-figcap__num { margin-right: .35em; font-weight: 700; color: var(--ed-ink); }
+:root[data-variant="data"] .ed-figcap__num:lang(en) { font-family: var(--font-ed-serif); font-style: italic; }
+
+/* ── tables: thin rules, a bold head rule, numbers right-aligned ── */
+:root[data-variant="data"] .ed-table { width: 100%; border-collapse: collapse; }
+:root[data-variant="data"] .ed-table th,
+:root[data-variant="data"] .ed-table td { padding: 10px 12px 10px 0; border-bottom: var(--ed-rule-w) solid var(--ed-rule); text-align: left; vertical-align: top; }
+:root[data-variant="data"] .ed-table thead th { border-bottom: var(--ed-rule-w-strong) solid var(--ed-rule-strong); font-weight: 700; }
+:root[data-variant="data"] .ed-table .num { text-align: right; }
+
+/* ── long-form text: the centred reading column on white (.ed-prose: the case-study body <article> and the figure list
+      section). The body article has a complete Markdown typography of its own (article.ed-prose, like read.css's
+      .prose, which only the article carried): from Task 9 on no general page inlines read.css
+      (tests/ops/layout-css.test.mjs), so nothing here may rely on it. Wide tables and code scroll inside their own box,
+      never the page (320px, §0.1). Links are underlined (link-in-text-block); .ed-btn keeps its own colours. ── */
+:root[data-variant="data"] .ed-prose { max-width: none; padding-block: var(--section-pad-y); padding-inline: max(var(--gutter), calc(50% - var(--measure) / 2)); background: var(--ed-bg); color: var(--ed-ink); font-size: var(--fs-body); line-height: var(--lh-body); }
+:root[data-variant="data"] article.ed-prose > * + * { margin-top: 1em; }
+:root[data-variant="data"] article.ed-prose h2 { margin-top: 2em; font-size: var(--fs-h2); line-height: var(--lh-h2); }
+:root[data-variant="data"] article.ed-prose h3 { margin-top: 1.6em; font-size: var(--fs-sub); line-height: var(--lh-sub); }
+:root[data-variant="data"] article.ed-prose h2 + *,
+:root[data-variant="data"] article.ed-prose h3 + * { margin-top: .6em; }
+:root[data-variant="data"] article.ed-prose ul,
+:root[data-variant="data"] article.ed-prose ol { padding-left: 1.4em; }
+:root[data-variant="data"] article.ed-prose ul { list-style: disc; }
+:root[data-variant="data"] article.ed-prose ol { list-style: decimal; }
+:root[data-variant="data"] article.ed-prose li + li { margin-top: .35em; }
+:root[data-variant="data"] article.ed-prose li::marker { color: var(--ed-muted); }
+:root[data-variant="data"] .ed-prose a:not(.ed-btn) { color: var(--ed-accent); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: .18em; }
+:root[data-variant="data"] article.ed-prose strong { font-weight: 700; }
+:root[data-variant="data"] article.ed-prose blockquote { padding: 4px 0 4px 16px; border-left: var(--ed-rule-w-strong) solid var(--ed-rule-strong); color: var(--ed-muted); }
+:root[data-variant="data"] article.ed-prose code { padding: .1em .35em; border: var(--ed-rule-w) solid var(--paper-code-line); background: var(--paper-code-bg); color: var(--paper-ink); font-family: var(--font-mono); font-size: .9em; }
+:root[data-variant="data"] article.ed-prose pre { max-width: 100%; overflow-x: auto; padding: 14px 16px; background: var(--paper-code-bg); color: var(--paper-ink); border: var(--ed-rule-w) solid var(--paper-code-line); font-family: var(--font-mono); font-size: 14px; line-height: 1.6; }
+:root[data-variant="data"] article.ed-prose pre code { padding: 0; border: 0; background: none; font-size: inherit; }
+:root[data-variant="data"] article.ed-prose .prose-table { max-width: 100%; overflow-x: auto; }
+:root[data-variant="data"] article.ed-prose table { width: 100%; border-collapse: collapse; font-size: var(--fs-small); line-height: 1.5; }
+:root[data-variant="data"] article.ed-prose th,
+:root[data-variant="data"] article.ed-prose td { padding: 8px 12px 8px 0; border-bottom: var(--ed-rule-w) solid var(--ed-rule); text-align: start; vertical-align: top; overflow-wrap: break-word; hyphens: manual; }
+:root[data-variant="data"] article.ed-prose thead th { border-bottom: var(--ed-rule-w-strong) solid var(--ed-rule-strong); font-weight: 700; }
+:root[data-variant="data"] article.ed-prose figcaption { margin-top: 8px; font-size: var(--fs-small); line-height: 1.6; color: var(--ed-muted); }
+:root[data-variant="data"] article.ed-prose hr { margin-block: 2em; border: 0; border-top: var(--ed-rule-w) solid var(--ed-rule); }
+:root[data-variant="data"] article.ed-prose .footnote { font-size: var(--fs-small); color: var(--ed-muted); }
+:root[data-variant="data"] article.ed-prose .footnotes,
+:root[data-variant="data"] article.ed-prose [data-footnotes] { margin-top: 2.5em; padding-top: 1em; border-top: var(--ed-rule-w) solid var(--ed-rule); font-size: var(--fs-small); color: var(--ed-muted); }

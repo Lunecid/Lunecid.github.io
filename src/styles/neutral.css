@@ -8,6 +8,9 @@
 .nt-footer__inner { max-width: var(--container); margin-inline: auto; padding: 24px var(--gutter) 32px; display: grid; gap: 8px; }
 .nt-footer__links { display: flex; flex-wrap: wrap; gap: 4px 16px; margin: 0; padding: 0; list-style: none; }
 .nt-footer__links a { display: inline-flex; align-items: center; min-height: var(--tap); color: var(--nt-accent); text-underline-offset: 3px; }
+/* P-04 (F-001): the contact row (not on the 404), plain underlined links in --nt-ink. */
+.nt-footer__contact { display: flex; flex-wrap: wrap; gap: 4px 16px; margin: 0; padding: 0; list-style: none; }
+.nt-footer__contact a { display: inline-flex; align-items: center; min-height: var(--tap); color: var(--nt-ink); text-decoration: underline; text-underline-offset: 3px; }
 /* Shared components that still carry HUD classes (P2-11 replaces their markup): dark-on-light, no bracket marks. */
 :root[data-variant="neutral"] .page-head { background: var(--nt-bg); border-bottom-color: var(--nt-rule); }
 :root[data-variant="neutral"] .page-head__title { color: var(--nt-ink); }

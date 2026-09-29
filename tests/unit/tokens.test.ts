@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { HUD_LABEL_LIME, NAV_HEIGHT_PX } from '../../src/config';
+import { contrast, parseRules as parseCss } from '../helpers/css';
 
 type Rule = { media: string | null; selector: string; decls: Map<string, string> };
 
@@ -204,11 +205,11 @@ describe('design tokens (src/styles/tokens.css)', () => {
 
   it('P1-10: neutral tokens and the role tokens that switch by <html data-variant>', () => {
     const d = rootDecls(BASE);
-    expect(d.get('--nt-bg')).toBe('#FFFFFF');
-    expect(d.get('--nt-ink')).toBe('#141414');
-    expect(d.get('--nt-muted')).toBe('#6B6B6B');
-    expect(d.get('--nt-rule')).toBe('#E5E5E5');
-    expect(d.get('--nt-accent')).toBe('#1E3A8A');
+    expect(d.get('--nt-bg')).toBe('var(--ed-bg)');
+    expect(d.get('--nt-ink')).toBe('var(--ed-ink)');
+    expect(d.get('--nt-muted')).toBe('var(--ed-muted)');
+    expect(d.get('--nt-rule')).toBe('var(--ed-rule)');
+    expect(d.get('--nt-accent')).toBe('var(--ed-accent)');
     expect(d.get('--page-bg')).toBe('var(--hud-bg)');
     expect(d.get('--page-ink')).toBe('var(--hud-text)');
     expect(d.get('--page-muted')).toBe('var(--hud-muted)');
@@ -239,5 +240,59 @@ describe('design tokens (src/styles/tokens.css)', () => {
     expect(ratio('#141414', '#FFFFFF')).toBeGreaterThan(18);
     expect(ratio('#6B6B6B', '#FFFFFF')).toBeGreaterThanOrEqual(4.5);
     expect(ratio('#1E3A8A', '#FFFFFF')).toBeGreaterThan(10);
+  });
+});
+
+describe('editorial palette, neutral aliases and role tokens (P2-1, spec §8, contract §4.2)', () => {
+  const tokenRules = () => parseCss(read('src/styles/tokens.css'));
+  /** Declarations of every top-level rule with exactly this selector, merged in source order. */
+  const declsOf = (selector: string): Map<string, string> =>
+    new Map(tokenRules().filter((r) => r.selector === selector && r.media === null).flatMap((r) => [...r.decls]));
+
+  it('editorial tokens are exact', () => {
+    const d = declsOf(':root');
+    const expected: Record<string, string> = {
+      '--ed-bg': '#FFFFFF',
+      '--ed-ink': '#141414',
+      '--ed-muted': '#6B6B6B',
+      '--ed-rule': '#E5E5E5',
+      '--ed-rule-strong': 'var(--ed-ink)',
+      '--ed-accent': '#1E3A8A',
+      '--ed-fill': 'var(--ed-ink)',
+      '--ed-fill-ink': '#FFFFFF',
+      '--ed-rule-w': '1px',
+      '--ed-rule-w-strong': '2px',
+      '--font-ed-serif': '"Times New Roman", Times, "TeX Gyre Termes", "Nimbus Roman", "Liberation Serif", serif',
+      '--font-ed-head': '"Times New Roman", Times, "TeX Gyre Termes", "Nimbus Roman", "Liberation Serif", "SB Serif KR Head", serif',
+    };
+    for (const [name, value] of Object.entries(expected)) expect(d.get(name), name).toBe(value);
+  });
+
+  it('neutral tokens alias the editorial palette', () => {
+    const d = declsOf(':root');
+    expect(['--nt-bg', '--nt-ink', '--nt-muted', '--nt-rule', '--nt-accent'].map((n) => d.get(n))).toEqual([
+      'var(--ed-bg)', 'var(--ed-ink)', 'var(--ed-muted)', 'var(--ed-rule)', 'var(--ed-accent)',
+    ]);
+  });
+
+  it('role tokens: one :root block holds them all, the neutral rule switches them, and it sets role tokens only', () => {
+    const ROLES = ['--page-bg', '--page-ink', '--page-muted', '--page-focus', '--page-link', '--page-rule', '--page-rule-strong', '--page-fill', '--page-fill-ink'];
+    expect(tokenRules().filter((r) => r.selector === ':root' && r.media === null)).toHaveLength(1);
+    const expected: Record<string, string[]> = {
+      ':root': ['var(--hud-bg)', 'var(--hud-text)', 'var(--hud-muted)', 'var(--accent)', 'var(--accent)', 'var(--hud-divider)', 'var(--hud-line-strong)', 'var(--accent)', 'var(--accent-ink)'],
+      ':root[data-variant="neutral"]': ['var(--nt-bg)', 'var(--nt-ink)', 'var(--nt-muted)', 'var(--nt-accent)', 'var(--nt-accent)', 'var(--nt-rule)', 'var(--nt-ink)', 'var(--nt-ink)', 'var(--nt-bg)'],
+    };
+    for (const [selector, values] of Object.entries(expected)) expect(ROLES.map((r) => declsOf(selector).get(r)), selector).toEqual(values);
+    for (const name of declsOf(':root[data-variant="neutral"]').keys()) expect(name, `neutral sets ${name}`).toMatch(/^--page-/);
+  });
+
+  it('WCAG contrast on white: ink ≥ 7, secondary ≥ 4.5, accent ≥ 7 (text) and ≥ 3 (focus ring), filled button text ≥ 7', () => {
+    const d = declsOf(':root');
+    const [bg, ink, muted, accent, fillInk] = ['--ed-bg', '--ed-ink', '--ed-muted', '--ed-accent', '--ed-fill-ink'].map((n) => d.get(n)!);
+    expect(contrast(ink!, bg!)).toBeGreaterThanOrEqual(7);
+    expect(contrast(muted!, bg!)).toBeGreaterThanOrEqual(4.5);
+    expect(contrast(accent!, bg!)).toBeGreaterThanOrEqual(7);
+    expect(contrast(accent!, bg!)).toBeGreaterThanOrEqual(3);
+    expect(contrast(fillInk!, ink!)).toBeGreaterThanOrEqual(7);
   });
 });
