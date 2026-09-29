@@ -10,8 +10,8 @@ import { EN_404_SCRIPT } from '../lib/en-404';
 // (spec §10) when the attempted path started with /en/ — see that file for why it is a plain inline script, not
 // this component's own <script> (which Astro turns into a deferred ES module).
 const meta = PAGE_META['not-found'].ko;
+// shared page: NeutralLayout from P1-10 (404: P1-16)
 ---
-{/* shared page: NeutralLayout from P1-10 (404: P1-16) */}
 <BaseLayout lang="ko" variant="game" title={meta.title} description={meta.description} page="not-found" altLangHref={null} noindex ogSlug="home">
   <section class="go hud-grid" aria-labelledby="go-title">
     <div class="go__inner">

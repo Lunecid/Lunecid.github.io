@@ -14,8 +14,8 @@ const entry = await getEntry('legal', `${lang}/${doc}`);
 if (!entry) throw new Error(`Legal entry missing: ${lang}/${doc}`);
 const { Content } = await render(entry);
 const meta = PAGE_META[doc][lang];
+// shared page: NeutralLayout from P1-10 (404: P1-16)
 ---
-{/* shared page: NeutralLayout from P1-10 (404: P1-16) */}
 <BaseLayout lang={lang} variant="game" title={meta.title} description={meta.description} page={doc}>
   <PageHeader lang={lang} label={doc === 'privacy' ? 'PRIVACY' : 'CREDITS'} title={entry.data.title} />
   {/* article.prose.read (contract §5.14): read.css spans the light band across the page and centres the text column */}
