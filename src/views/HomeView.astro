@@ -1,6 +1,6 @@
 ---
 // Home (spec §3): hero → MAIN MENU → cartridges → research highlight → patch notes → hello profile.
-// All copy hrefs are Korean-based and localized here; resume.yaml is the single source of name and
+// All copy hrefs are base form and built here with pageHref for the version; resume.yaml is the single source of name and
 // education, the version identity (src/variants/*.ts) of tagline, status and about (site = PDFs).
 import VariantLayout from '../layouts/VariantLayout.astro';
 import Hero from '../components/hud/Hero.astro';
@@ -10,7 +10,8 @@ import ResearchHighlight from '../components/home/ResearchHighlight.astro';
 import PatchNotes from '../components/home/PatchNotes.astro';
 import HelloProfile from '../components/home/HelloProfile.astro';
 import type { Lang } from '../i18n/ui';
-import { localizeHref, t } from '../i18n/utils';
+import { t } from '../i18n/utils';
+import { homeHref, pageHref } from '../lib/links';
 import { educationLine } from '../lib/records';
 import { CV_HREF, SITE } from '../config';
 import { heroCopy, mainMenuCopy, splitTagline } from '../data/copy/hero';
@@ -22,7 +23,7 @@ import { toPaperCard, toPaperCartridge } from '../lib/publications';
 import { toPatchNotes } from '../lib/news';
 import { canonicalUrl, personJsonLd } from '../lib/seo';
 import { resolveDeep } from '../lib/facts';
-import type { ModuleId, VariantId } from '../variants/ids';
+import { BASE_PATH, type ModuleId, type VariantId } from '../variants/ids';
 import { getVariant, pageMetaFor, resolveIdentity } from '../variants';
 
 interface Props {
@@ -31,6 +32,7 @@ interface Props {
 }
 
 const { lang, variant } = Astro.props;
+const ctx = { lang, variant };
 const v = getVariant(variant);
 const on = (m: ModuleId): boolean => v.modules.includes(m);
 const facts = await getFactSource();
@@ -55,22 +57,22 @@ const notices = on('characterArt') ? characters.notices(['remielle', 'eula']) : 
 const credit = on('characterArt') ? characterCredit(['remielle', 'eula'], lang) : null;
 
 const toCard = (item: Awaited<ReturnType<typeof resolveOrder>>[number]): CartridgeProps =>
-  item.kind === 'project' ? toCartridge(item.entry, lang) : toPaperCartridge(item.entry, lang, localizeHref(item.entry.data.caseStudy ?? '', lang));
+  item.kind === 'project' ? toCartridge(item.entry, ctx) : toPaperCartridge(item.entry, lang, pageHref(item.entry.data.caseStudy ?? '', ctx));
 // D-3: the version's home row (game: CoG wide card + two projects = one row of four columns).
 const featured = (await resolveOrder(v.orders.homeFeatured, lang)).map(toCard);
 
 const publications = await getPublications();
 const highlighted = publications.find((entry) => entry.data.highlight) ?? publications[0];
 if (!highlighted) throw new Error('HomeView: no publication entry for the research highlight');
-const paper = toPaperCard(highlighted, lang);
+const paper = toPaperCard(highlighted, ctx);
 
-const notes = toPatchNotes(await getNews(), lang, 4);
+const notes = toPatchNotes(await getNews(), ctx, 4);
 
 const education = resumeData.education.map((e) => educationLine(e, lang));
 const location = lang === 'ko' ? `${profile.location.ko} · ${profile.location.en}` : profile.location.en;
 ---
 
-<VariantLayout lang={lang} variant={variant} title={meta.title} description={meta.description} page="home" notices={notices} jsonLd={personJsonLd(lang, { jobTitle: identity.headline, url: canonicalUrl(localizeHref('/', lang)) }, resumeData.researchIds)}>
+<VariantLayout lang={lang} variant={variant} title={meta.title} description={meta.description} page="home" notices={notices} jsonLd={personJsonLd(lang, { jobTitle: identity.headline, url: canonicalUrl(homeHref(lang, variant)) }, resumeData.researchIds)}>
   {leadChar && leadChar.image.avifSrcSet && (
     <link
       slot="head"
@@ -94,17 +96,17 @@ const location = lang === 'ko' ? `${profile.location.ko} · ${profile.location.e
     slogan={splitTagline(identity.tagline)}
     meta={hero.meta}
     status={identity.status}
-    ctas={{ primary: { label: hero.ctas.primary.label, href: localizeHref(hero.ctas.primary.href, lang) } }}
+    ctas={{ primary: { label: hero.ctas.primary.label, href: pageHref(hero.ctas.primary.href, ctx) } }}
     contact={{
       email: SITE.email,
       github: SITE.githubUrl,
       cvHref: CV_HREF[lang],
       cvLabel: hero.contact.cvLabel,
       cvDocLabel: t(lang, 'nav.cvResume'),
-      jobFitHref: localizeHref(hero.contact.jobFitHref, lang),
+      jobFitHref: pageHref(hero.contact.jobFitHref, ctx),
       jobFitLabel: hero.contact.jobFitLabel,
     }}
-    artifact={{ ...hero.artifact, href: localizeHref(hero.artifact.href, lang) }}
+    artifact={{ ...hero.artifact, href: pageHref(hero.artifact.href, ctx) }}
     credit={credit}
     swap={hero.swap}
     playerCard={{ ...hero.playerCard, classLine: lang === 'ko' ? identity.headline : resolveIdentity(v, 'en', facts).headline.toUpperCase() }}
@@ -112,12 +114,12 @@ const location = lang === 'ko' ? `${profile.location.ko} · ${profile.location.e
   {on('mainMenu') && (
     <MainMenu
       lang={lang}
-      items={menu.items.map((item) => ({ ...item, href: localizeHref(item.href, lang) }))}
+      items={menu.items.map((item) => ({ ...item, href: pageHref(item.href, ctx) }))}
       hint={menu.hint}
       side={sideChars}
     />
   )}
-  <CartridgeSection lang={lang} cartridges={featured} moreHref={localizeHref('/projects/', lang)} moreLabel={home.moreProjects} />
+  <CartridgeSection lang={lang} cartridges={featured} moreHref={pageHref(BASE_PATH.projects, ctx)} moreLabel={home.moreProjects} />
   <ResearchHighlight lang={lang} paper={paper} nowPlaying={home.researchNowPlaying} figureLabel={hero.artifact.label} />
   <PatchNotes lang={lang} notes={notes} />
   <HelloProfile

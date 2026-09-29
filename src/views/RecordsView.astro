@@ -34,6 +34,7 @@ interface Props {
 }
 
 const { lang, variant } = Astro.props;
+const ctx = { lang, variant };
 const v = getVariant(variant);
 const facts = await getFactSource();
 const identity = resolveIdentity(v, lang, facts);
@@ -48,7 +49,7 @@ const publications = await getPublications();
 const papers = resume.publications.map(({ ref }) => {
   const entry = publications.find((publication) => publication.id === ref);
   if (!entry) throw new Error(`records: unknown publication ref "${ref}"`);
-  return toPaperCard(entry, lang);
+  return toPaperCard(entry, ctx);
 });
 
 const certificates = (await Promise.all(awards.map((award) => buildCertificate(award, lang)))).filter(
@@ -75,7 +76,7 @@ const titles = {
   ),
 };
 const credentials = credentialItems(resume, lang, todayIso());
-const skills = skillGroups(resume.skills, lang, titles);
+const skills = skillGroups(resume.skills, ctx, titles);
 const documents = resume.documents.map((doc) => ({ id: doc.id, label: doc.label[lang], href: DOCUMENTS[doc.id] }));
 const meta = pageMetaFor('records', lang, variant, facts);
 ---
@@ -105,8 +106,8 @@ const meta = pageMetaFor('records', lang, variant, facts);
         </ol>
       </div>
     </section>
-    <ProjectSummaryList lang={lang} items={projectSummaryItems(v.orders.recordsProjectsOrder.map((item) => ({ ref: item.slice('project:'.length) })), projects, lang)} />
-    <AwardList lang={lang} awards={awardItems(resume.awards, awards, lang, certMeta)} />
+    <ProjectSummaryList lang={lang} items={projectSummaryItems(v.orders.recordsProjectsOrder.map((item) => ({ ref: item.slice('project:'.length) })), projects, ctx)} />
+    <AwardList lang={lang} awards={awardItems(resume.awards, awards, ctx, certMeta)} />
     <CredentialList
       lang={lang}
       groups={[
@@ -117,7 +118,7 @@ const meta = pageMetaFor('records', lang, variant, facts);
       ]}
     />
     <SkillList lang={lang} primary={skills.primary} familiar={skills.familiar} />
-    <JobFitTable lang={lang} data={jobfit} facts={facts} />
+    <JobFitTable lang={lang} variant={variant} data={jobfit} facts={facts} />
     <DocumentList lang={lang} documents={documents} />
   </div>
   <ImageViewer

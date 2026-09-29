@@ -1,0 +1,50 @@
+---
+// The chooser (spec §6) — P1 skeleton: the name, the B-13 line and one whole-card link per version (game first, Tab
+// order game → data). P1-14 adds the remembered choice, P2-10 the design.
+import NeutralLayout from '../layouts/NeutralLayout.astro';
+import { chooserCopy } from '../data/copy/chooser';
+import type { Lang } from '../i18n/ui';
+import { resolveDeep } from '../lib/facts';
+import { chooserHref, homeHref } from '../lib/links';
+import { getFactSource, getPerson } from '../lib/portfolio';
+import { canonicalUrl, personJsonLd } from '../lib/seo';
+import { NEUTRAL_IDENTITY, VARIANT_IDS, pageMetaFor } from '../variants';
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const facts = await getFactSource();
+const person = await getPerson();
+const copy = resolveDeep(chooserCopy[lang], lang, facts);
+const meta = pageMetaFor('chooser', lang, null, facts);
+const jsonLd = personJsonLd(lang, { jobTitle: NEUTRAL_IDENTITY.headline[lang], url: canonicalUrl(chooserHref(lang)) }, person.researchIds);
+---
+<NeutralLayout lang={lang} title={meta.title} description={meta.description} page="chooser" jsonLd={jsonLd}>
+  <section class="chooser" aria-labelledby="chooser-title">
+    <h1 id="chooser-title" class="chooser__name">{person.name[lang]}</h1>
+    <p class="chooser__line">{NEUTRAL_IDENTITY.oneLiner[lang]}</p>
+    <ul class="chooser__options" role="list">
+      {VARIANT_IDS.map((variant) => (
+        <li>
+          <a class="chooser__option" href={homeHref(lang, variant)} data-choose-variant={variant}>
+            <span class="chooser__title">{copy[variant].title}</span>
+            <span class="chooser__evidence">{copy[variant].evidence}</span>
+          </a>
+        </li>
+      ))}
+    </ul>
+  </section>
+</NeutralLayout>
+
+<style>
+  .chooser { max-width: var(--container); margin-inline: auto; padding: 48px var(--gutter) 64px; }
+  .chooser__name { font-size: var(--fs-display); line-height: var(--lh-display); font-weight: 800; color: var(--nt-ink); }
+  .chooser__line { margin-top: 12px; max-width: var(--measure); font-size: var(--fs-sub); line-height: var(--lh-sub); color: var(--nt-ink); }
+  .chooser__options { margin: 32px 0 0; padding: 0; list-style: none; display: grid; gap: 16px; }
+  .chooser__option { display: grid; gap: 6px; min-height: var(--tap); padding: 20px; border: 1px solid var(--nt-rule); color: var(--nt-ink); text-decoration: none; }
+  .chooser__option:hover { border-color: var(--nt-accent); }
+  .chooser__title { font-size: var(--fs-h2); font-weight: 800; line-height: var(--lh-h2); }
+  .chooser__evidence { font-size: var(--fs-body); color: var(--nt-muted); }
+  @media (min-width: 734px) { .chooser__options { grid-template-columns: 1fr 1fr; } }
+</style>

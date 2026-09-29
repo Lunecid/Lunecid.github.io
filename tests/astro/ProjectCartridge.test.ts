@@ -5,7 +5,7 @@ import type { CartridgeProps } from '../../src/lib/projects';
 import { readSource, renderAstro } from './helpers';
 
 const base: CartridgeProps = {
-  href: '/projects/kickick-park/',
+  href: '/game/projects/kickick-park/',
   title: '킥킥파크',
   meta: 'Python · Tableau',
   tagKeys: ['cv', 'web', 'gamification', 'viz'],
@@ -16,7 +16,7 @@ describe('ProjectCartridge.astro', () => {
   it('whole card is one link with the title', async () => {
     const html = await renderAstro(ProjectCartridge, { props: { ...base } }); // spread: an interface is not a Record<string, unknown>
     expect(html.match(/<a\b/g) ?? []).toHaveLength(1);
-    expect(html).toMatch(/<a class="cart__link" href="\/projects\/kickick-park\/"[^>]*>킥킥파크<\/a>/);
+    expect(html).toMatch(/<a class="cart__link" href="\/game\/projects\/kickick-park\/"[^>]*>킥킥파크<\/a>/);
     expect(html).toMatch(/<h3[^>]*class="cart__title"/);
     expect(html).toMatch(/<p[^>]*class="cart__meta"[^>]*>Python · Tableau<\/p>/);
   });

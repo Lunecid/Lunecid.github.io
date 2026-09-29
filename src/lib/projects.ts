@@ -2,9 +2,10 @@
 import type { ImageMetadata } from 'astro';
 import type { CollectionEntry } from 'astro:content';
 import type { Lang } from '../i18n/ui';
-import { formatPeriod, localizeHref, splitEntryId, t } from '../i18n/utils';
+import { formatPeriod, splitEntryId, t } from '../i18n/utils';
 import type { ProjectFrontmatter } from '../content/schemas';
 import { tagKey, type TagKey } from '../content/tags';
+import { pageHref, projectBase, type HrefContext } from './links';
 
 export type ProjectEntry = CollectionEntry<'projects'>;
 
@@ -72,10 +73,11 @@ function awardStickerText(name: string): string {
   return (cut === -1 ? name : name.slice(0, cut)).trim();
 }
 
-export function toCartridge(entry: ProjectEntry, lang: Lang, opts: { headingLevel?: 2 | 3 } = {}): CartridgeProps {
+export function toCartridge(entry: ProjectEntry, ctx: HrefContext, opts: { headingLevel?: 2 | 3 } = {}): CartridgeProps {
+  const lang = ctx.lang;
   const { data } = entry;
   return {
-    ...(hasProjectPage(data) ? { href: localizeHref(`/projects/${projectSlug(entry)}/`, lang) } : { summary: data.summary }),
+    ...(hasProjectPage(data) ? { href: pageHref(projectBase(projectSlug(entry)), ctx) } : { summary: data.summary }),
     title: data.title,
     meta: cartridgeMeta(data.tools),
     tagKeys: data.tags.map((label) => tagKey(label)),

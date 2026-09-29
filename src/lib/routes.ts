@@ -28,22 +28,6 @@ export const STORY_SLUGS = ['cog-2026-engagement'] as const;
 
 const LANGS: readonly Lang[] = ['ko', 'en'];
 
-// ── OLD route list: kept until P1-11 moves the game version to /game/ (A-2) ──
-/** @deprecated P1-11 deletes this (use VARIANT_STATIC_PATHS / SHARED_PATHS / variantBasePaths). */
-export const STATIC_PATHS = ['/', '/research/', '/projects/', '/records/', '/player-log/', '/stats/', '/privacy/', '/credits/'] as const;
-/** @deprecated P1-11 deletes this. Korean-form paths of every page today: 8 static + 1 paper + 3 project pages = 12. */
-export function koPaths(): string[] {
-  return [...STATIC_PATHS, ...STORY_SLUGS.map((slug) => `/research/${slug}/`), ...PROJECT_PAGE_SLUGS.map((slug) => `/projects/${slug}/`)];
-}
-/** Paths for one language. OLD meaning (en = '/en' + ko path) until P1-11. */
-export function routesFor(lang: Lang): string[] {
-  const ko = koPaths();
-  return lang === 'ko' ? ko : ko.map((path) => `/en${path}`);
-}
-/** routesFor('ko') then routesFor('en'). OLD meaning (24 routes) until P1-11. */
-export function allRoutes(): string[] {
-  return [...routesFor('ko'), ...routesFor('en')];
-}
 // Print routes are NOT listed here: use Object.values(PRINT_ROUTES) from src/config.ts (single definition).
 
 // ── route table v2 ──
@@ -75,6 +59,16 @@ export function chooserRoute(lang: Lang): string {
   return routePath(CHOOSER_PATH, lang, null);
 }
 
+/** One language: [chooser, ...game, ...data, ...shared] (contract §2.1). */
+export function routesFor(lang: Lang): string[] {
+  return [chooserRoute(lang), ...VARIANT_IDS.flatMap((variant) => variantRoutes(variant, lang)), ...sharedRoutes(lang)];
+}
+
+/** routesFor('ko') then routesFor('en'). */
+export function allRoutes(): string[] {
+  return [...routesFor('ko'), ...routesFor('en')];
+}
+
 export type RouteKind = 'chooser' | 'variant' | 'shared';
 export interface RouteInfo {
   route: string;
@@ -84,7 +78,7 @@ export interface RouteInfo {
   kind: RouteKind;
 }
 
-/** Pathname (query/hash ignored, trailing slash added) → RouteInfo, or null for anything outside the v2 table. */
+/** Pathname (query/hash ignored, trailing slash added) → RouteInfo, or null for anything not in allRoutes(). */
 export function parseRoute(pathname: string): RouteInfo | null {
   const cut = pathname.search(/[?#]/);
   const bare = cut === -1 ? pathname : pathname.slice(0, cut);

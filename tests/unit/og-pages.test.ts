@@ -11,6 +11,7 @@ import { gameVariant } from '../../src/variants/game';
 import { loadFactSource } from '../helpers/fact-source';
 
 const LANGS: Lang[] = ['ko', 'en'];
+const facts = loadFactSource();
 
 function fixtureSources(): OgSources {
   return {
@@ -50,20 +51,20 @@ function realSources(): OgSources {
 }
 
 describe('buildOgMap', () => {
-  it('buildOgMap has a key for ogSlugFor(route) of all 24 routes', () => {
+  it('buildOgMap has a key for ogSlugFor(route) of every route', () => {
     const map = buildOgMap(fixtureSources());
     const expected = allRoutes().map(ogSlugFor).sort();
-    expect(expected).toHaveLength(24);
-    expect(map['projects/kbo-attendance']).toBeUndefined(); // D-4: no page, so no OG card
+    expect(new Set(expected).size).toBe(allRoutes().length);
+    expect(map['game/projects/kbo-attendance']).toBeUndefined(); // D-4: no page, so no OG card
     expect(Object.keys(map).sort()).toEqual(expected);
     expect(map['home'].eyebrow).toBe('PORTFOLIO');
-    expect(map['en/projects/kickick-park']).toEqual({
+    expect(map['en/game/projects/kickick-park']).toEqual({
       eyebrow: 'PROJECT',
       title: 'Project kickick-park',
       subtitle: 'Summary of kickick-park',
     });
-    expect(map['en/records'].eyebrow).toBe('RECORDS');
-    expect(map['player-log'].eyebrow).toBe('PLAYER LOG');
+    expect(map['en/game/records'].eyebrow).toBe('RECORDS');
+    expect(map['game/player-log'].eyebrow).toBe('PLAYER LOG');
     expect(map['stats'].eyebrow).toBe('STATS');
     expect(map['en/privacy'].eyebrow).toBe('PRIVACY');
     expect(map['credits'].eyebrow).toBe('CREDITS');
@@ -79,21 +80,22 @@ describe('buildOgMap', () => {
 
   it("a paper page's OG card is the research-story PAGE_META title without the name suffix + its description", () => {
     const map = buildOgMap(fixtureSources());
-    expect(map['research/cog-2026-engagement'].title).toBe('교전 결과 예측 논문');
-    expect(map['en/research/cog-2026-engagement'].title).toBe('Engagement Outcome Prediction Paper');
-    expect(`${map['research/cog-2026-engagement'].title} · 백성은`).toBe(PAGE_META['research-story'].ko.title);
-    expect(`${map['en/research/cog-2026-engagement'].title} · Seongeun Baek`).toBe(PAGE_META['research-story'].en.title);
-    expect(map['research/cog-2026-engagement'].subtitle).toBe(pageMetaFor('research-story', 'ko', 'game', loadFactSource()).description);
-    expect(map['en/research/cog-2026-engagement'].subtitle).toBe(pageMetaFor('research-story', 'en', 'game', loadFactSource()).description);
-    expect(map['research/cog-2026-engagement'].eyebrow).toBe('RESEARCH');
+    expect(map['game/research/cog-2026-engagement'].title).toBe('교전 결과 예측 논문');
+    expect(map['en/game/research/cog-2026-engagement'].title).toBe('Engagement Outcome Prediction Paper');
+    expect(`${map['game/research/cog-2026-engagement'].title} · 백성은`).toBe(PAGE_META['research-story'].ko.title);
+    expect(`${map['en/game/research/cog-2026-engagement'].title} · Seongeun Baek`).toBe(PAGE_META['research-story'].en.title);
+    expect(map['game/research/cog-2026-engagement'].subtitle).toBe(pageMetaFor('research-story', 'ko', 'game', loadFactSource()).description);
+    expect(map['en/game/research/cog-2026-engagement'].subtitle).toBe(pageMetaFor('research-story', 'en', 'game', loadFactSource()).description);
+    expect(map['game/research/cog-2026-engagement'].eyebrow).toBe('RESEARCH');
   });
 
   it('fixed pages use the PAGE_META title and the description as subtitle', () => {
     const map = buildOgMap(fixtureSources());
-    expect(map['research']).toEqual({ eyebrow: 'RESEARCH', title: PAGE_META.research.ko.title, subtitle: PAGE_META.research.ko.description });
-    expect(map['en/records'].title).toBe(gameVariant.pageMeta.records.en.title);
-    expect(map['en/home'].title).toBe(gameVariant.pageMeta.home.en.title);
-    expect(map['projects'].eyebrow).toBe('PROJECT');
+    expect(map['game/research']).toEqual({ eyebrow: 'RESEARCH', title: PAGE_META.research.ko.title, subtitle: PAGE_META.research.ko.description });
+    expect(map['en/game/records'].title).toBe(gameVariant.pageMeta.records.en.title);
+    expect(map['en/home'].title).toBe(pageMetaFor('chooser', 'en', null, facts).title);
+    expect(map['en/game'].title).toBe(gameVariant.pageMeta.home.en.title);
+    expect(map['game/projects'].eyebrow).toBe('PROJECT');
   });
 
   it('P2-36: each card names its artifact: the photo, the paper title block, the CoG figure, a project cover or plate', () => {
@@ -103,10 +105,10 @@ describe('buildOgMap', () => {
     const src = fixtureSources();
     src.projects = src.projects.map((p) => ({ ...p, artifact: { kind: 'figure', path: `/${p.slug}.webp`, label: 'FIG' } as const }));
     const map = buildOgMap({ ...src, artifacts: { photo, paper, projects } });
-    for (const k of ['home', 'en/home', 'records', 'en/records', 'player-log', 'stats', 'privacy', 'credits']) expect(map[k]?.artifact, k).toEqual(photo);
-    for (const k of ['research', 'en/research', 'research/cog-2026-engagement', 'en/research/cog-2026-engagement']) expect(map[k]?.artifact, k).toEqual(paper);
-    expect(map['projects']?.artifact).toEqual(projects);
-    expect(map['en/projects/kickick-park']?.artifact).toEqual({ kind: 'figure', path: '/kickick-park.webp', label: 'FIG' });
+    for (const k of ['home', 'en/home', 'game', 'en/game', 'game/records', 'en/game/records', 'game/player-log', 'stats', 'privacy', 'credits']) expect(map[k]?.artifact, k).toEqual(photo);
+    for (const k of ['game/research', 'en/game/research', 'game/research/cog-2026-engagement', 'en/game/research/cog-2026-engagement']) expect(map[k]?.artifact, k).toEqual(paper);
+    expect(map['game/projects']?.artifact).toEqual(projects);
+    expect(map['en/game/projects/kickick-park']?.artifact).toEqual({ kind: 'figure', path: '/kickick-park.webp', label: 'FIG' });
     // no artifacts given (unit fixtures): text-only cards, no artifact key at all
     expect('artifact' in buildOgMap(fixtureSources())['home']!).toBe(false);
   });
@@ -129,6 +131,6 @@ describe('buildOgMap', () => {
     const map = buildOgMap(realSources());
     const residue = Object.entries(map).filter(([, og]) => /[{}]/.test(`${og.title} ${og.subtitle ?? ''}`)).map(([k]) => k);
     expect(residue).toEqual([]);
-    expect(map['research/cog-2026-engagement']?.subtitle).toBe('교전 직전 30초의 공개 경기 기록으로 교전 뒤 이득을 예측한 IEEE CoG 2026 구두 발표 논문의 초록과 BibTeX.');
+    expect(map['game/research/cog-2026-engagement']?.subtitle).toBe('교전 직전 30초의 공개 경기 기록으로 교전 뒤 이득을 예측한 IEEE CoG 2026 구두 발표 논문의 초록과 BibTeX.');
   });
 });

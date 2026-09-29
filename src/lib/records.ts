@@ -3,8 +3,9 @@
 import type { AwardData, ProjectFrontmatter, ResumeData } from '../content/schemas';
 import { AWARD_LEVEL_MEDAL } from '../data/award-levels';
 import type { Lang } from '../i18n/ui';
-import { formatDate, formatPeriod, formatYm, localizeHref, t } from '../i18n/utils';
+import { formatDate, formatPeriod, formatYm, t } from '../i18n/utils';
 import type { CertificateId } from '../types';
+import { pageHref, paperBase, projectBase, type HrefContext } from './links';
 
 /** Today's date as YYYY-MM-DD in Asia/Seoul (the build date: drives the TOEIC expiry badge and the PDFs). */
 export function todayIso(now: Date = new Date()): string {
@@ -28,9 +29,9 @@ export function visibleOnRecords<T extends { records?: boolean }>(items: readonl
   return items.filter((item) => item.records !== false);
 }
 
-/** Localized page link of a skill's evidence: /projects/<id>/ or /research/<id>/. */
-export function evidenceHref(kind: 'project' | 'research', id: string, lang: Lang): string {
-  return localizeHref(kind === 'project' ? `/projects/${id}/` : `/research/${id}/`, lang);
+/** Page link of a skill's evidence (pageHref): the project page or the paper page of the version. */
+export function evidenceHref(kind: 'project' | 'research', id: string, ctx: HrefContext): string {
+  return pageHref(kind === 'project' ? projectBase(id) : paperBase(id), ctx);
 }
 
 export interface ProjectSummaryItem {
@@ -51,14 +52,15 @@ export interface ProjectSummaryItem {
 export function projectSummaryItems(
   refs: readonly { ref: string }[],
   projects: readonly { id: string; data: Pick<ProjectFrontmatter, 'title' | 'summary' | 'period' | 'org' | 'team' | 'status'> }[],
-  lang: Lang,
+  ctx: HrefContext,
 ): ProjectSummaryItem[] {
+  const lang = ctx.lang;
   return refs.map(({ ref }) => {
     const entry = projects.find((project) => project.id === `${lang}/${ref}`);
     if (!entry) throw new Error(`records: unknown project ref "${ref}" (${lang})`);
     const data = entry.data;
     return {
-      href: data.status === 'card' ? null : localizeHref(`/projects/${ref}/`, lang),
+      href: data.status === 'card' ? null : pageHref(projectBase(ref), ctx),
       title: data.title,
       period: formatPeriod(data.period.start, data.period.end, lang),
       org: data.org,
@@ -180,9 +182,10 @@ export interface AwardCertMeta {
 export function awardItems(
   refs: readonly { ref: CertificateId }[],
   awards: readonly AwardData[],
-  lang: Lang,
+  ctx: HrefContext,
   certs: Partial<Record<CertificateId, string | AwardCertMeta>>,
 ): AwardItem[] {
+  const lang = ctx.lang;
   return refs.map(({ ref }) => {
     const award = awards.find((a) => a.id === ref);
     if (!award) throw new Error(`records: unknown award ref "${ref}"`);
@@ -205,7 +208,7 @@ export function awardItems(
       certAlt: meta && typeof meta.alt === 'string' ? meta.alt : null,
       certCaption: meta && typeof meta.caption === 'string' ? meta.caption : null,
       redactionNote: award.redactionNote ? award.redactionNote[lang] : null,
-      projectHref: award.project ? localizeHref(`/projects/${award.project}/`, lang) : null,
+      projectHref: award.project ? pageHref(projectBase(award.project), ctx) : null,
     };
   });
 }
@@ -222,16 +225,17 @@ export interface SkillItem {
  */
 export function skillGroups(
   skills: Pick<ResumeData['skills'], 'primary' | 'familiar'>,
-  lang: Lang,
+  ctx: HrefContext,
   titles: { projects: Record<string, string>; stories: Record<string, string>; codes?: Record<string, { href: string; label: string }> },
 ): { primary: SkillItem[]; familiar: SkillItem[] } {
+  const lang = ctx.lang;
   const toEvidence = (e: ResumeData['skills']['primary'][number]['evidence'][number]): { label: string; href: string } => {
     if (e.kind === 'code') {
       const code = titles.codes?.[e.id];
       if (!code) throw new Error(`records: no code link for "${e.id}" (${lang})`);
       return { label: code.label, href: code.href };
     }
-    return { label: evidenceLabel(e.kind, e.id, lang, titles), href: evidenceHref(e.kind, e.id, lang) };
+    return { label: evidenceLabel(e.kind, e.id, lang, titles), href: evidenceHref(e.kind, e.id, ctx) };
   };
   const toItem = (skill: ResumeData['skills']['primary'][number]): SkillItem => ({ name: skill.name, evidence: skill.evidence.map(toEvidence) });
   return { primary: skills.primary.map(toItem), familiar: skills.familiar.map(toItem) };

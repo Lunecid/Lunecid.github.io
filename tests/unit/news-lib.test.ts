@@ -31,7 +31,7 @@ const items: { data: NewsData }[] = [
 
 describe('toPatchNotes', () => {
   it('toPatchNotes sorts newest first, limits to 4 and localizes hrefs', () => {
-    const ko = toPatchNotes(items, 'ko');
+    const ko = toPatchNotes(items, { lang: 'ko', variant: 'game' });
     expect(ko.map((n) => n.dateIso)).toEqual(['2026-10-01', '2026-09-01', '2026-06-18', '2025-07-11']);
     expect(ko.map((n) => n.kindLabel)).toEqual(['사이트', '연구', '연구', '수상']);
     expect(ko[3]).toEqual({
@@ -41,12 +41,12 @@ describe('toPatchNotes', () => {
       kindLabel: '수상',
       short: null,
       text: items[0]?.data.title.ko,
-      href: '/projects/school-zone-blindspots/',
+      href: '/game/projects/school-zone-blindspots/',
     });
     expect(ko[0]?.href).toBeNull();
 
-    const en = toPatchNotes(items, 'en');
-    expect(en.map((n) => n.href)).toEqual([null, '/en/research/cog-2026-engagement/', '/en/research/', '/en/projects/school-zone-blindspots/']);
+    const en = toPatchNotes(items, { lang: 'en', variant: 'game' });
+    expect(en.map((n) => n.href)).toEqual([null, '/en/game/research/cog-2026-engagement/', '/en/game/research/', '/en/game/projects/school-zone-blindspots/']);
     expect(en.map((n) => n.kindLabel)).toEqual(['Site', 'Research', 'Research', 'Award']);
     expect(en[3]?.dateLabel).toBe('Jul 11, 2025');
     expect(en.map((n) => n.dateLabel)).toEqual(en.map((n) => formatDate(n.dateIso, 'en')));
@@ -57,27 +57,27 @@ describe('toPatchNotes', () => {
     expect(patchVersion('2026-09-01')).toBe('v2026.09');
     expect(patchVersion('2026-09-28', 1)).toBe('v2026.09.1');
     const withShort = [{ data: { ...items[1]!.data, short: { ko: 'CoG 2026 구두 발표', en: 'Oral at CoG 2026' } } }];
-    expect(toPatchNotes(withShort, 'ko')[0]).toMatchObject({ version: expect.stringMatching(/v2026\.09(\.\d+)?/), short: 'CoG 2026 구두 발표', text: 'IEEE CoG 2026에서 구두 발표했습니다.' });
-    expect(toPatchNotes(withShort, 'en')[0]?.short).toBe('Oral at CoG 2026');
+    expect(toPatchNotes(withShort, { lang: 'ko', variant: 'game' })[0]).toMatchObject({ version: expect.stringMatching(/v2026\.09(\.\d+)?/), short: 'CoG 2026 구두 발표', text: 'IEEE CoG 2026에서 구두 발표했습니다.' });
+    expect(toPatchNotes(withShort, { lang: 'en', variant: 'game' })[0]?.short).toBe('Oral at CoG 2026');
   });
 
   it('P-01/F-094: later entries of a month get a sequence suffix, computed over all entries, so no two rows share a version', () => {
     const september = [...items, { data: { date: '2026-09-28', kind: 'site' as const, title: { ko: '사이트 개편', en: 'Site update' }, href: null } }];
-    const shown = toPatchNotes(september, 'ko', 2);
+    const shown = toPatchNotes(september, { lang: 'ko', variant: 'game' }, 2);
     expect(shown.map((n) => [n.dateIso, n.version])).toEqual([['2026-10-01', 'v2026.10'], ['2026-09-28', 'v2026.09.1']]);
-    const all = toPatchNotes(september, 'ko', september.length).map((n) => n.version);
+    const all = toPatchNotes(september, { lang: 'ko', variant: 'game' }, september.length).map((n) => n.version);
     expect(new Set(all).size).toBe(all.length);
   });
 
   it('F-094: same-date entries are numbered by entry id, whatever the input order; the higher version is listed first', () => {
     const day = (id: string) => ({ id, data: { date: '2026-11-02', kind: 'site' as const, title: { ko: id, en: id }, href: null } });
     for (const input of [[day('a'), day('b')], [day('b'), day('a')]]) {
-      expect(toPatchNotes(input, 'en').map((n) => [n.text, n.version])).toEqual([['b', 'v2026.11.1'], ['a', 'v2026.11']]);
+      expect(toPatchNotes(input, { lang: 'en', variant: 'game' }).map((n) => [n.text, n.version])).toEqual([['b', 'v2026.11.1'], ['a', 'v2026.11']]);
     }
   });
 
   it('respects a custom limit and never reorders its input', () => {
-    expect(toPatchNotes(items, 'ko', 2).map((n) => n.dateIso)).toEqual(['2026-10-01', '2026-09-01']);
+    expect(toPatchNotes(items, { lang: 'ko', variant: 'game' }, 2).map((n) => n.dateIso)).toEqual(['2026-10-01', '2026-09-01']);
     expect(items.map((i) => i.data.date)).toEqual(['2025-07-11', '2026-09-01', '2024-03-12', '2026-10-01', '2026-06-18']);
   });
 });

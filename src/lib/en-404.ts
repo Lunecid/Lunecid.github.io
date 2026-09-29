@@ -13,10 +13,26 @@
 // lets it show its toasts in English.
 import { CV_HREF } from '../config';
 import { ui } from '../i18n/ui';
+import { getVariant } from '../variants';
+import { BASE_PATH } from '../variants/ids';
+import { SHARED_NAV } from '../variants/neutral';
+import { homeHref, pageHref } from './links';
 
 const en = ui.en;
 const ko = ui.ko;
 const j = (value: string) => JSON.stringify(value);
+
+// P1-11 (interim; P1-16 rewrites this file): every href the script writes comes from the link builders at module load.
+// A 404 stays on the game version (the old site), so its version links point at /game/ and /en/game/.
+const NAV_HREFS = getVariant('game').nav.map((item) => pageHref(item.base, { lang: 'en', variant: 'game' }));
+const FOOTER_HREFS = SHARED_NAV.map((item) => pageHref(item.base, { lang: 'en', variant: null }));
+const HOME = { en: homeHref('en', 'game'), ko: homeHref('ko', 'game') };
+const PROJECTS = { en: pageHref(BASE_PATH.projects, { lang: 'en', variant: 'game' }), ko: pageHref(BASE_PATH.projects, { lang: 'ko', variant: 'game' }) };
+const href = (list: readonly string[], i: number): string => {
+  const value = list[i];
+  if (value === undefined) throw new Error(`en-404: no href at index ${i}`);
+  return value;
+};
 
 export const EN_404_SCRIPT = `(function () {
   if (location.pathname.indexOf('/en/') !== 0) return;
@@ -31,10 +47,10 @@ export const EN_404_SCRIPT = `(function () {
   if (menu) menu.setAttribute('aria-label', ${j(en['nav.label'])});
 
   var NAV_ITEMS = [
-    ['01', ${j(en['nav.research'])}, '/en/research/'],
-    ['02', ${j(en['nav.projects'])}, '/en/projects/'],
-    ['03', ${j(en['nav.records'])}, '/en/records/'],
-    ['04', ${j(en['nav.playerLog'])}, '/en/player-log/']
+    ['01', ${j(en['nav.research'])}, ${j(href(NAV_HREFS, 0))}],
+    ['02', ${j(en['nav.projects'])}, ${j(href(NAV_HREFS, 1))}],
+    ['03', ${j(en['nav.records'])}, ${j(href(NAV_HREFS, 2))}],
+    ['04', ${j(en['nav.playerLog'])}, ${j(href(NAV_HREFS, 3))}]
   ];
   var navLinks = document.querySelectorAll('#hud-menu a');
   for (var i = 0; i < navLinks.length && i < NAV_ITEMS.length; i++) {
@@ -52,7 +68,7 @@ export const EN_404_SCRIPT = `(function () {
 
   var brand = document.querySelector('.hud-nav__brand');
   if (brand) {
-    brand.setAttribute('href', '/en/');
+    brand.setAttribute('href', ${j(HOME.en)});
     var brandSr = brand.querySelector('.sr-only');
     if (brandSr) brandSr.textContent = ${j(en['nav.brandSr'])};
   }
@@ -79,7 +95,7 @@ export const EN_404_SCRIPT = `(function () {
   if (toggle) {
     var barLink = document.createElement('a');
     barLink.className = 'nf-lang-switch nf-lang-switch--bar';
-    barLink.setAttribute('href', '/');
+    barLink.setAttribute('href', ${j(HOME.ko)});
     barLink.setAttribute('hreflang', 'ko');
     barLink.setAttribute('lang', 'ko');
     barLink.appendChild(document.createTextNode('KO'));
@@ -97,7 +113,7 @@ export const EN_404_SCRIPT = `(function () {
     var panelWrap = document.createElement('p');
     panelWrap.className = 'nf-lang-switch nf-lang-switch--panel';
     var panelLink = document.createElement('a');
-    panelLink.setAttribute('href', '/');
+    panelLink.setAttribute('href', ${j(HOME.ko)});
     panelLink.setAttribute('hreflang', 'ko');
     panelLink.setAttribute('lang', 'ko');
     panelLink.textContent = ${j(en['action.switchLanguage'])};
@@ -108,7 +124,7 @@ export const EN_404_SCRIPT = `(function () {
   var footerNav = document.querySelector('.site-footer__nav');
   if (footerNav) footerNav.setAttribute('aria-label', ${j(en['footer.siteInfo'])});
   var footerLinks = document.querySelectorAll('.site-footer__links a');
-  var FOOTER = [[${j(en['nav.stats'])}, '/en/stats/'], [${j(en['nav.privacy'])}, '/en/privacy/'], [${j(en['nav.credits'])}, '/en/credits/']];
+  var FOOTER = [[${j(en['nav.stats'])}, ${j(href(FOOTER_HREFS, 0))}], [${j(en['nav.privacy'])}, ${j(href(FOOTER_HREFS, 1))}], [${j(en['nav.credits'])}, ${j(href(FOOTER_HREFS, 2))}]];
   for (var j = 0; j < footerLinks.length && j < FOOTER.length; j++) {
     footerLinks[j].textContent = FOOTER[j][0];
     footerLinks[j].setAttribute('href', FOOTER[j][1]);
@@ -171,15 +187,15 @@ export const EN_404_SCRIPT = `(function () {
   var actions = document.querySelector('[data-go-actions]');
   if (actions) {
     var actionLinks = actions.querySelectorAll('a');
-    if (actionLinks[0]) { actionLinks[0].textContent = ${j(en['404.home'])}; actionLinks[0].setAttribute('href', '/en/'); }
-    if (actionLinks[1]) { actionLinks[1].textContent = ${j(en['404.projects'])}; actionLinks[1].setAttribute('href', '/en/projects/'); }
+    if (actionLinks[0]) { actionLinks[0].textContent = ${j(en['404.home'])}; actionLinks[0].setAttribute('href', ${j(HOME.en)}); }
+    if (actionLinks[1]) { actionLinks[1].textContent = ${j(en['404.projects'])}; actionLinks[1].setAttribute('href', ${j(PROJECTS.en)}); }
   }
   var secondary = document.querySelector('[data-go-secondary]');
   if (secondary) {
     secondary.setAttribute('lang', 'ko');
     var secLinks = secondary.querySelectorAll('a');
-    if (secLinks[0]) { secLinks[0].textContent = ${j(ko['404.home'])}; secLinks[0].setAttribute('href', '/'); }
-    if (secLinks[1]) { secLinks[1].textContent = ${j(ko['404.projects'])}; secLinks[1].setAttribute('href', '/projects/'); }
+    if (secLinks[0]) { secLinks[0].textContent = ${j(ko['404.home'])}; secLinks[0].setAttribute('href', ${j(HOME.ko)}); }
+    if (secLinks[1]) { secLinks[1].textContent = ${j(ko['404.projects'])}; secLinks[1].setAttribute('href', ${j(PROJECTS.ko)}); }
   }
   var primaryMsg = document.querySelector('.go__plain:not(.go__plain--en)');
   var secondaryMsg = document.querySelector('.go__plain--en');

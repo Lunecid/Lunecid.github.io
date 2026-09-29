@@ -13,7 +13,7 @@ import { loadFactSource } from '../helpers/fact-source';
 const jobfit = jobfitSchema.parse(parseYamlDocument(readFileSync(resolve(process.cwd(), 'src/data/jobfit.game.yaml'), 'utf8'), 'game'));
 const STATUS_KO: Record<JobfitStatus, string> = { met: '충족', partial: '부분', 'in-progress': '보완 중', later: '후순위', 'n-a': '해당 없음' };
 const STATUS_EN: Record<JobfitStatus, string> = { met: 'Met', partial: 'Partial', 'in-progress': 'In progress', later: 'Later', 'n-a': 'N/A' };
-const render = (lang: Lang) => renderAstro(JobFitTable, { props: { lang, data: jobfit, facts: loadFactSource() } });
+const render = (lang: Lang) => renderAstro(JobFitTable, { props: { lang, variant: 'game', data: jobfit, facts: loadFactSource() } });
 const hrefsOf = (html: string): string[] => [...html.matchAll(/<a\b[^>]*href="([^"]+)"/g)].map((m) => m[1]);
 
 describe('JobFitTable.astro', () => {
@@ -48,11 +48,11 @@ describe('JobFitTable.astro', () => {
     const hrefs = hrefsOf(en);
     const internal = hrefs.filter((href) => href.startsWith('/'));
     expect(internal.length).toBeGreaterThan(0);
-    for (const href of internal) expect(href.startsWith('/en/')).toBe(true);
-    expect(hrefs).toContain('/en/research/cog-2026-engagement/');
+    for (const href of internal) expect(href.startsWith('/en/game/')).toBe(true);
+    expect(hrefs).toContain('/en/game/research/cog-2026-engagement/');
     expect(hrefs.some((href) => href.includes('#for-game-teams'))).toBe(false);
-    expect(hrefs).toContain('/en/records/#education');
-    expect(hrefs).toContain('/en/research/#in-progress');
+    expect(hrefs).toContain('/en/game/records/#education');
+    expect(hrefs).toContain('/en/game/research/#in-progress');
     // D-6: no posting URLs on the site; D-9: AI·LLM has no evidence yet (take-home, AI·LLM, BM · anomaly).
     // the only external link is the owner's CoG code (PyTorch evidence), never a posting
     expect(hrefs.filter((href) => /^https?:/.test(href))).toEqual(['https://github.com/Lunecid/LOL_teamfight_Lab/tree/v1.0-cog2026']);
@@ -62,7 +62,7 @@ describe('JobFitTable.astro', () => {
 
     const ko = await render('ko');
     expect(ko.match(/아직 없음/g)).toHaveLength(empty);
-    expect(hrefsOf(ko)).toContain('/research/cog-2026-engagement/');
+    expect(hrefsOf(ko)).toContain('/game/research/cog-2026-engagement/');
     expect(hrefsOf(ko).filter((href) => href.startsWith('/en/'))).toEqual([]);
     // D10a: the log-validation row never claims a leakage audit.
     expect(ko).not.toMatch(/누수 (감사|점검)/);
@@ -121,7 +121,7 @@ describe('JobFitTable.astro', () => {
     // P2-14: the code evidence link (GitHub) gets ↗ (leaves the site); the internal /research/ evidence link next
     // to it does not (anchorBlock: tests/astro/helpers.ts, shared with SkillList.test.ts).
     expect(anchorBlock(ko, 'https://github.com/Lunecid/LOL_teamfight_Lab/tree/v1.0-cog2026')).toContain('↗');
-    expect(anchorBlock(ko, '/research/cog-2026-engagement/')).not.toContain('↗');
+    expect(anchorBlock(ko, '/game/research/cog-2026-engagement/')).not.toContain('↗');
     for (const row of jobfit.rows) for (const e of row.evidence) if (e.short) {
       expect(e.label.ko).toContain(e.short.ko);
       expect(e.label.en).toContain(e.short.en);
@@ -138,7 +138,7 @@ describe('JobFitTable.astro', () => {
 
   it('A-13 / §2.6: a missing table renders the pending state inside section#job-fit', async () => {
     for (const [lang, line] of [['ko', '공고 조사를 마친 뒤 이 표를 채웁니다.'], ['en', 'This table will be filled in after the job-posting survey is complete.']] as const) {
-      const html = await renderAstro(JobFitTable, { props: { lang, data: null, facts: loadFactSource() } });
+      const html = await renderAstro(JobFitTable, { props: { lang, variant: 'game', data: null, facts: loadFactSource() } });
       expect(html).toMatch(/<section(?=[^>]*\bid="job-fit")[^>]*>/);
       expect(html).toMatch(/<h2[^>]*id="job-fit-title"/);
       expect(html).toMatch(new RegExp(`<p class="jobfit__pending"[^>]*>${line.replace(/\./g, '\\.')}</p>`));

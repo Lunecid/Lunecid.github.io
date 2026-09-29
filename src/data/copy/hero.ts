@@ -1,4 +1,4 @@
-// Home hero + MAIN MENU copy. Every href is Korean-based; HomeView applies localizeHref() on /en/.
+// Home hero + MAIN MENU copy. Every href is base form (Korean, version-free); HomeView builds the links with pageHref.
 // The headline/tagline/status/about text lives in the version identity (src/variants/*.ts, resolved through fact
 // tokens; the same source feeds the site and the PDFs).
 import { t, type Localized } from '../../i18n/utils';

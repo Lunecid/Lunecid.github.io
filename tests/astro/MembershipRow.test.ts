@@ -20,7 +20,7 @@ const THREE = [tile('remielle', '레미엘'), tile('eula', '유라'), tile('mona
 const render = (tiles: FavoriteTile[], lang: 'ko' | 'en' = 'ko') =>
   renderAstro(MembershipRow, {
     props: { lang, membership: membershipCard(resolveDeep(playerLogCopy[lang], lang, loadFactSource()).membership, lang === 'ko' ? '게임 데이터 분석가 · 연구자' : 'Game Data Analyst · Researcher'), tiles, tileSlots: 3, achievements: defs },
-    url: lang === 'en' ? '/en/player-log/' : '/player-log/',
+    url: lang === 'en' ? '/en/game/player-log/' : '/game/player-log/',
   });
 
 describe('MembershipRow (Player Log first row)', () => {
@@ -69,7 +69,7 @@ describe('AchievementMeter', () => {
     expect(html).toContain('달성 기록은 이 브라우저에만 저장됩니다.');
     expect(html).toMatch(/<a class="sec-more" href="#site-achievements"[^>]*>업적 목록 보기 /);
     expect(html).toMatch(/<script[^>]*type="module"/);
-    const en = await renderAstro(AchievementMeter, { props: { lang: 'en', defs }, url: '/en/player-log/' });
+    const en = await renderAstro(AchievementMeter, { props: { lang: 'en', defs }, url: '/en/game/player-log/' });
     expect(en).toMatch(/data-ach-meter-count[^>]*>0 \/ 8 unlocked</);
     expect(en).toContain('See all achievements');
   });

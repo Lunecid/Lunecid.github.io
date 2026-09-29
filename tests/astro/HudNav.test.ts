@@ -5,7 +5,7 @@ import { readSource, renderAstro } from './helpers';
 const KO = {
   lang: 'ko',
   variant: 'game',
-  altLangHref: '/en/research/',
+  altLangHref: '/en/game/research/',
   cvHref: '/cv/seongeun-baek-resume-ko.pdf',
   cvLabel: '이력서 (PDF)',
   bgmAvailable: false,
@@ -25,26 +25,26 @@ describe('HudNav.astro', () => {
   it('renders 4 localized section links in a labelled nav', async () => {
     const ko = await renderAstro(HudNav, { props: KO });
     expect(firstTag(ko, /<nav[^>]*id="hud-menu"[^>]*>/)).toContain('aria-label="주 메뉴"');
-    expect(sectionHrefs(ko)).toEqual(['/research/', '/projects/', '/records/', '/player-log/']);
+    expect(sectionHrefs(ko)).toEqual(['/game/research/', '/game/projects/', '/game/records/', '/game/player-log/']);
     for (const label of ['연구', '프로젝트', '기록', '플레이 로그']) expect(ko).toContain(label);
 
     const en = await renderAstro(HudNav, {
-      props: { ...KO, lang: 'en', altLangHref: '/research/', cvHref: '/cv/seongeun-baek-resume-en.pdf' },
-      url: '/en/research/',
+      props: { ...KO, lang: 'en', altLangHref: '/game/research/', cvHref: '/cv/seongeun-baek-resume-en.pdf' },
+      url: '/en/game/research/',
     });
     expect(firstTag(en, /<nav[^>]*id="hud-menu"[^>]*>/)).toContain('aria-label="Main navigation"');
-    expect(sectionHrefs(en)).toEqual(['/en/research/', '/en/projects/', '/en/records/', '/en/player-log/']);
+    expect(sectionHrefs(en)).toEqual(['/en/game/research/', '/en/game/projects/', '/en/game/records/', '/en/game/player-log/']);
     for (const label of ['Research', 'Projects', 'Records', 'Player Log']) expect(en).toContain(label);
-    expect(firstTag(en, /<a [^>]*class="hud-nav__brand"[^>]*>/)).toContain('href="/en/"');
+    expect(firstTag(en, /<a [^>]*class="hud-nav__brand"[^>]*>/)).toContain('href="/en/game/"');
   });
 
   it("aria-current is 'page' on the section index and 'true' inside it", async () => {
     const index = await renderAstro(HudNav, { props: { ...KO, current: 'projects', exact: true } });
-    expect(firstTag(index, /<a href="\/projects\/"[^>]*>/)).toContain('aria-current="page"');
-    expect(firstTag(index, /<a href="\/research\/"[^>]*>/)).not.toContain('aria-current');
+    expect(firstTag(index, /<a href="\/game\/projects\/"[^>]*>/)).toContain('aria-current="page"');
+    expect(firstTag(index, /<a href="\/game\/research\/"[^>]*>/)).not.toContain('aria-current');
 
     const inner = await renderAstro(HudNav, { props: { ...KO, current: 'projects' } });
-    expect(firstTag(inner, /<a href="\/projects\/"[^>]*>/)).toContain('aria-current="true"');
+    expect(firstTag(inner, /<a href="\/game\/projects\/"[^>]*>/)).toContain('aria-current="true"');
 
     const none = await renderAstro(HudNav, { props: KO });
     expect(none).not.toContain('aria-current');
@@ -55,7 +55,7 @@ describe('HudNav.astro', () => {
     const links = html.match(/<a [^>]*hreflang="en"[^>]*>/g) ?? [];
     expect(links.length).toBeGreaterThanOrEqual(1);
     for (const tag of links) {
-      expect(tag).toContain('href="/en/research/"');
+      expect(tag).toContain('href="/en/game/research/"');
       expect(tag).toContain('lang="en"');
     }
     const hidden = await renderAstro(HudNav, { props: { ...KO, altLangHref: null } });
@@ -107,7 +107,7 @@ describe('HudNav.astro', () => {
 
   it('§1.8: items come from the version nav — no Player Log on the data version', async () => {
     const data = await renderAstro(HudNav, { props: { ...KO, variant: 'data' } });
-    expect(sectionHrefs(data)).toEqual(['/research/', '/projects/', '/records/']);
+    expect(sectionHrefs(data)).toEqual(['/data/research/', '/data/projects/', '/data/records/']);
     expect(data).not.toContain('플레이 로그');
     expect(data.match(/class="hud-nav__num"[^>]*>0[1-3]</g)).toHaveLength(3);
   });

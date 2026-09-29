@@ -9,7 +9,7 @@ import type { OgArtifact, OgInput } from './og';
 import type { FactSource } from './facts';
 import { bibtexField } from './publications';
 import { getFactSource, getPaperPages, getProjects } from './portfolio';
-import { allRoutes } from './routes';
+import { allRoutes, parseRoute } from './routes';
 import { containsTrademark, ogSlugFor } from './seo';
 
 export interface OgSources {
@@ -27,7 +27,7 @@ export interface OgSources {
 
 const NAME_SUFFIX: Record<Lang, string> = { ko: ' · 백성은', en: ' · Seongeun Baek' };
 
-/** Korean-form path of each fixed page → its PAGE_META key, card eyebrow and which artifact it shows (P2-36). */
+/** Base path of each fixed page (the '/' entry is the version home, not the chooser) → its PAGE_META key, card eyebrow and which artifact it shows (P2-36). */
 const FIXED: Readonly<Record<string, { key: PageKey; eyebrow: string; artifact: keyof NonNullable<OgSources['artifacts']> }>> = {
   '/': { key: 'home', eyebrow: 'PORTFOLIO', artifact: 'photo' },
   '/research/': { key: 'research', eyebrow: 'RESEARCH', artifact: 'paper' },
@@ -49,33 +49,37 @@ function withoutName(title: string, lang: Lang): string {
 }
 
 /**
- * One OG card per route in allRoutes(), keyed by ogSlugFor(route). Fixed pages: PAGE_META title (unchanged)
- * + description. Projects: frontmatter title + summary. Paper pages: PAGE_META['research-story'] title
- * (without the name suffix) + description. Throws when a route has no source entry or when a title names a
+ * One OG card per route in allRoutes() (read through parseRoute), keyed by ogSlugFor(route). The chooser: its
+ * page meta. Fixed pages: the page meta of the route's version (null for shared pages) + description. Projects:
+ * frontmatter title + summary. Paper pages: the version's 'research-story' meta title (without the name suffix) +
+ * description. Throws when a route has no source entry or when a title names a
  * game trademark (OG titles never do; frontmatter titles may, as body text).
  */
 export function buildOgMap(src: OgSources): Record<string, OgInput> {
   const map: Record<string, OgInput> = {};
   for (const route of allRoutes()) {
-    const lang: Lang = route.startsWith('/en/') ? 'en' : 'ko';
-    const koPath = lang === 'en' ? route.slice(3) : route;
+    const info = parseRoute(route);
+    if (!info) throw new Error(`og: ${route} is not in the route table`);
+    const { lang, variant, base, kind } = info;
     let og: OgInput;
-    const fixed = FIXED[koPath];
-    if (fixed) {
-      // P1-7a: version pages (home, records, …) read the game version's meta until P1-11 adds the version axis.
-      const meta = pageMetaFor(fixed.key, lang, fixed.key === 'stats' || fixed.key === 'privacy' || fixed.key === 'credits' ? null : 'game', src.facts);
+    if (kind === 'chooser') {
+      const meta = pageMetaFor('chooser', lang, null, src.facts);
+      og = { eyebrow: 'PORTFOLIO', title: meta.title, subtitle: meta.description, ...withArtifact(src.artifacts?.photo) };
+    } else if (FIXED[base]) {
+      const fixed = FIXED[base];
+      const meta = pageMetaFor(fixed.key, lang, variant, src.facts);
       og = { eyebrow: fixed.eyebrow, title: meta.title, subtitle: meta.description, ...withArtifact(src.artifacts?.[fixed.artifact]) };
     } else {
-      const match = /^\/(projects|research)\/([a-z0-9-]+)\/$/.exec(koPath);
-      if (!match) throw new Error(`og: no OG rule for ${route}`);
-      const [, kind, slug] = match;
-      if (kind === 'projects') {
+      const match = /^\/(projects|research)\/([a-z0-9-]+)\/$/.exec(base);
+      if (!match || variant === null) throw new Error(`og: no OG rule for ${route}`);
+      const [, kindOf, slug] = match;
+      if (kindOf === 'projects') {
         const project = src.projects.find((p) => p.lang === lang && p.slug === slug);
         if (!project) throw new Error(`og: no project entry ${lang}/${slug}`);
         og = { eyebrow: 'PROJECT', title: project.title, subtitle: project.summary, ...withArtifact(project.artifact) };
       } else {
         if (!src.papers.some((p) => p.lang === lang && p.slug === slug)) throw new Error(`og: no paper entry ${lang}/${slug}`);
-        const meta = pageMetaFor('research-story', lang, 'game', src.facts);
+        const meta = pageMetaFor('research-story', lang, variant, src.facts);
         og = { eyebrow: 'RESEARCH', title: withoutName(meta.title, lang), subtitle: meta.description, ...withArtifact(src.artifacts?.paper) };
       }
     }

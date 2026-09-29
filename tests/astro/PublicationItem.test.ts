@@ -6,7 +6,7 @@ import { readSource, renderAstro } from './helpers';
 
 const ko: PaperCardData = {
   id: 'cog-2026-engagement',
-  href: '/research/cog-2026-engagement/',
+  href: '/game/research/cog-2026-engagement/',
   title: 'Kill-Conditioned Engagement Outcome Prediction in League of Legends Under Minute-Resolution Public Telemetry',
   titleGloss: '1분 해상도 공개 텔레메트리에서의 리그 오브 레전드 킬 조건부 교전 결과 예측',
   authors: [
@@ -31,7 +31,7 @@ const ko: PaperCardData = {
 
 const en: PaperCardData = {
   ...ko,
-  href: '/en/research/cog-2026-engagement/',
+  href: '/en/game/research/cog-2026-engagement/',
   titleGloss: null,
   tldr: 'Predicts which team gains from a fight using only 30 seconds of public telemetry.',
   abstract: 'We study how much pre-engagement signal is recoverable from the public Riot API.',
@@ -46,7 +46,7 @@ describe('PublicationItem.astro', () => {
   it('English title, gloss only on ko', async () => {
     const koHtml = await render({ lang: 'ko', paper: ko });
     expect(koHtml).toMatch(
-      /<h3(?=[^>]*class="pub__title")(?=[^>]*lang="en")[^>]*>\s*<a[^>]*href="\/research\/cog-2026-engagement\/"[^>]*>Kill-Conditioned Engagement Outcome Prediction/,
+      /<h3(?=[^>]*class="pub__title")(?=[^>]*lang="en")[^>]*>\s*<a[^>]*href="\/game\/research\/cog-2026-engagement\/"[^>]*>Kill-Conditioned Engagement Outcome Prediction/,
     );
     expect(koHtml).toMatch(/<p(?=[^>]*class="pub__gloss")[^>]*>1분 해상도 공개 텔레메트리/);
     // P2-28: the Korean title is marked "(국문 제목)", never "한국어 풀이".
@@ -157,8 +157,8 @@ describe('PublicationItem.astro', () => {
 
   it('links the paper page only when href is set', async () => {
     const html = await render({ lang: 'ko', paper: ko });
-    expect(html.match(/href="\/research\/cog-2026-engagement\/"/g)).toHaveLength(2); // title + 논문 페이지 button
-    expect(html).toMatch(/<a[^>]*href="\/research\/cog-2026-engagement\/"[^>]*>논문 페이지<\/a>/);
+    expect(html.match(/href="\/game\/research\/cog-2026-engagement\/"/g)).toHaveLength(2); // title + 논문 페이지 button
+    expect(html).toMatch(/<a[^>]*href="\/game\/research\/cog-2026-engagement\/"[^>]*>논문 페이지<\/a>/);
     const plain = await render({ lang: 'ko', paper: { ...ko, href: null } });
     expect(plain).not.toContain('/research/cog-2026-engagement/');
     expect(plain).toMatch(/<h3[^>]*class="pub__title"[^>]*>Kill-Conditioned/);

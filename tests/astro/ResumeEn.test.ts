@@ -50,8 +50,8 @@ describe('ResumeEn', () => {
 
   it('final review fix 1 item 11: the CoG link says "paper page" (D-15: abstract only), project pages say "case study"', async () => {
     const html = await renderAstro(ResumeEn, { props: { model } });
-    expect(html).toMatch(/<a[^>]*href="https:\/\/lunecid\.github\.io\/en\/research\/cog-2026-engagement\/"[^>]*>↗ paper page<\/a>/);
+    expect(html).toMatch(/<a[^>]*href="https:\/\/lunecid\.github\.io\/en\/game\/research\/cog-2026-engagement\/"[^>]*>↗ paper page<\/a>/);
     expect(html).not.toMatch(/href="[^"]*\/research\/cog-2026-engagement\/"[^>]*>↗ case study</);
-    expect(html).toMatch(/<a[^>]*href="https:\/\/lunecid\.github\.io\/en\/projects\/kickick-park\/"[^>]*>↗ case study<\/a>/);
+    expect(html).toMatch(/<a[^>]*href="https:\/\/lunecid\.github\.io\/en\/game\/projects\/kickick-park\/"[^>]*>↗ case study<\/a>/);
   });
 });

@@ -5,7 +5,8 @@
  */
 import type { Lang } from '../../i18n/ui';
 import { languages } from '../../i18n/ui';
-import { localizeHref, otherLang, t, type UiKey } from '../../i18n/utils';
+import { otherLang, t, type UiKey } from '../../i18n/utils';
+import { homeHref, pageHref } from '../../lib/links';
 import type { NavSection } from '../../types';
 import { MEDIA } from '../../config';
 import BgmToggle from './BgmToggle.astro';
@@ -31,13 +32,13 @@ const items = getVariant(variant).nav.map((item, i) => ({
   key: item.key,
   num: String(i + 1).padStart(2, '0'),
   label: t(lang, NAV_LABEL[item.key]),
-  href: localizeHref(item.base, lang), // P1-11: pageHref(item.base, { lang, variant })
+  href: pageHref(item.base, { lang, variant }),
 }));
 const currentValue = exact ? 'page' : 'true';
 ---
 <header class="hud-nav" data-open="false" data-hud-nav>
   <div class="hud-nav__bar">
-    <a class="hud-nav__brand" href={localizeHref('/', lang)}>
+    <a class="hud-nav__brand" href={homeHref(lang, variant)}>
       <span class="hud-nav__logo" aria-hidden="true">[SB]</span>
       <span class="hud-nav__id" lang="en">SEONGEUN_BAEK<span class="hud-nav__role"> // GAME DATA ANALYST</span></span>
       <span class="sr-only">{t(lang, 'nav.brandSr')}</span>

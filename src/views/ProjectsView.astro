@@ -7,7 +7,8 @@ import TagFilter from '../components/projects/TagFilter.astro';
 import ProjectCartridge from '../components/projects/ProjectCartridge.astro';
 import GitHubSection from '../components/github/GitHubSection.astro';
 import type { Lang } from '../i18n/ui';
-import { localizeHref, t } from '../i18n/utils';
+import { t } from '../i18n/utils';
+import { pageHref } from '../lib/links';
 import { TAG_KEYS, type TagKey } from '../content/tags';
 import { getFactSource, resolveOrder } from '../lib/portfolio';
 import { toCartridge, type CartridgeProps } from '../lib/projects';
@@ -22,11 +23,12 @@ interface Props {
 }
 
 const { lang, variant } = Astro.props;
+const ctx = { lang, variant };
 const v = getVariant(variant);
 const facts = await getFactSource();
 const meta = pageMetaFor('projects', lang, variant, facts);
 const toCard = (item: Awaited<ReturnType<typeof resolveOrder>>[number]): CartridgeProps =>
-  item.kind === 'project' ? toCartridge(item.entry, lang) : toPaperCartridge(item.entry, lang, localizeHref(item.entry.data.caseStudy ?? '', lang));
+  item.kind === 'project' ? toCartridge(item.entry, ctx) : toPaperCartridge(item.entry, lang, pageHref(item.entry.data.caseStudy ?? '', ctx));
 const cards: CartridgeProps[] = (await resolveOrder(v.orders.projectsOrder, lang)).map(toCard);
 // P2-8 (controller ruling 5): a tag with fewer than 2 projects (often just one card, or one with no tags at all
 // besides it) adds filter-button noise without doing useful filtering, so it is hidden entirely.

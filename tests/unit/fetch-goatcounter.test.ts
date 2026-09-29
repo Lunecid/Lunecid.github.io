@@ -96,8 +96,9 @@ describe('fetch-goatcounter', () => {
         { path_id: 4, path: '/<script>alert(1)</script>', title: '<script>alert(1)</script>', event: false, count: 900 },
         { path_id: 5, path: '/buy-cheap-pills/', title: 'spam', event: false, count: 800 },
         { path_id: 6, path: `/records/?${'x'.repeat(5000)}`, title: 'long', event: false, count: 700 },
-        { path_id: 7, path: '/records/?utm_source=newsletter', title: '기록', event: false, count: 4 },
-        { path_id: 8, path: '/records/', title: '기록', event: false, count: 6 },
+        { path_id: 7, path: '/game/records/?utm_source=newsletter', title: '기록', event: false, count: 4 },
+        { path_id: 8, path: '/game/records/', title: '기록', event: false, count: 6 },
+        { path_id: 9, path: '/records/', title: '기록', event: false, count: 40 }, // legacy game URL: dropped (A-9)
       ],
       total: 2000,
       more: false,
@@ -123,8 +124,9 @@ describe('fetch-goatcounter', () => {
     expect(data.pages.map((p: { path: string; count: number }) => [p.path, p.count])).toEqual([
       ['/', 70],
       ['/en/', 30],
-      ['/records/', 10],
+      ['/game/records/', 10],
     ]);
+    expect(data.pages.map((p: { path: string }) => p.path), 'A-9: legacy paths leave the top pages').not.toContain('/records/');
     expect(data.referrers).toEqual([{ name: null, count: 50 }, { name: 'github.com', count: 22 }]);
     const json = JSON.stringify(data);
     for (const bad of ['<script', 'buy-cheap-pills', 'javascript:', 'onerror', 'Buy cheap', 'xxxxxxxxxx', 'aaaaaaaaaa']) expect(json, bad).not.toContain(bad);
@@ -132,7 +134,7 @@ describe('fetch-goatcounter', () => {
 
   it('final review fix 1 round 2 item 6: spam rows at the top cannot crowd the real routes out; the published lists stay top 10', async () => {
     const spamHits = Array.from({ length: 30 }, (_, i) => ({ path_id: 100 + i, path: `/spam-${i}/`, title: 'spam', event: false, count: 1000 - i }));
-    const realHits = ['/', '/en/', '/records/', '/research/', '/projects/', '/en/records/', '/player-log/', '/stats/', '/privacy/', '/credits/', '/en/research/'].map(
+    const realHits = ['/', '/en/', '/game/records/', '/game/research/', '/game/projects/', '/en/game/records/', '/game/player-log/', '/stats/', '/privacy/', '/credits/', '/en/game/research/'].map(
       (path, i) => ({ path_id: i + 1, path, title: '', event: false, count: 50 - i }),
     );
     const spamRefs = Array.from({ length: 30 }, (_, i) => ({ id: 100 + i, name: `<b>spam ${i}</b>`, count: 1000 - i }));

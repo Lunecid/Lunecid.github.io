@@ -3,6 +3,8 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import { PAGE_META } from '../data/copy/pages';
 import { t } from '../i18n/utils';
 import { EN_404_SCRIPT } from '../lib/en-404';
+import { homeHref, pageHref } from '../lib/links';
+import { BASE_PATH } from '../variants/ids';
 
 // GitHub Pages serves this one dist/404.html for every unknown ko or en path. It is rendered once, in Korean
 // (altLangHref stays null: a 404 has no real bilingual counterpart, so it gets no <link rel="alternate"> either).
@@ -23,10 +25,10 @@ const meta = PAGE_META['not-found'].ko;
       </h1>
       <p class="go__continue" lang="en">{t('ko', '404.continue')}</p>
       <div class="go__actions" data-go-actions>
-        <a class="btn btn--fill cut" href="/">{t('ko', '404.home')}</a>
-        <a class="btn btn--line cut cut--line" href="/projects/">{t('ko', '404.projects')}</a>
+        <a class="btn btn--fill cut" href={homeHref('ko', 'game')}>{t('ko', '404.home')}</a>
+        <a class="btn btn--line cut cut--line" href={pageHref(BASE_PATH.projects, { lang: 'ko', variant: 'game' })}>{t('ko', '404.projects')}</a>
       </div>
-      <p class="go__en" lang="en" data-go-secondary><a href="/en/">{t('en', '404.home')}</a><span aria-hidden="true"> · </span><a href="/en/projects/">{t('en', '404.projects')}</a></p>
+      <p class="go__en" lang="en" data-go-secondary><a href={homeHref('en', 'game')}>{t('en', '404.home')}</a><span aria-hidden="true"> · </span><a href={pageHref(BASE_PATH.projects, { lang: 'en', variant: 'game' })}>{t('en', '404.projects')}</a></p>
     </div>
   </section>
 </BaseLayout>

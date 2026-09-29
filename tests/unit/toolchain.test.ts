@@ -51,7 +51,7 @@ describe('toolchain', () => {
     expect(sitemapFilter('https://lunecid.github.io/print/resume-ko/')).toBe(false);
     expect(sitemapFilter('https://lunecid.github.io/print/cv-academic/')).toBe(false);
     expect(sitemapFilter('https://lunecid.github.io/en/')).toBe(true);
-    expect(sitemapFilter('https://lunecid.github.io/en/projects/kickick-park/')).toBe(true);
+    expect(sitemapFilter('https://lunecid.github.io/en/game/projects/kickick-park/')).toBe(true);
     expect(sitemapFilter('https://lunecid.github.io/')).toBe(true);
   });
 

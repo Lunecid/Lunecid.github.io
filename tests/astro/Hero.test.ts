@@ -10,6 +10,7 @@ import { figureCopy, overallAuc } from '../../src/data/research/cog-2026';
 import { t } from '../../src/i18n/utils';
 import { resolveDeep } from '../../src/lib/facts';
 import type { StageCharacter } from '../../src/islands/CharacterStage';
+import { pageHref } from '../../src/lib/links';
 import { isKnownInternalHref } from '../../src/lib/routes';
 import { loadFactSource } from '../helpers/fact-source';
 import { readSource, renderAstro } from './helpers';
@@ -35,6 +36,9 @@ const REMIELLE: StageCharacter = {
   objectPosition: '58% 14%',
 };
 
+/** Hero receives built hrefs (HomeView: pageHref over the base-form copy, P1-11); these are the game ones. */
+const built = (href: string, lang: 'ko' | 'en' = 'ko'): string => pageHref(href, { lang, variant: 'game' });
+
 function props(overrides: Record<string, unknown> = {}): Record<string, unknown> {
   const copy = resolveDeep(heroCopy.ko, 'ko', loadFactSource());
   const classLine = CLASS_LINE[overrides.lang === 'en' ? 'en' : 'ko'];
@@ -47,17 +51,17 @@ function props(overrides: Record<string, unknown> = {}): Record<string, unknown>
     slogan: splitTagline(KO_TAGLINE),
     meta: copy.meta,
     status: STATUS,
-    ctas: copy.ctas,
+    ctas: { primary: { ...copy.ctas.primary, href: built(copy.ctas.primary.href) } },
     contact: {
       email: SITE.email,
       github: SITE.githubUrl,
       cvHref: CV_HREF.ko,
       cvLabel: copy.contact.cvLabel,
       cvDocLabel: t('ko', 'nav.cvResume'),
-      jobFitHref: copy.contact.jobFitHref,
+      jobFitHref: built(copy.contact.jobFitHref),
       jobFitLabel: copy.contact.jobFitLabel,
     },
-    artifact: copy.artifact,
+    artifact: { ...copy.artifact, href: built(copy.artifact.href) },
     credit: null,
     swap: copy.swap,
     playerCard: { ...copy.playerCard, classLine },
@@ -99,7 +103,7 @@ describe('Hero.astro', () => {
   });
 
   it('final fix 2 item 11: the English hero has no title card repeating the name above the H1', async () => {
-    const en = await renderAstro(Hero, { props: props({ lang: 'en', name: 'Seongeun Baek', roman: resolveDeep(heroCopy.en, 'en', facts).roman }), url: '/en/' });
+    const en = await renderAstro(Hero, { props: props({ lang: 'en', name: 'Seongeun Baek', roman: resolveDeep(heroCopy.en, 'en', facts).roman }), url: '/en/game/' });
     expect(en).not.toContain('hero__titlecard');
     expect(en.match(/Seongeun Baek/gi)).toHaveLength(1);
   });
@@ -121,45 +125,45 @@ describe('Hero.astro', () => {
     const ctas = /<div class="hero__ctas"[^>]*>([\s\S]*?)<\/div>/.exec(ko)?.[1] ?? '';
     const buttons = ctas.match(/<a\b[^>]*>/g) ?? [];
     expect(buttons).toHaveLength(2);
-    expect(buttons[0]).toMatch(/class="btn btn--fill cut" href="\/research\/"/);
+    expect(buttons[0]).toMatch(/class="btn btn--fill cut" href="\/game\/research\/"/);
     // D-7: the CV button names its document (tooltip + accessible name) and stays a plain link to the PDF with ↓
     expect(buttons[1]).toMatch(/class="btn btn--line cut cut--line hero__cv" href="\/cv\/seongeun-baek-resume-ko\.pdf" title="이력서 \(PDF\)"/);
     expect(ctas).toMatch(/CV \(PDF\) <span aria-hidden="true"[^>]*>↓<\/span><span class="sr-only"[^>]*> — 이력서 \(PDF\)<\/span>/);
-    expect(ko).not.toContain('href="/projects/"'); // the MAIN MENU right below leads to the projects
+    expect(ko).not.toContain('href="/game/projects/"'); // the MAIN MENU right below leads to the projects
 
     const links = /<ul class="hero__links"[^>]*>([\s\S]*?)<\/ul>/.exec(ko)?.[1] ?? '';
     const hrefs = [...links.matchAll(/<a\b[^>]*href="([^"]+)"/g)].map((m) => m[1]);
-    expect(hrefs).toEqual(['/records/#job-fit', `mailto:${SITE.email}`, 'https://github.com/Lunecid']);
-    expect(links).toMatch(/<a class="hero__jobfit" href="\/records\/#job-fit"[^>]*>지원 요건 대응 보기 <span aria-hidden="true"[^>]*>→<\/span><\/a>/);
+    expect(hrefs).toEqual(['/game/records/#job-fit', `mailto:${SITE.email}`, 'https://github.com/Lunecid']);
+    expect(links).toMatch(/<a class="hero__jobfit" href="\/game\/records\/#job-fit"[^>]*>지원 요건 대응 보기 <span aria-hidden="true"[^>]*>→<\/span><\/a>/);
     expect(links.match(/class="hero__chip"/g)).toHaveLength(2);
     expect(links.match(/class="hero__chip-face cut cut--line"/g)).toHaveLength(2);
 
     const en = await renderAstro(Hero, {
       props: props({
         lang: 'en',
-        ctas: { primary: { label: 'See research', href: '/en/research/' } },
+        ctas: { primary: { label: 'See research', href: '/en/game/research/' } },
         contact: {
           email: SITE.email,
           github: SITE.githubUrl,
           cvHref: CV_HREF.en,
           cvLabel: 'CV (PDF)',
           cvDocLabel: t('en', 'nav.cvResume'),
-          jobFitHref: '/en/records/#job-fit',
+          jobFitHref: '/en/game/records/#job-fit',
           jobFitLabel: 'See job requirements fit',
         },
-        artifact: { ...resolveDeep(heroCopy.en, 'en', facts).artifact, href: '/en/research/cog-2026-engagement/' },
+        artifact: { ...resolveDeep(heroCopy.en, 'en', facts).artifact, href: '/en/game/research/cog-2026-engagement/' },
       }),
-      url: '/en/',
+      url: '/en/game/',
     });
-    expect(en).toContain('href="/en/records/#job-fit"'); // already localized by the caller; not prefixed twice
+    expect(en).toContain('href="/en/game/records/#job-fit"'); // already localized by the caller; not prefixed twice
     expect(en).not.toContain('/en/en/');
     expect(en).toMatch(/href="\/cv\/seongeun-baek-resume-en\.pdf" title="Résumé \(PDF\)"/);
-    expect(en).toContain('href="/en/research/cog-2026-engagement/"');
+    expect(en).toContain('href="/en/game/research/cog-2026-engagement/"');
   });
 
   it('D-1 no art: the right slot is the CoG AUC chart in a HUD bracket frame (figureCopy caption/alt), with a paper link', async () => {
     for (const lang of ['ko', 'en'] as const) {
-      const html = await renderAstro(Hero, { props: props({ lang, artifact: resolveDeep(heroCopy[lang], lang, facts).artifact }), url: lang === 'en' ? '/en/' : '/' });
+      const html = await renderAstro(Hero, { props: props({ lang, artifact: { ...resolveDeep(heroCopy[lang], lang, facts).artifact, href: built(heroCopy[lang].artifact.href, lang) } }), url: lang === 'en' ? '/en/game/' : '/game/' });
       expect(html).not.toContain('<astro-island');
       expect(html).not.toContain('char-stage');
       expect(html).not.toContain('hero__credit');
@@ -169,7 +173,7 @@ describe('Hero.astro', () => {
       expect(html).toContain(figureCopy.aucOverall.caption[lang]);
       expect(html).toContain(figureCopy.aucOverall.alt[lang]);
       for (const row of overallAuc) expect(html).toContain(`data-model="${row.id}"`);
-      expect(html).toMatch(new RegExp(`<a class="sec-more" href="/research/cog-2026-engagement/"[^>]*>${heroCopy[lang].artifact.linkLabel} `));
+      expect(html).toMatch(new RegExp(`<a class="sec-more" href="${lang === 'en' ? '/en' : ''}/game/research/cog-2026-engagement/"[^>]*>${heroCopy[lang].artifact.linkLabel} `));
       // The raw Match-V5 excerpt is not used here, so the page needs no Riot notice.
       expect(html).not.toContain('class="telemetry');
       expect(html).not.toContain('participantFrames');

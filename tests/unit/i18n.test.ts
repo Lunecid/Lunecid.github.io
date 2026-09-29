@@ -9,7 +9,6 @@ import {
   formatYm,
   formatYmLong,
   hangulRuns,
-  langPrefix,
   localizeHref,
   otherLang,
   pick,
@@ -82,11 +81,9 @@ describe('t()', () => {
 });
 
 describe('locale helpers', () => {
-  it('otherLang, langPrefix and pick', () => {
+  it('otherLang and pick', () => {
     expect(otherLang('ko')).toBe('en');
     expect(otherLang('en')).toBe('ko');
-    expect(langPrefix('ko')).toBe('');
-    expect(langPrefix('en')).toBe('/en');
     expect(pick({ ko: '연구', en: 'Research' }, 'en')).toBe('Research');
     expect(pick({ ko: 1, en: 2 }, 'ko')).toBe(1);
   });
@@ -103,6 +100,7 @@ describe('locale helpers', () => {
       ['https://github.com/Lunecid', 'en', 'https://github.com/Lunecid'],
       ['mailto:todtjddms104204@pusan.ac.kr', 'en', 'mailto:todtjddms104204@pusan.ac.kr'],
       ['#job-fit', 'en', '#job-fit'],
+      ['/game/records/#job-fit', 'en', '/en/game/records/#job-fit'],
     ] as const;
     for (const [href, lang, expected] of cases) expect(localizeHref(href, lang), `${href} (${lang})`).toBe(expected);
   });
@@ -121,6 +119,7 @@ describe('locale helpers', () => {
       ['/en/projects/sample-project', 'ko', '/projects/sample-project/'],
       ['/records/', 'en', '/en/records/'],
       ['/en/records/', 'ko', '/records/'],
+      ['/en/data/', 'ko', '/data/'],
     ] as const;
     for (const [from, target, expected] of cases) expect(switchLocalePath(from, target), `${from} -> ${target}`).toBe(expected);
   });

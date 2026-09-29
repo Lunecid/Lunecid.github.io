@@ -13,6 +13,7 @@ import type { JobfitId } from '../types';
 import { VARIANT_IDS, type VariantId } from '../variants/ids';
 import { parseOrderItem, type OrderItem } from '../variants/types';
 import { buildFactSource, graduationEntry, type FactSource } from './facts';
+import { paperBase } from './links';
 import { hasProjectPage, projectSlug } from './projects';
 import { PROJECT_SLUGS, type ProjectSlug } from './routes';
 
@@ -108,8 +109,9 @@ export async function getPublication(id: string): Promise<PublicationEntry> {
 export function checkPaperPages<T extends { id: string; data: { caseStudy?: string } }>(entries: readonly T[]): T[] {
   const pages = entries.filter((entry) => entry.data.caseStudy !== undefined);
   for (const entry of pages) {
-    if (entry.data.caseStudy !== `/research/${entry.id}/`) {
-      throw new Error(`publications: ${entry.id} has caseStudy "${entry.data.caseStudy}", expected "/research/${entry.id}/"`);
+    const expected = paperBase(entry.id);
+    if (entry.data.caseStudy !== expected) {
+      throw new Error(`publications: ${entry.id} has caseStudy "${entry.data.caseStudy}", expected "${expected}"`);
     }
   }
   return pages;

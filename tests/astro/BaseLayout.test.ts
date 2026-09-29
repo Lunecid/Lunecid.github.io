@@ -22,7 +22,7 @@ function firstTag(html: string, pattern: RegExp): string {
   return match[0];
 }
 
-function render(props: Record<string, unknown> = {}, url = '/projects/'): Promise<string> {
+function render(props: Record<string, unknown> = {}, url = '/game/projects/'): Promise<string> {
   return renderAstro(BaseLayout, {
     props: {
       lang: 'ko',
@@ -53,7 +53,7 @@ describe('BaseLayout.astro', () => {
     expect(root).toContain('data-motion="full"');
     expect(html).toMatch(/<main id="main" tabindex="-1"[^>]*>\s*<p class="probe">본문<\/p>\s*<\/main>/);
 
-    const home = await render({ lang: 'en', page: 'home', section: undefined }, '/en/');
+    const home = await render({ lang: 'en', page: 'home', section: undefined }, '/en/game/');
     const homeRoot = firstTag(home, /<html[^>]*>/);
     expect(homeRoot).toContain('lang="en"');
     expect(homeRoot).not.toContain('data-section');
@@ -78,14 +78,14 @@ describe('BaseLayout.astro', () => {
     const projects = await render();
     expect(cvTag(projects)).toContain('href="/cv/seongeun-baek-resume-ko.pdf"');
     expect(cvTag(projects)).toContain('title="이력서 (PDF)"');
-    const enProjects = await render({ lang: 'en' }, '/en/projects/');
+    const enProjects = await render({ lang: 'en' }, '/en/game/projects/');
     expect(cvTag(enProjects)).toContain('href="/cv/seongeun-baek-resume-en.pdf"');
     expect(cvTag(enProjects)).toContain('title="Résumé (PDF)"');
     for (const [lang, url, page] of [
-      ['ko', '/research/', 'research'],
-      ['en', '/en/research/', 'research'],
-      ['ko', '/research/cog-2026-engagement/', 'research-story'],
-      ['en', '/en/research/cog-2026-engagement/', 'research-story'],
+      ['ko', '/game/research/', 'research'],
+      ['en', '/en/game/research/', 'research'],
+      ['ko', '/game/research/cog-2026-engagement/', 'research-story'],
+      ['en', '/en/game/research/cog-2026-engagement/', 'research-story'],
     ] as const) {
       const html = await render({ lang, page, section: 'research' }, url);
       expect(cvTag(html), url).toContain('href="/cv/seongeun-baek-cv-academic.pdf"');
@@ -94,22 +94,22 @@ describe('BaseLayout.astro', () => {
   });
 
   it('canonical, hreflang ko/en/x-default and og:image are absolute', async () => {
-    const html = await render({ lang: 'en', title: 'Projects · Seongeun Baek' }, '/en/projects/');
-    expect(html).toContain('<link rel="canonical" href="https://lunecid.github.io/en/projects/"');
+    const html = await render({ lang: 'en', title: 'Projects · Seongeun Baek' }, '/en/game/projects/');
+    expect(html).toContain('<link rel="canonical" href="https://lunecid.github.io/en/game/projects/"');
     const alternates = [...html.matchAll(/<link rel="alternate" hreflang="([^"]+)" href="([^"]+)"/g)].map((m) => [m[1], m[2]]);
     expect(alternates).toEqual([
-      ['ko', 'https://lunecid.github.io/projects/'],
-      ['en', 'https://lunecid.github.io/en/projects/'],
-      ['x-default', 'https://lunecid.github.io/projects/'],
+      ['ko', 'https://lunecid.github.io/game/projects/'],
+      ['en', 'https://lunecid.github.io/en/game/projects/'],
+      ['x-default', 'https://lunecid.github.io/game/projects/'],
     ]);
-    expect(html).toContain('<meta property="og:image" content="https://lunecid.github.io/og/en/projects.png"');
+    expect(html).toContain('<meta property="og:image" content="https://lunecid.github.io/og/en/game/projects.png"');
     expect(html).toContain('<meta property="og:image:width" content="1200"');
     expect(html).toContain('<meta property="og:image:height" content="630"');
     expect(html).toContain('<meta property="og:locale" content="en_US"');
-    expect(html).toContain('<meta property="og:url" content="https://lunecid.github.io/en/projects/"');
+    expect(html).toContain('<meta property="og:url" content="https://lunecid.github.io/en/game/projects/"');
     expect(html).toMatch(/<title>Projects · Seongeun Baek<\/title>/);
 
-    const custom = await render({ ogSlug: 'home' }, '/projects/');
+    const custom = await render({ ogSlug: 'home' }, '/game/projects/');
     expect(custom).toContain('<meta property="og:image" content="https://lunecid.github.io/og/home.png"');
   });
 
@@ -126,11 +126,11 @@ describe('BaseLayout.astro', () => {
     expect(html).not.toContain('rel="alternate"');
     expect(html).not.toContain('hreflang');
     const withDefault = await render();
-    expect(firstTag(withDefault, /<a [^>]*hreflang="en"[^>]*>/)).toContain('href="/en/projects/"');
+    expect(firstTag(withDefault, /<a [^>]*hreflang="en"[^>]*>/)).toContain('href="/en/game/projects/"');
   });
 
   it('JSON-LD only when the jsonLd prop is given', async () => {
-    const home = await render({ page: 'home', section: undefined, jsonLd: personJsonLd('ko', { jobTitle: '게임 데이터 분석가 · 연구자', url: 'https://lunecid.github.io/' }) }, '/');
+    const home = await render({ page: 'home', section: undefined, jsonLd: personJsonLd('ko', { jobTitle: '게임 데이터 분석가 · 연구자', url: 'https://lunecid.github.io/game/' }) }, '/game/');
     const body = home.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/)?.[1] ?? 'null';
     expect(JSON.parse(body)).toMatchObject({ '@type': 'Person', name: '백성은', alternateName: 'Seongeun Baek' });
     const plain = await render();
@@ -147,7 +147,7 @@ describe('BaseLayout.astro', () => {
   });
 
   it('CRT overlay only on the home page', async () => {
-    const home = await render({ page: 'home', section: undefined }, '/');
+    const home = await render({ page: 'home', section: undefined }, '/game/');
     expect(home).toMatch(/<div[^>]*class="crt"/);
     const projects = await render();
     expect(projects).not.toMatch(/<div[^>]*class="crt"/);
@@ -185,13 +185,13 @@ describe('BaseLayout.astro', () => {
 
   it('§1.8: data-variant on <html>; a data page renders no CRT, no achievement host, no BGM and no data-sfx', async () => {
     vi.mocked(soundAvailability).mockReturnValue({ bgm: true, sfx: true });
-    const game = await render({ page: 'home', section: undefined }, '/');
+    const game = await render({ page: 'home', section: undefined }, '/game/');
     expect(firstTag(game, /<html[^>]*>/)).toContain('data-variant="game"');
     expect(firstTag(game, /<html[^>]*>/)).toContain('data-sfx="on"');
     expect(game).toMatch(/<div[^>]*class="crt"/);
     expect(game.match(/data-achievement-host/g)).toHaveLength(1);
     expect(game.match(/data-bgm-toggle/g)).toHaveLength(1);
-    const data = await render({ variant: 'data', page: 'home', section: undefined }, '/');
+    const data = await render({ variant: 'data', page: 'home', section: undefined }, '/data/');
     const root = firstTag(data, /<html[^>]*>/);
     expect(root).toContain('data-variant="data"');
     expect(root).not.toContain('data-sfx');

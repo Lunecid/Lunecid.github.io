@@ -211,11 +211,11 @@ test('the Korean paper page loads the Korean serif and no other page does', () =
   const withSerif = builtPages()
     .filter((p) => fontFaces(new JSDOM(readFileSync(p.file, 'utf8')).window.document).some((f) => f.family === SERIF_KO_FAMILY))
     .map((p) => p.route);
-  assert.deepEqual(withSerif, ['/research/cog-2026-engagement/']);
+  assert.deepEqual(withSerif.sort(), ['/data/research/cog-2026-engagement/', '/game/research/cog-2026-engagement/']);
 });
 
 test('self-test: a character the source font has but the subset lacks fails, named', () => {
-  const html = readFileSync(join(DIST, 'index.html'), 'utf8');
+  const html = readFileSync(join(DIST, 'game', 'index.html'), 'utf8');
   const probe = '똠'; // U+B620: in Pretendard, used nowhere on the site
   const cmap = fontCmap(/** @type {string} */ (fontFaces(new JSDOM(html).window.document).find((f) => f.family === SANS_FAMILY)?.url));
   assert.equal(cmap.has(0xb620), false, 'the probe must not be in the subset');
@@ -229,7 +229,7 @@ test('self-test: a character the source font has but the subset lacks fails, nam
 });
 
 test('self-test: a character the source font lacks only warns (third-party text never fails the build)', () => {
-  const html = readFileSync(join(DIST, 'index.html'), 'utf8');
+  const html = readFileSync(join(DIST, 'game', 'index.html'), 'utf8');
   const probe = '漢'; // U+6F22: a CJK ideograph, e.g. from a fetched GitHub description; Pretendard has none
   assert.equal(SOURCE[SANS_FAMILY]().has(0x6f22), false, 'the probe must not be in Pretendard');
   const planted = checkPage(html.replace('</main>', `<p>${probe}</p></main>`), '');
@@ -239,7 +239,7 @@ test('self-test: a character the source font lacks only warns (third-party text 
 });
 
 test('self-test: the Korean serif fails on a syllable Noto Serif KR has, warns on archaic jamo it lacks', () => {
-  const html = readFileSync(join(DIST, 'research/cog-2026-engagement/index.html'), 'utf8');
+  const html = readFileSync(join(DIST, 'game/research/cog-2026-engagement/index.html'), 'utf8');
   const inSheet = (/** @type {string} */ probe) => html.replace('</article>', `<p>${probe}</p></article>`);
   assert.equal(SOURCE[SERIF_KO_FAMILY]().has(0xb620), true);
   const bug = checkPage(inSheet('똠'), '');

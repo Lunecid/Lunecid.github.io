@@ -1,7 +1,8 @@
 import type { DocumentId } from '../config';
 import type { AwardData, ProjectFrontmatter, PublicationFrontmatter, ResumeData } from '../content/schemas';
 import type { Lang } from '../i18n/ui';
-import { formatDate, formatDateSpan, formatPeriod, formatYm, localizeHref, t } from '../i18n/utils';
+import { formatDate, formatDateSpan, formatPeriod, formatYm, t } from '../i18n/utils';
+import { pageHref, projectBase } from './links';
 import { isExpired } from './records';
 import { canonicalUrl } from './seo';
 import { parseOrderItem, type OrderItem } from '../variants/types';
@@ -95,7 +96,7 @@ export function buildResumeModel(input: ResumeInputs): ResumeModel {
 
   // Projects section (batch 3b P1-20/P2-32): the CoG paper (if flagged for this doc) plus every flagged
   // projects-collection ref.
-  const caseStudyLink = (href: string | undefined | null): string | null => (href ? canonicalUrl(localizeHref(href, lang)) : null);
+  const caseStudyLink = (href: string | undefined | null): string | null => (href ? canonicalUrl(pageHref(href, { lang, variant: 'game' })) : null);
   // A-17: the version's pdfProjectOrder decides the order (the game list equals the old end-month sort); a row appears
   // when its pdf flag is set for this document, and every flagged row must be in the order list.
   const refRow = (r: ResumeData['projects'][number]): ResumeModel['projects'][number] => {
@@ -106,7 +107,7 @@ export function buildResumeModel(input: ResumeInputs): ResumeModel {
       period: formatPeriod(d.period.start, d.period.end, lang),
       team: d.team,
       bullets: r.resume ? r.resume[lang] : [d.summary, d.role],
-      caseStudyHref: d.status === 'card' ? null : caseStudyLink(`/projects/${r.ref}/`),
+      caseStudyHref: d.status === 'card' ? null : caseStudyLink(projectBase(r.ref)),
       pageLabel: d.status === 'card' ? null : PAGE_LINK_LABEL[lang][d.status === 'summary' ? 'summary' : 'case-study'],
     };
   };

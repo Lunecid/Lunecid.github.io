@@ -31,7 +31,7 @@ describe('PlayerCard.astro', () => {
 
     const en = await renderAstro(PlayerCard, {
       props: { ...PROPS, lang: 'en', label: 'Player card', classLine: 'GAME DATA ANALYST · RESEARCHER', photoAlt: 'Seongeun Baek ID photo' },
-      url: '/en/',
+      url: '/en/game/',
     });
     expect(en).toMatch(/<p class="player-card__class" lang="en"[^>]*>GAME DATA ANALYST · RESEARCHER<\/p>/);
   });

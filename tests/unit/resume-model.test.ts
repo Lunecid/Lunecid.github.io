@@ -123,22 +123,22 @@ describe('buildResumeModel', () => {
     const en = buildResumeModel(inputs('resume-en'));
     for (const p of en.projects) expect(p.caseStudyHref, p.title).toMatch(new RegExp(`^${SITE.url.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}/`));
     const cog = en.projects.find((p) => /League of Legends/.test(p.title));
-    expect(cog?.caseStudyHref).toBe(`${SITE.url}/en/research/cog-2026-engagement/`);
+    expect(cog?.caseStudyHref).toBe(`${SITE.url}/en/game/research/cog-2026-engagement/`);
     const kickick = en.projects.find((p) => p.title === projects.find((x) => x.slug === 'kickick-park' && x.lang === 'en')?.data.title);
-    expect(kickick?.caseStudyHref).toBe(`${SITE.url}/en/projects/kickick-park/`);
+    expect(kickick?.caseStudyHref).toBe(`${SITE.url}/en/game/projects/kickick-park/`);
     // ResumeKo never renders case-study links (P2-32 scopes the link to English résumé + Academic CV), but the
     // model still computes a valid ko URL for symmetry; assert it resolves to the ko path, not an /en one.
     const ko = buildResumeModel(inputs('resume-ko'));
     expect(ko.projects.find((p) => p.title === projects.find((x) => x.slug === 'kickick-park' && x.lang === 'ko')?.data.title)?.caseStudyHref).toBe(
-      `${SITE.url}/projects/kickick-park/`,
+      `${SITE.url}/game/projects/kickick-park/`,
     );
   });
 
   it('final review fix 1 item 11: the page link is labelled by what the page is (paper page, case study)', () => {
     const en = buildResumeModel(inputs('resume-en'));
-    const cog = en.projects.find((p) => p.caseStudyHref === `${SITE.url}/en/research/cog-2026-engagement/`);
+    const cog = en.projects.find((p) => p.caseStudyHref === `${SITE.url}/en/game/research/cog-2026-engagement/`);
     expect(cog?.pageLabel, 'D-15: the CoG page is the paper (abstract) page').toBe('paper page');
-    const kickick = en.projects.find((p) => p.caseStudyHref === `${SITE.url}/en/projects/kickick-park/`);
+    const kickick = en.projects.find((p) => p.caseStudyHref === `${SITE.url}/en/game/projects/kickick-park/`);
     expect(kickick?.pageLabel).toBe('case study');
     for (const doc of DOCS) {
       for (const p of buildResumeModel(inputs(doc)).projects) {
@@ -146,7 +146,7 @@ describe('buildResumeModel', () => {
       }
     }
     const ko = buildResumeModel(inputs('resume-ko'));
-    const koCog = ko.projects.find((p) => p.caseStudyHref === `${SITE.url}/research/cog-2026-engagement/`);
+    const koCog = ko.projects.find((p) => p.caseStudyHref === `${SITE.url}/game/research/cog-2026-engagement/`);
     if (koCog) expect(koCog.pageLabel).toBe('논문 페이지');
   });
 

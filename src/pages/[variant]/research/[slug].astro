@@ -1,0 +1,9 @@
+---
+import type { GetStaticPaths } from 'astro';
+import ResearchPaperView from '../../../views/ResearchPaperView.astro';
+import { variantPaperPaths } from '../../../lib/portfolio';
+import type { VariantId } from '../../../variants/ids';
+export const getStaticPaths = (() => variantPaperPaths()) satisfies GetStaticPaths;
+const variant = Astro.params.variant as VariantId;
+---
+<ResearchPaperView lang="ko" variant={variant} entry={Astro.props.entry} />

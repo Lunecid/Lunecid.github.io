@@ -22,7 +22,7 @@ describe('SiteFooter.astro', () => {
     expect(ko).toMatch(/<nav[^>]*aria-label="사이트 정보"/);
     for (const label of ['방문 통계', '개인정보 처리방침', '출처·고지']) expect(ko).toContain(label);
 
-    const en = await renderAstro(SiteFooter, { props: { lang: 'en', notices: [], builtAt }, url: '/en/' });
+    const en = await renderAstro(SiteFooter, { props: { lang: 'en', notices: [], builtAt }, url: '/en/game/' });
     expect(footerLinkHrefs(en)).toEqual(['/en/stats/', '/en/privacy/', '/en/credits/']);
     expect(en).toMatch(/<nav[^>]*aria-label="Site information"/);
   });

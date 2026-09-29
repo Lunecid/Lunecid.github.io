@@ -10,14 +10,16 @@ Portfolio of **백성은 · Seongeun Baek**, game data analyst and researcher �
 
 | Page | Path |
 |---|---|
-| Home: HUD hero, main menu, featured projects, research highlight, patch notes, profile | `/` |
-| Research: publications, ongoing work, and the IEEE CoG 2026 paper page (abstract) | `/research/` |
-| Projects: three case studies and two project cards with a tag filter, plus public repositories | `/projects/` |
-| Records & CV: education, awards, certifications, skills, a job-requirements fit table, three résumé PDFs | `/records/` |
-| Player log: favorite games and site achievements | `/player-log/` |
+| Chooser: pick the game version or the general data-analyst version (remembered for the next visit) | `/` |
+| Home: HUD hero, main menu, featured projects, research highlight, patch notes, profile | `/game/` |
+| Research: publications, ongoing work, and the IEEE CoG 2026 paper page (abstract) | `/game/research/` |
+| Projects: three case studies and two project cards with a tag filter, plus public repositories | `/game/projects/` |
+| Records & CV: education, awards, certifications, skills, a job-requirements fit table, three résumé PDFs | `/game/records/` |
+| Player log: favorite games and site achievements | `/game/player-log/` |
+| General version: the same home, research, projects and records pages without the game modules | `/data/`, `/data/research/`, `/data/projects/`, `/data/records/` |
 | Visitor stats (GoatCounter, no cookies), privacy policy, credits | `/stats/`, `/privacy/`, `/credits/` |
 
-Every page exists in Korean (`/…/`) and English (`/en/…/`) with the same sections and links.
+Every page exists in Korean (`/…/`) and English (`/en/…/`, e.g. `/en/game/`, `/en/data/`) with the same sections and links. Old game URLs (`/records/` …) redirect to their `/game/` pages.
 
 ## Stack
 

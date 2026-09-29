@@ -8,7 +8,7 @@ describe('VariantLayout', () => {
       const html = await renderAstro(VariantLayout, {
         props: { lang: 'ko', title: 't', description: 'd', page: 'records', section: 'records', variant },
         slots: { default: '<p class="probe">x</p>', head: '<meta name="probe-head" content="1">' },
-        url: '/records/',
+        url: `/${variant}/records/`,
       });
       expect(html).toContain(`data-variant="${variant}"`);
       expect(html).toContain('class="hud-nav"');

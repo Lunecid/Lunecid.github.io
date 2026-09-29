@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { DOCUMENTS } from '../../src/config';
 import {
-  ANCHORS, ANCHOR_MODULES, LANG_PREFIX, PROJECT_PAGE_SLUGS, PROJECT_SLUGS, STATIC_PATHS, STORY_SLUGS,
-  allRoutes, anchorsFor, chooserRoute, isKnownInternalHref, koPaths, legacyRedirects, parseRoute, routePath,
+  ANCHORS, ANCHOR_MODULES, LANG_PREFIX, PROJECT_PAGE_SLUGS, PROJECT_SLUGS, STORY_SLUGS,
+  allRoutes, anchorsFor, chooserRoute, isKnownInternalHref, legacyRedirects, parseRoute, routePath,
   routesFor, sharedRoutes, variantBasePaths, variantParamsFor, variantRoutes,
 } from '../../src/lib/routes';
 import {
@@ -10,40 +10,31 @@ import {
   VARIANT_PREFIX, VARIANT_STATIC_PATHS, isVariantId,
 } from '../../src/variants/ids';
 
-describe('route table (old meaning until P1-11)', () => {
-  it('koPaths has 12 unique trailing-slash paths', () => {
-    const paths = koPaths();
-    expect(paths).toHaveLength(12);
-    expect(new Set(paths).size).toBe(12);
-    for (const p of paths) {
-      expect(p.startsWith('/'), p).toBe(true);
-      expect(p.endsWith('/'), p).toBe(true);
-      expect(p.startsWith('/en/'), p).toBe(false);
-    }
-    expect(paths.slice(0, STATIC_PATHS.length)).toEqual([...STATIC_PATHS]);
-    expect(paths).toContain('/research/cog-2026-engagement/');
-    for (const slug of PROJECT_PAGE_SLUGS) expect(paths).toContain(`/projects/${slug}/`);
-    // D-4: KBO and Seoul apartment are link-less cards without a page.
-    expect(PROJECT_SLUGS.filter((slug) => !paths.includes(`/projects/${slug}/`))).toEqual(['kbo-attendance', 'seoul-apartment-automl']);
-    expect(isKnownInternalHref('/projects/kbo-attendance/', 'game')).toBe(false);
-    expect(STORY_SLUGS).toEqual(['cog-2026-engagement']);
+describe('route table after the move (contract §2.1)', () => {
+  const perLang = 1 + variantBasePaths('game').length + variantBasePaths('data').length + SHARED_PATHS.length;
+
+  it('routesFor(lang) = chooser, game, data, shared; allRoutes = ko then en; counts come from the table', () => {
+    expect(routesFor('ko')).toEqual([chooserRoute('ko'), ...variantRoutes('game', 'ko'), ...variantRoutes('data', 'ko'), ...sharedRoutes('ko')]);
+    expect(routesFor('ko')).toHaveLength(perLang);
+    expect(allRoutes()).toEqual([...routesFor('ko'), ...routesFor('en')]);
+    expect(new Set(allRoutes()).size).toBe(2 * perLang);
+    expect(routesFor('en')).toEqual(routesFor('ko').map((r) => `/en${r}`));
+    expect(allRoutes()).toContain('/game/player-log/');
+    expect(allRoutes()).not.toContain('/data/player-log/');
+    expect(allRoutes().some((r) => r.startsWith('/print/'))).toBe(false);
+    for (const route of allRoutes()) expect(parseRoute(route)?.route, route).toBe(route);
   });
 
-  it("allRoutes is 24 routes, en = '/en' + ko", () => {
-    const all = allRoutes();
-    expect(all).toHaveLength(24);
-    expect(new Set(all).size).toBe(24);
-    expect(routesFor('ko')).toEqual(koPaths());
-    expect(routesFor('en')).toEqual(koPaths().map((p) => `/en${p}`));
-    expect(all).toEqual([...routesFor('ko'), ...routesFor('en')]);
-    expect(all).toContain('/en/');
-    expect(all.some((r) => r.startsWith('/print/'))).toBe(false);
+  it('no old game URL is a route any more, and the chooser is', () => {
+    for (const { from } of legacyRedirects()) expect(allRoutes(), from).not.toContain(from);
+    expect(allRoutes()).toContain('/');
+    expect(allRoutes()).toContain('/en/');
   });
 
-  it('every ANCHORS key is a ko path', () => {
-    const paths = koPaths();
+  it('every ANCHORS key is a version base path or a shared path', () => {
     for (const [key, ids] of Object.entries(ANCHORS)) {
-      expect(paths, key).toContain(key);
+      const known = variantBasePaths('game').includes(key) || (SHARED_PATHS as readonly string[]).includes(key);
+      expect(known, key).toBe(true);
       expect(new Set(ids).size, key).toBe(ids.length);
       for (const id of ids) expect(id, `${key}#${id}`).toMatch(/^[a-z][a-z0-9-]*$/);
     }
@@ -57,6 +48,15 @@ describe('route table (old meaning until P1-11)', () => {
     const i = records.indexOf('projects');
     expect(records[i - 1]).toBe('publications');
     expect(records[i + 1]).toBe('awards');
+  });
+
+  it('D-4: KBO and Seoul apartment have no page in either version', () => {
+    for (const v of ['game', 'data'] as const) {
+      const bases = variantBasePaths(v);
+      expect(PROJECT_SLUGS.filter((slug) => !bases.includes(`/projects/${slug}/`))).toEqual(['kbo-attendance', 'seoul-apartment-automl']);
+      expect(isKnownInternalHref('/projects/kbo-attendance/', v)).toBe(false);
+    }
+    expect(STORY_SLUGS).toEqual(['cog-2026-engagement']);
   });
 
   it("isKnownInternalHref(…, 'game') accepts '/records/#job-fit' and the document PDFs and rejects '/records/#nope' and '/nope/'", () => {

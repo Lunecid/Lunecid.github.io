@@ -3,6 +3,7 @@ import MainMenu from '../../src/components/hud/MainMenu.astro';
 import { mainMenuCopy } from '../../src/data/copy/hero';
 import type { StageCharacter } from '../../src/islands/CharacterStage';
 import { resolveDeep } from '../../src/lib/facts';
+import { pageHref } from '../../src/lib/links';
 import { loadFactSource } from '../helpers/fact-source';
 import { readSource, renderAstro } from './helpers';
 
@@ -21,8 +22,8 @@ const EULA: StageCharacter = {
 
 function props(lang: 'ko' | 'en', side: StageCharacter[] = []): Record<string, unknown> {
   const copy = resolveDeep(mainMenuCopy[lang], lang, loadFactSource());
-  const prefix = lang === 'en' ? '/en' : '';
-  return { lang, items: copy.items.map((item) => ({ ...item, href: `${prefix}${item.href}` })), hint: copy.hint, side };
+  // As HomeView builds them (P1-11): the game version's links.
+  return { lang, items: copy.items.map((item) => ({ ...item, href: pageHref(item.href, { lang, variant: 'game' }) })), hint: copy.hint, side };
 }
 
 describe('MainMenu.astro', () => {
@@ -38,16 +39,16 @@ describe('MainMenu.astro', () => {
   it('the title is ui section.mainMenu.title in the page language; the caption stays MAIN MENU', async () => {
     const ko = await renderAstro(MainMenu, { props: props('ko') });
     expect(ko).toMatch(/<h2[^>]*class="sr-only"[^>]*>사이트 메뉴<\/h2>/);
-    const en = await renderAstro(MainMenu, { props: props('en'), url: '/en/' });
+    const en = await renderAstro(MainMenu, { props: props('en'), url: '/en/game/' });
     expect(en).toMatch(/<h2[^>]*class="sr-only"[^>]*>Site menu<\/h2>/);
     expect(en).toMatch(/<span class="hud-label__en" lang="en"[^>]*>MAIN MENU<\/span>/);
   });
 
   it('4 links in an ordered list, first data-selected', async () => {
-    const html = await renderAstro(MainMenu, { props: props('en'), url: '/en/' });
+    const html = await renderAstro(MainMenu, { props: props('en'), url: '/en/game/' });
     expect(html).toMatch(/<ol class="mm__list" role="list"/);
     const hrefs = [...html.matchAll(/<a class="mm__link" href="([^"]+)"/g)].map((m) => m[1]);
-    expect(hrefs).toEqual(['/en/research/', '/en/projects/', '/en/records/', '/en/player-log/']);
+    expect(hrefs).toEqual(['/en/game/research/', '/en/game/projects/', '/en/game/records/', '/en/game/player-log/']);
     const items = html.match(/<li class="mm__item"[^>]*>/g) ?? [];
     expect(items).toHaveLength(4);
     expect(items[0]).toContain('data-selected');

@@ -7,23 +7,26 @@
 // The table keeps explicit ARIA roles because the card layout changes the rows' CSS display (table semantics then
 // stay for screen readers). Status is a text label (never colour alone) on a badge told apart at a glance: met =
 // filled accent-deep, partial = accent-deep outline, in progress = gold dashed, later / n-a = grey.
-// Evidence hrefs are Korean-based and localized here. No game-account data (NEXON terms 8.2). The next-step cell stays
+// Evidence hrefs are base form in the data and built here with pageHref for the page's version. No game-account data (NEXON terms 8.2). The next-step cell stays
 // empty when the row has no genuine skill step (plan: null, D-6); the source line names no company and links no
 // posting (D-6).
 import SectionHead from '../hud/SectionHead.astro';
 import type { JobfitData } from '../../content/schemas';
 import type { Lang } from '../../i18n/ui';
 import { factResolver, type FactSource } from '../../lib/facts';
-import { formatDate, localizeHref, t, type UiKey } from '../../i18n/utils';
+import { formatDate, t, type UiKey } from '../../i18n/utils';
+import { pageHref } from '../../lib/links';
 import type { JobfitStatus } from '../../types';
+import type { VariantId } from '../../variants/ids';
 
 interface Props {
   lang: Lang;
+  variant: VariantId;
   data: JobfitData | null;
   facts: FactSource;
 }
 
-const { lang, data, facts } = Astro.props;
+const { lang, variant, data, facts } = Astro.props;
 const STATUS_KEY: Record<JobfitStatus, UiKey> = {
   met: 'jobfit.status.met',
   partial: 'jobfit.status.partial',
@@ -38,7 +41,7 @@ const rows = (data?.rows ?? []).map((row) => ({
   requirement: r(row.requirement[lang]),
   // one value per requirement part (jobfit.<id>.yaml joins them with ' · ')
   frequency: row.frequency.split(' · '),
-  evidence: row.evidence.map((e) => ({ label: r(e.label[lang]), short: e.short ? r(e.short[lang]) : null, href: localizeHref(e.href, lang) })),
+  evidence: row.evidence.map((e) => ({ label: r(e.label[lang]), short: e.short ? r(e.short[lang]) : null, href: pageHref(e.href, { lang, variant }) })),
   status: row.status,
   statusLabel: t(lang, STATUS_KEY[row.status]),
   plan: row.plan === null ? null : r(row.plan[lang]),

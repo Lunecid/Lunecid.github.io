@@ -8,8 +8,9 @@ import { describe, expect, it } from 'vitest';
 import { awardSchema } from '../../src/content/schemas';
 import { parseYamlList } from '../../src/content/yaml-loader';
 import { AWARD_LEVEL_NAME } from '../../src/data/award-levels';
+import { chooserCopy } from '../../src/data/copy/chooser';
 import type { Lang } from '../../src/i18n/ui';
-import { FACT_TOKEN, resolveFacts, tokensIn, type FactContext } from '../../src/lib/facts';
+import { FACT_TOKEN, resolveDeep, resolveFacts, tokensIn, type FactContext } from '../../src/lib/facts';
 import { dataVariant } from '../../src/variants/data';
 import { gameVariant } from '../../src/variants/game';
 import { resolveIdentity } from '../../src/variants';
@@ -149,11 +150,12 @@ describe('fact lint (R-4)', () => {
 
 /**
  * [raw, rendered] pairs of one version's copy in one language: the identity strings next to what resolveIdentity (the
- * views' only path) makes of them. P1-11 appends the version's chooser lines (chooserCopy).
+ * views' only path) makes of them, then the version's chooser lines (chooserCopy) as ChooserView renders them (P1-11).
  */
 function versionCopy(variant: Variant, lang: Lang): (readonly [string, string])[] {
   const { identity } = variant;
   const shown = resolveIdentity(variant, lang, facts);
+  const chooser = resolveDeep(chooserCopy[lang], lang, facts)[variant.id];
   return [
     [identity.headline[lang], shown.headline],
     [identity.siteTitle[lang], shown.siteTitle],
@@ -162,5 +164,7 @@ function versionCopy(variant: Variant, lang: Lang): (readonly [string, string])[
     [identity.about[lang], shown.about],
     [identity.labNote.title[lang], shown.labNote.title],
     [identity.labNote.body[lang], shown.labNote.body],
+    [chooserCopy[lang][variant.id].title, chooser.title],
+    [chooserCopy[lang][variant.id].evidence, chooser.evidence],
   ];
 }

@@ -17,7 +17,7 @@ const projectsFor = (lang: Lang) =>
     id: `${lang}/${slug}`,
     data: readFrontmatter(abs(`src/content/projects/${lang}/${slug}.md`)) as ProjectFrontmatter,
   }));
-const itemsFor = (lang: Lang) => projectSummaryItems(resume.projects, projectsFor(lang), lang);
+const itemsFor = (lang: Lang) => projectSummaryItems(resume.projects, projectsFor(lang), { lang, variant: 'game' });
 const render = (lang: Lang) => renderAstro(ProjectSummaryList, { props: { lang, items: itemsFor(lang) } });
 const hrefsOf = (html: string): string[] => [...html.matchAll(/<a\b[^>]*href="([^"]+)"/g)].map((m) => m[1]);
 const teamsOf = (html: string): string[] =>
@@ -30,7 +30,7 @@ describe('ProjectSummaryList.astro', () => {
     expect(ko).toMatch(/<h2[^>]*>프로젝트<\/h2>/);
     // The rows follow the refs passed in (here resume.yaml's list; the page passes recordsProjectsOrder).
     const withPage = resume.projects.filter((p) => (PROJECT_PAGE_SLUGS as readonly string[]).includes(p.ref));
-    expect(hrefsOf(ko)).toEqual(withPage.map((p) => `/projects/${p.ref}/`));
+    expect(hrefsOf(ko)).toEqual(withPage.map((p) => `/game/projects/${p.ref}/`));
     expect(hrefsOf(ko)).toHaveLength(3);
     // D-4: the KBO and Seoul apartment rows keep their title as plain text (no page to link to).
     expect(ko).toMatch(/<h3 class="psum__title"[^>]*>KBO 구단 성적과 관중 수<\/h3>/);
@@ -41,7 +41,7 @@ describe('ProjectSummaryList.astro', () => {
     for (const team of teams) expect(team).toMatch(/^\d+인 팀$/);
 
     const en = await render('en');
-    expect(hrefsOf(en)).toEqual(withPage.map((p) => `/en/projects/${p.ref}/`));
+    expect(hrefsOf(en)).toEqual(withPage.map((p) => `/en/game/projects/${p.ref}/`));
     for (const team of teamsOf(en)) expect(team).toMatch(/^\d+-person team$/);
   });
 

@@ -6,6 +6,7 @@ import assert from 'node:assert/strict';
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { basename, join, relative, sep } from 'node:path';
 import sharp from 'sharp';
+import { allRoutes } from '../../src/lib/routes.ts';
 
 const DIST = process.env.DIST_DIR ?? 'dist';
 const IMAGE = /\.(png|jpe?g|webp|avif|gif|svg|ico)$/i;
@@ -48,7 +49,7 @@ test('item 21: favicon.ico holds the 16 and 32 px mark; apple-touch-icon.png is 
 
 test('item 21: every page links the SVG icon, the .ico fallback and the apple-touch-icon', () => {
   const pages = files().filter((f) => f.endsWith('.html') && !rel(f).startsWith('print/'));
-  assert.ok(pages.length >= 25, `${pages.length} pages`);
+  assert.ok(pages.length >= allRoutes().length + 1, `${pages.length} pages`);
   const missing = [];
   for (const page of pages) {
     const html = readFileSync(page, 'utf8');
@@ -62,7 +63,7 @@ test('item 21: every page links the SVG icon, the .ico fallback and the apple-to
 test('item 20: the sitemap and the page heads use one hreflang scheme: ko, en and x-default = the Korean page', () => {
   const sitemap = readFileSync(join(DIST, 'sitemap-0.xml'), 'utf8');
   const urls = [...sitemap.matchAll(/<url>([\s\S]*?)<\/url>/g)].map((m) => m[1]);
-  assert.ok(urls.length >= 24, `${urls.length} sitemap urls`);
+  assert.ok(urls.length >= allRoutes().length, `${urls.length} sitemap urls`);
   const wrong = [];
   for (const url of urls) {
     const loc = /<loc>([^<]+)<\/loc>/.exec(url)?.[1] ?? '';

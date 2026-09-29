@@ -1,7 +1,8 @@
 // src/lib/news.ts — news entries → PATCH NOTES rows (home).
-import type { Lang, UiKey } from '../i18n/ui';
-import { formatDate, localizeHref, t } from '../i18n/utils';
+import type { UiKey } from '../i18n/ui';
+import { formatDate, t } from '../i18n/utils';
 import type { NewsData } from '../content/schemas';
+import { pageHref, type HrefContext } from './links';
 
 export interface PatchNoteItem {
   dateIso: string;
@@ -52,8 +53,9 @@ const KIND_KEY = {
   site: 'news.kind.site',
 } as const satisfies Record<NewsData['kind'], UiKey>;
 
-/** Newest first (date desc; same date: id desc, so the higher version is on top), first `limit` (default 4); dateLabel = formatDate; version tag; kindLabel from ui news.kind.*; href localized. */
-export function toPatchNotes(entries: readonly NewsLike[], lang: Lang, limit = 4): PatchNoteItem[] {
+/** Newest first (date desc; same date: id desc, so the higher version is on top), first `limit` (default 4); dateLabel = formatDate; version tag; kindLabel from ui news.kind.*; href built by pageHref. */
+export function toPatchNotes(entries: readonly NewsLike[], ctx: HrefContext, limit = 4): PatchNoteItem[] {
+  const { lang } = ctx;
   const versions = patchVersions(entries);
   return [...entries]
     .sort((a, b) => byDateAsc(b, a))
@@ -67,7 +69,7 @@ export function toPatchNotes(entries: readonly NewsLike[], lang: Lang, limit = 4
         kindLabel: t(lang, KIND_KEY[data.kind]),
         short: data.short ? data.short[lang] : null,
         text: data.title[lang],
-        href: data.href === null ? null : localizeHref(data.href, lang),
+        href: data.href === null ? null : pageHref(data.href, ctx),
       };
     });
 }

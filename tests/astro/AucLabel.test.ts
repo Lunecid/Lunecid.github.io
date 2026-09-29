@@ -40,7 +40,7 @@ describe('AucLabel.astro', () => {
 
   it('ProjectCartridge draws it as the label of a chart card, with no image', async () => {
     const html = await renderAstro(ProjectCartridge, {
-      props: { href: '/research/cog-2026-engagement/', title: 'CoG', meta: 'm', tagKeys: [], tags: [], wide: true, chart: { kind: 'auc-overall', lang: 'ko' }, sticker: { text: 'ORAL', sr: '구두 발표', kind: 'oral' } },
+      props: { href: '/game/research/cog-2026-engagement/', title: 'CoG', meta: 'm', tagKeys: [], tags: [], wide: true, chart: { kind: 'auc-overall', lang: 'ko' }, sticker: { text: 'ORAL', sr: '구두 발표', kind: 'oral' } },
     });
     expect(html).toMatch(/<div class="cart__chart cart__chart--stickered"/);
     expect(html).toContain('auc-label');

@@ -1,8 +1,10 @@
 import { test as base, expect, type Page } from '@playwright/test';
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
-import { CV_HREF, NAV_HEIGHT_PX } from '../../src/config';
-import { allRoutes, ANCHORS } from '../../src/lib/routes';
+import { DOCUMENTS, NAV_HEIGHT_PX } from '../../src/config';
+import type { Lang } from '../../src/i18n/ui';
+import { allRoutes, anchorsFor, legacyRedirects, parseRoute, routePath, type RouteKind } from '../../src/lib/routes';
+import type { VariantId } from '../../src/variants/ids';
 
 export { expect };
 
@@ -16,10 +18,38 @@ const DIST = join(process.cwd(), 'dist');
 /** Section ids that render only with data or content (§5.4 "Conditional section ids"). */
 const CONDITIONAL_IDS = ['github', 'details', 'figures', 'links', 'daily', 'top-pages', 'referrers'];
 
-/** Routes of allRoutes() whose page exists in dist (page tasks before Task 29a have built only some of them). */
-export function builtRoutes(): string[] {
-  return allRoutes().filter((route) => existsSync(join(DIST, route, 'index.html')));
+/** '/en/game/records/' → { lang: 'en', variant: 'game', base: '/records/' }; throws for anything outside the table. */
+export function basePathOf(route: string): { lang: Lang; variant: VariantId | null; base: string } {
+  const info = parseRoute(route);
+  if (!info) throw new Error(`basePathOf: ${route} is not in the route table`);
+  return { lang: info.lang, variant: info.variant, base: info.base };
 }
+/** routePath with lang default 'ko'. */
+export function routeOf(base: string, opts: { lang?: Lang; variant: VariantId | null }): string {
+  return routePath(base, opts.lang ?? 'ko', opts.variant);
+}
+export function gamePath(base: string, lang: Lang = 'ko'): string {
+  return routeOf(base, { lang, variant: 'game' });
+}
+export function dataPath(base: string, lang: Lang = 'ko'): string {
+  return routeOf(base, { lang, variant: 'data' });
+}
+/** Routes of allRoutes() whose page exists in dist, optionally filtered by kind, version and language. */
+export function builtRoutes(filter: { kind?: RouteKind; variant?: VariantId | null; lang?: Lang } = {}): string[] {
+  return allRoutes().filter((route) => {
+    if (!existsSync(join(DIST, route, 'index.html'))) return false;
+    const info = parseRoute(route);
+    if (!info) return false;
+    return (filter.kind === undefined || info.kind === filter.kind)
+      && (filter.variant === undefined || info.variant === filter.variant)
+      && (filter.lang === undefined || info.lang === filter.lang);
+  });
+}
+/** The old game URLs that now serve redirect stubs (P1-13). */
+export function legacyPaths(): string[] {
+  return legacyRedirects().map((r) => r.from);
+}
+const RESUME_HREFS: readonly string[] = Object.entries(DOCUMENTS).filter(([id]) => id.startsWith('resume-')).map(([, href]) => href);
 
 /** '/en/records/' -> '/records/', '/en/' -> '/', Korean routes unchanged. */
 export function koPathOf(route: string): string {
@@ -73,13 +103,13 @@ export function collectProblems(page: Page): string[] {
 }
 
 /**
- * Sorted ids of `main section[id]` plus every element whose id is in ANCHORS[koPath] or in the conditional
+ * Sorted ids of `main section[id]` plus every element whose id is in anchorsFor(base, variant) or in the conditional
  * list, excluding anything inside `.prose`, `section.footnotes` or `[data-footnotes]` (Markdown heading ids
  * and footnotes are language-specific by nature).
  */
 export async function sectionIds(page: Page): Promise<string[]> {
-  const koPath = koPathOf(new URL(page.url()).pathname);
-  const wanted = [...(ANCHORS[koPath] ?? []), ...CONDITIONAL_IDS];
+  const info = parseRoute(new URL(page.url()).pathname);
+  const wanted = [...(info ? anchorsFor(info.base, info.variant) : []), ...CONDITIONAL_IDS];
   return page.evaluate((ids: string[]) => {
     const excluded = (el: Element): boolean => el.closest('.prose, section.footnotes, [data-footnotes]') !== null;
     const found = new Set<string>();
@@ -97,7 +127,7 @@ export async function sectionIds(page: Page): Promise<string[]> {
 /**
  * Sorted unique internal link targets inside <main>: `a[href^='/']` minus `a[hreflang]`, protocol-relative
  * `//…` hrefs and footnote fragments. Each target is normalised so ko and en pages compare equal: a leading
- * `/en` is stripped, and the per-language résumé PDF (CV_HREF.ko / CV_HREF.en differ by design, §5.2)
+ * `/en` is stripped, and any résumé PDF of DOCUMENTS (the per-language résumés differ by design, §5.2)
  * becomes the token `<cv>`.
  */
 export async function internalLinks(page: Page): Promise<string[]> {
@@ -115,10 +145,15 @@ export async function internalLinks(page: Page): Promise<string[]> {
     const hash = hashIndex >= 0 ? href.slice(hashIndex) : '';
     if (/^#(fn|footnote|user-content-fn)/.test(hash)) continue;
     let target = href.replace(/^\/en(?=\/)/, '');
-    if (target === CV_HREF.ko || target === CV_HREF.en) target = '<cv>';
+    if (RESUME_HREFS.includes(target)) target = '<cv>';
     targets.add(target);
   }
   return [...targets].sort();
+}
+
+/** Like internalLinks, but also strips /game and /data: the same base form on both versions (skeleton parity, §5.3). */
+export async function baseLinks(page: Page): Promise<string[]> {
+  return [...new Set((await internalLinks(page)).map((href) => href.replace(/^\/(?:game|data)(?=\/)/, '')))].sort();
 }
 
 /** Origin of the no-art build: playwright.config.ts's second web server (dist-no-art/, built with SB_NO_ART=1). */

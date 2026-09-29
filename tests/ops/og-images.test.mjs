@@ -5,6 +5,7 @@ import assert from 'node:assert/strict';
 import { existsSync, readdirSync, statSync } from 'node:fs';
 import { join, relative, sep } from 'node:path';
 import sharp from 'sharp';
+import { allRoutes } from '../../src/lib/routes.ts';
 
 const DIST = process.env.DIST_DIR ?? 'dist';
 const OG = join(DIST, 'og');
@@ -30,7 +31,7 @@ async function artifactArea(file) {
 
 test('every OG card is a 1200×630 PNG under 300 KB', async () => {
   const files = cards();
-  assert.equal(files.length, 24, 'one card per route');
+  assert.equal(files.length, allRoutes().length, 'one card per route');
   const heavy = [];
   for (const file of files) {
     const meta = await sharp(file).metadata();
@@ -53,7 +54,7 @@ test('each card shows an artifact on its right, not a text-only card (P2-36)', a
 
 test('home and records show the photo, project pages their figure, the paper page its white title sheet', async () => {
   const at = (k) => artifactArea(join(OG, `${k}.png`));
-  const [home, records, paper, project] = await Promise.all([at('home'), at('records'), at('research/cog-2026-engagement'), at('projects/school-zone-blindspots')]);
+  const [home, records, paper, project] = await Promise.all([at('home'), at('game/records'), at('game/research/cog-2026-engagement'), at('game/projects/school-zone-blindspots')]);
   assert.ok(Math.abs(home.mean - records.mean) < 1, 'home and records share the ID photo');
   assert.ok(paper.mean > 150, `the paper title block is a white sheet (mean ${paper.mean.toFixed(0)})`);
   assert.ok(Math.abs(project.mean - home.mean) > 5, 'a project card shows its own figure, not the photo');

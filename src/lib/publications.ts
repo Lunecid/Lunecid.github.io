@@ -4,13 +4,13 @@ import type { ImageMetadata } from 'astro';
 import type { CollectionEntry } from 'astro:content';
 import { tagLabel } from '../content/tags';
 import type { Lang } from '../i18n/ui';
-import { localizeHref } from '../i18n/utils';
 import { FORMAT_PHRASE } from './facts';
+import { pageHref, type HrefContext } from './links';
 import type { CartridgeProps } from './projects';
 
 export interface PaperCardData {
   id: string;
-  href: string | null; // localized caseStudy path or null
+  href: string | null; // caseStudy page (pageHref) or null
   title: string;
   titleGloss: string | null; // titleKo on ko pages only
   authors: { name: string; me: boolean }[]; // English names on both languages (paper byline)
@@ -30,12 +30,13 @@ export interface PaperCardData {
   thumbAlt: string; // altKo on ko pages
 }
 
-export function toPaperCard(entry: CollectionEntry<'publications'>, lang: Lang): PaperCardData {
+export function toPaperCard(entry: CollectionEntry<'publications'>, ctx: HrefContext): PaperCardData {
+  const lang = ctx.lang;
   const d = entry.data;
   const pending = d.pdf === null && d.doi === null;
   return {
     id: entry.id,
-    href: d.caseStudy ? localizeHref(d.caseStudy, lang) : null,
+    href: d.caseStudy ? pageHref(d.caseStudy, ctx) : null,
     title: d.title,
     titleGloss: lang === 'ko' ? (d.titleKo ?? null) : null,
     authors: d.authors.map((a) => ({ name: a.name, me: a.me })),

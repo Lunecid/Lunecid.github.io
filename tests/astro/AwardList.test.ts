@@ -26,7 +26,7 @@ const attr = (tag: string, name: string): string | undefined => new RegExp(`\\s$
 
 describe('AwardList.astro', () => {
   it('3 awards with certificate triggers (data-cert-id, image href)', async () => {
-    const html = await renderAstro(AwardList, { props: { lang: 'ko', awards: awardItems(REFS, awards, 'ko', CERT_HREFS) } });
+    const html = await renderAstro(AwardList, { props: { lang: 'ko', awards: awardItems(REFS, awards, { lang: 'ko', variant: 'game' }, CERT_HREFS) } });
     expect(html).toMatch(/<section(?=[^>]*\bid="awards")[^>]*>/);
     expect(html).toContain('ACHIEVEMENTS');
     expect(html).toMatch(/<h2[^>]*>수상<\/h2>/);
@@ -54,16 +54,16 @@ describe('AwardList.astro', () => {
   });
 
   it('project link when set, none for CDS', async () => {
-    const html = await renderAstro(AwardList, { props: { lang: 'ko', awards: awardItems(REFS, awards, 'ko', CERT_HREFS) } });
+    const html = await renderAstro(AwardList, { props: { lang: 'ko', awards: awardItems(REFS, awards, { lang: 'ko', variant: 'game' }, CERT_HREFS) } });
     const chunks = html.split(/<li\b/).slice(1);
     const cds = chunks.find((chunk) => chunk.includes('data-award="cds-encouragement-award"'));
     expect(cds).toBeDefined();
-    expect(cds).not.toMatch(/href="\/projects\//);
-    expect(html).toMatch(/<a[^>]*href="\/projects\/school-zone-blindspots\/"[^>]*>프로젝트 보기<\/a>/);
-    expect(html).toMatch(/<a[^>]*href="\/projects\/kickick-park\/"[^>]*>프로젝트 보기<\/a>/);
+    expect(cds).not.toMatch(/href="\/game\/projects\//);
+    expect(html).toMatch(/<a[^>]*href="\/game\/projects\/school-zone-blindspots\/"[^>]*>프로젝트 보기<\/a>/);
+    expect(html).toMatch(/<a[^>]*href="\/game\/projects\/kickick-park\/"[^>]*>프로젝트 보기<\/a>/);
 
-    const noImages = await renderAstro(AwardList, { props: { lang: 'en', awards: awardItems(REFS, awards, 'en', {}) } });
+    const noImages = await renderAstro(AwardList, { props: { lang: 'en', awards: awardItems(REFS, awards, { lang: 'en', variant: 'game' }, {}) } });
     expect(noImages).not.toContain('data-cert-id');
-    expect(noImages).toMatch(/<a[^>]*href="\/en\/projects\/kickick-park\/"[^>]*>View project<\/a>/);
+    expect(noImages).toMatch(/<a[^>]*href="\/en\/game\/projects\/kickick-park\/"[^>]*>View project<\/a>/);
   });
 });

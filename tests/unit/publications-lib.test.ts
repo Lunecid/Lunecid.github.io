@@ -22,7 +22,7 @@ function entry(overrides: Partial<typeof parsed> = {}): CollectionEntry<'publica
 
 describe('toPaperCard', () => {
   it('toPaperCard picks gloss, abstract language, thumb alt and localized case-study href per lang', () => {
-    const ko = toPaperCard(entry(), 'ko');
+    const ko = toPaperCard(entry(), { lang: 'ko', variant: 'game' });
     expect(ko.id).toBe('cog-2026-engagement');
     expect(ko.title).toBe(parsed.title);
     expect(ko.titleGloss).toBe(parsed.titleKo);
@@ -30,7 +30,7 @@ describe('toPaperCard', () => {
     expect(ko.abstractLang).toBe('ko');
     expect(ko.thumb).toBe(thumb);
     expect(ko.thumbAlt).toBe(parsed.thumbnail.altKo);
-    expect(ko.href).toBe('/research/cog-2026-engagement/');
+    expect(ko.href).toBe('/game/research/cog-2026-engagement/');
     expect(ko.tldr).toBe(parsed.tldr.ko);
     expect(ko.authors).toEqual([
       { name: 'Seongeun Baek', me: true },
@@ -43,23 +43,23 @@ describe('toPaperCard', () => {
     expect(ko.bibtex.startsWith('@inproceedings{baek2026killconditioned,')).toBe(true);
     expect(ko.bibtex.endsWith('}')).toBe(true);
 
-    const en = toPaperCard(entry(), 'en');
+    const en = toPaperCard(entry(), { lang: 'en', variant: 'game' });
     expect(en.titleGloss).toBeNull();
     expect(en.abstract).toBe(parsed.abstract);
     expect(en.abstractLang).toBe('en');
     expect(en.thumbAlt).toBe(parsed.thumbnail.alt);
-    expect(en.href).toBe('/en/research/cog-2026-engagement/');
+    expect(en.href).toBe('/en/game/research/cog-2026-engagement/');
     expect(en.tldr).toBe(parsed.tldr.en);
     expect(en.authors.map((a) => a.name)).toEqual(ko.authors.map((a) => a.name));
   });
 
   it('statusNote shown when pdf and doi are null', () => {
-    expect(toPaperCard(entry(), 'ko').statusNote).toBe('IEEE Xplore 게재 예정');
-    expect(toPaperCard(entry(), 'en').statusNote).toBe('To appear in IEEE Xplore');
-    const withDoi = toPaperCard(entry({ doi: '10.1109/CoG00000.2026.0000000' }), 'ko');
+    expect(toPaperCard(entry(), { lang: 'ko', variant: 'game' }).statusNote).toBe('IEEE Xplore 게재 예정');
+    expect(toPaperCard(entry(), { lang: 'en', variant: 'game' }).statusNote).toBe('To appear in IEEE Xplore');
+    const withDoi = toPaperCard(entry({ doi: '10.1109/CoG00000.2026.0000000' }), { lang: 'ko', variant: 'game' });
     expect(withDoi.statusNote).toBeNull();
     expect(withDoi.doi).toBe('10.1109/CoG00000.2026.0000000');
-    expect(toPaperCard(entry({ caseStudy: undefined }), 'en').href).toBeNull();
+    expect(toPaperCard(entry({ caseStudy: undefined }), { lang: 'en', variant: 'game' }).href).toBeNull();
   });
 });
 

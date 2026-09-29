@@ -7,7 +7,7 @@ import { readSource, renderAstro } from './helpers';
 
 const paper: PaperCardData = {
   id: 'cog-2026-engagement',
-  href: '/research/cog-2026-engagement/',
+  href: '/game/research/cog-2026-engagement/',
   title: 'Kill-Conditioned Engagement Outcome Prediction in League of Legends Under Minute-Resolution Public Telemetry',
   titleGloss: '1분 해상도 공개 텔레메트리에서의 리그 오브 레전드 킬 조건부 교전 결과 예측',
   authors: [
@@ -43,7 +43,7 @@ describe('ResearchHighlight.astro', () => {
     // fix round 1 minor: reuses BibtexBlock.astro (heading={false} square) instead of a duplicated <pre>.
     expect(html).toMatch(/<div(?=[^>]*id="rh-bib")(?=[^>]*class="bib bib--square")(?=[^>]*data-bib)[^>]*>/);
     expect(html).toMatch(/<span[^>]*class="bib__line"[^>]*>@inproceedings\{baek2026killconditioned,<\/span>/);
-    expect(html).toMatch(/<a[^>]*href="\/research\/cog-2026-engagement\/"[^>]*>논문 페이지<\/a>/);
+    expect(html).toMatch(/<a[^>]*href="\/game\/research\/cog-2026-engagement\/"[^>]*>논문 페이지<\/a>/);
     expect(html).toMatch(/<a[^>]*href="https:\/\/github.com\/Lunecid\/LOL_teamfight_Lab\/tree\/v1.0-cog2026"/);
     expect(html).toContain('[ NOW PLAYING ]');
     expect(html).toContain('준비 중: 석사 학위논문');

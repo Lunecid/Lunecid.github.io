@@ -54,10 +54,10 @@ describe('records helpers', () => {
   });
 
   it('evidenceHref localizes project and research links', () => {
-    expect(evidenceHref('project', 'kickick-park', 'ko')).toBe('/projects/kickick-park/');
-    expect(evidenceHref('project', 'kickick-park', 'en')).toBe('/en/projects/kickick-park/');
-    expect(evidenceHref('research', 'cog-2026-engagement', 'ko')).toBe('/research/cog-2026-engagement/');
-    expect(evidenceHref('research', 'cog-2026-engagement', 'en')).toBe('/en/research/cog-2026-engagement/');
+    expect(evidenceHref('project', 'kickick-park', { lang: 'ko', variant: 'game' })).toBe('/game/projects/kickick-park/');
+    expect(evidenceHref('project', 'kickick-park', { lang: 'en', variant: 'game' })).toBe('/en/game/projects/kickick-park/');
+    expect(evidenceHref('research', 'cog-2026-engagement', { lang: 'ko', variant: 'game' })).toBe('/game/research/cog-2026-engagement/');
+    expect(evidenceHref('research', 'cog-2026-engagement', { lang: 'en', variant: 'game' })).toBe('/en/game/research/cog-2026-engagement/');
   });
 
   it('evidenceLabel uses the project title or the paper short title per language', () => {
@@ -73,20 +73,21 @@ describe('records helpers', () => {
 
   it('projectSummaryItems keeps resume.yaml order, localizes hrefs and throws on an unknown ref', () => {
     const projects = [
-      { id: 'ko/beta', data: { title: '베타', summary: '베타 요약', period: { start: '2024-01', end: '2024-03' }, org: '멀티캠퍼스', team: '3인 팀', status: 'published' as const } },
-      { id: 'ko/alpha', data: { title: '알파', summary: '알파 요약', period: { start: '2025-04', end: '2025-07' }, org: '부산광역시', team: '4인 팀', status: 'published' as const } },
-      { id: 'en/alpha', data: { title: 'Alpha', summary: 'Alpha summary', period: { start: '2025-04', end: '2025-07' }, org: 'Busan', team: '4-person team', status: 'published' as const } },
+      { id: 'ko/school-zone-blindspots', data: { title: '베타', summary: '베타 요약', period: { start: '2024-01', end: '2024-03' }, org: '멀티캠퍼스', team: '3인 팀', status: 'published' as const } },
+      { id: 'ko/kickick-park', data: { title: '알파', summary: '알파 요약', period: { start: '2025-04', end: '2025-07' }, org: '부산광역시', team: '4인 팀', status: 'published' as const } },
+      { id: 'en/kickick-park', data: { title: 'Alpha', summary: 'Alpha summary', period: { start: '2025-04', end: '2025-07' }, org: 'Busan', team: '4-person team', status: 'published' as const } },
       { id: 'ko/gamma', data: { title: '감마', summary: '감마 요약', period: { start: '2023-09', end: '2024-01' }, org: '멀티캠퍼스', team: '4인 팀', status: 'card' as const } },
     ];
-    const ko = projectSummaryItems([{ ref: 'alpha' }, { ref: 'beta' }], projects, 'ko');
-    expect(ko.map((item) => item.href)).toEqual(['/projects/alpha/', '/projects/beta/']);
+    // Real page slugs: pageHref rejects a project without a page (A-4).
+    const ko = projectSummaryItems([{ ref: 'kickick-park' }, { ref: 'school-zone-blindspots' }], projects, { lang: 'ko', variant: 'game' });
+    expect(ko.map((item) => item.href)).toEqual(['/game/projects/kickick-park/', '/game/projects/school-zone-blindspots/']);
     // D-4: a 'card' project has no page, so its row is not a link.
-    expect(projectSummaryItems([{ ref: 'gamma' }], projects, 'ko')[0]?.href).toBeNull();
-    expect(ko[0]).toEqual({ href: '/projects/alpha/', title: '알파', period: '2025.04 – 2025.07', org: '부산광역시', team: '4인 팀', summary: '알파 요약' });
-    const en = projectSummaryItems([{ ref: 'alpha' }], projects, 'en');
-    expect(en[0]).toMatchObject({ href: '/en/projects/alpha/', title: 'Alpha', period: 'Apr 2025 – Jul 2025', team: '4-person team' });
-    expect(() => projectSummaryItems([{ ref: 'beta' }], projects, 'en')).toThrow('records: unknown project ref "beta" (en)');
-    expect(() => projectSummaryItems([{ ref: 'nope' }], projects, 'ko')).toThrow(/unknown project ref "nope"/);
+    expect(projectSummaryItems([{ ref: 'gamma' }], projects, { lang: 'ko', variant: 'game' })[0]?.href).toBeNull();
+    expect(ko[0]).toEqual({ href: '/game/projects/kickick-park/', title: '알파', period: '2025.04 – 2025.07', org: '부산광역시', team: '4인 팀', summary: '알파 요약' });
+    const en = projectSummaryItems([{ ref: 'kickick-park' }], projects, { lang: 'en', variant: 'game' });
+    expect(en[0]).toMatchObject({ href: '/en/game/projects/kickick-park/', title: 'Alpha', period: 'Apr 2025 – Jul 2025', team: '4-person team' });
+    expect(() => projectSummaryItems([{ ref: 'school-zone-blindspots' }], projects, { lang: 'en', variant: 'game' })).toThrow('records: unknown project ref "school-zone-blindspots" (en)');
+    expect(() => projectSummaryItems([{ ref: 'nope' }], projects, { lang: 'ko', variant: 'game' })).toThrow(/unknown project ref "nope"/);
   });
 
   it('todayIso uses Asia/Seoul', () => {
@@ -188,7 +189,7 @@ describe('records helpers', () => {
       'busan-mayor-award': '/_astro/busan-mayor-award_1280.webp',
       'multicampus-grand-award': '/_astro/multicampus-grand-award_1280.webp',
     };
-    const ko = awardItems(resume.awards, awards, 'ko', certHrefs);
+    const ko = awardItems(resume.awards, awards, { lang: 'ko', variant: 'game' }, certHrefs);
     expect(ko.map((item) => item.id)).toEqual(resume.awards.map((r) => r.ref));
     expect(ko.find((item) => item.id === 'busan-mayor-award')).toEqual({
       id: 'busan-mayor-award',
@@ -206,18 +207,18 @@ describe('records helpers', () => {
       certAlt: null,
       certCaption: null,
       redactionNote: null, // nothing hidden: no caption (P2-19)
-      projectHref: '/projects/school-zone-blindspots/',
+      projectHref: '/game/projects/school-zone-blindspots/',
     });
     expect(ko.find((item) => item.id === 'cds-encouragement-award')?.certHref).toBeNull();
-    const en = awardItems(resume.awards, awards, 'en', {});
+    const en = awardItems(resume.awards, awards, { lang: 'en', variant: 'game' }, {});
     expect(en.find((item) => item.id === 'multicampus-grand-award')).toMatchObject({
       title: 'Top Excellence Award',
       date: 'Mar 12, 2024',
       medal: { tier: 'gold', label: 'Top Excellence' },
       certHref: null,
-      projectHref: '/en/projects/kickick-park/',
+      projectHref: '/en/game/projects/kickick-park/',
     });
-    expect(() => awardItems([{ ref: 'busan-mayor-award' }], [], 'ko', {})).toThrow('records: unknown award ref "busan-mayor-award"');
+    expect(() => awardItems([{ ref: 'busan-mayor-award' }], [], { lang: 'ko', variant: 'game' }, {})).toThrow('records: unknown award ref "busan-mayor-award"');
   });
 
   it('skillGroups labels evidence with titles and localizes hrefs', () => {
@@ -226,17 +227,17 @@ describe('records helpers', () => {
       stories: { 'cog-2026-engagement': 'Predicting League of Legends engagement outcomes' },
       codes: { 'cog-2026-engagement': { href: 'https://example.com/code', label: 'IEEE CoG 2026 paper code' } },
     };
-    const groups = skillGroups(resume.skills, 'en', titles);
+    const groups = skillGroups(resume.skills, { lang: 'en', variant: 'game' }, titles);
     expect(groups.primary.map((skill) => skill.name)).toEqual(resume.skills.primary.map((skill) => skill.name));
     expect(groups.familiar.map((skill) => skill.name)).toEqual(resume.skills.familiar.map((skill) => skill.name));
     const lgbm = groups.primary.find((skill) => skill.name === 'LightGBM · XGBoost');
-    expect(lgbm?.evidence[0]).toEqual({ label: 'Predicting League of Legends engagement outcomes', href: '/en/research/cog-2026-engagement/' });
+    expect(lgbm?.evidence[0]).toEqual({ label: 'Predicting League of Legends engagement outcomes', href: '/en/game/research/cog-2026-engagement/' });
     const python = groups.primary.find((skill) => skill.name === 'Python');
     expect(python?.evidence.slice(0, 2)).toEqual([
       { label: 'IEEE CoG 2026 paper code', href: 'https://example.com/code' }, // kind 'code': external, not localized
-      { label: 'Project school-zone-blindspots', href: '/en/projects/school-zone-blindspots/' },
+      { label: 'Project school-zone-blindspots', href: '/en/game/projects/school-zone-blindspots/' },
     ]);
-    expect(() => skillGroups(resume.skills, 'en', { projects: {}, stories: {} })).toThrow(/no code link for "cog-2026-engagement"/);
-    expect(() => skillGroups(resume.skills, 'en', { ...titles, projects: {} })).toThrow(/no title for/);
+    expect(() => skillGroups(resume.skills, { lang: 'en', variant: 'game' }, { projects: {}, stories: {} })).toThrow(/no code link for "cog-2026-engagement"/);
+    expect(() => skillGroups(resume.skills, { lang: 'en', variant: 'game' }, { ...titles, projects: {} })).toThrow(/no title for/);
   });
 });

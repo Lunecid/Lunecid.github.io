@@ -4,7 +4,7 @@ import type { PatchNoteItem } from '../../src/lib/news';
 import { readSource, renderAstro } from './helpers';
 
 const notes: PatchNoteItem[] = [
-  { dateIso: '2026-09-01', dateLabel: '2026.09.01', version: 'v2026.09', kindLabel: '연구', short: 'IEEE CoG 2026 구두 발표', text: 'IEEE CoG 2026에서 구두 발표했습니다.', href: '/research/cog-2026-engagement/' },
+  { dateIso: '2026-09-01', dateLabel: '2026.09.01', version: 'v2026.09', kindLabel: '연구', short: 'IEEE CoG 2026 구두 발표', text: 'IEEE CoG 2026에서 구두 발표했습니다.', href: '/game/research/cog-2026-engagement/' },
   { dateIso: '2025-07-11', dateLabel: '2025.07.11', version: 'v2025.07', kindLabel: '수상', short: null, text: '최우수상(부산광역시장상)을 받았습니다.', href: null },
 ];
 

@@ -18,6 +18,8 @@ describe('seo helpers', () => {
     expect(ogSlugFor('/404/')).toBe('home');
     expect(ogSlugFor('/404.html')).toBe('home');
     expect(ogSlugFor('/research/cog-2026-engagement')).toBe('research/cog-2026-engagement');
+    expect(ogSlugFor('/game/')).toBe('game');
+    expect(ogSlugFor('/en/game/records/')).toBe('en/game/records');
   });
 
   it('canonicalUrl adds the trailing slash', () => {

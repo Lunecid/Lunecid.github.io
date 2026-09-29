@@ -2,7 +2,9 @@
 import SectionHead from '../hud/SectionHead.astro';
 import StatsLiveTotal from './StatsLiveTotal.astro';
 import type { Lang } from '../../i18n/ui';
-import { formatDate, formatNumber, localizeHref, t } from '../../i18n/utils';
+import { formatDate, formatNumber, t } from '../../i18n/utils';
+import { pageHref } from '../../lib/links';
+import { BASE_PATH } from '../../variants/ids';
 import { goatcounterDashboardUrl } from '../../lib/analytics';
 import { usableStats, type StatsData } from '../../lib/generated';
 
@@ -31,7 +33,7 @@ function asOf(iso: string): string {
       <div class="stats__offline bracket bracket--sm" data-stats-offline>
         <p class="stats__offline-tag" lang="en">[ OFFLINE ]</p>
         <p class="stats__note">{t(lang, 'stats.offline')} {t(lang, 'stats.notCollecting')}</p>
-        <p class="stats__links"><a href={localizeHref('/privacy/', lang)}>{t(lang, 'stats.privacyLink')}</a></p>
+        <p class="stats__links"><a href={pageHref(BASE_PATH.privacy, { lang, variant: null })}>{t(lang, 'stats.privacyLink')}</a></p>
       </div>
     ) : (
       <Fragment>

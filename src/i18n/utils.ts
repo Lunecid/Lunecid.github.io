@@ -33,10 +33,6 @@ export function pick<T>(value: Localized<T>, lang: Lang): T {
   return value[lang];
 }
 
-export function langPrefix(lang: Lang): '' | '/en' {
-  return lang === 'en' ? '/en' : '';
-}
-
 /**
  * Adds '/en' to Korean-based internal page links on English pages.
  * Only hrefs whose pathname starts with '/', is not already '/en' or '/en/…', and ends with '/' get the prefix

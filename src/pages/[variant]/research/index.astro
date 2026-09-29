@@ -1,0 +1,9 @@
+---
+import type { GetStaticPaths } from 'astro';
+import ResearchView from '../../../views/ResearchView.astro';
+import { variantParamsFor } from '../../../lib/routes';
+import { BASE_PATH, type VariantId } from '../../../variants/ids';
+export const getStaticPaths = (() => variantParamsFor(BASE_PATH.research)) satisfies GetStaticPaths;
+const variant = Astro.params.variant as VariantId;
+---
+<ResearchView lang="ko" variant={variant} />

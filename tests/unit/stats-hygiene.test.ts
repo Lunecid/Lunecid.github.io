@@ -18,9 +18,9 @@ const ROUTES = allRoutes();
 describe('sitePath', () => {
   it('keeps real routes (query string and hash dropped) and nothing else', () => {
     expect(sitePath('/', ROUTES)).toBe('/');
-    expect(sitePath('/en/records/', ROUTES)).toBe('/en/records/');
-    expect(sitePath('/records/?utm_source=x&q=<script>', ROUTES)).toBe('/records/');
-    expect(sitePath('/projects/kickick-park/#figures', ROUTES)).toBe('/projects/kickick-park/');
+    expect(sitePath('/en/game/records/', ROUTES)).toBe('/en/game/records/');
+    expect(sitePath('/game/records/?utm_source=x&q=<script>', ROUTES)).toBe('/game/records/');
+    expect(sitePath('/game/projects/kickick-park/#figures', ROUTES)).toBe('/game/projects/kickick-park/');
     for (const hostile of [
       '/<script>alert(1)</script>',
       '/%3Cscript%3Ealert(1)%3C/script%3E',
@@ -76,8 +76,9 @@ describe('cleanPages / cleanReferrers', () => {
       [
         { path: '/', title: '백성은', count: 70 },
         { path: '/<script>alert(1)</script>', title: 'x', count: 999 },
-        { path: '/records/?from=<b>spam</b>', title: `t\u0000${'y'.repeat(300)}`, count: 5 },
-        { path: '/records/', title: '기록', count: 10 },
+        { path: '/game/records/?from=<b>spam</b>', title: `t\u0000${'y'.repeat(300)}`, count: 5 },
+        { path: '/game/records/', title: '기록', count: 10 },
+        { path: '/records/', title: '기록', count: 40 }, // legacy game URL (a redirect stub since P1-13): dropped, A-9
         { path: '/en/', title: 'Seongeun Baek', count: '30' },
         { path: '/en/', title: 'Seongeun Baek', count: -4 },
         { path: '/stats/', title: 'Stats', count: 'NaN' },
@@ -87,11 +88,12 @@ describe('cleanPages / cleanReferrers', () => {
     expect(pages.map((p) => [p.path, p.count])).toEqual([
       ['/', 70],
       ['/en/', 30],
-      ['/records/', 15],
+      ['/game/records/', 15],
       ['/stats/', 0],
     ]);
     for (const page of pages) expect(page.title.length).toBeLessThanOrEqual(MAX_TITLE_LENGTH);
-    expect(pages.find((p) => p.path === '/records/')?.title).not.toMatch(/\u0000/);
+    expect(pages.find((p) => p.path === '/game/records/')?.title).not.toMatch(/\u0000/);
+    expect(pages.map((p) => p.path), 'A-9: legacy paths leave the top pages').not.toContain('/records/');
 
     const referrers = cleanReferrers([
       { name: '', count: 50 },

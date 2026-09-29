@@ -108,9 +108,9 @@ describe('project helpers', () => {
   });
 
   it('toCartridge localizes the href, maps tag keys and shortens the award sticker', () => {
-    const ko = toCartridge(schoolZoneKo, 'ko');
+    const ko = toCartridge(schoolZoneKo, { lang: 'ko', variant: 'game' });
     expect(ko).toEqual({
-      href: '/projects/school-zone-blindspots/',
+      href: '/game/projects/school-zone-blindspots/',
       title: '사각지대를 예측하다',
       meta: 'Python · QGIS',
       tagKeys: ['geospatial', 'ml', 'public-data'],
@@ -118,11 +118,11 @@ describe('project helpers', () => {
       cover,
       sticker: { text: '최우수상', kind: 'award' },
     });
-    const en = toCartridge(schoolZoneEn, 'en');
-    expect(en.href).toBe('/en/projects/school-zone-blindspots/');
+    const en = toCartridge(schoolZoneEn, { lang: 'en', variant: 'game' });
+    expect(en.href).toBe('/en/game/projects/school-zone-blindspots/');
     expect(en.tagKeys).toEqual(ko.tagKeys);
     expect(en.sticker).toEqual({ text: 'Top Excellence Award', kind: 'award' });
-    const kbo = toCartridge(kboKo, 'ko', { headingLevel: 2 });
+    const kbo = toCartridge(kboKo, { lang: 'ko', variant: 'game' }, { headingLevel: 2 });
     // D-4: a 'card' project has no page: no href, and the card carries the one-line summary instead.
     expect(kbo.href).toBeUndefined();
     expect(kbo.summary).toBe('요약');

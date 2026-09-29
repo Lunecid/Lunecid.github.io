@@ -29,9 +29,9 @@ const ym = (s, lang) => {
 const expectedPeriod = (e, lang) => `${ym(e.start, lang)} – ${ym(e.end, lang)}${lang === 'ko' ? ' (졸업 예정)' : ' (expected)'}`;
 const squash = (s) => s.replace(/\s+/g, '');
 const DOC = {
-  'resume-ko': { lang: 'ko', flag: 'ko', records: 'dist/records/index.html' },
-  'resume-en': { lang: 'en', flag: 'en', records: 'dist/en/records/index.html' },
-  'cv-academic': { lang: 'en', flag: 'academic', records: 'dist/en/records/index.html' },
+  'resume-ko': { lang: 'ko', flag: 'ko', records: 'dist/game/records/index.html' },
+  'resume-en': { lang: 'en', flag: 'en', records: 'dist/en/game/records/index.html' },
+  'cv-academic': { lang: 'en', flag: 'academic', records: 'dist/en/game/records/index.html' },
 };
 
 /** Every /URI action of every /Link annotation on every page, in reading order (pdf-lib low-level API). */
@@ -136,7 +136,7 @@ test('↗ page links (paper page, case study, project summary; resume-en, cv-aca
     assert.ok(existsSync(file), `${href} -> ${file} does not exist; run npm run build first`);
   }
   // resume-ko never renders a case-study link (P2-32 scopes it to English résumé + Academic CV).
-  assert.ok(ko.every((href) => !href.startsWith(`${SITE.url}/en/`) && !href.startsWith(`${SITE.url}/projects/`) && !href.startsWith(`${SITE.url}/research/`)));
+  assert.ok(ko.every((href) => !href.startsWith(`${SITE.url}/en/`) && !href.startsWith(`${SITE.url}/game/projects/`) && !href.startsWith(`${SITE.url}/game/research/`)));
 });
 
 test('A4 page size', { skip: popplerSkip }, () => {

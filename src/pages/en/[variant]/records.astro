@@ -1,0 +1,9 @@
+---
+import type { GetStaticPaths } from 'astro';
+import RecordsView from '../../../views/RecordsView.astro';
+import { variantParamsFor } from '../../../lib/routes';
+import { BASE_PATH, type VariantId } from '../../../variants/ids';
+export const getStaticPaths = (() => variantParamsFor(BASE_PATH.records)) satisfies GetStaticPaths;
+const variant = Astro.params.variant as VariantId;
+---
+<RecordsView lang="en" variant={variant} />

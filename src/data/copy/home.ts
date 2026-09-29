@@ -1,5 +1,5 @@
 // src/data/copy/home.ts — home-only copy (hero and MAIN MENU copy live in ./hero.ts).
-// Hrefs are never stored here; views build them with localizeHref.
+// Hrefs are never stored here; views build them with pageHref.
 // The CoG card comes from the publication's frontmatter card (toPaperCartridge, A-16).
 import type { Localized } from '../../i18n/utils';
 

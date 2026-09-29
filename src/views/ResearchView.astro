@@ -29,7 +29,7 @@ const v = getVariant(variant);
 const facts = await getFactSource();
 const meta = pageMetaFor('research', lang, variant, facts);
 const labNote = resolveIdentity(v, lang, facts).labNote;
-const papers = (await getPublications()).map((entry) => toPaperCard(entry, lang));
+const papers = (await getPublications()).map((entry) => toPaperCard(entry, { lang, variant }));
 const years = [...new Set(papers.map((paper) => paper.year))].sort((a, b) => b - a);
 const ids = (await getPerson()).researchIds;
 ---
@@ -55,7 +55,7 @@ const ids = (await getPerson()).researchIds;
       ))}
     </div>
   </section>
-  <InProgressList lang={lang} items={resolveLocalizedDeep(researchPage.ongoing, facts)} />
+  <InProgressList lang={lang} variant={variant} items={resolveLocalizedDeep(researchPage.ongoing, facts)} />
   <section id="for-labs" class="for-labs read read-sec" aria-labelledby="for-labs-title">
     <div class="container">
       {/* light HUD panel with corner marks, like [ NOW PLAYING ] (P1-9) */}

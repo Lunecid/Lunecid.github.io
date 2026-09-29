@@ -5,20 +5,23 @@
 import SectionHead from '../hud/SectionHead.astro';
 import type { researchPage } from '../../data/research-page';
 import type { Lang } from '../../i18n/ui';
-import { localizeHref, t } from '../../i18n/utils';
+import { t } from '../../i18n/utils';
+import { pageHref } from '../../lib/links';
+import type { VariantId } from '../../variants/ids';
 
 interface Props {
   lang: Lang;
+  variant: VariantId;
   items: typeof researchPage.ongoing;
 }
 
-const { lang, items } = Astro.props;
+const { lang, variant, items } = Astro.props;
 const rows = items.map((item) => ({
   id: item.id,
   status: item.status[lang],
   title: item.title[lang],
   body: item.body[lang],
-  href: item.href === null ? null : localizeHref(item.href, lang),
+  href: item.href === null ? null : pageHref(item.href, { lang, variant }),
 }));
 ---
 <section id="in-progress" class="progress-list read read-sec" aria-labelledby="in-progress-title">
