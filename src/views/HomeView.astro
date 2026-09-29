@@ -2,7 +2,7 @@
 // Home (spec §3): hero → MAIN MENU → cartridges → research highlight → patch notes → hello profile.
 // All copy hrefs are base form and built here with pageHref for the version; resume.yaml is the single source of name and
 // education, the version identity (src/variants/*.ts) of tagline, status and about (site = PDFs).
-import VariantLayout from '../layouts/VariantLayout.astro';
+import type { PageLayout } from '../layouts/page-layout';
 import Hero from '../components/hud/Hero.astro';
 import MainMenu from '../components/hud/MainMenu.astro';
 import CartridgeSection from '../components/home/CartridgeSection.astro';
@@ -29,9 +29,11 @@ import { getVariant, pageMetaFor, resolveIdentity } from '../variants';
 interface Props {
   lang: Lang;
   variant: VariantId;
+  /** The page module's layout (P2-2a): BaseLayout or DataLayout, never imported here (CSS, contract §2.2). */
+  layout: PageLayout;
 }
 
-const { lang, variant } = Astro.props;
+const { lang, variant, layout: Layout } = Astro.props;
 const ctx = { lang, variant };
 const v = getVariant(variant);
 const on = (m: ModuleId): boolean => v.modules.includes(m);
@@ -72,7 +74,7 @@ const education = resumeData.education.map((e) => educationLine(e, lang));
 const location = lang === 'ko' ? `${profile.location.ko} · ${profile.location.en}` : profile.location.en;
 ---
 
-<VariantLayout lang={lang} variant={variant} title={meta.title} description={meta.description} page="home" notices={notices} jsonLd={personJsonLd(lang, { jobTitle: identity.headline, url: canonicalUrl(homeHref(lang, variant)) }, resumeData.researchIds)}>
+<Layout lang={lang} variant={variant} title={meta.title} description={meta.description} page="home" notices={notices} jsonLd={personJsonLd(lang, { jobTitle: identity.headline, url: canonicalUrl(homeHref(lang, variant)) }, resumeData.researchIds)}>
   {leadChar && leadChar.image.avifSrcSet && (
     <link
       slot="head"
@@ -133,4 +135,4 @@ const location = lang === 'ko' ? `${profile.location.ko} · ${profile.location.e
     contact={{ email: SITE.email, github: SITE.githubUrl, cvHref: DOCUMENTS[v.documents.resume[lang]], cvDocLabel: t(lang, 'nav.cvResume') }}
     ids={resumeData.researchIds}
   />
-</VariantLayout>
+</Layout>

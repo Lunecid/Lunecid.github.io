@@ -218,3 +218,13 @@ export async function variantProjectPaths(lang: Lang): Promise<{ params: { varia
   const entries = (await getProjects(lang)).filter((entry) => hasProjectPage(entry.data));
   return VARIANT_IDS.flatMap((variant) => entries.map((entry) => ({ params: { variant, slug: projectSlug(entry) }, props: { entry } })));
 }
+
+/** P2-2a: getStaticPaths of one version's paper pages (the page module fixes the version). */
+export async function paperPathsFor(variant: VariantId): Promise<{ params: { slug: string }; props: { entry: PublicationEntry } }[]> {
+  return (await variantPaperPaths()).filter((p) => p.params.variant === variant).map((p) => ({ params: { slug: p.params.slug }, props: p.props }));
+}
+
+/** P2-2a: getStaticPaths of one version's project pages in one language. */
+export async function projectPathsFor(variant: VariantId, lang: Lang): Promise<{ params: { slug: string }; props: { entry: ProjectEntry } }[]> {
+  return (await variantProjectPaths(lang)).filter((p) => p.params.variant === variant).map((p) => ({ params: { slug: p.params.slug }, props: p.props }));
+}

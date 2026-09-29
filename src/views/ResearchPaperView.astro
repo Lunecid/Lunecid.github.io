@@ -3,7 +3,7 @@
 // page of the IEEE paper, on a white sheet over the dark HUD background. Built from the publication entry;
 // HUD nav and footer stay. Page <title>/URL stay trademark-free; the <h1> is the real paper title.
 import type { CollectionEntry } from 'astro:content';
-import VariantLayout from '../layouts/VariantLayout.astro';
+import type { PageLayout } from '../layouts/page-layout';
 import PaperSheet from '../components/research/PaperSheet.astro';
 import { fontFaceCss } from '../lib/fonts';
 import { toPaperPage } from '../lib/publications';
@@ -18,12 +18,14 @@ interface Props {
   lang: Lang;
   variant: VariantId;
   entry: CollectionEntry<'publications'>;
+  /** The page module's layout (P2-2a): BaseLayout or DataLayout, never imported here (CSS, contract §2.2). */
+  layout: PageLayout;
 }
 
 /** Preflight Q19: Riot notice on this page when RIOT_NOTICE_ON_PAGES is true; otherwise credits only. */
 const PAPER_NOTICES: NoticeKey[] = RIOT_NOTICE_ON_PAGES ? ['riot'] : [];
 
-const { lang, variant, entry } = Astro.props;
+const { lang, variant, entry, layout: Layout } = Astro.props;
 const v = getVariant(variant);
 const facts = await getFactSource();
 const paper = toPaperPage(entry, lang);
@@ -32,7 +34,7 @@ const meta = pageMetaFor('research-story', lang, variant, facts);
 // it to exactly the Hangul inside this page's sheet (scripts/fonts/build.mjs).
 const koreanSerif = paper.titleKo !== null || paper.abstractKo !== null ? fontFaceCss(['serifKo']) : null;
 ---
-<VariantLayout
+<Layout
   lang={lang}
   variant={variant}
   title={meta.title}
@@ -50,7 +52,7 @@ const koreanSerif = paper.titleKo !== null || paper.abstractKo !== null ? fontFa
       </div>
     </div>
   </div>
-</VariantLayout>
+</Layout>
 
 <style>
   /* Phones: the sheet spans the width (16px padding inside it). From 734px it floats on the HUD grid like a

@@ -1,7 +1,7 @@
 ---
 // /projects/ (spec §3): SELECT YOUR PROJECT grid in the version's projectsOrder (game: CoG wide card first),
 // a tag filter, and the GitHub section when build-time GitHub data is usable.
-import VariantLayout from '../layouts/VariantLayout.astro';
+import type { PageLayout } from '../layouts/page-layout';
 import PageHeader from '../components/hud/PageHeader.astro';
 import TagFilter from '../components/projects/TagFilter.astro';
 import ProjectCartridge from '../components/projects/ProjectCartridge.astro';
@@ -20,9 +20,11 @@ import { getVariant, pageMetaFor } from '../variants';
 interface Props {
   lang: Lang;
   variant: VariantId;
+  /** The page module's layout (P2-2a): BaseLayout or DataLayout, never imported here (CSS, contract §2.2). */
+  layout: PageLayout;
 }
 
-const { lang, variant } = Astro.props;
+const { lang, variant, layout: Layout } = Astro.props;
 const ctx = { lang, variant };
 const v = getVariant(variant);
 const facts = await getFactSource();
@@ -40,7 +42,7 @@ const firstImage = cards.findIndex((card) => card.cover !== undefined);
 const github = usableGitHub(generated.github());
 ---
 
-<VariantLayout lang={lang} variant={variant} title={meta.title} description={meta.description} page="projects" section="projects" sectionIndex={true}>
+<Layout lang={lang} variant={variant} title={meta.title} description={meta.description} page="projects" section="projects" sectionIndex={true}>
   <PageHeader lang={lang} label="SELECT YOUR PROJECT" title={t(lang, 'projects.title')} intro={meta.description} />
   <section id="project-list" class="sec hud-grid" aria-labelledby="project-list-title">
     <div class="container container--hud">
@@ -52,4 +54,4 @@ const github = usableGitHub(generated.github());
     </div>
   </section>
   <GitHubSection lang={lang} variant={variant} data={github} />
-</VariantLayout>
+</Layout>

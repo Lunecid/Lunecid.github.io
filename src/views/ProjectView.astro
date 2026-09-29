@@ -4,7 +4,7 @@
 // the project has an award whose redacted certificate image exists. Everything after PROJECT DETAILS shares the one
 // centred reading column (--measure), so the page keeps one left edge; figures widen symmetrically to 760px.
 import type { CollectionEntry } from 'astro:content';
-import VariantLayout from '../layouts/VariantLayout.astro';
+import type { PageLayout } from '../layouts/page-layout';
 import ProjectDetails from '../components/projects/ProjectDetails.astro';
 import FigureList from '../components/projects/FigureList.astro';
 import ProjectLinks from '../components/projects/ProjectLinks.astro';
@@ -27,9 +27,11 @@ interface Props {
   lang: Lang;
   variant: VariantId; // used from P1-9 on
   entry: CollectionEntry<'projects'>;
+  /** The page module's layout (P2-2a): BaseLayout or DataLayout, never imported here (CSS, contract §2.2). */
+  layout: PageLayout;
 }
 
-const { lang, variant, entry } = Astro.props;
+const { lang, variant, entry, layout: Layout } = Astro.props;
 const v = getVariant(variant);
 const facts = await getFactSource();
 const { data } = entry;
@@ -72,7 +74,7 @@ const figure = data.cover
 const hasViewer = certificate !== null || data.figures.some((_, i) => i !== coverIndex);
 ---
 
-<VariantLayout lang={lang} variant={variant} title={meta.title} description={meta.description} page="project" section="projects" sectionIndex={false}>
+<Layout lang={lang} variant={variant} title={meta.title} description={meta.description} page="project" section="projects" sectionIndex={false}>
   <ProjectDetails lang={lang} title={data.title} rows={rows} figure={figure} award={award}>
     <p>{data.summary}</p>
   </ProjectDetails>
@@ -101,7 +103,7 @@ const hasViewer = certificate !== null || data.figures.some((_, i) => i !== cove
       }}
     />
   )}
-</VariantLayout>
+</Layout>
 
 <script>
   // Markdown tables (figures.ts boxTables): a box that overflows becomes a named, focusable scroll region.

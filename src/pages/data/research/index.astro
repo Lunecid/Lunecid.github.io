@@ -1,0 +1,7 @@
+---
+// P2-2a: one page module per version (contract §2.2). Astro inlines the CSS of every module this page imports, so it
+// imports only its version's layout and hands it to the shared view. (Task 2 switches the data page modules to DataLayout.)
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import ResearchView from '../../../views/ResearchView.astro';
+---
+<ResearchView lang="ko" variant="data" layout={BaseLayout} />

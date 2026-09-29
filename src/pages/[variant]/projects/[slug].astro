@@ -1,9 +1,0 @@
----
-import type { GetStaticPaths } from 'astro';
-import ProjectView from '../../../views/ProjectView.astro';
-import { variantProjectPaths } from '../../../lib/portfolio';
-import type { VariantId } from '../../../variants/ids';
-export const getStaticPaths = (() => variantProjectPaths('ko')) satisfies GetStaticPaths;
-const variant = Astro.params.variant as VariantId;
----
-<ProjectView lang="ko" variant={variant} entry={Astro.props.entry} />

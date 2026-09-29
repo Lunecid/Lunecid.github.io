@@ -1,7 +1,7 @@
 ---
 // /records/ and /en/records/ (spec §3 기록, §5.14 order). resume.yaml is the single source shared with the
 // three PDFs, so GPA, dates and award names here equal the PDF text (Task 27 checks that).
-import VariantLayout from '../layouts/VariantLayout.astro';
+import type { PageLayout } from '../layouts/page-layout';
 import PageHeader from '../components/hud/PageHeader.astro';
 import SectionHead from '../components/hud/SectionHead.astro';
 import RecordsHead from '../components/records/RecordsHead.astro';
@@ -31,9 +31,11 @@ import { getVariant, pageMetaFor, resolveIdentity } from '../variants';
 interface Props {
   lang: Lang;
   variant: VariantId;
+  /** The page module's layout (P2-2a): BaseLayout or DataLayout, never imported here (CSS, contract §2.2). */
+  layout: PageLayout;
 }
 
-const { lang, variant } = Astro.props;
+const { lang, variant, layout: Layout } = Astro.props;
 const ctx = { lang, variant };
 const v = getVariant(variant);
 const facts = await getFactSource();
@@ -85,7 +87,7 @@ const documents = v.documents.list.map((id) => {
 });
 const meta = pageMetaFor('records', lang, variant, facts);
 ---
-<VariantLayout lang={lang} variant={variant} title={meta.title} description={meta.description} page="records" section="records" sectionIndex>
+<Layout lang={lang} variant={variant} title={meta.title} description={meta.description} page="records" section="records" sectionIndex>
   <PageHeader lang={lang} label="RECORDS" title={t(lang, 'records.title')} />
   {/* P2-19: a short head (photo, name, status, one line, the three PDFs, an in-page bar), not the home profile again */}
   <RecordsHead
@@ -137,7 +139,7 @@ const meta = pageMetaFor('records', lang, variant, facts);
       counter: ui[lang]['viewer.counter'],
     }}
   />
-</VariantLayout>
+</Layout>
 
 <style>
   .rec__pubs { margin-top: 24px; display: grid; gap: 16px; }

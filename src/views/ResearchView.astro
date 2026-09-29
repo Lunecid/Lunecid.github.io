@@ -1,6 +1,6 @@
 ---
 // /research/ and /en/research/: PageHeader → #interests → #publications (year groups) → #in-progress → #for-labs.
-import VariantLayout from '../layouts/VariantLayout.astro';
+import type { PageLayout } from '../layouts/page-layout';
 import GhostArt from '../components/hud/GhostArt.astro';
 import PageHeader from '../components/hud/PageHeader.astro';
 import SectionHead from '../components/hud/SectionHead.astro';
@@ -22,9 +22,11 @@ import { getVariant, pageMetaFor, resolveIdentity } from '../variants';
 interface Props {
   lang: Lang;
   variant: VariantId;
+  /** The page module's layout (P2-2a): BaseLayout or DataLayout, never imported here (CSS, contract §2.2). */
+  layout: PageLayout;
 }
 
-const { lang, variant } = Astro.props;
+const { lang, variant, layout: Layout } = Astro.props;
 const v = getVariant(variant);
 const facts = await getFactSource();
 const meta = pageMetaFor('research', lang, variant, facts);
@@ -33,7 +35,7 @@ const papers = (await getPublications()).map((entry) => toPaperCard(entry, { lan
 const years = [...new Set(papers.map((paper) => paper.year))].sort((a, b) => b - a);
 const ids = (await getPerson()).researchIds;
 ---
-<VariantLayout lang={lang} variant={variant} title={meta.title} description={meta.description} page="research" section="research" sectionIndex>
+<Layout lang={lang} variant={variant} title={meta.title} description={meta.description} page="research" section="research" sectionIndex>
   <PageHeader lang={lang} label="RESEARCH" title={t(lang, 'research.title')} intro={resolveFacts(researchPage.intro[lang], lang, facts)}>
     {/* D-7: professors reach the Academic CV from the research page header (and from #for-labs below). */}
     <p class="research-cv"><a class="btn btn--line cut cut--line" href={DOCUMENTS[v.documents.academic]} title={t(lang, 'nav.cvAcademic')} download>{t(lang, 'nav.cvAcademic')} <span aria-hidden="true">↓</span></a></p>
@@ -81,7 +83,7 @@ const ids = (await getPerson()).researchIds;
       counter: ui[lang]['viewer.counter'],
     }}
   />
-</VariantLayout>
+</Layout>
 
 <style>
   .research-cv { margin-top: 20px; }

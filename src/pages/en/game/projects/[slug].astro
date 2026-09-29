@@ -1,0 +1,9 @@
+---
+// P2-2a: one page module per version (contract §2.2); see src/pages/game/index.astro.
+import type { GetStaticPaths } from 'astro';
+import BaseLayout from '../../../../layouts/BaseLayout.astro';
+import ProjectView from '../../../../views/ProjectView.astro';
+import { projectPathsFor } from '../../../../lib/portfolio';
+export const getStaticPaths = (() => projectPathsFor('game', 'en')) satisfies GetStaticPaths;
+---
+<ProjectView lang="en" variant="game" layout={BaseLayout} entry={Astro.props.entry} />
