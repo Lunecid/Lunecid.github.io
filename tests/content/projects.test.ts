@@ -134,6 +134,8 @@ describe('project case-study files', () => {
     expect(ko.filter((p) => p.featured).map((p) => p.order).sort()).toEqual([1, 2]);
     expect(ko.filter((p) => p.featured).map((p) => p.slug).sort()).toEqual(['kickick-park', 'school-zone-blindspots']);
     expect(ko.map((p) => p.order).sort((a, b) => a - b)).toEqual([1, 2, 3, 4, 5]);
+    // P1-5: portfolio.ts sorts by PROJECT_SLUGS; until P1-7b retires `order`, both must give one sequence.
+    expect(ko.map((p) => p.order)).toEqual([1, 2, 3, 4, 5]);
     expect(ko.filter((p) => p.featured).every((p) => p.status === 'published')).toBe(true);
   });
 

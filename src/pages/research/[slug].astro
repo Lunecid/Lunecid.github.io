@@ -1,7 +1,8 @@
 ---
 import type { GetStaticPaths } from 'astro';
 import ResearchPaperView from '../../views/ResearchPaperView.astro';
-import { paperStaticPaths } from '../../lib/publications';
-export const getStaticPaths = (() => paperStaticPaths()) satisfies GetStaticPaths;
+import { getPaperPages } from '../../lib/portfolio';
+// Old route (deleted in P1-11, replaced by src/pages/[variant]/research/[slug].astro + variantPaperPaths).
+export const getStaticPaths = (async () => (await getPaperPages()).map((entry) => ({ params: { slug: entry.id }, props: { entry } }))) satisfies GetStaticPaths;
 ---
 <ResearchPaperView lang="ko" entry={Astro.props.entry} />

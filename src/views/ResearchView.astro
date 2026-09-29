@@ -1,6 +1,5 @@
 ---
 // /research/ and /en/research/: PageHeader → #interests → #publications (year groups) → #in-progress → #for-labs.
-import { getEntry } from 'astro:content';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import GhostArt from '../components/hud/GhostArt.astro';
 import PageHeader from '../components/hud/PageHeader.astro';
@@ -11,7 +10,8 @@ import PublicationItem from '../components/research/PublicationItem.astro';
 import ImageViewer from '../islands/ImageViewer';
 import { researchPage } from '../data/research-page';
 import { PAGE_META } from '../data/copy/pages';
-import { getPublications, toPaperCard } from '../lib/publications';
+import { getPerson, getPublications } from '../lib/portfolio';
+import { toPaperCard } from '../lib/publications';
 import type { Lang } from '../i18n/ui';
 import { ui } from '../i18n/ui';
 import { t } from '../i18n/utils';
@@ -25,8 +25,7 @@ const { lang } = Astro.props;
 const meta = PAGE_META.research[lang];
 const papers = (await getPublications()).map((entry) => toPaperCard(entry, lang));
 const years = [...new Set(papers.map((paper) => paper.year))].sort((a, b) => b - a);
-const resume = await getEntry('resume', 'resume');
-const ids = resume ? resume.data.researchIds : { scholar: null, orcid: null };
+const ids = (await getPerson()).researchIds;
 const forLabs = researchPage.forLabs;
 ---
 <BaseLayout lang={lang} title={meta.title} description={meta.description} page="research" section="research" sectionIndex>

@@ -1,6 +1,6 @@
 // src/lib/projects.ts — project collection helpers shared by home, /projects/, project pages and records.
 import type { ImageMetadata } from 'astro';
-import { getCollection, type CollectionEntry } from 'astro:content';
+import type { CollectionEntry } from 'astro:content';
 import type { Lang } from '../i18n/ui';
 import { formatPeriod, localizeHref, splitEntryId, t } from '../i18n/utils';
 import type { ProjectFrontmatter } from '../content/schemas';
@@ -42,19 +42,9 @@ export function sortProjects<T extends { data: { order: number } }>(entries: T[]
   return [...entries].sort((a, b) => a.data.order - b.data.order);
 }
 
-export async function getProjects(lang: Lang): Promise<ProjectEntry[]> {
-  const entries = await getCollection('projects', ({ id }) => id.startsWith(`${lang}/`));
-  return sortProjects(entries);
-}
-
 /** false for status 'card' (short card only, D-4): no /projects/<slug>/ page and no link to one. */
 export function hasProjectPage(data: Pick<ProjectFrontmatter, 'status'>): boolean {
   return data.status !== 'card';
-}
-
-export async function projectStaticPaths(lang: Lang): Promise<{ params: { slug: string }; props: { entry: ProjectEntry } }[]> {
-  const entries = (await getProjects(lang)).filter((entry) => hasProjectPage(entry.data));
-  return entries.map((entry) => ({ params: { slug: projectSlug(entry) }, props: { entry } }));
 }
 
 /**

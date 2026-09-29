@@ -4,7 +4,8 @@ import { z } from 'astro/zod';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { publicationSchema } from '../../src/content/schemas';
-import { bibtexField, toPaperCard, toPaperPage } from '../../src/lib/publications';
+import { tagLabel } from '../../src/content/tags';
+import { bibtexField, toPaperCard, toPaperCartridge, toPaperPage } from '../../src/lib/publications';
 import { readFrontmatter } from '../content/helpers';
 
 const file = fileURLToPath(new URL('../../src/content/publications/cog-2026-engagement.md', import.meta.url));
@@ -114,5 +115,28 @@ describe('toPaperPage', () => {
     expect(bare.venueLine).toBe(parsed.venue);
     expect(bare.authors).toEqual([{ name: 'A', me: true, affiliation: [] }]);
     expect(toPaperPage(entry({ doi: '10.1109/CoG00000.2026.0000000' }), 'en').statusNote).toBeNull();
+  });
+});
+
+describe('toPaperCartridge', () => {
+  it('builds the CoG card exactly as HomeView/ProjectsView build it by hand today', () => {
+    for (const lang of ['ko', 'en'] as const) {
+      const card = toPaperCartridge(entry(), lang, '/x/');
+      expect(card).toEqual({
+        href: '/x/',
+        title: parsed.shortTitle?.[lang],
+        meta: 'Python · LightGBM · PyTorch',
+        tagKeys: ['ml', 'collection'],
+        tags: [tagLabel('ml', lang), tagLabel('collection', lang)],
+        chart: { kind: 'auc-overall', lang },
+        sticker: { text: 'ORAL', sr: lang === 'ko' ? '구두 발표' : 'oral presentation', kind: 'oral' },
+        wide: true,
+      });
+    }
+    expect(toPaperCartridge(entry(), 'ko', '/x/').title).toBe('리그 오브 레전드 교전 결과 예측');
+    expect(toPaperCartridge(entry(), 'en', '/x/').title).toBe('Predicting League of Legends engagement outcomes');
+    expect(toPaperCartridge(entry({ format: 'Poster' }), 'ko', null)).not.toHaveProperty('sticker');
+    expect(toPaperCartridge(entry(), 'ko', null)).not.toHaveProperty('href');
+    expect(() => toPaperCartridge(entry({ card: undefined }), 'ko', '/x/')).toThrow(/has no card/);
   });
 });

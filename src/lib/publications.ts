@@ -1,9 +1,12 @@
 // src/lib/publications.ts — publication entries → the card data used on home, /research/ and /records/,
 // and the paper page data of /research/<id>/ (D-15: abstract only, in paper typography).
 import type { ImageMetadata } from 'astro';
-import { getCollection, type CollectionEntry } from 'astro:content';
+import type { CollectionEntry } from 'astro:content';
+import { tagLabel } from '../content/tags';
 import type { Lang } from '../i18n/ui';
 import { localizeHref } from '../i18n/utils';
+import { FORMAT_PHRASE } from './facts';
+import type { CartridgeProps } from './projects';
 
 export interface PaperCardData {
   id: string;
@@ -25,12 +28,6 @@ export interface PaperCardData {
   statusNote: string | null; // e.g. 'IEEE Xplore 게재 예정' when pdf and doi are null
   thumb: ImageMetadata;
   thumbAlt: string; // altKo on ko pages
-}
-
-/** Year descending, then highlighted entries first. */
-export async function getPublications(): Promise<CollectionEntry<'publications'>[]> {
-  const entries = await getCollection('publications');
-  return [...entries].sort((a, b) => b.data.year - a.data.year || Number(b.data.highlight) - Number(a.data.highlight));
 }
 
 export function toPaperCard(entry: CollectionEntry<'publications'>, lang: Lang): PaperCardData {
@@ -111,18 +108,21 @@ export function toPaperPage(entry: CollectionEntry<'publications'>, lang: Lang):
   };
 }
 
-/** Publications that have a paper page; each page must live at /research/<id>/ (the route slug is the id). */
-export async function getPaperPages(): Promise<CollectionEntry<'publications'>[]> {
-  const entries = await getCollection('publications', (entry) => entry.data.caseStudy !== undefined);
-  for (const entry of entries) {
-    if (entry.data.caseStudy !== `/research/${entry.id}/`) {
-      throw new Error(`publications: ${entry.id} has caseStudy "${entry.data.caseStudy}", expected "/research/${entry.id}/"`);
-    }
-  }
-  return entries;
-}
-
-/** getStaticPaths for src/pages/research/[slug].astro and its /en/ twin. */
-export async function paperStaticPaths(): Promise<{ params: { slug: string }; props: { entry: CollectionEntry<'publications'> } }[]> {
-  return (await getPaperPages()).map((entry) => ({ params: { slug: entry.id }, props: { entry } }));
+/**
+ * The CoG card on home and /projects/ (A-16; views built it by hand from src/data/copy/home.ts until P1-7b): title =
+ * shortTitle, meta = the card's tool line, tags = card.tags, the AUC chart as label, an ORAL sticker for an oral paper.
+ */
+export function toPaperCartridge(entry: CollectionEntry<'publications'>, lang: Lang, href: string | null): CartridgeProps {
+  const d = entry.data;
+  if (!d.card) throw new Error(`publications: ${entry.id} has no card (tags, tools) in its frontmatter`);
+  return {
+    ...(href === null ? {} : { href }),
+    title: d.shortTitle ? d.shortTitle[lang] : d.title,
+    meta: d.card.tools.join(' · '),
+    tagKeys: [...d.card.tags],
+    tags: d.card.tags.map((key) => tagLabel(key, lang)),
+    chart: { kind: 'auc-overall', lang },
+    ...(d.format === 'Oral' ? { sticker: { text: 'ORAL', sr: FORMAT_PHRASE[lang].Oral, kind: 'oral' as const } } : {}),
+    wide: true,
+  };
 }

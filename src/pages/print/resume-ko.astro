@@ -1,17 +1,16 @@
 ---
-import { getCollection, getEntry } from 'astro:content';
+import { getAwards, getProjects, getPublications, getResume } from '../../lib/portfolio';
 import ResumeKo from '../../components/print/ResumeKo.astro';
 import { splitEntryId } from '../../i18n/utils';
 import PrintLayout from '../../layouts/PrintLayout.astro';
 import { todayIso } from '../../lib/records';
 import { ACADEMIC_EXTRAS, buildResumeModel } from '../../lib/resume-model';
 
-const resume = await getEntry('resume', 'resume');
-if (!resume) throw new Error('src/data/resume.yaml did not load');
-const projects = (await getCollection('projects')).map((e) => ({ ...splitEntryId(e.id), data: e.data }));
-const publications = (await getCollection('publications')).map((e) => ({ id: e.id, data: e.data }));
-const awards = (await getCollection('awards')).map((e) => e.data);
-const model = buildResumeModel({ resume: resume.data, projects, publications, awards, doc: 'resume-ko', today: todayIso(), academicExtras: ACADEMIC_EXTRAS });
+const resume = await getResume();
+const projects = [...(await getProjects('ko')), ...(await getProjects('en'))].map((e) => ({ ...splitEntryId(e.id), data: e.data }));
+const publications = (await getPublications()).map((e) => ({ id: e.id, data: e.data }));
+const awards = await getAwards();
+const model = buildResumeModel({ resume, projects, publications, awards, doc: 'resume-ko', today: todayIso(), academicExtras: ACADEMIC_EXTRAS });
 ---
 <PrintLayout lang={model.lang} title="백성은 이력서">
   <ResumeKo model={model} />

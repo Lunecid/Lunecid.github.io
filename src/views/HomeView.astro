@@ -2,7 +2,6 @@
 // Home (spec §3): hero → MAIN MENU → cartridges → research highlight → patch notes → hello profile.
 // All copy hrefs are Korean-based and localized here; resume.yaml is the single source of
 // name, tagline, status, about and education (site = PDFs).
-import { getCollection, getEntry } from 'astro:content';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Hero from '../components/hud/Hero.astro';
 import MainMenu from '../components/hud/MainMenu.astro';
@@ -19,8 +18,9 @@ import { PAGE_META } from '../data/copy/pages';
 import { heroCopy, mainMenuCopy, splitTagline } from '../data/copy/hero';
 import { cogCartridgeTagKeys, homeCopy } from '../data/copy/home';
 import { HERO_SIZES, characterCredit, characters, getStageCharacters } from '../lib/characters';
-import { getProjects, toCartridge, type CartridgeProps } from '../lib/projects';
-import { getPublications, toPaperCard } from '../lib/publications';
+import { getNews, getProjects, getPublications, getResume } from '../lib/portfolio';
+import { toCartridge, type CartridgeProps } from '../lib/projects';
+import { toPaperCard } from '../lib/publications';
 import { toPatchNotes } from '../lib/news';
 import { personJsonLd } from '../lib/seo';
 
@@ -30,9 +30,8 @@ interface Props {
 
 const { lang } = Astro.props;
 
-const resume = await getEntry('resume', 'resume');
-if (!resume) throw new Error('HomeView: the "resume" collection is empty (src/data/resume.yaml did not load)');
-const { profile } = resume.data;
+const resumeData = await getResume();
+const { profile } = resumeData;
 const meta = PAGE_META.home[lang];
 const hero = heroCopy[lang];
 const menu = mainMenuCopy[lang];
@@ -71,13 +70,13 @@ const highlighted = publications.find((entry) => entry.data.highlight) ?? public
 if (!highlighted) throw new Error('HomeView: no publication entry for the research highlight');
 const paper = toPaperCard(highlighted, lang);
 
-const notes = toPatchNotes(await getCollection('news'), lang, 4);
+const notes = toPatchNotes(await getNews(), lang, 4);
 
-const education = resume.data.education.map((e) => educationLine(e, lang));
+const education = resumeData.education.map((e) => educationLine(e, lang));
 const location = lang === 'ko' ? `${profile.location.ko} · ${profile.location.en}` : profile.location.en;
 ---
 
-<BaseLayout lang={lang} title={meta.title} description={meta.description} page="home" notices={notices} jsonLd={personJsonLd(lang, resume.data.researchIds)}>
+<BaseLayout lang={lang} title={meta.title} description={meta.description} page="home" notices={notices} jsonLd={personJsonLd(lang, resumeData.researchIds)}>
   {leadChar && leadChar.image.avifSrcSet && (
     <link
       slot="head"
@@ -130,9 +129,9 @@ const location = lang === 'ko' ? `${profile.location.ko} · ${profile.location.e
     about={profile.about[lang]}
     location={location}
     education={education}
-    skills={resume.data.skills.primary.map((skill) => skill.name)}
+    skills={resumeData.skills.primary.map((skill) => skill.name)}
     records={home.helloRecords}
     contact={{ email: SITE.email, github: SITE.githubUrl, cvHref: CV_HREF[lang], cvDocLabel: t(lang, 'nav.cvResume') }}
-    ids={resume.data.researchIds}
+    ids={resumeData.researchIds}
   />
 </BaseLayout>

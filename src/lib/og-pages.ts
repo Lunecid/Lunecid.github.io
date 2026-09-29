@@ -1,12 +1,12 @@
 import type { ImageMetadata } from 'astro';
-import { getCollection } from 'astro:content';
 import photo from '../assets/photo/photo-id.webp';
 import riskHeatmap from '../assets/projects/school-zone-blindspots/risk-heatmap.webp';
 import type { Lang } from '../i18n/ui';
 import { formatPeriod, LOCALES, splitEntryId } from '../i18n/utils';
 import { PAGE_META, type PageKey } from '../data/copy/pages';
 import type { OgArtifact, OgInput } from './og';
-import { bibtexField, getPaperPages } from './publications';
+import { bibtexField } from './publications';
+import { getPaperPages, getProjects } from './portfolio';
 import { allRoutes } from './routes';
 import { containsTrademark, ogSlugFor } from './seo';
 
@@ -93,7 +93,7 @@ function sourceFile(image: ImageMetadata): string {
 
 /** Collections → buildOgMap (used by src/pages/og/[...slug].png.ts at build time). */
 export async function getOgPages(): Promise<Record<string, OgInput>> {
-  const [projects, papers] = await Promise.all([getCollection('projects'), getPaperPages()]);
+  const [projects, papers] = await Promise.all([Promise.all([getProjects('ko'), getProjects('en')]).then((l) => l.flat()), getPaperPages()]);
   const paper = papers[0];
   const paperArtifact: OgArtifact | undefined = paper
     ? {

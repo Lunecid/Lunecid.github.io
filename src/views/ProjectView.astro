@@ -3,7 +3,7 @@
 // first cites it (P1-7) → "게임 팀에게 / 연구 기여" → figures not cited inline → links, plus the certificate modal when
 // the project has an award whose redacted certificate image exists. Everything after PROJECT DETAILS shares the one
 // centred reading column (--measure), so the page keeps one left edge; figures widen symmetrically to 760px.
-import { getCollection, type CollectionEntry } from 'astro:content';
+import type { CollectionEntry } from 'astro:content';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import ProjectDetails from '../components/projects/ProjectDetails.astro';
 import FigureList from '../components/projects/FigureList.astro';
@@ -16,6 +16,7 @@ import type { Lang } from '../i18n/ui';
 import { ui } from '../i18n/ui';
 import { t } from '../i18n/utils';
 import { projectPageMeta } from '../data/copy/pages';
+import { getAwards } from '../lib/portfolio';
 import { projectDetailRows } from '../lib/projects';
 import { buildCertificate } from '../lib/certificates';
 import { coverFigureIndex, placeFigures } from '../lib/figures';
@@ -40,8 +41,8 @@ const meta = projectPageMeta(data.title, data.summary, lang);
 const rows = projectDetailRows(data, lang);
 
 const awardRef = data.award;
-const awardEntry = awardRef ? (await getCollection('awards')).find((a) => a.id === awardRef.certificate) : undefined;
-const certificate: Certificate | null = awardEntry ? await buildCertificate(awardEntry.data, lang) : null;
+const awardEntry = awardRef ? (await getAwards()).find((a) => a.id === awardRef.certificate) : undefined;
+const certificate: Certificate | null = awardEntry ? await buildCertificate(awardEntry, lang) : null;
 const award = awardRef
   ? {
       name: awardRef.name,

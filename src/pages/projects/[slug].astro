@@ -1,9 +1,11 @@
 ---
-// src/pages/projects/[slug].astro (en: same file under src/pages/en/, with 'en' in both places)
 import type { GetStaticPaths } from 'astro';
 import ProjectView from '../../views/ProjectView.astro';
-import { projectStaticPaths } from '../../lib/projects';
-export const getStaticPaths = (() => projectStaticPaths('ko')) satisfies GetStaticPaths;
+import { getProjects } from '../../lib/portfolio';
+import { hasProjectPage, projectSlug } from '../../lib/projects';
+// Old route (deleted in P1-11, replaced by src/pages/[variant]/projects/[slug].astro + variantProjectPaths).
+export const getStaticPaths = (async () =>
+  (await getProjects('ko')).filter((e) => hasProjectPage(e.data)).map((entry) => ({ params: { slug: projectSlug(entry) }, props: { entry } }))) satisfies GetStaticPaths;
 ---
 
 <ProjectView lang="ko" entry={Astro.props.entry} />
