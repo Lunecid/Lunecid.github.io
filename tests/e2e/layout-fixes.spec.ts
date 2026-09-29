@@ -202,16 +202,33 @@ test.describe('N09: EN hud-nav fits one row', () => {
       }));
       expect(metrics.scrollWidth, 'nav does not scroll sideways').toBeLessThanOrEqual(metrics.clientWidth + 1);
       const bar = page.locator('.hud-nav__bar');
+      // One visual row: bar height stays within --nav-h, and every direct child's vertical centre
+      // lines up with the brand's (tops can differ when brand ≈31px and tools are 44px tall).
       const row = await bar.evaluate((el) => {
         const brand = el.querySelector('.hud-nav__brand');
-        const tools = el.querySelector('.hud-nav__tools');
-        if (!brand || !tools) return { ok: false, reason: 'missing' };
-        const b = brand.getBoundingClientRect();
-        const t = tools.getBoundingClientRect();
-        // One visual row: tools share the brand's vertical band (panel may sit below on phones).
-        return { ok: Math.abs(b.top - t.top) <= 4, brandTop: b.top, toolsTop: t.top };
+        if (!brand) return { ok: false, barH: 0, navH: 0, maxCenterDelta: Infinity };
+        const navH = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--nav-h')) || 52;
+        const barH = el.getBoundingClientRect().height;
+        const brandRect = brand.getBoundingClientRect();
+        const brandCy = brandRect.top + brandRect.height / 2;
+        let maxCenterDelta = 0;
+        for (const child of Array.from(el.children)) {
+          const r = child.getBoundingClientRect();
+          if (r.width === 0 && r.height === 0) continue;
+          const cy = r.top + r.height / 2;
+          maxCenterDelta = Math.max(maxCenterDelta, Math.abs(cy - brandCy));
+        }
+        return {
+          ok: barH <= navH + 1 && maxCenterDelta <= 6,
+          barH,
+          navH,
+          maxCenterDelta,
+        };
       });
-      expect(row.ok, `bar one row brandTop=${row.brandTop} toolsTop=${row.toolsTop}`).toBe(true);
+      expect(
+        row.ok,
+        `bar one row barH=${row.barH} navH=${row.navH} maxCenterDelta=${row.maxCenterDelta}`,
+      ).toBe(true);
     });
   }
 });

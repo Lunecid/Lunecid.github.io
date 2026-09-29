@@ -1009,11 +1009,26 @@ test('item 3: the English hero controls stay inside the gutters on a phone, and 
 });
 
 test('item 4: on /stats/ the light band runs down to the footer (no dark strip between)', async ({ page }) => {
-  await open(page, '/stats/', 2560, 1440);
-  const footer = await box(page.locator('.site-footer'));
-  const png = await page.screenshot({ clip: { x: 40, y: footer.y - 6, width: 1, height: 1 }, scale: 'css' });
-  const { data } = await sharp(png).removeAlpha().raw().toBuffer({ resolveWithObject: true });
-  expect([...data.subarray(0, 3)], 'just above the footer: --read-bg #F4F5F7').toEqual([0xf4, 0xf5, 0xf7]);
+  // 1280×500: footer starts below the fold whether or not GoatCounter charts are present (CI has real data).
+  // 2560×1440: short empty-stats pages keep the footer in view — both must sample after scroll.
+  for (const [width, height] of [
+    [1280, 500],
+    [2560, 1440],
+  ] as const) {
+    await open(page, '/stats/', width, height);
+    const footerEl = page.locator('.site-footer');
+    await footerEl.evaluate((el) => el.scrollIntoView({ block: 'center' }));
+    const footer = await box(footerEl);
+    expect(footer.y - 6, `${width}×${height}: sample y in viewport after scroll`).toBeGreaterThanOrEqual(0);
+    const png = await page.screenshot({
+      clip: { x: 40, y: footer.y - 6, width: 1, height: 1 },
+      scale: 'css',
+    });
+    const { data } = await sharp(png).removeAlpha().raw().toBuffer({ resolveWithObject: true });
+    expect([...data.subarray(0, 3)], `${width}×${height}: just above the footer: --read-bg #F4F5F7`).toEqual([
+      0xf4, 0xf5, 0xf7,
+    ]);
+  }
 });
 
 test.describe('item 5 and round 2 item 2: a row of cartridges ends at one height, with its titles on one line', () => {
