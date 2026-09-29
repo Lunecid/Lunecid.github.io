@@ -125,6 +125,22 @@ describe('toolchain', () => {
     expect(out.trim()).toBe('/cv/seongeun-baek-resume-ko.pdf remielle,eula,mona');
   });
 
+  it('P1-2: src/variants/ids.ts is import-free and plain Node loads src/lib/routes.ts', async () => {
+    const ids = read('src/variants/ids.ts');
+    expect(ids).not.toMatch(/^\s*import\b/m);
+    expect(ids).not.toMatch(/\bfrom\s+['"]/);
+    expect(ids).not.toMatch(/\brequire\(/);
+    expect(ids).not.toMatch(/^\s*(export\s+)?(const\s+)?enum\b|^\s*(export\s+)?namespace\b/m);
+    const out = execFileSync(
+      process.execPath,
+      ['--input-type=module', '-e', "const r = await import('./src/lib/routes.ts'); console.log(r.routePath('/', 'en', 'game') + ' ' + r.legacyRedirects().length)"],
+      { encoding: 'utf8' },
+    );
+    // Contract §2.1: counts come from the table, never a literal. Plain Node and vitest must see the same table.
+    const { legacyRedirects } = await import('../../src/lib/routes');
+    expect(out.trim()).toBe(`/en/game/ ${legacyRedirects().length}`);
+  });
+
   it('shared id lists', async () => {
     const types = await import('../../src/types');
     expect(types.CHARACTER_IDS).toEqual(['remielle', 'eula', 'mona']);

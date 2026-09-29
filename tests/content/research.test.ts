@@ -30,7 +30,7 @@ describe('publication', () => {
     expect(data.highlight).toBe(true);
     expect(data.authors.filter((a) => a.me).map((a) => a.name)).toEqual(['Seongeun Baek']);
     expect(data.caseStudy).toBe('/research/cog-2026-engagement/');
-    expect(isKnownInternalHref(data.caseStudy ?? '')).toBe(true);
+    expect(isKnownInternalHref(data.caseStudy ?? '', 'game')).toBe(true);
   });
 
   it('paper page data (D-15): IEEE keywords, affiliations without e-mail, presentation lines, short title', () => {
@@ -107,7 +107,7 @@ describe('news', () => {
       expect(result.error?.issues ?? [], file).toEqual([]);
       const data = newsSchema.parse(fm);
       expect(basename(file).startsWith(`${data.date}-`), `${file} name starts with its date`).toBe(true);
-      if (data.href !== null) expect(isKnownInternalHref(data.href), `${file} ${data.href}`).toBe(true);
+      if (data.href !== null) expect(isKnownInternalHref(data.href, 'game'), `${file} ${data.href}`).toBe(true);
     }
     const award = newsSchema.parse(readFrontmatter('src/content/news/2025-07-11-busan-big-data-award.md'));
     expect(award.href).toBe('/projects/school-zone-blindspots/');
@@ -139,7 +139,7 @@ describe('research page copy', () => {
     // Owner, 2026-09-28: the course project removed from the site is never listed as ongoing.
     expect(ongoing.has('counseling-nlp')).toBe(false);
     expect(JSON.stringify(researchPage.ongoing)).not.toMatch(/집계한 결과만|aggregate results only/);
-    for (const [id, href] of ongoing) if (href !== null) expect(isKnownInternalHref(href), id).toBe(true);
+    for (const [id, href] of ongoing) if (href !== null) expect(isKnownInternalHref(href, 'game'), id).toBe(true);
     expect(researchPage.forLabs.email).toBe(SITE.email);
     // contract §5.17: the PUBG repository is not linked anywhere, not even in a comment
     expect(readFileSync('src/data/research-page.ts', 'utf8')).not.toMatch(/github\.com\/Lunecid\/PUBG_Lab/);

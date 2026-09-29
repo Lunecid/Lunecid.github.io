@@ -239,7 +239,7 @@ describe('Hero.astro', () => {
       const hrefs = [copy.ctas.primary.href, copy.contact.jobFitHref, copy.artifact.href, ...mainMenuCopy[lang].items.map((i) => i.href)];
       for (const href of hrefs) {
         expect(href.startsWith('/en/'), href).toBe(false);
-        expect(isKnownInternalHref(href), href).toBe(true);
+        expect(isKnownInternalHref(href, 'game'), href).toBe(true);
       }
       expect(mainMenuCopy[lang].items.map((i) => i.num)).toEqual(['01', '02', '03', '04']);
       expect(mainMenuCopy[lang].items.map((i) => i.href)).toEqual(['/research/', '/projects/', '/records/', '/player-log/']);

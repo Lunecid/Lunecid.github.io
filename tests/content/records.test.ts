@@ -216,7 +216,7 @@ describe('records data files', () => {
     const data = jobfit();
     for (const row of data.rows) {
       for (const ev of row.evidence) {
-        const ok = isKnownInternalHref(ev.href) || /^https:\/\//.test(ev.href);
+        const ok = isKnownInternalHref(ev.href, 'game') || /^https:\/\//.test(ev.href);
         expect(ok, `${row.id}: ${ev.href}`).toBe(true);
       }
     }

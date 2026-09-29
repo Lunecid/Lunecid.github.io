@@ -130,11 +130,11 @@
   "tests/unit/records-lib.test.ts": 68,
   "tests/unit/resume-model.test.ts": 76,
   "tests/unit/robots.test.ts": 6,
-  "tests/unit/routes.test.ts": 42,
+  "tests/unit/routes.test.ts": 110,
   "tests/unit/seo.test.ts": 27,
   "tests/unit/stats-hygiene.test.ts": 26,
   "tests/unit/style-rules.test.ts": 31,
   "tests/unit/tokens.test.ts": 55,
-  "tests/unit/toolchain.test.ts": 68,
+  "tests/unit/toolchain.test.ts": 73,
   "tests/unit/yaml-loader.test.ts": 28
 }
