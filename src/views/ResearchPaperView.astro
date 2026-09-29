@@ -33,6 +33,8 @@ const meta = pageMetaFor('research-story', lang, variant, facts);
 // The Korean serif (Korean title gloss, 국문 초록, footnote) is set up on the Korean page only; the build subsets
 // it to exactly the Hangul inside this page's sheet (scripts/fonts/build.mjs).
 const koreanSerif = paper.titleKo !== null || paper.abstractKo !== null ? fontFaceCss(['serifKo']) : null;
+// P2-5: the general version sets the sheet on the white page with a thin rule; the game keeps the HUD grid and frame.
+const editorial = v.theme === 'editorial';
 ---
 <Layout
   lang={lang}
@@ -45,13 +47,21 @@ const koreanSerif = paper.titleKo !== null || paper.abstractKo !== null ? fontFa
   notices={PAPER_NOTICES}
 >
   {koreanSerif && <Fragment slot="head"><style is:inline set:html={koreanSerif}></style></Fragment>}
-  <div class="paper-view hud-grid">
-    <div class="paper-view__frame bracket">
-      <div class="paper-view__sheet">
+  {editorial ? (
+    <div class="paper-view paper-view--ed">
+      <div class="paper-view__sheet paper-view__sheet--ed">
         <PaperSheet lang={lang} paper={paper} />
       </div>
     </div>
-  </div>
+  ) : (
+    <div class="paper-view hud-grid">
+      <div class="paper-view__frame bracket">
+        <div class="paper-view__sheet">
+          <PaperSheet lang={lang} paper={paper} />
+        </div>
+      </div>
+    </div>
+  )}
 </Layout>
 
 <style>
@@ -66,6 +76,14 @@ const koreanSerif = paper.titleKo !== null || paper.abstractKo !== null ? fontFa
     .paper-view__frame { padding: 12px; }
     .paper-view__frame::before, .paper-view__frame::after { display: block; }
     .paper-view__sheet { box-shadow: var(--paper-shadow); }
+  }
+
+  /* General version (P2-5): the white sheet on the white page with a thin rule instead of the HUD frame and shadow. */
+  .paper-view--ed { background: var(--ed-bg); }
+  .paper-view__sheet--ed { max-width: calc(46 * 17px + 24px); margin-inline: auto; }
+  @media (min-width: 734px) {
+    .paper-view--ed { padding: 40px var(--gutter) 64px; }
+    .paper-view__sheet--ed { padding: 12px; border: var(--ed-rule-w) solid var(--ed-rule); box-shadow: none; }
   }
 
   /* Print: only the sheet, black on white — no nav, footer, toasts, grid, frame or shadow. */

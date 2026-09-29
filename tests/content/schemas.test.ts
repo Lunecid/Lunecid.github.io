@@ -137,6 +137,19 @@ describe('projectSchema', () => {
     expect(project.safeParse({ ...validProject, award: { ...award, date: '2025-07-11' } }).success).toBe(true);
     expect(project.safeParse({ ...validProject, period: { start: '2025-5', end: '2025-07' } }).success).toBe(false);
   });
+
+  it('P-06 F-007 step 2 (contract §1.9): a figure may carry a table whose column headers are localized; cells are strings', () => {
+    const figure = { src: '../../../assets/projects/x/y.webp', alt: '그림', caption: '캡션.' };
+    const table = { columns: [L('열 가', 'Column A'), L('열 나', 'Column B')], rows: [['행 1', '0.5']] }; // synthetic fixture
+    const parsed = project.parse({ ...validProject, figures: [{ ...figure, table }] });
+    expect(parsed.figures[0]?.table).toEqual(table);
+    expect(project.parse({ ...validProject, figures: [figure] }).figures[0]).not.toHaveProperty('table');
+    expect(project.safeParse({ ...validProject, figures: [{ ...figure, table: { ...table, columns: ['Column A', 'Column B'] } }] }).success).toBe(false);
+    expect(project.safeParse({ ...validProject, figures: [{ ...figure, table: { ...table, columns: [{ ko: '열 가' }] } }] }).success).toBe(false);
+    expect(project.safeParse({ ...validProject, figures: [{ ...figure, table: { columns: [], rows: [['a']] } }] }).success).toBe(false);
+    expect(project.safeParse({ ...validProject, figures: [{ ...figure, table: { ...table, rows: [] } }] }).success).toBe(false);
+    expect(project.safeParse({ ...validProject, figures: [{ ...figure, table: { ...table, rows: [[0.5]] } }] }).success).toBe(false);
+  });
 });
 
 describe('publicationSchema', () => {

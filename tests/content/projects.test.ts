@@ -63,6 +63,22 @@ describe('project case-study files', () => {
     }
   });
 
+  it('P-06 F-007 step 2: the ranking and heatmap tables transcribe their figures, the same rows in both languages', () => {
+    const table = (lang: 'ko' | 'en', slug: string, src: RegExp) => data(lang, slug).figures?.find((f) => src.test(String(f.src)))?.table;
+    const ranking = { ko: table('ko', 'kickick-park', /dong-ranking/), en: table('en', 'kickick-park', /dong-ranking/) };
+    for (const lang of ['ko', 'en'] as const) {
+      expect(ranking[lang]?.rows.map((r) => r[0]), lang).toEqual(Array.from({ length: 22 }, (_, i) => String(i + 1)));
+      expect(ranking[lang]?.rows.every((r) => r.length === 2), lang).toBe(true); // rank and dong only: the figure prints no values
+    }
+    expect(ranking.ko?.rows[8]?.[1]).toBe('역삼2동'); // the 9th, highlighted in the figure and named in its caption
+    expect(ranking.en?.rows[8]?.[1]).toBe('Yeoksam 2-dong');
+    const heat = { ko: table('ko', 'youth-startup-location', /cluster-zscore-heatmap/), en: table('en', 'youth-startup-location', /cluster-zscore-heatmap/) };
+    expect(heat.ko?.columns).toHaveLength(5);
+    expect(heat.ko?.rows).toHaveLength(7);
+    expect(heat.en?.rows).toEqual(heat.ko?.rows);
+    expect(heat.ko?.rows.find((r) => r[0] === 'floating_pop_22_01')?.slice(1)).toEqual(['-0.08', '2.39', '-0.09', '-0.62']);
+  });
+
   it('P2-21: every cover names its figure for the "FIG · <label>" strip, with no digits (no number headline)', () => {
     const labels = PROJECT_SLUGS.map((slug) => data('ko', slug).cover?.label).filter((l): l is string => l !== undefined);
     expect(labels.sort()).toEqual(['CLUSTER PROFILES', 'PARKING DETECTION', 'RISK HEATMAP']);

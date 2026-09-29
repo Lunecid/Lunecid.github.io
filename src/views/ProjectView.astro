@@ -3,6 +3,8 @@
 // first cites it (P1-7) → "게임 팀에게 / 연구 기여" → figures not cited inline → links, plus the certificate modal when
 // the project has an award whose redacted certificate image exists. Everything after PROJECT DETAILS shares the one
 // centred reading column (--measure), so the page keeps one left edge; figures widen symmetrically to 760px.
+// P2-5: the general version sets the body on white (article.ed-prose) with its headings in the serif heading face;
+// P-06 F-065: in both versions the body's "그림 N" / "Figure N" citations link to the figure (#figure-N).
 import type { CollectionEntry } from 'astro:content';
 import type { PageLayout } from '../layouts/page-layout';
 import ProjectDetails from '../components/projects/ProjectDetails.astro';
@@ -19,7 +21,7 @@ import { projectPageMeta } from '../data/copy/pages';
 import { getAwards, getFactSource } from '../lib/portfolio';
 import { projectDetailRows } from '../lib/projects';
 import { buildCertificate } from '../lib/certificates';
-import { coverFigureIndex, placeFigures } from '../lib/figures';
+import { coverFigureIndex, linkFigureCitations, placeFigures, serifHeadings } from '../lib/figures';
 import type { VariantId } from '../variants/ids';
 import { getVariant } from '../variants';
 
@@ -33,13 +35,16 @@ interface Props {
 
 const { lang, variant, entry, layout: Layout } = Astro.props;
 const v = getVariant(variant);
+const editorial = v.theme === 'editorial';
 const facts = await getFactSource();
 const { data } = entry;
 const body = entry.rendered?.html;
 if (body === undefined) throw new Error(`ProjectView: ${entry.id} has no rendered body`);
 // A figure that is the cover image is shown once, in PROJECT DETAILS, with its number and caption (fix round 1).
 const coverIndex = coverFigureIndex(data.cover?.src, data.figures);
-const placed = placeFigures(body, data.figures.map((figure, index) => (index === coverIndex ? undefined : figure.inlineAfter)));
+// F-065 (P-06): figure N is the body's Figure, a FigureList entry or the cover, each with id="figure-N".
+const linkedBody = linkFigureCitations(body, data.figures.length);
+const placed = placeFigures(linkedBody, data.figures.map((figure, index) => (index === coverIndex ? undefined : figure.inlineAfter)));
 const parts = placed.parts;
 const rest = placed.rest.filter((index) => index !== coverIndex);
 const numbered = data.figures.map((figure, index) => ({ ...figure, number: index + 1 }));
@@ -78,13 +83,14 @@ const hasViewer = certificate !== null || data.figures.some((_, i) => i !== cove
   <ProjectDetails lang={lang} variant={variant} title={data.title} rows={rows} figure={figure} award={award}>
     <p>{data.summary}</p>
   </ProjectDetails>
-  {/* .prose.read (read.css) is a full-width light band with the centred reading column */}
-  <article class="prose read">
+  {/* .prose.read (read.css) is a full-width light band with the centred reading column; .ed-prose (editorial.css) is
+      the general version's reading column on white */}
+  <article class:list={['prose', editorial ? 'ed-prose' : 'read']}>
     {bodyParts.map((part) =>
       part.kind === 'html' ? (
-        <Fragment set:html={part.html} />
+        <Fragment set:html={editorial ? serifHeadings(part.html) : part.html} />
       ) : (
-        <Figure lang={lang} src={part.figure.src} alt={part.figure.alt} caption={part.figure.caption} number={part.figure.number} class="figure--inline" />
+        <Figure variant={variant} lang={lang} src={part.figure.src} alt={part.figure.alt} caption={part.figure.caption} number={part.figure.number} class="figure--inline" table={part.figure.table} />
       ),
     )}
   </article>

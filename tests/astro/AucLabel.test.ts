@@ -47,4 +47,9 @@ describe('AucLabel.astro', () => {
     expect(html).not.toMatch(/<img\b/);
     expect(html).not.toContain('cart__label--text');
   });
+
+  it('tone editorial (P2-5): the root gains auc-label--editorial; the default root is unchanged', async () => {
+    expect(await renderAstro(AucLabel, { props: { lang: 'ko', tone: 'editorial' } })).toMatch(/<div class="auc-label auc-label--editorial"[^>]*data-auc-label/);
+    expect(await renderAstro(AucLabel, { props: { lang: 'ko' } })).toMatch(/<div class="auc-label"[^>]*data-auc-label/);
+  });
 });

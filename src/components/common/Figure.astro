@@ -2,13 +2,21 @@
 // One figure: <picture> (AVIF + WebP), a caption optionally prefixed "그림 N" / "Figure N",
 // and a "크게 보기" link to a single WebP no wider than 1600px (D4: sources are ≤1600w).
 // The link is also an ImageViewer trigger (data-viewer=figures); without JS it still opens the WebP.
+// P2-5: `variant` picks the markup. The game version frames the figure in the light-HUD panel with corner marks
+// (P-06 F-042 part 3); the general version draws a heavy top rule and numbers the caption "그림 N —" / "Fig. N —"
+// (spec §8). Both keep the viewer trigger. P-06: the <figure> carries id="figure-N", the target of the body's
+// "그림 N" link (F-065), and an optional table of the figure's data after the caption (F-007 step 2).
 import type { ImageMetadata } from 'astro';
 import { Picture, getImage } from 'astro:assets';
 import type { Lang } from '../../i18n/ui';
 import { t } from '../../i18n/utils';
+import type { Localized } from '../../i18n/utils';
+import { editorialFigureLabel } from '../../lib/figures';
 import { FIGURE_SIZES, fitWidths, sourceSize } from '../../lib/images';
+import type { VariantId } from '../../variants';
 
 interface Props {
+  variant: VariantId;
   lang: Lang;
   src: ImageMetadata;
   alt: string;
@@ -18,9 +26,12 @@ interface Props {
   sizes?: string;
   loading?: 'lazy' | 'eager';
   class?: string;
+  /** P-06 F-007 step 2 (contract §1.9): the figure's data as a table; each column header is resolved per `lang`. */
+  table?: { columns: Localized[]; rows: string[][] };
 }
 
 const {
+  variant,
   lang,
   src,
   alt,
@@ -30,48 +41,119 @@ const {
   sizes = FIGURE_SIZES,
   loading = 'lazy',
   class: className,
+  table,
 } = Astro.props;
 
 const pictureWidths = fitWidths(widths, sourceSize(src).width);
 const full = await getImage({ src, width: Math.min(1600, sourceSize(src).width), format: 'webp' });
 const numberLabel = number !== undefined ? t(lang, 'project.figure', { n: number }) : null;
-const stripLabel = number !== undefined ? `FIG · ${number}` : null;
-const viewerLabel = stripLabel ?? numberLabel ?? alt;
+const viewerLabel = numberLabel ?? alt;
+/** F-065 (P-06): the id sits on the <figure>, never on the figcaption; the body's "그림 N" links to it. */
+const figureId = number !== undefined ? `figure-${number}` : undefined;
+const tableSummaryId = figureId ? `${figureId}-table` : undefined;
 const fullLabel = t(lang, 'action.fullSize');
 ---
 
-<figure class:list={['figure', className]}>
-  <Picture class="figure__img" src={src} alt={alt} formats={['avif', 'webp']} fallbackFormat="webp" widths={pictureWidths} sizes={sizes} loading={loading} />
-  <figcaption class="figure__cap">
-    {numberLabel && <span class="figure__num">{numberLabel}</span>}
-    <span class="figure__text">{caption}</span>
-    <a
-      class="figure__full"
-      href={full.src}
-      aria-label={`${fullLabel} · ${numberLabel ?? alt}`}
-      aria-haspopup="dialog"
-      data-viewer="figures"
-      data-viewer-w={full.attributes.width}
-      data-viewer-h={full.attributes.height}
-      data-viewer-label={viewerLabel}
-      data-viewer-caption={caption}
-      data-viewer-alt={alt}
-    >{fullLabel}</a>
-  </figcaption>
-</figure>
+{variant === 'game' ? (
+  <figure id={figureId} class:list={['figure', 'lh-frame', 'bracket', 'bracket--sm', className]}>
+    <Picture class="figure__img" src={src} alt={alt} formats={['avif', 'webp']} fallbackFormat="webp" widths={pictureWidths} sizes={sizes} loading={loading} />
+    <figcaption class="figure__cap">
+      {numberLabel && <span class="figure__num">{numberLabel}</span>}
+      <span class="figure__text">{caption}</span>
+      <a
+        class="figure__full"
+        href={full.src}
+        aria-label={`${fullLabel} · ${numberLabel ?? alt}`}
+        aria-haspopup="dialog"
+        data-viewer="figures"
+        data-viewer-w={full.attributes.width}
+        data-viewer-h={full.attributes.height}
+        data-viewer-label={viewerLabel}
+        data-viewer-caption={caption}
+        data-viewer-alt={alt}
+      >{fullLabel}</a>
+    </figcaption>
+    {table && (
+      <details class="chart__table">
+        <summary class="chart__summary" id={tableSummaryId}>{t(lang, 'action.viewAsTable')}</summary>
+        <div class="chart__table-scroll" data-table-scroll data-label-id={tableSummaryId}>
+          <table><thead><tr>{table.columns.map((c) => <th scope="col">{c[lang]}</th>)}</tr></thead>
+            <tbody>{table.rows.map((row) => <tr>{row.map((cell, i) => (i === 0 ? <th scope="row">{cell}</th> : <td>{cell}</td>))}</tr>)}</tbody></table>
+        </div>
+      </details>
+    )}
+  </figure>
+) : (
+  <figure id={figureId} class:list={['ed-figure', className]}>
+    <Picture class="figure__img" src={src} alt={alt} formats={['avif', 'webp']} fallbackFormat="webp" widths={pictureWidths} sizes={sizes} loading={loading} />
+    <figcaption class="ed-figcap">{number !== undefined && <span class="ed-figcap__num">{editorialFigureLabel(lang, number)}</span>}
+      <span>{caption}</span>
+      <a
+        class="figure__full"
+        href={full.src}
+        aria-label={`${fullLabel} · ${numberLabel ?? alt}`}
+        aria-haspopup="dialog"
+        data-viewer="figures"
+        data-viewer-w={full.attributes.width}
+        data-viewer-h={full.attributes.height}
+        data-viewer-label={viewerLabel}
+        data-viewer-caption={caption}
+        data-viewer-alt={alt}
+      >{fullLabel}</a>
+    </figcaption>
+    {table && (
+      <details class="chart__table">
+        <summary class="chart__summary" id={tableSummaryId}>{t(lang, 'action.viewAsTable')}</summary>
+        <div class="chart__table-scroll" data-table-scroll data-label-id={tableSummaryId}>
+          <table class="ed-table"><thead><tr>{table.columns.map((c) => <th scope="col">{c[lang]}</th>)}</tr></thead>
+            <tbody>{table.rows.map((row) => <tr>{row.map((cell, i) => (i === 0 ? <th scope="row">{cell}</th> : <td>{cell}</td>))}</tr>)}</tbody></table>
+        </div>
+      </details>
+    )}
+  </figure>
+)}
 
 <style>
-  .figure { margin: 0; }
+  /* F-065 (P-06): a cited figure (#figure-N) lands with its top below the sticky nav (.ed-figure: editorial.css). */
+  .figure { margin: 0; scroll-margin-top: calc(var(--nav-h) + 16px); }
   /* Case-study figures in the reading column (P1-7): right after the paragraph that cites them, widening symmetrically
      around the column to 760px where the page has room (src/lib/images.ts FIGURE_SIZES follows these widths). */
   .figure--inline { margin-block: 2em; }
   @media (min-width: 900px) {
     .figure--inline { margin-inline: calc((100% - 760px) / 2); }
   }
-  .figure :global(img) { display: block; width: 100%; height: auto; border: 1px solid var(--read-line); background: var(--read-card); }
+  /* F-042 part 3 (P-06): the lh-frame panel with its corner marks frames the game figure, so the image itself has no
+     grey border (border 0 also beats read.css's `.prose figure img` frame in the case-study body). */
+  .figure :global(img) { display: block; width: 100%; height: auto; border: 0; background: var(--read-card); }
   .figure__cap { margin-top: 10px; font-size: 15px; line-height: 1.6; color: var(--read-muted); }
   .figure__num { margin-right: .5em; font-weight: 700; color: var(--read-text); }
   /* padding + a matching negative margin enlarge the tap target without inflating the caption's line box
      (a plain min-height here doubles the wrapped line's height — P2-12); absolute floor is 24x24 (spec §5). */
   .figure__full { display: inline-flex; align-items: center; padding-block: 12px; margin-block: -12px; margin-left: .5em; font-weight: 600; }
+
+  /* F-007 step 2 (P-06): the figure's data as a table, AucOverallChart's "view as table" pattern: a <details> after the
+     caption whose table scrolls inside its own box on a narrow phone (src/scripts/table-scroll.ts makes the box a
+     focusable region, named by the summary, only while it overflows). The general version's table takes editorial.css
+     (.ed-table, the case-study body's table rules) and an ink summary. */
+  .chart__table { margin-top: 8px; }
+  .chart__summary {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--tap);
+    padding: 0 12px;
+    border: 1px solid var(--read-line-strong);
+    font: 600 var(--fs-label)/1 var(--font-mono);
+    color: var(--read-text);
+    list-style: none;
+    cursor: pointer;
+  }
+  .chart__summary::-webkit-details-marker { display: none; }
+  .chart__summary:lang(ko) { font-family: var(--font-sans); letter-spacing: 0; }
+  .chart__table-scroll { margin-top: 8px; max-width: 100%; overflow-x: auto; }
+  .chart__table table { width: 100%; border-collapse: collapse; font-size: var(--fs-small); line-height: 1.5; font-variant-numeric: tabular-nums; }
+  .chart__table tbody th { white-space: nowrap; }
+  .figure .chart__table th,
+  .figure .chart__table td { padding: 6px 8px; text-align: left; border-bottom: 1px solid var(--read-line); overflow-wrap: normal; }
+  .figure .chart__table thead th { font-size: var(--fs-caption); font-weight: 600; color: var(--read-muted); }
+  .ed-figure .chart__summary { border-color: var(--ed-ink); color: var(--ed-ink); font-family: var(--font-sans); }
 </style>

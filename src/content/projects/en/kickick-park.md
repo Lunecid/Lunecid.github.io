@@ -25,6 +25,34 @@ figures:
     alt: 'Horizontal bar chart of Gangnam-gu administrative dongs ranked by the dashboard total (합계). The horizontal axis is that total as exported from Tableau (M = million). Top five in red; rank 9 Yeoksam 2-dong in yellow.'
     caption: 'Gangnam-gu administrative dongs ranked by the dashboard total (합계). The horizontal axis is that total as exported from Tableau (M = million). Top five in red; rank 9 Yeoksam 2-dong in yellow (Tableau).'
     inlineAfter: 'Figures 1 and 2'
+    # P-06 F-007 step 2: the ranking as the figure prints it (rank and dong); the figure prints no values, only bars.
+    table:
+      columns:
+        - { ko: 순위, en: Rank }
+        - { ko: 행정동(강남구), en: Administrative dong (Gangnam-gu) }
+      rows:
+        - ['1', 'Yeoksam 1-dong']
+        - ['2', 'Daechi 4-dong']
+        - ['3', 'Nonhyeon 1-dong']
+        - ['4', 'Samseong 2-dong']
+        - ['5', 'Nonhyeon 2-dong']
+        - ['6', 'Cheongdam-dong']
+        - ['7', 'Apgujeong-dong']
+        - ['8', 'Sinsa-dong']
+        - ['9', 'Yeoksam 2-dong']
+        - ['10', 'Daechi 2-dong']
+        - ['11', 'Gaepo 4-dong']
+        - ['12', 'Irwon 1-dong']
+        - ['13', 'Samseong 1-dong']
+        - ['14', 'Daechi 1-dong']
+        - ['15', 'Dogok 2-dong']
+        - ['16', 'Dogok 1-dong']
+        - ['17', 'Gaepo 2-dong']
+        - ['18', 'Irwonbon-dong']
+        - ['19', 'Gaepo 1-dong']
+        - ['20', 'Segok-dong']
+        - ['21', 'Suseo-dong']
+        - ['22', 'Gaepo 3-dong']
   - src: '../../../assets/projects/kickick-park/selected-dongs.webp'
     alt: 'Choropleth map of Gangnam-gu with top-total districts in shades of red (darker = higher total), a yellow highlighted district, and the rest in gray'
     caption: 'Top-total districts on the map. Red shades show the total (darker = higher); the yellow district is the ranking highlight; gray districts are the rest (Tableau).'

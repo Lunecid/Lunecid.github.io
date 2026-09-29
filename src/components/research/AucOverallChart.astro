@@ -15,9 +15,15 @@
 //   left at this width) and the domain stays 0.50-0.70 as before.
 // Every layout sets its text at >= 13 viewBox units and is shown only in a box at least as wide as its viewBox,
 // so rendered SVG text stays >= 12px everywhere (Review Focus 1).
-// tone="hud" restyles the chart for a dark HUD panel (the frame around it draws the border).
+// tone="hud" restyles the chart for a dark HUD panel (the frame around it draws the border); tone="editorial" (P2-5)
+// is the general version's black and grey plus the one accent, with the figure number in the caption. Views map the
+// version's theme to the tone: getVariant(variant).theme === 'editorial' ? 'editorial' : 'read'.
+// P-06 F-085, in every tone and layout: LightGBM is told apart without its hue (a 2px ring round its dot, its label
+// and value at weight 800), each group is named at its first row (TABULAR, NEURAL: row.group; above the group, at
+// the plot's right end in the narrow layout, where the chance label holds the left), and the axis is titled "AUC →".
 import type { Lang } from '../../i18n/ui';
 import { t } from '../../i18n/utils';
+import { editorialFigureLabel } from '../../lib/figures';
 import { CHANCE_AUC, type overallAuc } from '../../data/research/cog-2026';
 
 interface Props {
@@ -25,13 +31,15 @@ interface Props {
   rows: typeof overallAuc;
   caption: string;
   alt: string;
-  tone?: 'read' | 'hud';
+  tone?: 'read' | 'hud' | 'editorial';
+  /** Editorial tone only: the figure number shown as "그림 n —" in the caption. */
+  figureNumber?: number;
   /** Prefix of the SVG title/desc ids: the chart can appear twice on one page (the no-art hero and the research
       highlight on /), and ids must stay unique. */
   idPrefix?: string;
 }
 
-const { lang, rows, caption, alt, tone = 'read', idPrefix = 'auc-overall' } = Astro.props;
+const { lang, rows, caption, alt, tone = 'read', figureNumber, idPrefix = 'auc-overall' } = Astro.props;
 
 const MIN = CHANCE_AUC;
 const MAX = 0.7;
@@ -48,19 +56,34 @@ interface Layout {
   groupGap: number;
 }
 
-function place(layout: Layout): { rows: { id: string; model: string; highlight: boolean; cx: number; cy: number; label: string }[]; axisY: number; h: number; x: (v: number) => number } {
+/** F-085: the ring round the highlighted dot (2px stroke; every dot, the highlighted one included, has r = 6). */
+const RING_R = 10;
+/** F-085: the highlighted value starts clear of its ring (the other values keep their 11-12 unit gap). */
+const HL_VALUE_GAP = 16;
+
+function place(layout: Layout): {
+  rows: { id: string; model: string; highlight: boolean; cx: number; cy: number; label: string }[];
+  /** F-085: one label per group (row.group), its baseline just above the group's first row. */
+  groups: { name: string; y: number }[];
+  axisY: number;
+  h: number;
+  x: (v: number) => number;
+} {
   const x = (v: number): number => round1(layout.left + ((v - MIN) / (MAX - MIN)) * (layout.right - layout.left));
   let cursor = layout.top;
   let previousGroup: string | null = null;
+  const groups: { name: string; y: number }[] = [];
   const placed = rows.map((row) => {
     if (previousGroup !== null && row.group !== previousGroup) cursor += layout.groupGap;
+    if (row.group !== previousGroup) groups.push({ name: row.group.toUpperCase(), y: cursor - 3 });
     const cy = cursor + layout.row / 2;
     cursor += layout.row;
     previousGroup = row.group;
     return { id: row.id, model: row.model, highlight: row.highlight === true, cx: x(row.auc), cy, label: row.auc.toFixed(3) };
   });
   const axisY = cursor + 4;
-  return { rows: placed, axisY, h: axisY + 32, x };
+  // Tick labels sit on axisY + 22, the axis title (F-085) under them on axisY + 41.
+  return { rows: placed, groups, axisY, h: axisY + 48, x };
 }
 
 const wideLayout: Layout = { w: 560, left: 150, right: 490, top: 36, row: 30, groupGap: 14 };
@@ -82,7 +105,7 @@ const tableCaptionId = `${idPrefix}-table-caption`;
 const summaryId = `${idPrefix}-table-summary`;
 const columns = lang === 'ko' ? ['모델', '입력 표현', 'AUC'] : ['Model', 'Input view', 'AUC'];
 ---
-<figure class:list={['chart', 'chart--overall', { 'chart--hud': tone === 'hud' }]}>
+<figure class:list={['chart', 'chart--overall', { 'chart--hud': tone === 'hud' }, tone === 'editorial' && ['chart--editorial', 'ed-figure']]}>
   <div class="chart__scroll chart__scroll--wide" data-table-scroll data-label-id={titleIdWide}>
     <svg class="chart__svg" viewBox={`0 0 ${wideLayout.w} ${wide.h}`} role="img" aria-labelledby={titleIdWide} aria-describedby={descIdWide}>
       <title id={titleIdWide}>{lang === 'ko' ? '모델별 AUC 점 그래프' : 'AUC by model, dot plot'}</title>
@@ -94,14 +117,19 @@ const columns = lang === 'ko' ? ['모델', '입력 표현', 'AUC'] : ['Model', '
           <text class="chart__tick" data-tick={v.toFixed(2)} x={wide.x(v)} y={wide.axisY + 22} text-anchor="middle">{v.toFixed(2)}</text>
         </g>
       ))}
+      <text class="chart__axis-title" x={wideLayout.right} y={wide.axisY + 41} text-anchor="end">AUC →</text>
       <line class="chart__chance" data-value={CHANCE_AUC} x1={wideChanceX} x2={wideChanceX} y1={wideLayout.top - 10} y2={wide.axisY} />
       <text class="chart__chance-label" x={wideChanceX + 6} y={wideLayout.top - 14}>{t(lang, 'research.chance')}</text>
+      {wide.groups.map((group) => (
+        <text class="chart__group" x={wideLayout.left - 12} y={group.y} text-anchor="end">{group.name}</text>
+      ))}
       {wide.rows.map((row) => (
         <g class="chart__row" data-model={row.id}>
           <line class="chart__guide" x1={wideLayout.left} x2={wideLayout.right} y1={row.cy} y2={row.cy} />
-          <text class="chart__label" x={wideLayout.left - 12} y={row.cy + 5} text-anchor="end">{row.model}</text>
-          <circle class:list={['chart__dot', { 'chart__dot--hl': row.highlight }]} cx={row.cx} cy={row.cy} r={row.highlight ? 7 : 6} />
-          <text class="chart__value" x={row.cx + 12} y={row.cy + 5}>{row.label}</text>
+          <text class:list={['chart__label', { 'chart__label--hl': row.highlight }]} x={wideLayout.left - 12} y={row.cy + 5} text-anchor="end">{row.model}</text>
+          {row.highlight && <circle class="chart__ring" cx={row.cx} cy={row.cy} r={RING_R} />}
+          <circle class:list={['chart__dot', { 'chart__dot--hl': row.highlight }]} cx={row.cx} cy={row.cy} r={6} />
+          <text class:list={['chart__value', { 'chart__value--hl': row.highlight }]} x={row.cx + (row.highlight ? HL_VALUE_GAP : 12)} y={row.cy + 5}>{row.label}</text>
         </g>
       ))}
     </svg>
@@ -117,14 +145,19 @@ const columns = lang === 'ko' ? ['모델', '입력 표현', 'AUC'] : ['Model', '
           <text class="chart__tick" data-tick={v.toFixed(2)} x={compact.x(v)} y={compact.axisY + 22} text-anchor="middle">{v.toFixed(2)}</text>
         </g>
       ))}
+      <text class="chart__axis-title" x={compactLayout.right} y={compact.axisY + 41} text-anchor="end">AUC →</text>
       <line class="chart__chance" data-value={CHANCE_AUC} x1={compactChanceX} x2={compactChanceX} y1={compactLayout.top - 10} y2={compact.axisY} />
       <text class="chart__chance-label" x={compactChanceX + 6} y={compactLayout.top - 14}>{t(lang, 'research.chance')}</text>
+      {compact.groups.map((group) => (
+        <text class="chart__group" x={compactLayout.left - 10} y={group.y} text-anchor="end">{group.name}</text>
+      ))}
       {compact.rows.map((row) => (
         <g class="chart__row" data-model={row.id}>
           <line class="chart__guide" x1={compactLayout.left} x2={compactLayout.right} y1={row.cy} y2={row.cy} />
-          <text class="chart__label" x={compactLayout.left - 10} y={row.cy + 5} text-anchor="end">{row.model}</text>
-          <circle class:list={['chart__dot', { 'chart__dot--hl': row.highlight }]} cx={row.cx} cy={row.cy} r={row.highlight ? 7 : 6} />
-          <text class="chart__value" x={row.cx + 11} y={row.cy + 5}>{row.label}</text>
+          <text class:list={['chart__label', { 'chart__label--hl': row.highlight }]} x={compactLayout.left - 10} y={row.cy + 5} text-anchor="end">{row.model}</text>
+          {row.highlight && <circle class="chart__ring" cx={row.cx} cy={row.cy} r={RING_R} />}
+          <circle class:list={['chart__dot', { 'chart__dot--hl': row.highlight }]} cx={row.cx} cy={row.cy} r={6} />
+          <text class:list={['chart__value', { 'chart__value--hl': row.highlight }]} x={row.cx + (row.highlight ? HL_VALUE_GAP : 11)} y={row.cy + 5}>{row.label}</text>
         </g>
       ))}
     </svg>
@@ -140,20 +173,25 @@ const columns = lang === 'ko' ? ['모델', '입력 표현', 'AUC'] : ['Model', '
           <text class="chart__tick" data-tick={v.toFixed(2)} x={narrow.x(v)} y={narrow.axisY + 22} text-anchor="middle">{v.toFixed(2)}</text>
         </g>
       ))}
+      <text class="chart__axis-title" x={narrowLayout.right} y={narrow.axisY + 41} text-anchor="end">AUC →</text>
       <line class="chart__chance" data-value={CHANCE_AUC} x1={narrowChanceX} x2={narrowChanceX} y1={narrowLayout.top - 10} y2={narrow.axisY} />
       <text class="chart__chance-label" x={narrowChanceX + 6} y={narrowLayout.top - 14}>{t(lang, 'research.chance')}</text>
+      {narrow.groups.map((group) => (
+        <text class="chart__group" x={narrowLayout.right} y={group.y} text-anchor="end">{group.name}</text>
+      ))}
       {narrow.rows.map((row) => (
         <g class="chart__row" data-model={row.id}>
-          <text class="chart__label" x={narrowLayout.left} y={row.cy - 12}>{row.model}</text>
+          <text class:list={['chart__label', { 'chart__label--hl': row.highlight }]} x={narrowLayout.left} y={row.cy - 12}>{row.model}</text>
           <line class="chart__guide" x1={narrowLayout.left} x2={narrowLayout.right} y1={row.cy} y2={row.cy} />
-          <circle class:list={['chart__dot', { 'chart__dot--hl': row.highlight }]} cx={row.cx} cy={row.cy} r={row.highlight ? 7 : 6} />
-          <text class="chart__value" x={row.cx + 12} y={row.cy + 5}>{row.label}</text>
+          {row.highlight && <circle class="chart__ring" cx={row.cx} cy={row.cy} r={RING_R} />}
+          <circle class:list={['chart__dot', { 'chart__dot--hl': row.highlight }]} cx={row.cx} cy={row.cy} r={6} />
+          <text class:list={['chart__value', { 'chart__value--hl': row.highlight }]} x={row.cx + (row.highlight ? HL_VALUE_GAP : 12)} y={row.cy + 5}>{row.label}</text>
         </g>
       ))}
     </svg>
   </div>
   <figcaption class="chart__caption">
-    <p class="chart__caption-text">{caption}</p>
+    <p class="chart__caption-text">{tone === 'editorial' && figureNumber !== undefined && <span class="ed-figcap__num">{editorialFigureLabel(lang, figureNumber)}</span>}{caption}</p>
     <p class="chart__source">{t(lang, 'research.aucSource')}</p>
   </figcaption>
   {/* Final fix 2 item 23: the table view sits after the figcaption (still inside the figure), so the figure's name is
@@ -262,6 +300,14 @@ const columns = lang === 'ko' ? ['모델', '입력 표현', 'AUC'] : ['Model', '
   .chart__chance { stroke: var(--read-muted); stroke-width: 1.5; stroke-dasharray: 4 3; }
   .chart__dot { fill: var(--read-muted); }
   .chart__dot--hl { fill: var(--accent-deep); }
+  /* P-06 F-085: LightGBM, the paper's model, is told apart without its hue: a 2px ring round its dot (--accent-deep in
+     the read and hud tones, --ed-accent in the editorial one) and its label and value at weight 800. The groups are
+     named at their first row and the axis carries its title (muted, like the ticks). */
+  .chart__ring { fill: none; stroke: var(--accent-deep); stroke-width: 2px; }
+  .chart__label--hl,
+  .chart__value--hl { font-weight: 800; }
+  .chart__group,
+  .chart__axis-title { font: 600 13px var(--font-mono); letter-spacing: .06em; fill: var(--read-muted); }
   .chart__caption { margin-top: 10px; }
   .chart__caption-text { font-size: 14px; line-height: 1.6; color: var(--read-muted); max-width: var(--measure); }
   /* final review fix 1 item 16: where the numbers come from (the paper), under the caption */
@@ -299,7 +345,9 @@ const columns = lang === 'ko' ? ['모델', '입력 표현', 'AUC'] : ['Model', '
   .chart--hud .chart__label { fill: var(--hud-text); }
   .chart--hud .chart__value { fill: var(--hud-strong); }
   .chart--hud .chart__tick,
-  .chart--hud .chart__chance-label { fill: var(--hud-muted); }
+  .chart--hud .chart__chance-label,
+  .chart--hud .chart__group,
+  .chart--hud .chart__axis-title { fill: var(--hud-muted); }
   .chart--hud .chart__axis-line,
   .chart--hud .chart__tick-line { stroke: var(--hud-muted); }
   .chart--hud .chart__guide { stroke: var(--hud-divider); stroke-dasharray: none; }
@@ -313,6 +361,35 @@ const columns = lang === 'ko' ? ['모델', '입력 표현', 'AUC'] : ['Model', '
   .chart--hud .chart__table td { border-bottom-color: var(--hud-divider); }
   .chart--hud .chart__table thead th { color: var(--hud-muted); }
 
+  /* tone="editorial" (P2-5, spec §8): black and grey plus the one accent for the paper's model; sans numbers; the
+     figure's heavy top rule comes from .ed-figure (editorial.css). */
+  .chart--editorial .chart__scroll { background: transparent; border: 0; border-radius: 0; }
+  .chart--editorial .chart__label,
+  .chart--editorial .chart__value { fill: var(--ed-ink); }
+  .chart--editorial .chart__value,
+  .chart--editorial .chart__tick,
+  .chart--editorial .chart__chance-label { font-family: var(--font-sans); }
+  .chart--editorial .chart__tick,
+  .chart--editorial .chart__chance-label { fill: var(--ed-muted); }
+  .chart--editorial .chart__axis-line,
+  .chart--editorial .chart__tick-line { stroke: var(--ed-ink); }
+  .chart--editorial .chart__guide { stroke: var(--ed-rule); }
+  .chart--editorial .chart__chance { stroke: var(--ed-muted); }
+  .chart--editorial .chart__dot { fill: var(--ed-muted); }
+  .chart--editorial .chart__dot--hl { fill: var(--ed-accent); }
+  .chart--editorial .chart__caption-text,
+  .chart--editorial .chart__source { color: var(--ed-muted); }
+  .chart--editorial .chart__summary { border-color: var(--ed-ink); color: var(--ed-ink); font-family: var(--font-sans); }
+  .chart--editorial .chart__table th,
+  .chart--editorial .chart__table td { border-bottom-color: var(--ed-rule); }
+  .chart--editorial .chart__table thead th { color: var(--ed-muted); border-bottom: var(--ed-rule-w-strong) solid var(--ed-rule-strong); }
+  .chart--editorial .chart__table td:last-child { font-family: var(--font-sans); }
+  /* F-085 in the editorial tone: the ring in the one accent (data-records.spec forbids --accent-deep on general pages);
+     group labels and the axis title in sans, muted. */
+  .chart--editorial .chart__ring { stroke: var(--ed-accent); }
+  .chart--editorial .chart__group,
+  .chart--editorial .chart__axis-title { fill: var(--ed-muted); font-family: var(--font-sans); }
+
   /* Final fix 2 item 18: in forced colours (Windows contrast themes) the card's background becomes the theme's Canvas
      but SVG fills keep their author colours, which left grey and near-black labels on a black card. Every mark and label
      takes a system colour instead: text and the result dots CanvasText, the paper's model (LightGBM) Highlight, rules
@@ -322,12 +399,15 @@ const columns = lang === 'ko' ? ['모델', '입력 표현', 'AUC'] : ['Model', '
     .chart__label,
     .chart__value,
     .chart__tick,
-    .chart__chance-label { fill: CanvasText; }
+    .chart__chance-label,
+    .chart__group,
+    .chart__axis-title { fill: CanvasText; }
     .chart__axis-line,
     .chart__tick-line,
     .chart__guide,
     .chart__chance { stroke: GrayText; }
     .chart__dot { fill: CanvasText; }
     .chart__dot--hl { fill: Highlight; }
+    .chart__ring { stroke: Highlight; }
   }
 </style>

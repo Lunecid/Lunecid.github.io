@@ -21,6 +21,22 @@ figures:
     alt: '군집별 핵심 변수 Z-score 히트맵. 군집 0은 지표가 평균 근처, 군집 1은 야간 유동인구가, 군집 2는 중장년 비율과 경쟁 강도가, 군집 3은 유동·주거 비율이 높습니다.'
     caption: '군집별 핵심 변수의 Z-score. 붉을수록 평균보다 높습니다. 군집 0=일반 주거지역, 1=번화가·야간, 2=중장년층 중심, 3=주거·교통 허브.'
     inlineAfter: '그림 1'
+    # P-06 F-007 step 2: the z-scores printed in the heatmap, feature names as printed.
+    table:
+      columns:
+        - { ko: 변수, en: Feature }
+        - { ko: 군집 0, en: Cluster 0 }
+        - { ko: 군집 1, en: Cluster 1 }
+        - { ko: 군집 2, en: Cluster 2 }
+        - { ko: 군집 3, en: Cluster 3 }
+      rows:
+        - ['youth_floating_ratio', '-0.13', '1.22', '1.82', '-0.75']
+        - ['middle_aged_floating_ratio', '-0.09', '0.43', '2.32', '-0.74']
+        - ['floating_pop_17_20', '-0.09', '2.29', '0.37', '-0.70']
+        - ['floating_resident_ratio', '-0.25', '-0.68', '-1.33', '1.16']
+        - ['floating_pop_11_14', '-0.09', '1.97', '0.62', '-0.69']
+        - ['floating_pop_22_01', '-0.08', '2.39', '-0.09', '-0.62']
+        - ['competition_intensity', '-0.03', '0.74', '1.42', '-0.66']
 links:
   github: 'https://github.com/Lunecid/busan-youth-startup-location'
   report: 'https://github.com/Lunecid/busan-youth-startup-location/blob/main/docs/report.pdf'
@@ -59,6 +75,7 @@ status: 'published'
 
 부산의 외식 상권은 성격이 다른 네 유형으로 나뉘었습니다(그림 1).
 
+<!-- row-headers -->
 | 유형 | 군집 | 특징 | 제안 업종 |
 |---|---|---|---|
 | 일반 주거지역 상권 | 0 | 모든 지표가 평균 이하, 경쟁이 약함 | 배달 전문점, 가족 단위 생활밀착형 식당 |

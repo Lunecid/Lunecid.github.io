@@ -39,7 +39,20 @@ export function projectSchema<TImage extends z.ZodType>(image: TImage) {
     // inlineAfter (P1-7): a snippet of the body text that first cites the figure ("그림 1" / "Figure 1"); the figure is
     // placed right after that paragraph, list or table (src/lib/figures.ts). Without it the figure stays in the list
     // after the body. A snippet the body does not contain fails the build.
-    figures: z.array(z.object({ src: image, alt: z.string().min(1), caption: z.string().min(1), inlineAfter: z.string().min(1).optional() })).default([]),
+    // table (P-06 F-007 step 2, contract §1.9): the figure's data as a "표로 보기" table under its caption (Figure.astro);
+    // column headers are localized (resolved per page language), cells are shown as written. Values only from a source
+    // in the repo (no invented facts).
+    figures: z
+      .array(
+        z.object({
+          src: image,
+          alt: z.string().min(1),
+          caption: z.string().min(1),
+          inlineAfter: z.string().min(1).optional(),
+          table: z.object({ columns: z.array(localized).min(1), rows: z.array(z.array(z.string())).min(1) }).optional(),
+        }),
+      )
+      .default([]),
     links: z.object({ github: z.url().optional(), report: z.url().optional(), slides: z.url().optional() }).default({}),
     // spec §6 audience{game, research} (P1-8): "게임 팀에게 / 연구 기여" after the body. Every project with a page has
     // it with at least one part (tests/content/projects.test.ts); a part the owner has no text for is left out

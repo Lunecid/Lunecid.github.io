@@ -51,4 +51,31 @@ describe('src/styles/editorial.css (P2-1, spec §8)', () => {
     expect(data).toContain("import '../styles/read.css'; // TRANSITIONAL P2-2 → P2-9 (D-7)");
     for (const f of ['BaseLayout', 'NeutralLayout']) expect(read(`src/layouts/${f}.astro`), f).not.toContain('editorial.css');
   });
+
+  it('re-colours the plain research components on general pages (P2-5)', () => {
+    const selectors = rules.flatMap((r) => splitSelectors(r.selector));
+    for (const s of [
+      `${SCOPE} .paper[data-paper] a`,
+      `${SCOPE} .paper[data-paper] :focus-visible`,
+      `${SCOPE} .pub__btn:hover`,
+      `${SCOPE} .pub__btn[aria-expanded="true"]`,
+      `${SCOPE} .bib__copy:hover`,
+      `${SCOPE} .ed-figure img`,
+    ]) expect(selectors, s).toContain(s);
+  });
+
+  it('figures (P2-5, P-06 F-065): the image has no frame (read.css frames .prose figure img until Task 9) and a cited figure lands below the nav', () => {
+    const decls = (selector: string) => rules.filter((r) => splitSelectors(r.selector).includes(selector)).map((r) => r.decls);
+    expect(decls(`${SCOPE} .ed-figure img`).map((d) => d.get('border'))).toContain('0');
+    expect(decls(`${SCOPE} .ed-figure`).map((d) => d.get('scroll-margin-top'))).toContain('calc(var(--nav-h) + 16px)');
+    const hover = rules.filter((r) => r.media === '@media (hover: hover)').flatMap((r) => splitSelectors(r.selector));
+    expect(hover, 'colour hovers only on hover-capable pointers (N13)').toEqual(expect.arrayContaining([`${SCOPE} .pub__btn:hover`, `${SCOPE} .bib__copy:hover`]));
+  });
+
+  it('every hover sits inside @media (hover: hover) and has a matching :active press state (N13, Global Constraints)', () => {
+    const hover = rules.filter((r) => r.media === '@media (hover: hover)').flatMap((r) => splitSelectors(r.selector));
+    const outside = rules.filter((r) => r.media === null).flatMap((r) => splitSelectors(r.selector));
+    expect(outside.filter((s) => s.includes(':hover'))).toEqual([]);
+    for (const s of hover.filter((h) => h.endsWith(':hover'))) expect(outside, s).toContain(s.replace(/:hover$/, ':active'));
+  });
 });

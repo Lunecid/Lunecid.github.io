@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import AucOverallChart from '../../src/components/research/AucOverallChart.astro';
-import { overallAuc } from '../../src/data/research/cog-2026';
+import { figureCopy, overallAuc } from '../../src/data/research/cog-2026';
 import { readSource, renderAstro } from './helpers';
 
 const CAPTION = '15.16 패치 테스트 AUC, 세 시드 평균. 세로선은 우연 수준(0.5)입니다.';
@@ -178,6 +178,68 @@ describe('AucOverallChart.astro', () => {
     const src = readSource('src/components/research/AucOverallChart.astro');
     expect(src).toMatch(/\.chart--hud \.chart__dot--hl\s*\{\s*fill:\s*var\(--hud-strong\)/);
     expect(src).toMatch(/\.chart--hud \.chart__scroll\s*\{[^}]*background:\s*transparent/);
+  });
+
+  it('tone editorial (P2-5): black and grey with the one accent, a heavy top rule, the numbered caption; read tone unchanged', async () => {
+    const props = { lang: 'ko', rows: overallAuc, caption: figureCopy.aucOverall.caption.ko, alt: figureCopy.aucOverall.alt.ko };
+    const ed = await renderAstro(AucOverallChart, { props: { ...props, tone: 'editorial', figureNumber: 2 } });
+    expect(ed).toMatch(/<figure class="chart chart--overall chart--editorial ed-figure"/);
+    expect(ed).toMatch(/<p class="chart__caption-text"[^>]*><span class="ed-figcap__num"[^>]*>그림 2 —<\/span>/);
+    const read = await renderAstro(AucOverallChart, { props });
+    expect(read).toMatch(/<figure class="chart chart--overall"[\s>]/);
+    expect(read).not.toContain('ed-figcap__num');
+    const css = readSource('src/components/research/AucOverallChart.astro');
+    expect(css).toMatch(/\.chart--editorial \.chart__dot--hl \{ fill: var\(--ed-accent\); \}/);
+  });
+
+  it('P-06 F-085: LightGBM is told apart without its hue (a 2px ring round its dot, label and value at weight 800) in every tone and layout', async () => {
+    for (const tone of ['read', 'hud', 'editorial'] as const) {
+      const html = await renderAstro(AucOverallChart, { props: { lang: 'en', rows: overallAuc, caption: CAPTION, alt: ALT, tone } });
+      for (const name of LAYOUTS) {
+        const part = layoutOf(html, name);
+        expect(openTags(part, 'circle', 'chart__ring'), `${tone} ${name}: one ring`).toHaveLength(1);
+        const lightgbm = part.split(/<g\b/).find((chunk) => chunk.includes('data-model="lightgbm"')) ?? '';
+        const ring = openTags(lightgbm, 'circle', 'chart__ring')[0] ?? '';
+        const dot = openTags(lightgbm, 'circle', 'chart__dot--hl')[0] ?? '';
+        expect([attr(ring, 'cx'), attr(ring, 'cy')], `${tone} ${name}: the ring is round the LightGBM dot`).toEqual([attr(dot, 'cx'), attr(dot, 'cy')]);
+        expect(Number(attr(ring, 'r')), `${tone} ${name}: a gap between the ring and the inner dot`).toBeGreaterThan(Number(attr(dot, 'r')) + 2);
+        expect(texts(lightgbm, 'chart__label--hl'), `${tone} ${name}`).toEqual(['LightGBM']);
+        expect(texts(lightgbm, 'chart__value--hl'), `${tone} ${name}`).toEqual(['0.675']);
+        expect([...texts(part, 'chart__label--hl'), ...texts(part, 'chart__value--hl')], `${tone} ${name}: only LightGBM`).toHaveLength(2);
+      }
+    }
+    const src = readSource('src/components/research/AucOverallChart.astro');
+    expect(src).toMatch(/\.chart__ring \{ fill: none; stroke: var\(--accent-deep\); stroke-width: 2px; \}/); // read and hud
+    expect(src).toMatch(/\.chart__label--hl,\s*\n\s*\.chart__value--hl \{ font-weight: 800; \}/);
+    expect(src).toMatch(/\.chart--editorial \.chart__ring \{ stroke: var\(--ed-accent\); \}/);
+    expect(src).not.toMatch(/\.chart--hud \.chart__ring/); // the hud tone keeps the --accent-deep ring
+  });
+
+  it('P-06 F-085: the groups are named at their boundary (TABULAR, NEURAL; above each group) and the axis is titled "AUC →", in every layout', async () => {
+    for (const lang of ['ko', 'en'] as const) {
+      const html = await render(lang);
+      for (const name of LAYOUTS) {
+        const part = layoutOf(html, name);
+        expect(texts(part, 'chart__group'), `${lang} ${name}`).toEqual(['TABULAR', 'NEURAL']);
+        expect(texts(part, 'chart__axis-title'), `${lang} ${name}`).toEqual(['AUC →']);
+        const groupYs = openTags(part, 'text', 'chart__group').map((tag) => Number(attr(tag, 'y')));
+        const dotYs = openTags(part, 'circle', 'chart__dot').map((tag) => Number(attr(tag, 'cy')));
+        const labelYs = openTags(part, 'text', 'chart__label').map((tag) => Number(attr(tag, 'y')));
+        // TABULAR above LightGBM (row 0); NEURAL below MLP (row 1) and above Bi-GRU (row 2), the first neural row.
+        expect(groupYs[0], `${name} TABULAR`).toBeLessThan(Math.min(dotYs[0]!, labelYs[0]!));
+        expect(groupYs[1], `${name} NEURAL`).toBeGreaterThan(Math.max(dotYs[1]!, labelYs[1]!));
+        expect(groupYs[1], `${name} NEURAL`).toBeLessThan(Math.min(dotYs[2]!, labelYs[2]!));
+        // The axis title sits under the tick labels, inside the viewBox.
+        const tickY = Number(attr(openTags(part, 'text', 'chart__tick')[0]!, 'y'));
+        const titleY = Number(attr(openTags(part, 'text', 'chart__axis-title')[0]!, 'y'));
+        const viewBoxHeight = Number((attr(openTags(part, 'svg', 'chart__svg')[0]!, 'viewBox') ?? '').split(/\s+/)[3]);
+        expect(titleY, name).toBeGreaterThan(tickY);
+        expect(titleY + 4, name).toBeLessThanOrEqual(viewBoxHeight);
+      }
+    }
+    // The labels come from row.group: one group, one label.
+    const neuralOnly = await renderAstro(AucOverallChart, { props: { lang: 'ko', rows: overallAuc.filter((row) => row.group === 'neural'), caption: CAPTION, alt: ALT } });
+    expect(texts(layoutOf(neuralOnly, 'wide'), 'chart__group')).toEqual(['NEURAL']);
   });
 });
 

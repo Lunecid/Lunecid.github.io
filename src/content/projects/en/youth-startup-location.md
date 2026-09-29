@@ -21,6 +21,22 @@ figures:
     alt: 'Heatmap of key-feature z-scores by cluster. Cluster 0 is near average; cluster 1 is high on late-night foot traffic; cluster 2 on middle-aged share and competition; cluster 3 on the floating-to-resident ratio.'
     caption: 'Z-scores of key features by cluster; redder means above average. Cluster 0=Residential, 1=Nightlife, 2=Middle-aged, 3=Residential and transit hub.'
     inlineAfter: 'Figure 1'
+    # P-06 F-007 step 2: the z-scores printed in the heatmap, feature names as printed.
+    table:
+      columns:
+        - { ko: 변수, en: Feature }
+        - { ko: 군집 0, en: Cluster 0 }
+        - { ko: 군집 1, en: Cluster 1 }
+        - { ko: 군집 2, en: Cluster 2 }
+        - { ko: 군집 3, en: Cluster 3 }
+      rows:
+        - ['youth_floating_ratio', '-0.13', '1.22', '1.82', '-0.75']
+        - ['middle_aged_floating_ratio', '-0.09', '0.43', '2.32', '-0.74']
+        - ['floating_pop_17_20', '-0.09', '2.29', '0.37', '-0.70']
+        - ['floating_resident_ratio', '-0.25', '-0.68', '-1.33', '1.16']
+        - ['floating_pop_11_14', '-0.09', '1.97', '0.62', '-0.69']
+        - ['floating_pop_22_01', '-0.08', '2.39', '-0.09', '-0.62']
+        - ['competition_intensity', '-0.03', '0.74', '1.42', '-0.66']
 links:
   github: 'https://github.com/Lunecid/busan-youth-startup-location'
   report: 'https://github.com/Lunecid/busan-youth-startup-location/blob/main/docs/report.pdf'
@@ -59,6 +75,7 @@ The team ran the analysis below.
 
 Busan's restaurant districts fell into four distinct types (Figure 1).
 
+<!-- row-headers -->
 | Type | Cluster | Profile | Suggested businesses |
 |---|---|---|---|
 | Residential | 0 | All indicators below average, weak competition | Delivery-only kitchens, family restaurants |

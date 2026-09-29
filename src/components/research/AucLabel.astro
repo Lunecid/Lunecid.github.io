@@ -14,9 +14,11 @@ interface Props {
   lang: Lang;
   /** Prefix of the SVG title/desc ids (the label appears once per page). */
   idPrefix?: string;
+  /** 'editorial' (P2-5): the general version's black/grey plus one accent. */
+  tone?: 'read' | 'editorial';
 }
 
-const { lang, idPrefix = 'auc-label' } = Astro.props;
+const { lang, idPrefix = 'auc-label', tone = 'read' } = Astro.props;
 const MAX = 0.7;
 const lightgbm = overallAuc.find((row) => row.highlight);
 const mlp = overallAuc.find((row) => row.id === 'mlp');
@@ -62,7 +64,7 @@ const layouts = [
   { name: 'strip', ...place(strip) },
 ];
 ---
-<div class="auc-label" data-auc-label>
+<div class:list={['auc-label', { 'auc-label--editorial': tone === 'editorial' }]} data-auc-label>
   {layouts.map(({ name, l, x, rows, gap }) => (
     <svg class={`auc-label__svg auc-label__svg--${name}`} viewBox={`0 0 ${l.w} ${l.h}`} preserveAspectRatio="xMidYMid meet" role="img" aria-labelledby={`${idPrefix}-${name}-title`} aria-describedby={`${idPrefix}-${name}-desc`} style={`--f: ${l.font}px`}>
       <title id={`${idPrefix}-${name}-title`}>{caption}</title>
@@ -112,6 +114,19 @@ const layouts = [
   .auc-label__dot--hl { fill: var(--accent-deep); }
   .auc-label__range { stroke: var(--read-muted); stroke-width: 4; }
   .auc-label__cap { stroke: var(--read-muted); stroke-width: 2; }
+  /* tone="editorial" (P2-5, spec §8): black and grey plus the one accent for the paper's model; sans numbers. */
+  .auc-label--editorial .auc-label__name,
+  .auc-label--editorial .auc-label__value { fill: var(--ed-ink); }
+  .auc-label--editorial .auc-label__value,
+  .auc-label--editorial .auc-label__tick { font-family: var(--font-sans); }
+  .auc-label--editorial .auc-label__tick { fill: var(--ed-muted); }
+  .auc-label--editorial .auc-label__axis { stroke: var(--ed-ink); }
+  .auc-label--editorial .auc-label__guide { stroke: var(--ed-rule); }
+  .auc-label--editorial .auc-label__chance,
+  .auc-label--editorial .auc-label__range,
+  .auc-label--editorial .auc-label__cap { stroke: var(--ed-muted); }
+  .auc-label--editorial .auc-label__dot { fill: var(--ed-muted); }
+  .auc-label--editorial .auc-label__dot--hl { fill: var(--ed-accent); }
   /* Final fix 2 item 18: forced colours (Windows contrast themes) repaint the label's white plate as Canvas but not
      SVG fills, so every label and mark takes a system colour (LightGBM, the paper's model, stays apart as Highlight). */
   @media (forced-colors: active) {

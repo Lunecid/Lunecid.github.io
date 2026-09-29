@@ -5,14 +5,15 @@ import type { ImageMetadata } from 'astro';
 import Figure from '../common/Figure.astro';
 import SectionHead from '../hud/SectionHead.astro';
 import type { Lang } from '../../i18n/ui';
-import { t } from '../../i18n/utils';
+import { t, type Localized } from '../../i18n/utils';
 import { captionFor, getVariant, type VariantId } from '../../variants';
 
 interface Props {
   lang: Lang;
   variant: VariantId;
-  /** `number` is the figure's number in the case study ("그림 N"); defaults to the position in this list. */
-  figures: { src: ImageMetadata; alt: string; caption: string; number?: number }[];
+  /** `number` is the figure's number in the case study ("그림 N"); defaults to the position in this list.
+      `table` (P-06 F-007 step 2): the figure's data, shown by Figure as "표로 보기". */
+  figures: { src: ImageMetadata; alt: string; caption: string; number?: number; table?: { columns: Localized[]; rows: string[][] } }[];
 }
 
 const { lang, variant, figures } = Astro.props;
@@ -20,12 +21,12 @@ const { lang, variant, figures } = Astro.props;
 
 {
   figures.length > 0 && (
-    <section id="figures" class="figs read read-section read-column" aria-labelledby="figures-title">
+    <section id="figures" class:list={['figs', variant === 'game' ? ['read', 'read-section', 'read-column'] : 'ed-prose']} aria-labelledby="figures-title">
       <SectionHead variant={variant} id="figures-title" caption={captionFor(getVariant(variant), 'figures', lang)} title={t(lang, 'project.figures')} />
       <ol class="figs__list" role="list">
         {figures.map((fig, i) => (
           <li>
-            <Figure lang={lang} src={fig.src} alt={fig.alt} caption={fig.caption} number={fig.number ?? i + 1} class="figure--inline" />
+            <Figure variant={variant} lang={lang} src={fig.src} alt={fig.alt} caption={fig.caption} number={fig.number ?? i + 1} class="figure--inline" table={fig.table} />
           </li>
         ))}
       </ol>

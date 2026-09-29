@@ -51,7 +51,7 @@
 
 /* ── figures: a heavy top rule instead of a frame; captions "그림 n —" / "Fig. n —" ── */
 :root[data-variant="data"] .ed-figure { margin: 0; padding-top: 10px; border-top: var(--ed-rule-w-strong) solid var(--ed-rule-strong); }
-:root[data-variant="data"] .ed-figure img { display: block; width: 100%; height: auto; }
+:root[data-variant="data"] .ed-figure img { display: block; width: 100%; height: auto; border: 0; }
 :root[data-variant="data"] .ed-figcap { margin-top: 8px; font-size: var(--fs-small); line-height: 1.6; color: var(--ed-muted); }
 :root[data-variant="data"] .ed-figcap__num { margin-right: .35em; font-weight: 700; color: var(--ed-ink); }
 :root[data-variant="data"] .ed-figcap__num:lang(en) { font-family: var(--font-ed-serif); font-style: italic; }
@@ -99,3 +99,26 @@
 
 /* ── the version switch (P1-15) on general pages: a plain link in the accent (P2-2) ── */
 :root[data-variant="data"] .variant-switch { color: var(--ed-accent); }
+
+/* ── plain shared components (markup without HUD decoration): re-coloured here, never re-marked (P2-5) ──
+   Specificity beats their scoped rules: [data-paper] is the paper sheet's own attribute. */
+:root[data-variant="data"] .paper[data-paper] a { color: var(--ed-accent); }
+:root[data-variant="data"] .paper[data-paper] :focus-visible { outline-color: var(--ed-accent); }
+:root[data-variant="data"] .pub__btn,
+:root[data-variant="data"] .pub__pending,
+:root[data-variant="data"] .pub__panel-label,
+:root[data-variant="data"] .bib__copy { font-family: var(--font-sans); }
+:root[data-variant="data"] .pub__btn[aria-expanded="true"],
+:root[data-variant="data"] .bib__copy[data-state="done"] { color: var(--ed-accent); border-color: var(--ed-accent); }
+/* colour hovers only on hover-capable pointers (N13; PaperLinks did the same in 54cf5a8) */
+@media (hover: hover) {
+  :root[data-variant="data"] .pub__btn:hover,
+  :root[data-variant="data"] .bib__copy:hover { color: var(--ed-accent); border-color: var(--ed-accent); }
+  :root[data-variant="data"] .pub__title a:hover { color: var(--ed-accent); }
+}
+:root[data-variant="data"] .pub__btn:active,
+:root[data-variant="data"] .bib__copy:active { color: var(--ed-accent); border-color: var(--ed-accent); }
+:root[data-variant="data"] .pub__title a:active { color: var(--ed-accent); }
+:root[data-variant="data"] .bib__copy:focus-visible { outline-color: var(--ed-accent); }
+/* F-065 (P-06): a cited figure lands below the sticky nav */
+:root[data-variant="data"] .ed-figure { scroll-margin-top: calc(var(--nav-h) + 16px); }
