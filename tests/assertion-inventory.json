@@ -13,7 +13,7 @@
   "tests/astro/DailyChart.test.ts": 17,
   "tests/astro/DataFooter.test.ts": 16,
   "tests/astro/DataLayout.test.ts": 13,
-  "tests/astro/DataNav.test.ts": 13,
+  "tests/astro/DataNav.test.ts": 14,
   "tests/astro/DocumentList.test.ts": 15,
   "tests/astro/EducationTimeline.test.ts": 15,
   "tests/astro/FavoriteTiles.test.ts": 11,

@@ -33,7 +33,7 @@ const currentValue = exact ? 'page' : 'true';
 <header class="data-nav" data-open="false" data-data-nav>
   <div class="data-nav__bar">
     <a class="data-nav__brand" href={homeHref(lang, 'data')}>
-      <span class="data-nav__name" data-serif>{person.name[lang]}</span>
+      <span class="data-nav__name" data-serif aria-hidden="true">{person.name[lang]}</span>
       <span class="sr-only">{t(lang, 'nav.brandSr')}</span>
     </a>
     <nav id="data-menu" class="data-nav__panel" aria-label={t(lang, 'nav.label')}>
@@ -139,7 +139,9 @@ const currentValue = exact ? 'page' : 'true';
   .data-nav__cv {
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     min-height: var(--tap);
+    min-width: var(--tap);
     color: var(--ed-accent);
     font-weight: 600;
   }
@@ -203,6 +205,10 @@ const currentValue = exact ? 'page' : 'true';
   }
   @media (min-width: 1068px) {
     .data-nav__bar { padding-inline: 28px; }
+  }
+  /* F-023 (as HudNav): from 1200px the bar's gutter matches .container's, so the brand lines up with the content. */
+  @media (min-width: 1200px) {
+    .data-nav__bar { padding-inline: var(--gutter); }
   }
   @keyframes nav-panel-in { from { opacity: 0; transform: translateY(-8px); } }
   @keyframes nav-scrim-in { from { opacity: 0; } }

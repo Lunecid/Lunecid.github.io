@@ -14,6 +14,8 @@ describe('DataNav.astro (P2-2)', () => {
     const ko = await renderAstro(DataNav, { props: { lang: 'ko', current: 'records', exact: true, altLangHref: '/en/data/records/', ...cvKo }, url: '/data/records/' });
     expect(ko).toMatch(/<a class="data-nav__brand" href="\/data\/"/);
     expect(ko).toMatch(/<span class="data-nav__name" data-serif[^>]*>백성은<\/span>/);
+    // The accessible name is the sr-only '백성은 홈' once, not the name twice; the visible name is part of it (WCAG 2.5.3).
+    expect(ko).toMatch(/<span class="data-nav__name" data-serif[^>]*aria-hidden="true"[^>]*>백성은<\/span>\s*<span class="sr-only"[^>]*>백성은 홈<\/span>/);
     expect(listHrefs(ko)).toEqual(['/data/research/', '/data/projects/', '/data/records/']);
     expect(ko).toMatch(/<a href="\/data\/records\/" aria-current="page"/);
     expect(ko).not.toMatch(/player-log|플레이 로그|\b0[1-4]\b|\[SB\]|GAME DATA ANALYST|hud-nav|cut--line/);
