@@ -24,8 +24,8 @@ const PUB = (() => {
 })();
 
 const ROUTES = [
-  { lang: 'ko', route: '/research/cog-2026-engagement/' },
-  { lang: 'en', route: '/en/research/cog-2026-engagement/' },
+  { lang: 'ko', route: '/game/research/cog-2026-engagement/' },
+  { lang: 'en', route: '/en/game/research/cog-2026-engagement/' },
 ] as const;
 
 const squash = (s: string) => s.replace(/\s+/g, ' ').trim();

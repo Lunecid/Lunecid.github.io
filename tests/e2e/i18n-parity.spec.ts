@@ -27,22 +27,22 @@ test.describe('language switch resolves on every route', () => {
 // P2-6 (controller ruling 3): the language switch keeps location.hash (anchor ids are shared across languages), so
 // a hash-scrolled page (e.g. from "지원 요건 대응 보기" → #job-fit) stays on the same section after switching language.
 test.describe('language switch keeps the #hash', () => {
-  test('/records/#job-fit -> /en/records/#job-fit', async ({ page }) => {
-    await page.goto('/records/#job-fit', { waitUntil: 'load' });
+  test('/game/records/#job-fit -> /en/game/records/#job-fit', async ({ page }) => {
+    await page.goto('/game/records/#job-fit', { waitUntil: 'load' });
     // a[hreflang]').first() (as elsewhere in this file) is the DOM-first .hud-nav__lang--panel link, hidden at
     // desktop width (it exists only for < 734px); this test clicks, so it needs the always-on-desktop bar link.
     const link = page.locator('.hud-nav__lang--bar a[hreflang]');
-    await expect(link).toHaveAttribute('href', '/en/records/#job-fit');
+    await expect(link).toHaveAttribute('href', '/en/game/records/#job-fit');
     await link.click();
-    await expect(page).toHaveURL(/\/en\/records\/#job-fit$/);
+    await expect(page).toHaveURL(/\/en\/game\/records\/#job-fit$/);
     await expect(page.locator('html')).toHaveAttribute('lang', 'en');
     await expect(page.locator('#job-fit')).toBeInViewport();
   });
 
   test('a route with no hash is unaffected', async ({ page }) => {
-    await page.goto('/records/', { waitUntil: 'load' });
+    await page.goto('/game/records/', { waitUntil: 'load' });
     const link = page.locator('a[hreflang]').first();
-    await expect(link).toHaveAttribute('href', '/en/records/');
+    await expect(link).toHaveAttribute('href', '/en/game/records/');
   });
 });
 

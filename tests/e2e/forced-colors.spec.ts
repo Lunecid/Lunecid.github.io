@@ -4,10 +4,10 @@ import { test, expect, settle } from './helpers';
 
 test.describe('N14: forced colours', () => {
   for (const colorScheme of ['dark', 'light'] as const) {
-    test(`${colorScheme}: visible .cut controls keep a ≥1px border on / and /records/`, async ({ page }) => {
+    test(`${colorScheme}: visible .cut controls keep a ≥1px border on /game/ and /game/records/`, async ({ page }) => {
       await page.emulateMedia({ forcedColors: 'active', colorScheme });
       await page.setViewportSize({ width: 1440, height: 900 });
-      for (const route of ['/', '/records/'] as const) {
+      for (const route of ['/game/', '/game/records/'] as const) {
         await page.goto(route, { waitUntil: 'networkidle' });
         await settle(page);
         const widths = await page.evaluate(() =>
@@ -27,7 +27,7 @@ test.describe('N14: forced colours', () => {
   test('pressed tag / character / game-tab backgrounds differ from idle', async ({ page }) => {
     await page.emulateMedia({ forcedColors: 'active', colorScheme: 'dark' });
     await page.setViewportSize({ width: 1440, height: 900 });
-    await page.goto('/projects/', { waitUntil: 'networkidle' });
+    await page.goto('/game/projects/', { waitUntil: 'networkidle' });
     await settle(page);
 
     const tags = page.locator('.tag-filter__btn');
@@ -38,7 +38,7 @@ test.describe('N14: forced colours', () => {
     const pressedBg = await tags.nth(1).evaluate((el) => getComputedStyle(el).backgroundColor);
     expect(pressedBg, 'pressed tag uses Highlight').not.toBe(idleBg);
 
-    await page.goto('/', { waitUntil: 'networkidle' });
+    await page.goto('/game/', { waitUntil: 'networkidle' });
     await settle(page);
     const charBtns = page.locator('.char-stage__btn');
     if ((await charBtns.count()) >= 2) {
@@ -49,7 +49,7 @@ test.describe('N14: forced colours', () => {
       if (pressed0 !== pressed1) expect(a).not.toBe(b);
     }
 
-    await page.goto('/player-log/', { waitUntil: 'networkidle' });
+    await page.goto('/game/player-log/', { waitUntil: 'networkidle' });
     await settle(page);
     const tabs = page.locator('.fg__tab');
     if ((await tabs.count()) >= 2) {
@@ -66,7 +66,7 @@ test.describe('N14: forced colours', () => {
   test('.hud-label__sq background differs from the body', async ({ page }) => {
     await page.emulateMedia({ forcedColors: 'active', colorScheme: 'dark' });
     await page.setViewportSize({ width: 1440, height: 900 });
-    await page.goto('/', { waitUntil: 'networkidle' });
+    await page.goto('/game/', { waitUntil: 'networkidle' });
     await settle(page);
     const sq = page.locator('.hud-label__sq').first();
     await expect(sq).toBeVisible();

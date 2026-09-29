@@ -4,7 +4,7 @@ import { test, expect } from './helpers';
 
 const DAY_MS = 86_400_000;
 const TARGETS = [
-  { route: '/projects/', id: 'github' },
+  { route: '/game/projects/', id: 'github' },
   { route: '/stats/', id: 'daily' },
 ] as const;
 

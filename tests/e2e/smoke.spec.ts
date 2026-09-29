@@ -1,6 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { test, expect, builtRoutes, collectProblems } from './helpers';
 import { GOATCOUNTER } from '../../src/config';
+import { allRoutes } from '../../src/lib/routes';
 import { containsTrademark } from '../../src/lib/seo';
 
 const AXE_TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'];
@@ -49,7 +50,7 @@ for (const route of builtRoutes()) {
 }
 
 test('OG endpoints return 1200×630 PNGs', async ({ request }) => {
-  for (const path of ['/og/home.png', '/og/en/home.png', '/og/projects/kickick-park.png', '/og/en/research/cog-2026-engagement.png']) {
+  for (const path of ['/og/home.png', '/og/en/home.png', '/og/game/projects/kickick-park.png', '/og/en/game/research/cog-2026-engagement.png']) {
     const res = await request.get(path);
     expect(res.status(), path).toBe(200);
     expect(res.headers()['content-type'], path).toContain('image/png');
@@ -74,12 +75,14 @@ test('sitemap lists ko and en pages and no /print/ route', async ({ request }) =
   const xml = await res.text();
   expect(xml).toContain('<loc>https://lunecid.github.io/</loc>');
   expect(xml).toContain('<loc>https://lunecid.github.io/en/</loc>');
+  expect(xml).toContain('<loc>https://lunecid.github.io/game/</loc>');
+  expect(xml).toContain('<loc>https://lunecid.github.io/data/</loc>');
   expect(xml).not.toContain('/print/');
 });
 
 test.describe('projects tag filter (P2-8)', () => {
   test('tags with fewer than 2 projects are hidden entirely; the rest filter and All restores them', async ({ page }) => {
-    await page.goto('/projects/');
+    await page.goto('/game/projects/');
     const all = page.locator('#project-grid > [data-tags]');
     const visible = page.locator('#project-grid > [data-tags]:not([hidden])');
     await expect(all).toHaveCount(6);
@@ -101,7 +104,7 @@ test.describe('projects tag filter (P2-8)', () => {
   });
 
   test('the selection lives in ?tag= and survives reload, and reappears after visiting a project and going back', async ({ page }) => {
-    await page.goto('/en/projects/');
+    await page.goto('/en/game/projects/');
     const group = page.getByRole('group', { name: 'Filter by tag' });
     const status = page.locator('[data-tag-filter-status]');
     const viz = group.getByRole('button', { name: 'Visualization', exact: true });
@@ -116,7 +119,7 @@ test.describe('projects tag filter (P2-8)', () => {
     // history.replaceState (controller ruling 5) never creates its own back-traversable entry between two tag
     // selections on the same page; "restored on … back" means: leave for a project, then return.
     await page.locator('#project-grid > [data-tags]:not([hidden]) .cart__link').first().click();
-    await page.waitForURL(/\/en\/projects\/[a-z0-9-]+\/$/);
+    await page.waitForURL(/\/en\/game\/projects\/[a-z0-9-]+\/$/);
     await page.goBack();
     await expect(page).toHaveURL(/[?&]tag=viz(&|$)/);
     await expect(viz).toHaveAttribute('aria-pressed', 'true');
@@ -124,7 +127,7 @@ test.describe('projects tag filter (P2-8)', () => {
   });
 
   test('fix round 1 minor: the status region stays silent on initial load, even restoring a valid ?tag=', async ({ page }) => {
-    await page.goto('/en/projects/?tag=viz');
+    await page.goto('/en/game/projects/?tag=viz');
     const status = page.locator('[data-tag-filter-status]');
     await expect(page.getByRole('button', { name: 'Visualization', exact: true })).toHaveAttribute('aria-pressed', 'true');
     await expect(page.locator('#project-grid > [data-tags]:not([hidden])')).toHaveCount(3);
@@ -136,7 +139,7 @@ test.describe('projects tag filter (P2-8)', () => {
   });
 
   test('fix round 2 item 8: a hash-only popstate (e.g. a skip link) does not re-announce the filter', async ({ page }) => {
-    await page.goto('/en/projects/?tag=viz');
+    await page.goto('/en/game/projects/?tag=viz');
     const status = page.locator('[data-tag-filter-status]');
     await expect(page.getByRole('button', { name: 'Visualization', exact: true })).toHaveAttribute('aria-pressed', 'true');
     await expect(status).toBeEmpty(); // silent on load, as above
@@ -152,13 +155,13 @@ test.describe('projects tag filter (P2-8)', () => {
   });
 
   test('fix round 1 minor: an unknown ?tag= shows All and is dropped from the address bar', async ({ page }) => {
-    await page.goto('/projects/?tag=does-not-exist');
+    await page.goto('/game/projects/?tag=does-not-exist');
     await expect(page.getByRole('group', { name: '태그로 거르기' }).getByRole('button', { name: '전체', exact: true })).toHaveAttribute(
       'aria-pressed',
       'true',
     );
     await expect(page.locator('#project-grid > [data-tags]:not([hidden])')).toHaveCount(6);
-    await expect(page).toHaveURL(/\/projects\/$/);
+    await expect(page).toHaveURL(/\/game\/projects\/$/);
     expect(new URL(page.url()).searchParams.has('tag')).toBe(false);
   });
 });
@@ -169,8 +172,8 @@ test('unknown route serves GAME OVER', async ({ page }) => {
   await expect(page.getByRole('heading', { level: 1 })).toContainText('GAME OVER');
   await expect(page.getByText('페이지를 찾을 수 없습니다')).toBeVisible();
   await expect(page.getByText('CONTINUE?', { exact: true })).toBeVisible();
-  await expect(page.getByRole('link', { name: '처음으로', exact: true })).toHaveAttribute('href', '/');
-  await expect(page.getByRole('link', { name: '프로젝트 보기', exact: true })).toHaveAttribute('href', '/projects/');
+  await expect(page.getByRole('link', { name: '처음으로', exact: true })).toHaveAttribute('href', '/game/');
+  await expect(page.getByRole('link', { name: '프로젝트 보기', exact: true })).toHaveAttribute('href', '/game/projects/');
   await expect(page.locator('meta[http-equiv="refresh"]')).toHaveCount(0);
   await expect(page.locator('link[hreflang]')).toHaveCount(0);
   const url = page.url();
@@ -264,7 +267,7 @@ test.describe('stats page at 375 px', () => {
   });
 });
 
-test('all 24 routes are built', () => {
+test('every route of the table is built', () => {
   const built = builtRoutes();
-  expect(built, `built routes: ${built.join(' ')}`).toHaveLength(24);
+  expect(built, `built routes: ${built.join(' ')}`).toEqual(allRoutes());
 });

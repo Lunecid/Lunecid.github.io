@@ -19,7 +19,7 @@ test.use({ reducedMotion: 'no-preference' });
 
 test('without reduced motion the CRT intro plays once per session on the home page', async ({ page }) => {
   const html = page.locator('html');
-  await page.goto('/', { waitUntil: 'load' });
+  await page.goto('/game/', { waitUntil: 'load' });
   // The head script marks a played intro with data-intro-played (kept) and removes data-intro after 700 ms.
   await expect(html).toHaveAttribute('data-intro-played', '');
   await expect(html).not.toHaveAttribute('data-intro');
@@ -35,7 +35,7 @@ test.describe('with the OS reduced-motion setting', () => {
 
   test('reduced motion: no CRT and data-motion=reduce', async ({ page }) => {
     const html = page.locator('html');
-    await page.goto('/', { waitUntil: 'load' });
+    await page.goto('/game/', { waitUntil: 'load' });
     await expect(html).toHaveAttribute('data-motion', 'reduce');
     await expect(html, 'the intro never started').not.toHaveAttribute('data-intro-played');
     await expect(html).not.toHaveAttribute('data-intro');
@@ -43,7 +43,7 @@ test.describe('with the OS reduced-motion setting', () => {
   });
 
   test('reduced motion: no .char-stage__streak animation', async ({ page }) => {
-    await page.goto('/', { waitUntil: 'networkidle' });
+    await page.goto('/game/', { waitUntil: 'networkidle' });
     const names = await page
       .locator('.char-stage__streak')
       .evaluateAll((streaks) => streaks.map((s) => getComputedStyle(s).animationName));
@@ -54,7 +54,7 @@ test.describe('with the OS reduced-motion setting', () => {
 test('footer toggle stores sb:motion, flips data-motion; visible label is constant (fix round 2 item 1)', async ({
   page,
 }) => {
-  await page.goto('/records/', { waitUntil: 'networkidle' });
+  await page.goto('/game/records/', { waitUntil: 'networkidle' });
   const html = page.locator('html');
   const toggle = page.locator('[data-motion-toggle]');
   const chip = page.locator('[data-motion-chip]');
@@ -96,7 +96,7 @@ test.describe('P2-7 / fix round 2 item 1: the OS reduced-motion setting locks th
   test.use({ reducedMotion: 'reduce' });
 
   test('the toggle is pressed+disabled; a visible note outside the button explains why', async ({ page }) => {
-    await page.goto('/en/records/', { waitUntil: 'networkidle' });
+    await page.goto('/en/game/records/', { waitUntil: 'networkidle' });
     const toggle = page.locator('[data-motion-toggle]');
     await expect(toggle).toHaveAttribute('aria-pressed', 'true');
     await expect(toggle).toBeDisabled();
@@ -116,7 +116,7 @@ test.describe('P2-7 / fix round 2 item 1: the OS reduced-motion setting locks th
 // the visible label). Now the visible label itself is constant, doubles as the name, and carries no aria-label.
 test.describe('P2-7 fix round 2: accessible name equals the (constant) visible label in every state', () => {
   test('ko: name/pressed/chip in every state', async ({ page }) => {
-    await page.goto('/records/', { waitUntil: 'networkidle' });
+    await page.goto('/game/records/', { waitUntil: 'networkidle' });
     const toggle = page.locator('[data-motion-toggle]');
     await expect(toggle).toHaveAccessibleName('모션 줄이기');
     await expect(toggle).toHaveAttribute('aria-pressed', 'false');
@@ -126,7 +126,7 @@ test.describe('P2-7 fix round 2: accessible name equals the (constant) visible l
   });
 
   test('en: name/pressed pairs in every state, including OS-reduced', async ({ page }) => {
-    await page.goto('/en/records/', { waitUntil: 'networkidle' });
+    await page.goto('/en/game/records/', { waitUntil: 'networkidle' });
     const toggle = page.locator('[data-motion-toggle]');
     await expect(toggle).toHaveAccessibleName('Reduce motion');
     await expect(toggle).toHaveAttribute('aria-pressed', 'false');
@@ -138,7 +138,7 @@ test.describe('P2-7 fix round 2: accessible name equals the (constant) visible l
   test.describe('OS reduced-motion', () => {
     test.use({ reducedMotion: 'reduce' });
     test('ko: name stays the (still constant) visible label, pressed=true, disabled', async ({ page }) => {
-      await page.goto('/records/', { waitUntil: 'networkidle' });
+      await page.goto('/game/records/', { waitUntil: 'networkidle' });
       const toggle = page.locator('[data-motion-toggle]');
       await expect(toggle).toHaveAccessibleName('모션 줄이기');
       await expect(toggle).toHaveAttribute('aria-pressed', 'true');
@@ -164,7 +164,7 @@ test('pages work when localStorage throws (no page errors on /, /player-log/, /r
     }
   });
   const problems = collectProblems(page);
-  for (const route of ['/', '/player-log/', '/records/']) {
+  for (const route of ['/game/', '/game/player-log/', '/game/records/']) {
     const response = await page.goto(route, { waitUntil: 'networkidle' });
     expect(response?.status(), route).toBe(200);
     await expect(page.locator('h1')).toHaveCount(1);

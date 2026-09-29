@@ -1,13 +1,13 @@
 import { mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 import type { Page } from '@playwright/test';
-import { test } from './helpers';
+import { test, gamePath } from './helpers';
 
 const PAGES = [
-  { route: '/', name: 'home' },
-  { route: '/projects/', name: 'projects' },
-  { route: '/records/', name: 'records' },
-  { route: '/player-log/', name: 'player-log' },
+  { route: gamePath('/'), name: 'game-home' },
+  { route: gamePath('/projects/'), name: 'game-projects' },
+  { route: gamePath('/records/'), name: 'game-records' },
+  { route: gamePath('/player-log/'), name: 'game-player-log' },
 ] as const;
 
 /** Scrolls the whole page once so lazy images load and client:visible islands hydrate, then returns to the top. */

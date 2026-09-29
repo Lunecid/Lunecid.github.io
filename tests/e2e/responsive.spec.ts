@@ -23,10 +23,10 @@ test.describe('no rendered text below 12px', () => {
 });
 
 test.describe('identity, CV link and evidence within two screens', () => {
-  for (const route of ['/', '/en/']) {
+  for (const route of ['/game/', '/en/game/']) {
     test(route, async ({ page }, testInfo) => {
       test.skip(testInfo.project.name === 'mobile-320', 'the two-screen rule is asserted at 375 px and wider');
-      const cv = route === '/en/' ? CV_HREF.en : CV_HREF.ko;
+      const cv = route === '/en/game/' ? CV_HREF.en : CV_HREF.ko;
       await page.goto(route, { waitUntil: 'networkidle' });
       await settle(page);
       await page.evaluate(() => window.scrollTo(0, 0));
@@ -57,7 +57,7 @@ test.describe('identity, CV link and evidence within two screens', () => {
 // N01 / G-011: at short phone heights the open menu panel scrolls; body scroll stays locked at 0.
 test.describe('N01: phone menu panel scrolls at short heights', () => {
   for (const height of [256, 200] as const) {
-    for (const route of ['/records/', '/en/records/'] as const) {
+    for (const route of ['/game/records/', '/en/game/records/'] as const) {
       test(`${route} at 320×${height}`, async ({ page }, testInfo) => {
         test.skip(!testInfo.project.name.startsWith('mobile'), 'phone menu only below 734px');
         await page.setViewportSize({ width: 320, height });
@@ -94,7 +94,7 @@ test.describe('N01: phone menu panel scrolls at short heights', () => {
 // N01 / G-017: toggle x/width identical open vs closed; bar stays one row at 305px content width.
 test.describe('N01: phone menu toggle width is stable', () => {
   for (const width of [320, 375, 390] as const) {
-    for (const route of ['/', '/en/'] as const) {
+    for (const route of ['/game/', '/en/game/'] as const) {
       test(`${route} at ${width}px`, async ({ page }, testInfo) => {
         test.skip(!testInfo.project.name.startsWith('mobile'), 'phone menu only below 734px');
         await page.setViewportSize({ width, height: 720 });
@@ -117,11 +117,11 @@ test.describe('N01: phone menu toggle width is stable', () => {
     }
   }
 
-  test('/en/ bar does not wrap at 305px content width', async ({ page }, testInfo) => {
+  test('/en/game/ bar does not wrap at 305px content width', async ({ page }, testInfo) => {
     test.skip(!testInfo.project.name.startsWith('mobile'), 'phone menu only below 734px');
     // 320 CSS px with a desktop-like scrollbar ≈ 305px content; emulate via a 305-wide viewport.
     await page.setViewportSize({ width: 305, height: 720 });
-    await page.goto('/en/', { waitUntil: 'networkidle' });
+    await page.goto('/en/game/', { waitUntil: 'networkidle' });
     await settle(page);
     const toggle = page.locator('[data-nav-toggle]');
     const brand = page.locator('.hud-nav__brand');

@@ -4,12 +4,12 @@ import { test, expect } from './helpers';
 
 test.use({ javaScriptEnabled: false });
 
-const SECTION_LINKS = ['/research/', '/projects/', '/records/', '/player-log/'];
+const SECTION_LINKS = ['/game/research/', '/game/projects/', '/game/records/', '/game/player-log/'];
 const HERO_ART = ['remielle', 'eula'].some((id) => existsSync(join(process.cwd(), 'src', 'assets', 'characters', `${id}.png`)));
 
 test('site is usable without JavaScript at 375px', async ({ page, request }) => {
   await test.step('home: no CRT overlay, nav links visible and reachable, hero art visible when present', async () => {
-    const response = await page.goto('/');
+    const response = await page.goto('/game/');
     expect(response?.status()).toBe(200);
     await expect(page.locator('html')).not.toHaveClass(/(^|\s)js(\s|$)/);
     await expect(page.locator('.crt')).toBeHidden();
@@ -25,16 +25,16 @@ test('site is usable without JavaScript at 375px', async ({ page, request }) => 
     await expect(page.locator('[data-motion-toggle]')).toBeHidden();
   });
 
-  await test.step('/projects/: all 6 cartridges shown, tag filter hidden', async () => {
-    await page.goto('/projects/');
+  await test.step('/game/projects/: all 6 cartridges shown, tag filter hidden', async () => {
+    await page.goto('/game/projects/');
     const cards = page.locator('#project-grid [data-tags]');
     await expect(cards).toHaveCount(6);
     for (let i = 0; i < 6; i += 1) await expect(cards.nth(i)).toBeVisible();
     await expect(page.locator('.tag-filter')).toBeHidden();
   });
 
-  await test.step('/records/: a certificate link opens the WebP', async () => {
-    await page.goto('/records/');
+  await test.step('/game/records/: a certificate link opens the WebP', async () => {
+    await page.goto('/game/records/');
     const certificate = page.locator('#awards a[data-cert-id]').first();
     const href = await certificate.getAttribute('href');
     expect(href, 'certificate link href').toMatch(/\.webp$/);
@@ -45,8 +45,8 @@ test('site is usable without JavaScript at 375px', async ({ page, request }) => 
     await expect(page).toHaveURL(/\.webp$/);
   });
 
-  await test.step('/research/: a figure 크게 보기 link opens the WebP', async () => {
-    await page.goto('/research/');
+  await test.step('/game/research/: a figure 크게 보기 link opens the WebP', async () => {
+    await page.goto('/game/research/');
     const figure = page.locator('#interests a[data-viewer="figures"]').first();
     const href = await figure.getAttribute('href');
     expect(href, 'figure link href').toMatch(/\.webp$/);
@@ -57,8 +57,8 @@ test('site is usable without JavaScript at 375px', async ({ page, request }) => 
     await expect(page).toHaveURL(/\.webp$/);
   });
 
-  await test.step('/research/: the abstract and BibTeX read inline, visible; the (dead-without-JS) toggle buttons are not exposed (fix round 1 item 7, fix round 3 item 3)', async () => {
-    await page.goto('/research/');
+  await test.step('/game/research/: the abstract and BibTeX read inline, visible; the (dead-without-JS) toggle buttons are not exposed (fix round 1 item 7, fix round 3 item 3)', async () => {
+    await page.goto('/game/research/');
     const abstract = page.locator('#cog-2026-engagement-abstract .pub__abstract').first();
     const bib = page.locator('#cog-2026-engagement-bibtex .bib__code').first();
     await expect(abstract).toBeVisible();
@@ -74,8 +74,8 @@ test('site is usable without JavaScript at 375px', async ({ page, request }) => 
     await expect(page.locator('#cog-2026-engagement-bibtex .pub__panel-label').first()).toBeVisible();
   });
 
-  await test.step('/player-log/: the showcase <noscript> copy is visible', async () => {
-    await page.goto('/player-log/');
+  await test.step('/game/player-log/: the showcase <noscript> copy is visible', async () => {
+    await page.goto('/game/player-log/');
     await expect(page.locator('#favorite-games noscript > *').first()).toBeVisible();
     // innerText counts only rendered text: with JS on, the <noscript> body is not rendered.
     // .fg__title (FavoriteGames.css) is text-transform: uppercase, so the rendered case differs from

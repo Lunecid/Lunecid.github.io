@@ -24,13 +24,13 @@ for (const device of [
   test.describe(`${device.name}`, () => {
     test.use({ viewport: device.viewport, deviceScaleFactor: device.deviceScaleFactor });
 
-    test('/ shows the KDE figure as the CoG cartridge cover: no other research figure image is fetched', async ({ page }) => {
+    test('/game/ shows the KDE figure as the CoG cartridge cover: no other research figure image is fetched', async ({ page }) => {
       const urls: string[] = [];
       page.on('request', (request) => {
         const figure = /\/_astro\/(label-horizon|kill-gap-kde)\./.exec(request.url());
         if (figure && figure[1] !== 'kill-gap-kde') urls.push(request.url());
       });
-      await page.goto('/', { waitUntil: 'networkidle' });
+      await page.goto('/game/', { waitUntil: 'networkidle' });
       await scrollThrough(page);
       expect(urls, urls.join('\n')).toEqual([]);
       // one visible cover img whose src is the KDE figure, in a CoG cartridge that holds no inline .auc-label svg
@@ -40,29 +40,29 @@ for (const device of [
 }
 
 test('LCP images are eager with fetchpriority high; the other cartridges stay lazy', async ({ page }) => {
-  await page.goto('/projects/');
+  await page.goto('/game/projects/');
   const carts = page.locator('.cart__img');
   expect(await carts.count()).toBeGreaterThan(2);
   await expect(carts.first()).toHaveAttribute('loading', 'eager');
   await expect(carts.first()).toHaveAttribute('fetchpriority', 'high');
   for (const img of (await carts.all()).slice(1)) await expect(img).toHaveAttribute('loading', 'lazy');
 
-  await page.goto('/records/');
+  await page.goto('/game/records/');
   await expect(page.locator('img.rhead__photo')).toHaveAttribute('fetchpriority', 'high'); // the short records head (P2-19)
   await expect(page.locator('img.rhead__photo')).toHaveAttribute('loading', 'eager');
 
-  await page.goto('/');
+  await page.goto('/game/');
   await expect(page.locator('img.hello__photo')).toHaveAttribute('loading', 'lazy'); // bottom of the home page
 
-  await page.goto('/player-log/');
+  await page.goto('/game/player-log/');
   await expect(page.locator('.mcard__photo img')).toHaveAttribute('loading', 'eager');
 });
 
 // N06 code parts: duplicate alt cleared; caption inset; srcset ladders near 1x slot.
 test.describe('N06: research figures code parts (F-057, F-066, F-081)', () => {
-  test('/research/: Fig. 1 alt appears once (pub thumb is decorative)', async ({ page }) => {
+  test('/game/research/: Fig. 1 alt appears once (pub thumb is decorative)', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
-    await page.goto('/research/');
+    await page.goto('/game/research/');
     const alts = await page.locator('img[alt]').evaluateAll((imgs) =>
       imgs
         .map((img) => img.getAttribute('alt') ?? '')
@@ -75,7 +75,7 @@ test.describe('N06: research figures code parts (F-057, F-066, F-081)', () => {
 
   test('at 375 chart caption starts 12px inside the frame', async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 812 });
-    await page.goto('/research/');
+    await page.goto('/game/research/');
     const report = await page.evaluate(() => {
       const fig = document.querySelector('.interests__fig--chart');
       const cap = fig?.querySelector('.chart__caption');
@@ -91,7 +91,7 @@ test.describe('N06: research figures code parts (F-057, F-066, F-081)', () => {
 
   test('at 1440 DPR1 figure currentSrc natural width / slot <= 1.15', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
-    await page.goto('/research/', { waitUntil: 'networkidle' });
+    await page.goto('/game/research/', { waitUntil: 'networkidle' });
     const report = await page.evaluate(async () => {
       const imgs = [...document.querySelectorAll('.interests__fig img')] as HTMLImageElement[];
       await Promise.all(

@@ -1,12 +1,23 @@
 import { ACADEMIC_CV_HREF, CV_HREF, GOATCOUNTER } from '../../src/config';
 import { STATS_META } from '../../src/data/copy/pages';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { load } from 'js-yaml';
+import { availableAchievements, type AchievementDef } from '../../src/lib/achievements';
+import { soundAvailability } from '../../src/lib/public-assets';
 import { test, expect } from './helpers';
+
+/** achievements.yaml minus bgm-on when the BGM file is absent: the same rule as the Player Log list (availableAchievements). */
+const ACHIEVEMENT_COUNT = availableAchievements(
+  load(readFileSync(join(process.cwd(), 'src/data/achievements.yaml'), 'utf8')) as Pick<AchievementDef, 'trigger'>[],
+  soundAvailability(),
+).length;
 
 // Batch 3a (content facts): what the built pages show must match the owner decisions D-4, D-7, D-13 and P2-33.
 
 test.describe('D-7: the nav CV button opens the document that fits the page', () => {
-  const academic = ['/research/', '/en/research/', '/research/cog-2026-engagement/', '/en/research/cog-2026-engagement/'];
-  const resume = ['/', '/en/', '/projects/', '/en/projects/', '/records/', '/en/records/', '/player-log/', '/en/player-log/'];
+  const academic = ['/game/research/', '/en/game/research/', '/game/research/cog-2026-engagement/', '/en/game/research/cog-2026-engagement/'];
+  const resume = ['/game/', '/en/game/', '/game/projects/', '/en/game/projects/', '/game/records/', '/en/game/records/', '/game/player-log/', '/en/game/player-log/'];
 
   for (const route of academic) {
     test(`${route} → Academic CV`, async ({ page }) => {
@@ -29,7 +40,7 @@ test.describe('D-7: the nav CV button opens the document that fits the page', ()
     });
   }
 
-  for (const route of ['/research/', '/en/research/']) {
+  for (const route of ['/game/research/', '/en/game/research/']) {
     test(`${route} links the Academic CV under the header and in #for-labs`, async ({ page }) => {
       await page.goto(route);
       const headerCv = page.locator(`.page-head a[href="${ACADEMIC_CV_HREF}"]`);
@@ -48,7 +59,7 @@ test.describe('D-7: the nav CV button opens the document that fits the page', ()
 });
 
 test.describe('D-13: the Player Log shows only what exists', () => {
-  for (const route of ['/player-log/', '/en/player-log/']) {
+  for (const route of ['/game/player-log/', '/en/game/player-log/']) {
     test(route, async ({ page }) => {
       await page.goto(route, { waitUntil: 'load' });
       await expect(page.locator('#favorite-games [role="tab"]')).toHaveCount(2);
@@ -60,9 +71,9 @@ test.describe('D-13: the Player Log shows only what exists', () => {
       await expect(page.locator('.page-head__intro')).not.toContainText(/파이프라인|pipeline/i);
       await expect(page.locator('#membership')).toBeVisible();
       await expect(page.locator('#site-achievements')).toBeVisible();
-      // The BGM file ships, so the sound achievement is reachable and listed (8 in all).
+      // The BGM file ships, so the sound achievement is reachable and listed (every entry of achievements.yaml).
       await expect(page.locator('#site-achievements [data-ach-id="sound-on"]')).toHaveCount(1);
-      await expect(page.locator('#site-achievements [data-ach-id]')).toHaveCount(8);
+      await expect(page.locator('#site-achievements [data-ach-id]')).toHaveCount(ACHIEVEMENT_COUNT);
       const hint = route.startsWith('/en/') ? 'Menu → 한국어' : '메뉴 → English';
       await expect(page.locator('#site-achievements [data-ach-id="bilingual"]')).toContainText(hint);
     });
@@ -86,7 +97,7 @@ test.describe('P2-33: /stats/ says it is offline while no GoatCounter code is se
 });
 
 test.describe('D-4 and P1-8: project cards and case studies', () => {
-  for (const route of ['/projects/', '/en/projects/']) {
+  for (const route of ['/game/projects/', '/en/game/projects/']) {
     test(`${route}: KBO and Seoul apartment are link-less cards with a summary`, async ({ page }) => {
       await page.goto(route);
       const cards = page.locator('#project-grid .cart--static');
@@ -102,7 +113,7 @@ test.describe('D-4 and P1-8: project cards and case studies', () => {
     });
   }
 
-  for (const route of ['/projects/school-zone-blindspots/', '/en/projects/kickick-park/', '/projects/youth-startup-location/']) {
+  for (const route of ['/game/projects/school-zone-blindspots/', '/en/game/projects/kickick-park/', '/game/projects/youth-startup-location/']) {
     test(`${route}: "for game teams | research contribution" after the body`, async ({ page }) => {
       await page.goto(route);
       const en = route.startsWith('/en/');
@@ -114,8 +125,8 @@ test.describe('D-4 and P1-8: project cards and case studies', () => {
     });
   }
 
-  test('/projects/kickick-park/: figure 1 caption no longer claims a "점수"', async ({ page }) => {
-    await page.goto('/projects/kickick-park/');
+  test('/game/projects/kickick-park/: figure 1 caption no longer claims a "점수"', async ({ page }) => {
+    await page.goto('/game/projects/kickick-park/');
     const fig1 = page.locator('article.prose figure.figure').first();
     await expect(fig1.locator('.figure__text')).toBeVisible();
     const caption = await fig1.locator('.figure__text').innerText();

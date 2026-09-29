@@ -9,7 +9,7 @@ async function settle(page: Page): Promise<void> {
 
 test('MAIN MENU arrow keys move focus and Enter follows', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== 'desktop', 'keyboard check runs on desktop');
-  await page.goto('/', { waitUntil: 'load' });
+  await page.goto('/game/', { waitUntil: 'load' });
   await settle(page);
   const items = page.locator('#main-menu li.mm__item');
   const links = page.locator('#main-menu a.mm__link');
@@ -41,9 +41,9 @@ test('MAIN MENU arrow keys move focus and Enter follows', async ({ page }, testI
 test('MAIN MENU Tab order is stable with the mouse parked over a later row', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== 'desktop', 'keyboard check runs on desktop');
   await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto('/', { waitUntil: 'load' });
+  await page.goto('/game/', { waitUntil: 'load' });
   await settle(page);
-  await page.goto('/en/', { waitUntil: 'load' });
+  await page.goto('/en/game/', { waitUntil: 'load' });
   await settle(page);
   const links = page.locator('#main-menu a.mm__link');
   await expect(links).toHaveCount(4);
@@ -70,7 +70,7 @@ test('MAIN MENU Tab order is stable with the mouse parked over a later row', asy
 
 test('certificate modal opens with Enter, traps Tab, closes with Esc and restores focus', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== 'desktop', 'keyboard check runs on desktop');
-  await page.goto('/records/', { waitUntil: 'load' });
+  await page.goto('/game/records/', { waitUntil: 'load' });
   await settle(page);
   // Before hydration the trigger is a plain link to the image (no-JS fallback); wait for the island.
   await expect(page.locator('astro-island:not([ssr]) dialog.image-viewer')).toHaveCount(1);
@@ -96,12 +96,12 @@ test('certificate modal opens with Enter, traps Tab, closes with Esc and restore
   await page.keyboard.press('Escape');
   await expect(dialog).not.toHaveAttribute('open');
   await expect(trigger).toBeFocused();
-  await expect(page).toHaveURL(/\/records\/$/);
+  await expect(page).toHaveURL(/\/game\/records\/$/);
 });
 
 test('showcase tabs move with arrows (only the unlocked games are listed, D-13)', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== 'desktop', 'keyboard check runs on desktop');
-  await page.goto('/player-log/', { waitUntil: 'load' });
+  await page.goto('/game/player-log/', { waitUntil: 'load' });
   await settle(page);
   const section = page.locator('#favorite-games');
   await section.scrollIntoViewIfNeeded();
@@ -128,7 +128,7 @@ test('showcase tabs move with arrows (only the unlocked games are listed, D-13)'
 
 test('mobile menu opens and closes with Esc (375px)', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== 'mobile-375', 'the menu button exists below 734px');
-  await page.goto('/', { waitUntil: 'load' });
+  await page.goto('/game/', { waitUntil: 'load' });
   await settle(page);
   const toggle = page.locator('button[aria-controls="hud-menu"]');
   const firstLink = page.locator('#hud-menu a').first();
@@ -157,7 +157,7 @@ test('mobile menu opens and closes with Esc (375px)', async ({ page }, testInfo)
 
 test('mobile menu: a scrim sits behind the panel and closes it on click (375px)', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== 'mobile-375', 'the menu button exists below 734px');
-  await page.goto('/', { waitUntil: 'load' });
+  await page.goto('/game/', { waitUntil: 'load' });
   await settle(page);
   const toggle = page.locator('button[aria-controls="hud-menu"]');
   const scrim = page.locator('[data-nav-scrim]');
@@ -177,7 +177,7 @@ test('mobile menu: a scrim sits behind the panel and closes it on click (375px)'
 
 test('mobile menu: focus is trapped in [toggle, ...panel links] while open; Escape always closes (fix round 1 item 3)', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== 'mobile-375', 'the menu button exists below 734px');
-  await page.goto('/', { waitUntil: 'load' });
+  await page.goto('/game/', { waitUntil: 'load' });
   await settle(page);
   const toggle = page.locator('button[aria-controls="hud-menu"]');
   const panelLinks = page.locator('#hud-menu a');
@@ -208,7 +208,7 @@ test('mobile menu: focus is trapped in [toggle, ...panel links] while open; Esca
 // Final review fix 1 item 2 (WCAG 2.2 2.4.11 Focus Not Obscured): moving backwards puts the previous stop above the
 // viewport, and the browser used to scroll it to the very top edge, right under the 92%-opaque sticky nav. With the
 // root scroll-padding it lands below the nav. Runs at 1280 (desktop) and 375 (mobile-375).
-for (const route of ['/records/', '/en/records/', '/credits/']) {
+for (const route of ['/game/records/', '/en/game/records/', '/credits/']) {
   test(`Shift+Tab never leaves the focused element under the sticky nav (${route})`, async ({ page }, testInfo) => {
     test.skip(!['desktop', 'mobile-375'].includes(testInfo.project.name), 'desktop and phone only');
     test.setTimeout(90_000);
@@ -252,7 +252,7 @@ for (const route of ['/records/', '/en/records/', '/credits/']) {
 // scroll the page (a root scroll-padding made the browser "reveal" the nav's focused control by scrolling up).
 test('focusing or using the nav controls never scrolls the page', async ({ page }, testInfo) => {
   test.skip(!['desktop', 'mobile-375'].includes(testInfo.project.name), 'desktop and phone only');
-  await page.goto('/records/', { waitUntil: 'load' });
+  await page.goto('/game/records/', { waitUntil: 'load' });
   await settle(page);
   // P1-9b: the BGM button is server markup whose module script has run by 'load' (no island to wait for); the
   // check stays so a reintroduced island in the nav is still awaited.
@@ -297,7 +297,7 @@ test('focusing or using the nav controls never scrolls the page', async ({ page 
 
 test('mobile menu: Escape closes even when focus has landed on <body> (fix round 2 item 2)', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== 'mobile-375', 'the menu button exists below 734px');
-  await page.goto('/', { waitUntil: 'load' });
+  await page.goto('/game/', { waitUntil: 'load' });
   await settle(page);
   const toggle = page.locator('button[aria-controls="hud-menu"]');
   await toggle.click();

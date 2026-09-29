@@ -9,7 +9,7 @@ import { test, expect, settle } from './helpers';
 test.describe('P2-2: achievement toast', () => {
   test('dark HUD panel (not a cream pill), bottom-right on desktop, close button is 44x44', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 900 });
-    await page.goto('/records/', { waitUntil: 'networkidle' });
+    await page.goto('/game/records/', { waitUntil: 'networkidle' });
     await settle(page);
     const trigger = page.locator('#awards a[data-cert-id]').first();
     const dialog = page.locator('dialog.image-viewer');
@@ -50,7 +50,7 @@ test.describe('P2-2: achievement toast', () => {
   });
 
   test('never shows while the certificate <dialog> is open; appears only after it closes', async ({ page }) => {
-    await page.goto('/records/', { waitUntil: 'networkidle' });
+    await page.goto('/game/records/', { waitUntil: 'networkidle' });
     await settle(page);
     const trigger = page.locator('#awards a[data-cert-id]').first();
     const dialog = page.locator('dialog.image-viewer');
@@ -68,7 +68,7 @@ test.describe('P2-2: achievement toast', () => {
   test('below 734px it sits at the bottom, and no animation plays under reduced motion', async ({ page }) => {
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await page.setViewportSize({ width: 375, height: 812 });
-    await page.goto('/records/', { waitUntil: 'networkidle' });
+    await page.goto('/game/records/', { waitUntil: 'networkidle' });
     await settle(page);
     await page.locator('#awards a[data-cert-id]').first().click();
     await page.keyboard.press('Escape');
@@ -84,8 +84,8 @@ test.describe('P2-2: achievement toast', () => {
 test.describe('P2-9: publication panels', () => {
   // Final review fix 1 item 4: the home research highlight uses the same link row (PaperLinks) as /research/.
   for (const { url, idBase } of [
-    { url: '/research/', idBase: 'cog-2026-engagement' },
-    { url: '/', idBase: 'rh' },
+    { url: '/game/research/', idBase: 'cog-2026-engagement' },
+    { url: '/game/', idBase: 'rh' },
   ]) {
     test(`the button row stays one line; panels open below it, not inside it (${url})`, async ({ page }) => {
       await page.goto(url, { waitUntil: 'networkidle' });
@@ -99,7 +99,7 @@ test.describe('P2-9: publication panels', () => {
       const topsBefore = await chipTops();
       // /research/ has room for one line at 1280; the home card's narrower text column wraps the same five chips onto
       // two lines (as its old chip row did). Either way the row must not change when a panel opens (checked below).
-      if (url === '/research/') expect(rowBoxBefore.height, 'one row of buttons').toBeLessThan(60);
+      if (url === '/game/research/') expect(rowBoxBefore.height, 'one row of buttons').toBeLessThan(60);
 
       await expect(abstractBtn).toHaveAttribute('aria-expanded', 'false');
       await abstractBtn.click();
@@ -124,7 +124,7 @@ test.describe('P2-9: publication panels', () => {
     });
   }
 
-  for (const url of ['/research/#in-progress', '/records/#publications']) {
+  for (const url of ['/game/research/#in-progress', '/game/records/#publications']) {
     test(`no layout shift > 0.01 on ${url} at 375px even with the disclosure-trigger chunk delayed (fix round 2 item 5)`, async ({
       page,
     }) => {
@@ -159,7 +159,7 @@ test.describe('P2-9: publication panels', () => {
 
   test('the BibTeX panel copy button works (reused BibtexBlock, not a duplicate)', async ({ page, context, baseURL }) => {
     await context.grantPermissions(['clipboard-read', 'clipboard-write'], { origin: baseURL });
-    await page.goto('/research/', { waitUntil: 'networkidle' });
+    await page.goto('/game/research/', { waitUntil: 'networkidle' });
     await settle(page);
     await page.getByRole('button', { name: 'BibTeX' }).first().click();
     const button = page.locator('#cog-2026-engagement-bibtex [data-bib-copy]');
@@ -178,13 +178,13 @@ test.describe('P2-13: certificate modal before hydration', () => {
       await new Promise((resolve) => setTimeout(resolve, 400));
       await route.continue();
     });
-    await page.goto('/records/', { waitUntil: 'domcontentloaded' });
+    await page.goto('/game/records/', { waitUntil: 'domcontentloaded' });
     const trigger = page.locator('#awards a[data-cert-id]').first();
     await trigger.waitFor({ state: 'attached' });
     await trigger.click();
     // Still on /records/ (no navigation to the bare certificate image) once hydration completes.
     await expect(page.locator('dialog.image-viewer')).toHaveAttribute('open', '', { timeout: 5000 });
-    await expect(page).toHaveURL(/\/records\/(#view-[^#]+)?$/);
+    await expect(page).toHaveURL(/\/game\/records\/(#view-[^#]+)?$/);
     await expect(page.getByRole('button', { name: '닫기' })).toBeFocused();
   });
 });
@@ -203,16 +203,16 @@ test.describe('P2-15: the English 404', () => {
     await expect(page).toHaveTitle('GAME OVER · Seongeun Baek');
     await expect(page.locator('.skip-link')).toHaveText('Skip to content');
     await expect(page.locator('#hud-menu')).toHaveAttribute('aria-label', 'Main navigation');
-    await expect(page.locator('.hud-nav__brand')).toHaveAttribute('href', '/en/');
+    await expect(page.locator('.hud-nav__brand')).toHaveAttribute('href', '/en/game/');
 
     // .hud-nav__list, not #hud-menu a generally: the panel also carries the KO/EN switch link (below), which is
     // a 5th <a> inside #hud-menu.
     const navLinks = page.locator('#hud-menu .hud-nav__list a');
     await expect(navLinks).toHaveCount(4);
     await expect(navLinks.nth(0)).toHaveText('01 Research');
-    await expect(navLinks.nth(0)).toHaveAttribute('href', '/en/research/');
+    await expect(navLinks.nth(0)).toHaveAttribute('href', '/en/game/research/');
     await expect(navLinks.nth(3)).toHaveText('04 Player Log');
-    await expect(navLinks.nth(3)).toHaveAttribute('href', '/en/player-log/');
+    await expect(navLinks.nth(3)).toHaveAttribute('href', '/en/game/player-log/');
 
     const cv = page.locator('.hud-nav__cv');
     await expect(cv).toHaveAttribute('href', '/cv/seongeun-baek-resume-en.pdf');
@@ -221,14 +221,14 @@ test.describe('P2-15: the English 404', () => {
     // Button order: the big CTAs are now the English ones; the small secondary line is the Korean fallback.
     const primary = page.locator('[data-go-actions] a');
     await expect(primary.nth(0)).toHaveText('Back to start');
-    await expect(primary.nth(0)).toHaveAttribute('href', '/en/');
+    await expect(primary.nth(0)).toHaveAttribute('href', '/en/game/');
     await expect(primary.nth(1)).toHaveText('See projects');
-    await expect(primary.nth(1)).toHaveAttribute('href', '/en/projects/');
+    await expect(primary.nth(1)).toHaveAttribute('href', '/en/game/projects/');
     const secondary = page.locator('[data-go-secondary] a');
     await expect(secondary.nth(0)).toHaveText('처음으로');
-    await expect(secondary.nth(0)).toHaveAttribute('href', '/');
+    await expect(secondary.nth(0)).toHaveAttribute('href', '/game/');
     await expect(secondary.nth(1)).toHaveText('프로젝트 보기');
-    await expect(secondary.nth(1)).toHaveAttribute('href', '/projects/');
+    await expect(secondary.nth(1)).toHaveAttribute('href', '/game/projects/');
 
     await expect(page.locator('.go__plain:not(.go__plain--en)')).toHaveText('Page not found.');
     await expect(page.locator('.go__plain--en')).toHaveText('페이지를 찾을 수 없습니다.');
@@ -257,7 +257,7 @@ test.describe('P2-15: the English 404', () => {
     // "KO" alone was not a real accessible name.
     await expect(bar).toContainText('KO');
     await expect(bar).toHaveAccessibleName('KO 한국어');
-    await expect(bar).toHaveAttribute('href', '/');
+    await expect(bar).toHaveAttribute('href', '/game/');
     await expect(bar).toHaveAttribute('hreflang', 'ko');
     await expect(page.locator('.nf-lang-switch--panel')).toBeHidden();
   });
@@ -361,7 +361,7 @@ test.describe('P2-15: the English 404', () => {
 test.describe('P2-24: touch targets and caption sizes', () => {
   test('the [SB] brand link and the tablet language link are >= 44x44', async ({ page }) => {
     await page.setViewportSize({ width: 768, height: 1024 });
-    await page.goto('/records/', { waitUntil: 'networkidle' });
+    await page.goto('/game/records/', { waitUntil: 'networkidle' });
     await settle(page);
     const brand = page.locator('.hud-nav__brand');
     const brandBox = (await brand.boundingBox())!;
@@ -376,7 +376,7 @@ test.describe('P2-24: touch targets and caption sizes', () => {
 
   test('the education lab link and a job-fit evidence link are >= 44px tall', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 900 });
-    await page.goto('/records/', { waitUntil: 'networkidle' });
+    await page.goto('/game/records/', { waitUntil: 'networkidle' });
     await settle(page);
     const labLink = page.locator('.timeline__lab a').first();
     if (await labLink.count()) {
@@ -390,7 +390,7 @@ test.describe('P2-24: touch targets and caption sizes', () => {
 
   test('job-fit evidence links are real, non-overlapping 44px targets (fix round 1, item 2)', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 900 });
-    await page.goto('/records/', { waitUntil: 'networkidle' });
+    await page.goto('/game/records/', { waitUntil: 'networkidle' });
     await settle(page);
     // python-ml is the first row with 4 stacked evidence links (padding+negative-margin previously made their
     // hit boxes taller than the row's own flow spacing, so they overlapped and a tap could land on a neighbour).
@@ -432,7 +432,7 @@ test.describe('P2-24: touch targets and caption sizes', () => {
   });
 
   test('project cartridge tags read as plain text, not filter buttons', async ({ page }) => {
-    await page.goto('/projects/', { waitUntil: 'networkidle' });
+    await page.goto('/game/projects/', { waitUntil: 'networkidle' });
     await settle(page);
     const tag = page.locator('.cart__tags li').first();
     await expect(tag).toBeVisible();
@@ -532,7 +532,7 @@ test.describe('N20: BGM resume and waiting state', () => {
 
   test('button width is equal across off, on and waiting at 375', async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 812 });
-    await page.goto('/', { waitUntil: 'networkidle' });
+    await page.goto('/game/', { waitUntil: 'networkidle' });
     await settle(page);
     const button = page.locator('button.bgm');
     await expect(button).toBeVisible();
@@ -564,7 +564,7 @@ test.describe('N20: BGM resume and waiting state', () => {
 
   test('after navigation, playback resumes within ±2s of the saved time', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 720 });
-    await page.goto('/', { waitUntil: 'networkidle' });
+    await page.goto('/game/', { waitUntil: 'networkidle' });
     await settle(page);
     const button = page.locator('button.bgm');
     await expect(button).toBeVisible();
@@ -579,8 +579,8 @@ test.describe('N20: BGM resume and waiting state', () => {
       sessionStorage.setItem('sb:bgm-t', JSON.stringify({ t, at: Date.now() }));
     }, savedAt);
 
-    await page.locator('.hud-nav__list a[href="/records/"]').click();
-    await page.waitForURL('**/records/');
+    await page.locator('.hud-nav__list a[href="/game/records/"]').click();
+    await page.waitForURL('**/game/records/');
     await settle(page);
 
     const nextButton = page.locator('button.bgm');
@@ -603,7 +603,7 @@ test.describe('N20: BGM resume and waiting state', () => {
 });
 
 test.describe('N08: cartridge hover lifts the body, not the hit box', () => {
-  for (const route of ['/projects/', '/'] as const) {
+  for (const route of ['/game/projects/', '/game/'] as const) {
     test(`${route}: pointer near the bottom keeps :hover; .cart top stays put`, async ({ page }) => {
       await page.setViewportSize({ width: 1440, height: 900 });
       await page.goto(route, { waitUntil: 'networkidle' });
@@ -651,7 +651,7 @@ test.describe('N08: cartridge hover lifts the body, not the hit box', () => {
     const context = await browser.newContext({ javaScriptEnabled: false, reducedMotion: 'reduce' });
     const page = await context.newPage();
     await page.setViewportSize({ width: 1440, height: 900 });
-    await page.goto('/projects/', { waitUntil: 'networkidle' });
+    await page.goto('/game/projects/', { waitUntil: 'networkidle' });
     const cart = page.locator('.cart:not(.cart--static)').first();
     await expect(cart).toBeVisible();
     await cart.scrollIntoViewIfNeeded();
@@ -675,7 +675,7 @@ test.describe('N13: sticky hover cleared on touch; press fill holds', () => {
       isMobile: true,
     });
     const page = await context.newPage();
-    await page.goto('/projects/', { waitUntil: 'networkidle' });
+    await page.goto('/game/projects/', { waitUntil: 'networkidle' });
     await settle(page);
     const hoverNone = await page.evaluate(() => matchMedia('(hover: hover)').matches);
     expect(hoverNone, 'touch context must not claim hover:hover').toBe(false);
@@ -694,9 +694,9 @@ test.describe('N13: sticky hover cleared on touch; press fill holds', () => {
     await context.close();
   });
 
-  test('/records/ primary PDF button --cut-fill changes on hover', async ({ page }) => {
+  test('/game/records/ primary PDF button --cut-fill changes on hover', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
-    await page.goto('/records/', { waitUntil: 'networkidle' });
+    await page.goto('/game/records/', { waitUntil: 'networkidle' });
     await settle(page);
     const btn = page.locator('.read .btn--fill, .read-section .btn--fill').first();
     await expect(btn).toBeVisible();

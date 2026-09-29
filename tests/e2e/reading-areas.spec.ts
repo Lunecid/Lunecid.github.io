@@ -22,7 +22,7 @@ async function open(page: Page, route: string, width: number, height = 900): Pro
 }
 
 test.describe('P1-9: the reading bands are light HUD, not rounded card grids', () => {
-  for (const route of ['/research/', '/records/', '/en/records/', '/projects/', '/player-log/']) {
+  for (const route of ['/game/research/', '/game/records/', '/en/game/records/', '/game/projects/', '/game/player-log/']) {
     test(`${route}: no rounded boxes in the light bands`, async ({ page }) => {
       await open(page, route, 1440);
       const rounded = await page.evaluate(() => {
@@ -39,8 +39,8 @@ test.describe('P1-9: the reading bands are light HUD, not rounded card grids', (
     });
   }
 
-  test('/: PATCH NOTES is a dark band; ▶ shows on hover; one link per row; the research highlight shows the AUC chart', async ({ page }) => {
-    await open(page, '/', 1440);
+  test('/game/: PATCH NOTES is a dark band; ▶ shows on hover; one link per row; the research highlight shows the AUC chart', async ({ page }) => {
+    await open(page, '/game/', 1440);
     const pn = page.locator('#patch-notes');
     expect(await pn.evaluate((el) => getComputedStyle(el).backgroundColor)).toBe('rgb(11, 13, 17)'); // --hud-bg
     const row = pn.locator('.pn__item').first();
@@ -58,7 +58,7 @@ test.describe('P1-9: the reading bands are light HUD, not rounded card grids', (
 
 test.describe('P1-11 / P2-18: job-fit reads on a phone, fits as a table from 734px', () => {
   for (const lang of ['ko', 'en'] as const) {
-    const route = lang === 'en' ? '/en/records/' : '/records/';
+    const route = lang === 'en' ? '/en/game/records/' : '/game/records/';
     test(`${lang} 375px: one card per row, status on the first line, 44px evidence rows, nothing off-screen`, async ({ page }) => {
       await open(page, route, 375, 812);
       const overflow = await horizontalOverflow(page);
@@ -102,7 +102,7 @@ test.describe('P1-11 / P2-18: job-fit reads on a phone, fits as a table from 734
   }
 
   test('status badges differ at a glance: filled, outlined, gold dashed, grey', async ({ page }) => {
-    await open(page, '/records/', 1440);
+    await open(page, '/game/records/', 1440);
     const look = (status: string) =>
       page.locator(`#job-fit .jobfit__status--${status}`).first().evaluate((el) => {
         const s = getComputedStyle(el);
@@ -121,7 +121,7 @@ test.describe('P1-11 / P2-18: job-fit reads on a phone, fits as a table from 734
 
 test.describe('P1-7: case-study figures in one reading column, after the paragraph that cites them', () => {
   test('school-zone at 1440: each figure right after the block citing it, centred on the column, 760px; one left edge', async ({ page }) => {
-    await open(page, '/projects/school-zone-blindspots/', 1440);
+    await open(page, '/game/projects/school-zone-blindspots/', 1440);
     const figures = page.locator('.prose.read > .figure--inline');
     expect(await figures.count()).toBe(4);
     const pairs = await figures.evaluateAll((els) =>
@@ -152,12 +152,12 @@ test.describe('P1-7: case-study figures in one reading column, after the paragra
   });
 
   test('school-zone below 1068: audience shares the prose\'s left edge', async ({ page }) => {
-    await open(page, '/projects/school-zone-blindspots/', 1024);
+    await open(page, '/game/projects/school-zone-blindspots/', 1024);
     const p = await box(page.locator('.prose.read > p').first());
     expect((await box(page.locator('#for-game-teams'))).x, '#for-game-teams shares the prose\'s left edge').toBeCloseTo(p.x, 0);
   });
 
-  for (const route of ['/projects/youth-startup-location/', '/en/projects/youth-startup-location/']) {
+  for (const route of ['/game/projects/youth-startup-location/', '/en/game/projects/youth-startup-location/']) {
     test(`fix round 1 ${route}: the cover that is figure 1 is shown once, numbered and captioned in PROJECT DETAILS`, async ({ page }) => {
       await open(page, route, 1440);
       await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
@@ -175,7 +175,7 @@ test.describe('P1-7: case-study figures in one reading column, after the paragra
 });
 
 test.describe('P1-6 / P2-23: cartridge labels and stickers', () => {
-  for (const [route, width] of [['/projects/', 375], ['/projects/', 1440], ['/en/projects/', 375], ['/en/projects/', 1440], ['/en/', 768]] as const) {
+  for (const [route, width] of [['/game/projects/', 375], ['/game/projects/', 1440], ['/en/game/projects/', 375], ['/en/game/projects/', 1440], ['/en/game/', 768]] as const) {
     test(`${route} ${width}px: every label has a real figure or a filled plate; stickers stay on the band, inside the card`, async ({ page }) => {
       await open(page, route, width);
       for (const label of await page.locator('.cart__label').all()) {
@@ -203,14 +203,14 @@ test.describe('P1-6 / P2-23: cartridge labels and stickers', () => {
   }
 
   test('the chart labels (youth start-up, CoG KDE figure) are drawn whole (contain), never cropped', async ({ page }) => {
-    await open(page, '/projects/', 1440);
+    await open(page, '/game/projects/', 1440);
     const fits = await page.locator('img.cart__img--contain').evaluateAll((els) => els.map((el) => getComputedStyle(el).objectFit));
     expect(fits).toEqual(['contain', 'contain']);
   });
 
   // P1-8 (F-045, owner decision 11 and the 2026-09-29 answer): the CoG label on home and /projects/ is the paper's
   // KDE figure (kill-gap-kde), shown whole as a contained cover; the inline AUC chart is gone from the card.
-  for (const [route, width] of [['/', 320], ['/', 375], ['/en/', 768], ['/', 1068], ['/projects/', 1440], ['/en/projects/', 1920]] as const) {
+  for (const [route, width] of [['/game/', 320], ['/game/', 375], ['/en/game/', 768], ['/game/', 1068], ['/game/projects/', 1440], ['/en/game/projects/', 1920]] as const) {
     test(`${route} ${width}px: the CoG label is the KDE figure: one visible image, whole in its label, no inline chart`, async ({ page }) => {
       await open(page, route, width);
       const cart = page.locator('.cart--wide').first();
@@ -231,7 +231,7 @@ test.describe('P1-6 / P2-23: cartridge labels and stickers', () => {
 
 test.describe('P2-19 / P2-22: the records head and the photo', () => {
   test('375px: the photo (96–120px) sits beside the greeting; the three PDFs and the in-page bar follow', async ({ page }) => {
-    await open(page, '/records/', 375, 812);
+    await open(page, '/game/records/', 375, 812);
     const [photo, hello] = await Promise.all([box(page.locator('.rhead__photo')), box(page.locator('#profile-title'))]);
     expect(photo.width).toBeGreaterThanOrEqual(96);
     expect(photo.width).toBeLessThanOrEqual(120);
@@ -246,7 +246,7 @@ test.describe('P2-19 / P2-22: the records head and the photo', () => {
   // Fix round 1: the PDF buttons' "PDF" affix had opacity .85 (≈4.39:1). axe cannot see the cut-corner buttons' fill
   // (it is drawn on ::before/::after), so the contrast is computed here: the text colour, with every ancestor's opacity,
   // blended over the fill layer, against WCAG AA 4.5:1.
-  for (const route of ['/records/', '/en/records/']) {
+  for (const route of ['/game/records/', '/en/game/records/']) {
     test(`${route}: every text in the PDF buttons meets AA contrast against the button's own fill`, async ({ page }) => {
       await open(page, route, 1440);
       const ratios = await page.locator('#profile .doc-btns a, #documents .doc-btns a').evaluateAll((buttons) => {
@@ -282,7 +282,7 @@ test.describe('P2-19 / P2-22: the records head and the photo', () => {
   }
 
   test('the re-cropped photo file: 354×472, framed with a hairline on the home profile', async ({ page }) => {
-    await open(page, '/', 1440);
+    await open(page, '/game/', 1440);
     const photo = page.locator('img.hello__photo');
     await photo.scrollIntoViewIfNeeded();
     await expect.poll(() => photo.evaluate((el) => (el as HTMLImageElement).naturalWidth)).toBeGreaterThan(0);

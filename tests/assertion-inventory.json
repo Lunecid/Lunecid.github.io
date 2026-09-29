@@ -78,7 +78,7 @@
   "tests/e2e/reading-areas.spec.ts": 71,
   "tests/e2e/responsive.spec.ts": 22,
   "tests/e2e/screenshots.spec.ts": 0,
-  "tests/e2e/smoke.spec.ts": 67,
+  "tests/e2e/smoke.spec.ts": 69,
   "tests/e2e/stale-data.spec.ts": 4,
   "tests/e2e/wide-screens.spec.ts": 38,
   "tests/ops/build-pdfs.test.mjs": 6,

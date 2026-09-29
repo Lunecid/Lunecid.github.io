@@ -66,7 +66,7 @@ test.describe('item 1: the character art fades out where it meets open backgroun
   for (const width of [1440, 2560]) {
     test(`${width}px: the hero and MAIN MENU art end in a fade, not a straight cut, in both hero states`, async ({ page }) => {
       test.skip(!HERO_ART, 'needs both hero characters');
-      await open(page, '/', width, 1300);
+      await open(page, '/game/', width, 1300);
       const edgeOf = async (frame: Locator): Promise<number> => {
         // 2px strip just inside the frame's right edge (below the swap buttons, above the credit)
         const png = await frame.screenshot({ scale: 'css' });
@@ -366,7 +366,7 @@ test.describe('item 1, round 3: masked art never exceeds its mask at device boun
   }
 
   async function assertHomeArt(page: Page, width: number, height: number): Promise<void> {
-    await open(page, '/', width, height);
+    await open(page, '/game/', width, height);
     await expect(page.locator('.char-stage--hero')).toHaveAttribute('data-phase', 'shown', { timeout: 5000 });
     await page.locator('.char-stage--hero .char-stage__img').evaluate(async (el: HTMLImageElement) => {
       if (!el.complete) await new Promise((resolve) => el.addEventListener('load', resolve, { once: true }));
@@ -391,7 +391,7 @@ test.describe('item 1, round 3: masked art never exceeds its mask at device boun
   }
 
   async function assertShowcase(page: Page, width: number, height: number): Promise<void> {
-    await open(page, '/player-log/', width, height);
+    await open(page, '/game/player-log/', width, height);
     await page.locator('section.fg').evaluate((el) => {
       const r = el.getBoundingClientRect();
       window.scrollTo({ top: window.scrollY + r.top + r.height / 2 - window.innerHeight / 2, left: 0, behavior: 'instant' as ScrollBehavior });
@@ -530,7 +530,7 @@ test.describe('item 1, straight-cut guard: art is faded at the visible right bou
         test.use({ deviceScaleFactor: dpr });
         test('hero and MAIN MENU right edge is faded', async ({ page }) => {
           test.skip(!HERO_ART, 'needs both hero characters');
-          await open(page, '/', width, height);
+          await open(page, '/game/', width, height);
           await expect(page.locator('.char-stage--hero')).toHaveAttribute('data-phase', 'shown', { timeout: 5000 });
           expect(await edgeStripLuma(page, '.char-stage--hero .char-stage__clip', 'right'), 'hero').toBeLessThanOrEqual(14);
           const side = page.locator('.char-stage--side .char-stage__frame');
@@ -552,7 +552,7 @@ test.describe('item 1, straight-cut guard: art is faded at the visible right bou
         test('hero top (Eula) and showcase L/R/top stay faded', async ({ page }) => {
           test.setTimeout(90_000);
           test.skip(!HERO_ART, 'needs both hero characters');
-          await open(page, '/', width, height);
+          await open(page, '/game/', width, height);
           await expect(page.locator('.char-stage--hero')).toHaveAttribute('data-phase', 'shown', { timeout: 5000 });
           await page.locator('.char-stage__swap button').nth(1).click();
           await expect(page.locator('.char-stage--hero')).toHaveAttribute('data-phase', 'shown', { timeout: 5000 });
@@ -563,7 +563,7 @@ test.describe('item 1, straight-cut guard: art is faded at the visible right bou
             'hero Eula top',
           ).toBeLessThanOrEqual(14);
 
-          await open(page, '/player-log/', width, height);
+          await open(page, '/game/player-log/', width, height);
           await page.locator('section.fg').scrollIntoViewIfNeeded();
           await expect(page.locator('.fg__chr img')).toBeVisible({ timeout: 15_000 });
           await page.waitForTimeout(400);
@@ -608,7 +608,7 @@ test.describe('item 1, straight-cut guard: art is faded at the visible right bou
         test('hero right edge is faded (Remielle + Eula); HEAD mask leaves art', async ({ page }) => {
           test.setTimeout(90_000);
           test.skip(!HERO_ART, 'needs both hero characters');
-          await open(page, '/', width, height);
+          await open(page, '/game/', width, height);
           await expect(page.locator('.char-stage--hero')).toHaveAttribute('data-phase', 'shown', { timeout: 5000 });
           await page.locator('.char-stage--hero .char-stage__img').evaluate(async (el: HTMLImageElement) => {
             if (!el.complete) await new Promise((resolve) => el.addEventListener('load', resolve, { once: true }));
@@ -689,7 +689,7 @@ test.describe('item 1, img-box sanity: painted width matches the designed frame'
     test(`${width}x${height}: hero/side/showcase img width and centre`, async ({ page }) => {
       test.setTimeout(90_000);
       test.skip(!HERO_ART, 'needs both hero characters');
-      await open(page, '/', width, height);
+      await open(page, '/game/', width, height);
       await expect(page.locator('.char-stage--hero')).toHaveAttribute('data-phase', 'shown', { timeout: 5000 });
       const hero = await imgVsFrame(page, '.char-stage--hero .char-stage__frame', '.char-stage--hero .char-stage__img');
       expect(Math.abs(hero.imgW - hero.designedW), `hero imgW=${hero.imgW} designed=${hero.designedW}`).toBeLessThanOrEqual(1);
@@ -709,7 +709,7 @@ test.describe('item 1, img-box sanity: painted width matches the designed frame'
         expect(side.imgCx).toBeLessThanOrEqual(side.frameR + 0.5);
       }
 
-      await open(page, '/player-log/', width, height);
+      await open(page, '/game/player-log/', width, height);
       await page.locator('section.fg').scrollIntoViewIfNeeded();
       await expect(page.locator('.fg__chr img')).toBeVisible({ timeout: 15_000 });
       for (const tab of [0, 1] as const) {
@@ -768,7 +768,7 @@ test.describe('item 1, composition: tablet showcase art fills the frame', () => 
       test.setTimeout(90_000);
       test.skip(!HERO_ART, 'needs character art');
       mkdirSync(SHOT_DIR, { recursive: true });
-      await open(page, '/player-log/', width, height);
+      await open(page, '/game/player-log/', width, height);
       await page.locator('section.fg').scrollIntoViewIfNeeded();
       await expect(page.locator('.fg__chr img')).toBeVisible({ timeout: 15_000 });
       await page.waitForTimeout(500);
@@ -873,7 +873,7 @@ test.describe('item 1, geometry: img box and mask stops match HEAD where --oh = 
       test.use({ deviceScaleFactor: 1.5 });
       test('hero img box and mask stops within 0.5px of HEAD', async ({ page }) => {
         test.skip(!HERO_ART, 'needs both hero characters');
-        await open(page, '/', width, height);
+        await open(page, '/game/', width, height);
         await expect(page.locator('.char-stage--hero')).toHaveAttribute('data-phase', 'shown', { timeout: 5000 });
         const expected = await headHeroGeometry(page, width);
         const actual = await actualGeometry(page);
@@ -894,7 +894,7 @@ test.describe('item 1, geometry: img box and mask stops match HEAD where --oh = 
     const height = width === 1068 ? 800 : width === 1152 ? 864 : width === 1200 ? 800 : width === 1280 ? 720 : 768;
     test(`${width}x${height}: report right-fade shift (overhang − oh)`, async ({ page }) => {
       test.skip(!HERO_ART, 'needs both hero characters');
-      await open(page, '/', width, height);
+      await open(page, '/game/', width, height);
       await expect(page.locator('.char-stage--hero')).toHaveAttribute('data-phase', 'shown', { timeout: 5000 });
       const expected = await headHeroGeometry(page, width);
       const actual = await actualGeometry(page);
@@ -948,9 +948,9 @@ test.describe('item 1, no art under copy', () => {
     return worst;
   }
 
-  for (const lang of ['/', '/en/'] as const) {
+  for (const lang of ['/game/', '/en/game/'] as const) {
     for (const width of [1068, 1100, 1200] as const) {
-      test(`${lang === '/' ? 'ko' : 'en'} ${width}px: no painted art inside copy/title/card`, async ({ page }) => {
+      test(`${lang === '/game/' ? 'ko' : 'en'} ${width}px: no painted art inside copy/title/card`, async ({ page }) => {
         test.skip(!HERO_ART, 'needs both hero characters');
         await open(page, lang, width, 800);
         await expect(page.locator('.char-stage--hero')).toHaveAttribute('data-phase', 'shown', { timeout: 5000 });
@@ -972,7 +972,7 @@ test.describe('item 2: character images are served at the width they are painted
       test('hero, favorite tiles and showcase: the served file covers the painted width (or is the largest there is)', async ({ page }) => {
         test.skip(!HERO_ART, 'needs character art');
         const imgs: [string, Locator][] = [];
-        await open(page, '/', width, height);
+        await open(page, '/game/', width, height);
         imgs.push(['hero', page.locator('.char-stage--hero .char-stage__img')]);
         const check = async (): Promise<void> => {
           for (const [name, img] of imgs) {
@@ -986,7 +986,7 @@ test.describe('item 2: character images are served at the width they are painted
           imgs.length = 0;
         };
         await check();
-        await open(page, '/player-log/', width, height);
+        await open(page, '/game/player-log/', width, height);
         for (const tile of await page.locator('.fav-tile img').all()) imgs.push(['tile', tile]);
         await page.locator('section.fg').scrollIntoViewIfNeeded();
         await expect(page.locator('.fg__chr img')).toBeVisible();
@@ -999,7 +999,7 @@ test.describe('item 2: character images are served at the width they are painted
 
 test('item 3: the English hero controls stay inside the gutters on a phone, and wrapped rows keep 44px targets', async ({ page }) => {
   test.skip(!HERO_ART, 'needs both hero characters');
-  await open(page, '/en/', 375, 812);
+  await open(page, '/en/game/', 375, 812);
   const controls = await box(page.locator('.char-stage__controls'));
   expect(controls.x).toBeGreaterThanOrEqual(16 - 0.5);
   expect(controls.x + controls.width).toBeLessThanOrEqual(375 - 16 + 0.5);
@@ -1032,7 +1032,7 @@ test('item 4: on /stats/ the light band runs down to the footer (no dark strip b
 });
 
 test.describe('item 5 and round 2 item 2: a row of cartridges ends at one height, with its titles on one line', () => {
-  for (const [route, width] of [['/', 1440], ['/', 2560], ['/projects/', 1440], ['/projects/', 2560], ['/en/projects/', 1920]] as const) {
+  for (const [route, width] of [['/game/', 1440], ['/game/', 2560], ['/game/projects/', 1440], ['/game/projects/', 2560], ['/en/game/projects/', 1920]] as const) {
     test(`${route} ${width}px`, async ({ page }) => {
       await open(page, route, width);
       const cards = await Promise.all((await page.locator('.cart-grid > .cart:not([hidden])').all()).map(async (card) => ({ card, b: await box(card) })));
@@ -1066,7 +1066,7 @@ test.describe('item 5 and round 2 item 2: a row of cartridges ends at one height
 });
 
 test('item 6: /records/ head: the tagline follows the status line, no empty band beside the photo', async ({ page }) => {
-  for (const route of ['/records/', '/en/records/']) {
+  for (const route of ['/game/records/', '/en/game/records/']) {
     await open(page, route, 1440);
     const status = await box(page.locator('.rhead__status'));
     const tagline = await box(page.locator('.rhead__tagline'));
@@ -1075,7 +1075,7 @@ test('item 6: /records/ head: the tagline follows the status line, no empty band
 });
 
 test('item 7: job-fit table at 1440px: compact rows, evidence on the requirement\'s line, counts one per line', async ({ page }) => {
-  await open(page, '/records/', 1440);
+  await open(page, '/game/records/', 1440);
   const row = page.locator('.jobfit__row[data-row="python-ml"]');
   expect((await box(row)).height, 'the four-link row').toBeLessThan(130);
   for (const r of await page.locator('.jobfit__row').all()) {
@@ -1105,7 +1105,7 @@ test('item 7: job-fit table at 1440px: compact rows, evidence on the requirement
 test.describe('item 8: Player Log', () => {
   test('1440px: a 520px showcase with the tabs in a row and no half-empty panel; tile captions on one line', async ({ page }) => {
     test.skip(!HERO_ART, 'needs character art');
-    for (const route of ['/player-log/', '/en/player-log/']) {
+    for (const route of ['/game/player-log/', '/en/game/player-log/']) {
       await open(page, route, 1440);
       await page.locator('section.fg').scrollIntoViewIfNeeded();
       await expect(page.locator('.fg__scene .fg__copy')).toBeVisible();
@@ -1126,7 +1126,7 @@ test.describe('item 8: Player Log', () => {
   });
 
   test('375px: the membership sticker stays on the photo, clear of the barcode band and the fields', async ({ page }) => {
-    await open(page, '/player-log/', 375, 812);
+    await open(page, '/game/player-log/', 375, 812);
     const sticker = await box(page.locator('.mcard__sticker'));
     const band = await box(page.locator('.mcard__band'));
     expect(sticker.y + sticker.height).toBeLessThan(band.y);
@@ -1146,7 +1146,7 @@ test.describe('item 8: Player Log', () => {
 test.describe('item 9: the hero credit', () => {
   test('375px: right under the art it credits, before the player card', async ({ page }) => {
     test.skip(!HERO_ART, 'needs character art');
-    await open(page, '/', 375, 812);
+    await open(page, '/game/', 375, 812);
     const stage = await box(page.locator('.char-stage--hero'));
     const credit = await box(page.locator('.hero__credit'));
     const card = await box(page.locator('.hero__pcard'));
@@ -1157,7 +1157,7 @@ test.describe('item 9: the hero credit', () => {
   for (const width of [1068, 1440, 2560]) {
     test(`${width}px: lines break only between its pieces, never inside one`, async ({ page }) => {
       test.skip(!HERO_ART, 'needs character art');
-      for (const route of ['/', '/en/']) {
+      for (const route of ['/game/', '/en/game/']) {
         await open(page, route, width);
         for (const part of await page.locator('.hero__credit-part').all()) {
           expect(await part.evaluate((el) => el.getClientRects().length === 1 && el.getBoundingClientRect().height < 25), `${route} "${await part.textContent()}"`).toBe(true);
@@ -1169,7 +1169,7 @@ test.describe('item 9: the hero credit', () => {
 
 test('item 10: choosing Eula in the hero moves Remielle to the MAIN MENU, and back', async ({ page }) => {
   test.skip(!HERO_ART, 'needs both hero characters');
-  await open(page, '/', 1440, 1100);
+  await open(page, '/game/', 1440, 1100);
   const side = page.locator('.char-stage--side .char-stage__img');
   const sideSrc = (): Promise<string> => side.evaluate((img: HTMLImageElement) => img.currentSrc || img.src);
   await page.locator('.char-stage--side').scrollIntoViewIfNeeded();
@@ -1183,23 +1183,23 @@ test('item 10: choosing Eula in the hero moves Remielle to the MAIN MENU, and ba
 });
 
 test('item 11: the English hero does not repeat the name above the H1', async ({ page }) => {
-  await open(page, '/en/', 1440);
+  await open(page, '/en/game/', 1440);
   await expect(page.locator('.hero__titlecard')).toHaveCount(0);
   await expect(page.locator('h1')).toHaveText('Seongeun Baek');
-  await open(page, '/', 1440);
+  await open(page, '/game/', 1440);
   await expect(page.locator('.hero__titlecard')).toHaveText('SEONGEUN BAEK'); // the Korean page keeps the romanization
 });
 
 test('item 13: the largest first-screen image of each page loads eagerly; the rest stay lazy', async ({ page }) => {
-  await page.goto('/player-log/');
+  await page.goto('/game/player-log/');
   const tiles = page.locator('.fav-tile img');
   for (const tile of await tiles.all()) await expect(tile).toHaveAttribute('loading', 'eager'); // the phone LCP
   await expect(tiles.first()).toHaveAttribute('fetchpriority', 'high');
-  await page.goto('/research/');
+  await page.goto('/game/research/');
   const figures = page.locator('img.interests__img');
   await expect(figures.first()).toHaveAttribute('loading', 'eager'); // the desktop LCP (1440x900, 2560x1440)
   for (const img of (await figures.all()).slice(1)) await expect(img).toHaveAttribute('loading', 'lazy');
-  await page.goto('/');
+  await page.goto('/game/');
   const carts = page.locator('#featured-projects img.cart__img');
   await expect(carts.first()).toHaveAttribute('loading', 'eager'); // the LCP at 2560x1440
   await expect(carts.first()).toHaveAttribute('fetchpriority', 'low'); // far below the fold on phones
@@ -1208,7 +1208,7 @@ test('item 13: the largest first-screen image of each page loads eagerly; the re
 
 test('item 16, round 2 item 3: the /records/ jump links keep equal gaps and 44px targets', async ({ page }) => {
   for (const width of [375, 1440]) {
-    await open(page, '/records/', width, 900);
+    await open(page, '/game/records/', width, 900);
     const links = await page.locator('.rnav__link').all();
     const texts = await Promise.all(
       links.map((link) =>
@@ -1228,13 +1228,13 @@ test('item 16, round 2 item 3: the /records/ jump links keep equal gaps and 44px
 
 test.describe('item 16: standalone links get 44px targets on phones', () => {
   const TARGETS: [string, string][] = [
-    ['/', '.pn__link'],
-    ['/records/', '.psum__title a'],
-    ['/records/', '.rnav__link'],
-    ['/research/', '.progress-list__name a'],
+    ['/game/', '.pn__link'],
+    ['/game/records/', '.psum__title a'],
+    ['/game/records/', '.rnav__link'],
+    ['/game/research/', '.progress-list__name a'],
     ['/credits/', '.legal td > a'],
     ['/privacy/', '.legal p > a[href^="mailto:"]'],
-    ['/projects/', '.gh__name'],
+    ['/game/projects/', '.gh__name'],
   ];
   for (const [route, selector] of TARGETS) {
     test(`${route} ${selector}`, async ({ page }) => {
@@ -1249,7 +1249,7 @@ test.describe('item 16: standalone links get 44px targets on phones', () => {
 test('item 18: in forced colours (dark and light themes) the AUC chart and label text stays readable on the chart', async ({ page }) => {
   // Chromium's emulated forced colours follow the colour scheme: a dark scheme gives a black Canvas, where the author
   // fills (#1D1D1F text) had all but vanished.
-  for (const [route, width, colorScheme] of [['/research/', 1440, 'dark'], ['/', 1440, 'dark'], ['/', 375, 'dark'], ['/', 1440, 'light']] as const) {
+  for (const [route, width, colorScheme] of [['/game/research/', 1440, 'dark'], ['/game/', 1440, 'dark'], ['/game/', 375, 'dark'], ['/game/', 1440, 'light']] as const) {
     await page.emulateMedia({ forcedColors: 'active', colorScheme, reducedMotion: 'reduce' });
     await page.setViewportSize({ width, height: 900 });
     await page.goto(route, { waitUntil: 'networkidle' });
@@ -1285,7 +1285,7 @@ test('item 18: in forced colours (dark and light themes) the AUC chart and label
 });
 
 test('item 19: prose tables break English words only at spaces at 320px, and never widen the page', async ({ page }) => {
-  await open(page, '/en/projects/youth-startup-location/', 320, 640);
+  await open(page, '/en/game/projects/youth-startup-location/', 320, 640);
   const cellHyphens = await page.locator('.prose td').first().evaluate((el) => getComputedStyle(el).hyphens);
   expect(cellHyphens, 'prose td must not use hyphens: auto (Linux Chromium would split syllables)').toBe('manual');
   const split = await page.evaluate(() => {

@@ -13,7 +13,7 @@ test.describe('item 3: hero character buttons take clicks at tablet and small-la
     test(`${width}px: every swap button and the replay button receive the click`, async ({ page }) => {
       test.skip(!HERO_ART, 'no character art in this build (the no-art hero has no buttons)');
       await page.setViewportSize({ width, height: 900 });
-      await page.goto('/', { waitUntil: 'networkidle' });
+      await page.goto('/game/', { waitUntil: 'networkidle' });
       await settle(page);
       const stage = page.locator('.char-stage--hero');
       const buttons = stage.locator('.char-stage__swap button');
@@ -44,7 +44,7 @@ test.describe('item 3: hero character buttons take clicks at tablet and small-la
 
 test.describe('item 5: the AUC table on English phones keeps numbers and model names whole', () => {
   for (const width of [320, 375]) {
-    for (const route of ['/en/', '/en/research/']) {
+    for (const route of ['/en/game/', '/en/game/research/']) {
       test(`${route} at ${width}px`, async ({ browser }) => {
         const context = await browser.newContext({ viewport: { width, height: 800 }, isMobile: true, hasTouch: true, deviceScaleFactor: 2 });
         const page = await context.newPage();
@@ -82,7 +82,7 @@ test.describe('item 5: the AUC table on English phones keeps numbers and model n
   // Fix round 2 item 8: where the table fits, the box is not an extra tab stop or landmark.
   test('at 1280 on /research/ the table fits, so its box is no tab stop and no region', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 900 });
-    await page.goto('/research/', { waitUntil: 'networkidle' });
+    await page.goto('/game/research/', { waitUntil: 'networkidle' });
     await settle(page);
     const chart = page.locator('.chart--overall').filter({ has: page.locator('.chart__table') }).first();
     await chart.scrollIntoViewIfNeeded();

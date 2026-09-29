@@ -29,7 +29,7 @@ test.describe('D-2 XL steps: the section container widens; every band keeps one 
   ] as const;
   for (const [width, container, gutter, nameSize] of STEPS) {
     test(`${width}px: container ${container}px (gutter ${gutter}px) for HUD and light bands, name ${nameSize}px`, async ({ page }) => {
-      await open(page, '/', width);
+      await open(page, '/game/', width);
       for (const selector of ['.hud-nav__bar', '.hero__inner', '.mm-sec__inner', '#featured-projects .container', '.site-footer__inner']) {
         expect((await box(page.locator(selector).first())).width, selector).toBeCloseTo(container, 0);
       }
@@ -44,37 +44,37 @@ test.describe('D-2 XL steps: the section container widens; every band keeps one 
       }
       expect(await page.locator('#hero-name').evaluate((el) => parseFloat(getComputedStyle(el).fontSize))).toBe(nameSize);
 
-      await open(page, '/player-log/', width);
+      await open(page, '/game/player-log/', width);
       expect((await box(page.locator('.pl-intro__grid'))).width, 'Player Log first row').toBeCloseTo(container, 0);
       expect((await box(page.locator('.pl-showcase__inner'))).width, 'showcase').toBeCloseTo(container, 0);
     });
   }
 
   test('reading columns keep their measure and the paper sheet its width at 1920px', async ({ page }) => {
-    await open(page, '/projects/school-zone-blindspots/', 1440);
+    await open(page, '/game/projects/school-zone-blindspots/', 1440);
     const prose1440 = await box(page.locator('.prose.read > p').first());
-    await open(page, '/projects/school-zone-blindspots/', 1920);
+    await open(page, '/game/projects/school-zone-blindspots/', 1920);
     const prose1920 = await box(page.locator('.prose.read > p').first());
     expect(prose1920.width).toBeCloseTo(prose1440.width, 0);
     expect(prose1920.width).toBeLessThanOrEqual(38 * 17 + 1); // 38em at 17px
     expect((await box(page.locator('.pd'))).width, 'PROJECT DETAILS is a HUD panel: it widens').toBeCloseTo(1440, 0);
 
-    await open(page, '/research/cog-2026-engagement/', 1440);
+    await open(page, '/game/research/cog-2026-engagement/', 1440);
     const sheet1440 = await box(page.locator('.paper').first());
-    await open(page, '/research/cog-2026-engagement/', 1920);
+    await open(page, '/game/research/cog-2026-engagement/', 1920);
     const sheet1920 = await box(page.locator('.paper').first());
     expect(sheet1920.width).toBeCloseTo(sheet1440.width, 0);
   });
 
   test('P2-37: English prose is 36em (about 66 characters) wide; Korean prose stays 38em', async ({ page }) => {
-    await open(page, '/en/projects/school-zone-blindspots/', 1440);
+    await open(page, '/en/game/projects/school-zone-blindspots/', 1440);
     expect((await box(page.locator('.prose.read > p').first())).width).toBeCloseTo(36 * 17, 0);
-    await open(page, '/projects/school-zone-blindspots/', 1440);
+    await open(page, '/game/projects/school-zone-blindspots/', 1440);
     expect((await box(page.locator('.prose.read > p').first())).width).toBeCloseTo(38 * 17, 0);
   });
 
-  test('/projects/ at 1920px: four columns, CoG + five projects fill two complete rows', async ({ page }) => {
-    await open(page, '/projects/', 1920);
+  test('/game/projects/ at 1920px: four columns, CoG + five projects fill two complete rows', async ({ page }) => {
+    await open(page, '/game/projects/', 1920);
     const grid = await box(page.locator('#project-grid'));
     const cards = await Promise.all((await page.locator('#project-grid .cart').all()).map(box));
     expect(cards).toHaveLength(6); // CoG (two columns) + five projects, the last spanning two columns = 8 cells
@@ -91,7 +91,7 @@ test.describe('D-2 XL steps: the section container widens; every band keeps one 
 test.describe('D-3 / P1-5: home cartridges', () => {
   for (const width of [1440, 1920]) {
     test(`${width}px: CoG (two columns) + school-zone + kickick-park on one row, one height`, async ({ page }) => {
-      await open(page, '/', width);
+      await open(page, '/game/', width);
       const grid = await box(page.locator('#featured-projects .cart-grid'));
       const cards = page.locator('#featured-projects .cart');
       await expect(cards).toHaveCount(3);
@@ -102,12 +102,12 @@ test.describe('D-3 / P1-5: home cartridges', () => {
       // Final fix 2 item 5: one shelf height; the shorter cards' figures take up the extra height (final-fix2.spec.ts)
       expect(Math.max(...boxes.map((b) => b.height)) - Math.min(...boxes.map((b) => b.height)), 'one row height').toBeLessThanOrEqual(1);
       const hrefs = await cards.locator('a.cart__link').evaluateAll((as) => as.map((a) => a.getAttribute('href')));
-      expect(hrefs).toEqual(['/research/cog-2026-engagement/', '/projects/school-zone-blindspots/', '/projects/kickick-park/']);
+      expect(hrefs).toEqual(['/game/research/cog-2026-engagement/', '/game/projects/school-zone-blindspots/', '/game/projects/kickick-park/']);
     });
   }
 
   test('768px: no orphan cell — the wide CoG card, then the two projects side by side', async ({ page }) => {
-    await open(page, '/en/', 768, 1024);
+    await open(page, '/en/game/', 768, 1024);
     const grid = await box(page.locator('#featured-projects .cart-grid'));
     const boxes = await Promise.all((await page.locator('#featured-projects .cart').all()).map(box));
     expect(boxes).toHaveLength(3);
@@ -118,7 +118,7 @@ test.describe('D-3 / P1-5: home cartridges', () => {
 });
 
 test.describe('P2-16: hero copy lines', () => {
-  for (const route of ['/', '/en/']) {
+  for (const route of ['/game/', '/en/game/']) {
     test(`STATUS value wraps under itself, not under the label (${route}, 375px and 1068px)`, async ({ page }) => {
       for (const width of [375, 1068]) {
         await open(page, route, width);
@@ -135,12 +135,12 @@ test.describe('P2-16: hero copy lines', () => {
   }
 
   test('the second button is "CV (PDF) ↓" naming its document; the job-fit link comes first in the contact row', async ({ page }) => {
-    await open(page, '/', 1440);
+    await open(page, '/game/', 1440);
     const cv = page.locator('.hero__ctas a').nth(1);
     await expect(cv).toHaveAccessibleName('CV (PDF) — 이력서 (PDF)');
     await expect(cv).toHaveAttribute('href', '/cv/seongeun-baek-resume-ko.pdf');
     const links = page.locator('.hero__links a');
-    await expect(links.first()).toHaveAttribute('href', '/records/#job-fit');
+    await expect(links.first()).toHaveAttribute('href', '/game/records/#job-fit');
     const [jobfit, mail, github] = await Promise.all([0, 1, 2].map((i) => box(links.nth(i))));
     expect(mail.x).toBeGreaterThan(jobfit.x);
     expect(github.x).toBeGreaterThan(mail.x);
@@ -149,7 +149,7 @@ test.describe('P2-16: hero copy lines', () => {
 
 test.describe('P2-21: PROJECT DETAILS figure frame', () => {
   test('the FIG caption strip sits under the figure, and a short figure is centred beside the taller table', async ({ page }) => {
-    await open(page, '/projects/school-zone-blindspots/', 1440);
+    await open(page, '/game/projects/school-zone-blindspots/', 1440);
     await expect(page.locator('.pd__figcap')).toHaveText('FIG · RISK HEATMAP');
     const fig = await box(page.locator('.pd__fig'));
     const img = await box(page.locator('.pd__fig img'));

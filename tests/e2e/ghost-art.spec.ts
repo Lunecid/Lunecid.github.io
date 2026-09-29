@@ -4,7 +4,7 @@ import AxeBuilder from '@axe-core/playwright';
 import { existsSync, mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 import type { Locator, Page } from '@playwright/test';
-import { test, expect, settle } from './helpers';
+import { test, expect, settle, gamePath } from './helpers';
 
 const GHOST_ASSET = join(process.cwd(), 'src/assets/ghost/miku-v6.webp');
 const SHOT_DIR = join(process.cwd(), '.superpowers/sdd/2026-09-25-portfolio-site/miku-ghost-shots');
@@ -12,10 +12,10 @@ const AXE_TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'];
 
 /** One ghost per page: selector of the host band and expected side. */
 const PLACEMENTS = [
-  { route: '/', band: '#hello', side: 'right' as const, shot: 'home' },
-  { route: '/research/', band: '#publications', side: 'left' as const, shot: 'research' },
-  { route: '/records/', band: '#profile', side: 'right' as const, shot: 'records' },
-  { route: '/projects/', band: '#github', side: 'left' as const, shot: 'projects' },
+  { route: gamePath('/'), band: '#hello', side: 'right' as const, shot: 'game-home' },
+  { route: gamePath('/research/'), band: '#publications', side: 'left' as const, shot: 'game-research' },
+  { route: gamePath('/records/'), band: '#profile', side: 'right' as const, shot: 'game-records' },
+  { route: gamePath('/projects/'), band: '#github', side: 'left' as const, shot: 'game-projects' },
 ] as const;
 
 const WIDE = [

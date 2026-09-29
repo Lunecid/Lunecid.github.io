@@ -25,7 +25,7 @@ function overlaps(a: Rect, b: Rect): boolean {
 
 // P1-1: the hero player card sits under the copy column (left-aligned with it), not floated to the far right.
 test.describe('P1-1: hero player card sits under the copy, not at the far right', () => {
-  for (const route of ['/', '/en/']) {
+  for (const route of ['/game/', '/en/game/']) {
     test(route, async ({ page }) => {
       await page.setViewportSize({ width: 1440, height: 900 });
       await page.goto(route, { waitUntil: 'networkidle' });
@@ -60,7 +60,7 @@ test.describe('P1-4: membership card sticker and title do not overlap the field 
   });
 
   for (const width of [375, 1440]) {
-    for (const route of ['/player-log/', '/en/player-log/']) {
+    for (const route of ['/game/player-log/', '/en/game/player-log/']) {
       test(`${route} at ${width}px`, async ({ page }) => {
         await page.setViewportSize({ width, height: 1000 });
         await page.goto(route, { waitUntil: 'networkidle' });
@@ -96,7 +96,7 @@ test.describe('P1-10: Hangul labels in HUD mono elements use the sans font with 
   // The CoG story step labels and the chart "표로 보기" button left with the story page (D-15).
 
   test('the "모션 줄이기" motion-toggle button in the footer', async ({ page }) => {
-    await page.goto('/', { waitUntil: 'networkidle' });
+    await page.goto('/game/', { waitUntil: 'networkidle' });
     await settle(page);
     const button = page.locator('[data-motion-toggle]');
     await expect(button).toBeVisible();
@@ -114,7 +114,7 @@ test.describe('P1-10: Hangul labels in HUD mono elements use the sans font with 
   // English caption mono inside a Korean page's label. Fix round 1: the dark MAIN MENU band shows the caption only;
   // its Korean title stays the heading, visually hidden.
   test('a section head on a Korean page: the [ ■ ] mark and the English caption stay mono; MAIN MENU is caption-only', async ({ page }) => {
-    await page.goto('/', { waitUntil: 'networkidle' });
+    await page.goto('/game/', { waitUntil: 'networkidle' });
     await settle(page);
     const head = page.locator('#main-menu .sec-head');
     await expect(head).toBeVisible();
@@ -146,7 +146,7 @@ test.describe('P1-10: Hangul labels in HUD mono elements use the sans font with 
   });
 
   test('D-8: no [ NN ] section numbers outside the nav on any page of the home, records and player log', async ({ page }) => {
-    for (const route of ['/', '/records/', '/player-log/', '/en/research/']) {
+    for (const route of ['/game/', '/game/records/', '/game/player-log/', '/en/game/research/']) {
       await page.goto(route, { waitUntil: 'networkidle' });
       const numbered = await page.locator('main .hud-label, main .sec-head, main .fg__top').evaluateAll((els) =>
         els.map((el) => el.textContent ?? '').filter((text) => /\[\s*\d+\s*\]/.test(text)),
@@ -159,7 +159,7 @@ test.describe('P1-10: Hangul labels in HUD mono elements use the sans font with 
 // N09 / F-024: sticky nav is near-opaque (or keeps a real backdrop blur).
 test('N09: hud-nav background alpha ≥ .97 or backdrop-filter is active', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto('/records/', { waitUntil: 'networkidle' });
+  await page.goto('/game/records/', { waitUntil: 'networkidle' });
   await settle(page);
   const result = await page.locator('.hud-nav').evaluate((el) => {
     const s = getComputedStyle(el);
@@ -177,7 +177,7 @@ test.describe('N09: hud-nav brand aligns with content gutter', () => {
   for (const width of [1440, 2560] as const) {
     test(`brand vs heading at ${width}px`, async ({ page }) => {
       await page.setViewportSize({ width, height: 900 });
-      await page.goto('/records/', { waitUntil: 'networkidle' });
+      await page.goto('/game/records/', { waitUntil: 'networkidle' });
       await settle(page);
       const brandLeft = await page.locator('.hud-nav__brand').evaluate((el) => el.getBoundingClientRect().left);
       const heading = page.locator('main h1').first();
@@ -191,9 +191,9 @@ test.describe('N09: hud-nav brand aligns with content gutter', () => {
 // N09 / F-023: EN bar stays one row without sideways scroll at mid widths.
 test.describe('N09: EN hud-nav fits one row', () => {
   for (const width of [768, 1068, 1200] as const) {
-    test(`/en/ at ${width}px`, async ({ page }) => {
+    test(`/en/game/ at ${width}px`, async ({ page }) => {
       await page.setViewportSize({ width, height: 900 });
-      await page.goto('/en/', { waitUntil: 'networkidle' });
+      await page.goto('/en/game/', { waitUntil: 'networkidle' });
       await settle(page);
       const nav = page.locator('.hud-nav');
       const metrics = await nav.evaluate((el) => ({
@@ -255,9 +255,9 @@ test.describe('N09: EN hud-nav fits one row', () => {
 // N02 / F-017: EN patch-note tags stay one line from 734px.
 test.describe('N02: EN patch-note tags stay one line', () => {
   for (const width of [768, 1024, 1440, 2560] as const) {
-    test(`/en/ at ${width}px`, async ({ page }) => {
+    test(`/en/game/ at ${width}px`, async ({ page }) => {
       await page.setViewportSize({ width, height: 900 });
-      await page.goto('/en/', { waitUntil: 'networkidle' });
+      await page.goto('/en/game/', { waitUntil: 'networkidle' });
       await settle(page);
       const tags = page.locator('.pn__tag');
       const count = await tags.count();
@@ -280,9 +280,9 @@ test.describe('N02: EN patch-note tags stay one line', () => {
 // N02 / F-018: hero credit must not intersect the player card at mid desktop widths.
 test.describe('N02: hero credit clears the player card', () => {
   for (const width of [1068, 1080, 1100, 1120, 1140] as const) {
-    test(`/en/ at ${width}px`, async ({ page }) => {
+    test(`/en/game/ at ${width}px`, async ({ page }) => {
       await page.setViewportSize({ width, height: 900 });
-      await page.goto('/en/', { waitUntil: 'networkidle' });
+      await page.goto('/en/game/', { waitUntil: 'networkidle' });
       await settle(page);
       const credit = page.locator('.hero__credit');
       const pcard = page.locator('.hero__pcard');
@@ -306,7 +306,7 @@ test.describe('N02: heading balance and middot units', () => {
   for (const width of [320, 1440] as const) {
     test(`youth project title last line has >1 word at ${width}px`, async ({ page }) => {
       await page.setViewportSize({ width, height: 900 });
-      await page.goto('/projects/', { waitUntil: 'networkidle' });
+      await page.goto('/game/projects/', { waitUntil: 'networkidle' });
       await settle(page);
       const title = page.locator('.cart__title', { hasText: '청년 창업가를 위한 부산 상권 입지 제안' }).first();
       await expect(title).toBeVisible();
@@ -344,7 +344,7 @@ test.describe('N02: heading balance and middot units', () => {
   for (const width of [320, 375] as const) {
     test(`hero meta and MAIN MENU caption lines do not start with '·' at ${width}px`, async ({ page }) => {
       await page.setViewportSize({ width, height: 900 });
-      await page.goto('/', { waitUntil: 'networkidle' });
+      await page.goto('/game/', { waitUntil: 'networkidle' });
       await settle(page);
       const startsWithDot = await page.evaluate(() => {
         const check = (root: Element | null) => {
@@ -387,7 +387,7 @@ test.describe('N11: Korean mono labels use sans space advance', () => {
 
   test('canvas space advance ≤ 0.35em on KO home for Hangul mono labels', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
-    await page.goto('/', { waitUntil: 'networkidle' });
+    await page.goto('/game/', { waitUntil: 'networkidle' });
     await settle(page);
     const results = await page.evaluate(async (sels) => {
       await document.fonts.ready;
@@ -417,7 +417,7 @@ test.describe('N11: Korean mono labels use sans space advance', () => {
 
 // N03 / F-009: Player Log tiles are a 3-column grid that stays inside the side panel (no page overflow at 1068–1160).
 test.describe('N03: Player Log favorite tiles stay inside the side panel', () => {
-  for (const route of ['/player-log/', '/en/player-log/']) {
+  for (const route of ['/game/player-log/', '/en/game/player-log/']) {
     test(`${route} 1068–1160 no overflow; tiles ≤ side edge`, async ({ page }) => {
       for (let width = 1068; width <= 1160; width += 4) {
         await page.setViewportSize({ width, height: 900 });
@@ -464,7 +464,7 @@ test.describe('N03: site achievement state tags are 24px', () => {
   for (const width of [768, 1024, 1440]) {
     test(`at ${width}px`, async ({ page }) => {
       await page.setViewportSize({ width, height: 900 });
-      await page.goto('/player-log/', { waitUntil: 'networkidle' });
+      await page.goto('/game/player-log/', { waitUntil: 'networkidle' });
       await settle(page);
       const heights = await page.evaluate(() =>
         [...document.querySelectorAll('.site-ach__state-tag:not([hidden])')].map((el) => el.getBoundingClientRect().height),
@@ -477,7 +477,7 @@ test.describe('N03: site achievement state tags are 24px', () => {
 
 // R3 fix: author `display` on .site-ach__state-tag must not beat [hidden] { display: none }.
 test.describe('R3: site achievement [hidden] state tags stay invisible', () => {
-  for (const route of ['/player-log/', '/en/player-log/']) {
+  for (const route of ['/game/player-log/', '/en/game/player-log/']) {
     for (const width of [375, 1440]) {
       test(`${route} ${width}px fresh storage: one visible state tag; [hidden] not shown`, async ({ page }) => {
         await page.addInitScript(() => {
@@ -536,7 +536,7 @@ test.describe('R3: favorite tile captions fit FAVORITE at mid widths', () => {
   for (const width of widths) {
     test(`at ${width}px every kicker fits and shows FAVORITE`, async ({ page }) => {
       await page.setViewportSize({ width, height: 900 });
-      await page.goto('/player-log/', { waitUntil: 'networkidle' });
+      await page.goto('/game/player-log/', { waitUntil: 'networkidle' });
       await settle(page);
       const report = await page.evaluate(() => {
         const kickers = [...document.querySelectorAll('.fav-tile__kicker')];
@@ -561,12 +561,12 @@ test.describe('R3: favorite tile captions fit FAVORITE at mid widths', () => {
 // N15: case-study cover height, first h2 gap, cover fetchpriority, audience card width at >=1068.
 test.describe('N15: case-study layout (F-006, F-041, F-080, F-040)', () => {
   const caseStudies = [
-    '/projects/school-zone-blindspots/',
-    '/en/projects/school-zone-blindspots/',
-    '/projects/kickick-park/',
-    '/en/projects/kickick-park/',
-    '/projects/youth-startup-location/',
-    '/en/projects/youth-startup-location/',
+    '/game/projects/school-zone-blindspots/',
+    '/en/game/projects/school-zone-blindspots/',
+    '/game/projects/kickick-park/',
+    '/en/game/projects/kickick-park/',
+    '/game/projects/youth-startup-location/',
+    '/en/game/projects/youth-startup-location/',
   ];
 
   for (const width of [768, 1024, 1067]) {
@@ -599,13 +599,13 @@ test.describe('N15: case-study layout (F-006, F-041, F-080, F-040)', () => {
 
   test('cover img has fetchpriority=high', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
-    await page.goto('/projects/kickick-park/');
+    await page.goto('/game/projects/kickick-park/');
     await expect(page.locator('.pd__fig img')).toHaveAttribute('fetchpriority', 'high');
   });
 
   test('at 1440 audience grid breaks out of the reading column', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
-    await page.goto('/projects/kickick-park/');
+    await page.goto('/game/projects/kickick-park/');
     const report = await page.evaluate(() => {
       const grid = document.querySelector('.audience__grid')?.getBoundingClientRect();
       const prose = document.querySelector('article.prose')?.getBoundingClientRect();
@@ -625,7 +625,7 @@ test.describe('N15: case-study layout (F-006, F-041, F-080, F-040)', () => {
 
   test('at 1800 audience cards are each >=34em', async ({ page }) => {
     await page.setViewportSize({ width: 1800, height: 900 });
-    await page.goto('/projects/kickick-park/');
+    await page.goto('/game/projects/kickick-park/');
     const report = await page.evaluate(() => {
       const em = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
       const cards = [...document.querySelectorAll('.audience__block')].map((el) => el.getBoundingClientRect().width);

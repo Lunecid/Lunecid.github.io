@@ -56,7 +56,7 @@ async function faceStatus(page: Page, family: string): Promise<string[]> {
   return page.evaluate((family) => [...document.fonts].filter((f) => f.family.replace(/"/g, '') === family).map((f) => f.status), family);
 }
 
-for (const route of ['/', '/en/']) {
+for (const route of ['/game/', '/en/game/']) {
   test(`${route}: body text is in "${SANS_FAMILY}", HUD labels in "${MONO_FAMILY}", and nothing visible falls back`, async ({ page }) => {
     await open(page, route);
     const bodyFont = await page.evaluate(() => getComputedStyle(document.body).fontFamily);
@@ -68,13 +68,13 @@ for (const route of ['/', '/en/']) {
     // Two sans files: core (Latin, symbols, the Hangul English pages show) and the rest of the Hangul.
     // English pages never fetch the Hangul file; Korean pages load both.
     const hangulFetched = await page.evaluate(() => performance.getEntriesByType('resource').some((e) => e.name.includes('/sb-sans-ko.')));
-    expect(await faceStatus(page, SANS_FAMILY)).toEqual(route === '/' ? ['loaded', 'loaded'] : ['unloaded', 'loaded']);
-    expect(hangulFetched).toBe(route === '/');
+    expect(await faceStatus(page, SANS_FAMILY)).toEqual(route === '/game/' ? ['loaded', 'loaded'] : ['unloaded', 'loaded']);
+    expect(hangulFetched).toBe(route === '/game/');
     expect(await faceStatus(page, MONO_FAMILY)).toEqual(['loaded']);
     // After load, the faces for the page's sample are ready: Korean on /, English on /en/ (fonts.check() counts
     // every face whose unicode-range meets the text, so on /en/ a Hangul sample would also wait for the unused
     // Hangul file, which the English page rightly never fetches).
-    const sample = route === '/' ? '안녕하세요 백성은, 게임 데이터 분석' : 'Seongeun Baek, game data analyst · 2026';
+    const sample = route === '/game/' ? '안녕하세요 백성은, 게임 데이터 분석' : 'Seongeun Baek, game data analyst · 2026';
     expect(await page.evaluate(({ f, s }) => document.fonts.check(`17px "${f}"`, s), { f: SANS_FAMILY, s: sample })).toBe(true);
     expect(await fallbackChars(page, SANS_FAMILY, sample), 'sample').toEqual([]);
     expect(await fallbackChars(page, SANS_FAMILY, '똠'), 'control: a syllable the site never uses falls back').toEqual(['똠']);
@@ -87,7 +87,7 @@ for (const route of ['/', '/en/']) {
 }
 
 test('the Korean paper page sets its Korean text in the Korean serif; the English one does not load it', async ({ page }) => {
-  await open(page, '/research/cog-2026-engagement/');
+  await open(page, '/game/research/cog-2026-engagement/');
   const ko = page.locator('.paper__block--ko .paper__text');
   const font = await ko.evaluate((el) => getComputedStyle(el).fontFamily);
   expect(font.startsWith(`"${SERIF_KO_FAMILY}"`), font).toBe(true);
@@ -99,6 +99,6 @@ test('the Korean paper page sets its Korean text in the Korean serif; the Englis
   const en = await page.locator('#abstract .paper__text').evaluate((el) => getComputedStyle(el).fontFamily);
   expect(en.startsWith('"Times New Roman"'), en).toBe(true);
 
-  await open(page, '/en/research/cog-2026-engagement/');
+  await open(page, '/en/game/research/cog-2026-engagement/');
   expect(await faceStatus(page, SERIF_KO_FAMILY)).toEqual([]);
 });

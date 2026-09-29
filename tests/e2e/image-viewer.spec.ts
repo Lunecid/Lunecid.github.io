@@ -10,8 +10,8 @@ const VIEWPORTS = [
 ] as const;
 
 const PAGES = [
-  { path: '/projects/school-zone-blindspots/', scope: 'main', label: 'case study' },
-  { path: '/research/', scope: '#interests', label: 'research' },
+  { path: '/game/projects/school-zone-blindspots/', scope: 'main', label: 'case study' },
+  { path: '/game/research/', scope: '#interests', label: 'research' },
 ] as const;
 
 /** data-state=open, full image decoded, and every dialog animation/transition finished. */
@@ -66,7 +66,7 @@ test.describe('image viewer', () => {
 
   test('←/→ move within a group and update the counter; stop at ends', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
-    await page.goto('/research/', { waitUntil: 'networkidle' });
+    await page.goto('/game/research/', { waitUntil: 'networkidle' });
     await settle(page);
     const { dialog } = await openFigure(page, '#interests');
     await waitViewerSettled(dialog);
@@ -91,7 +91,7 @@ test.describe('image viewer', () => {
   for (const vp of VIEWPORTS) {
     test(`S11: arrows + thumbnail open @ ${vp.name}`, async ({ page }) => {
       await page.setViewportSize({ width: vp.width, height: vp.height });
-      await page.goto('/research/', { waitUntil: 'networkidle' });
+      await page.goto('/game/research/', { waitUntil: 'networkidle' });
       await settle(page);
       const thumb = page.locator('#interests figure.interests__fig img').first();
       await thumb.click();
@@ -109,7 +109,7 @@ test.describe('image viewer', () => {
 
   test('B8: at last image Next keeps focus and ArrowLeft still works', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
-    await page.goto('/records/', { waitUntil: 'networkidle' });
+    await page.goto('/game/records/', { waitUntil: 'networkidle' });
     await settle(page);
     await page.locator('#awards a[data-viewer="certificates"]').first().click();
     const dialog = page.locator('dialog.image-viewer');
@@ -132,7 +132,7 @@ test.describe('image viewer', () => {
   });
 
   test('clicking the thumbnail opens the viewer too', async ({ page }) => {
-    await page.goto('/research/', { waitUntil: 'networkidle' });
+    await page.goto('/game/research/', { waitUntil: 'networkidle' });
     await settle(page);
     const thumb = page.locator('#interests figure.interests__fig img').first();
     await thumb.click();
@@ -142,7 +142,7 @@ test.describe('image viewer', () => {
   test('reduced motion: stage has no transform; zoom still works; caption stays centred', async ({ page }) => {
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await page.setViewportSize({ width: 375, height: 812 });
-    await page.goto('/research/', { waitUntil: 'networkidle' });
+    await page.goto('/game/research/', { waitUntil: 'networkidle' });
     await settle(page);
     await page.locator('#interests a[data-viewer="figures"]').first().click();
     const dialog = page.locator('dialog.image-viewer');
@@ -164,12 +164,12 @@ test.describe('image viewer', () => {
     expect(Math.abs(centres.capCx - centres.stageCx)).toBeLessThanOrEqual(1);
   });
 
-  for (const path of ['/projects/kickick-park/', '/research/']) {
+  for (const path of ['/game/projects/kickick-park/', '/game/research/']) {
     test(`B1: opening FLIP grows through a mid width on ${path}`, async ({ page }) => {
       await page.setViewportSize({ width: 1440, height: 900 });
       await page.goto(path, { waitUntil: 'networkidle' });
       await settle(page);
-      const scope = path === '/research/' ? '#interests' : 'main';
+      const scope = path === '/game/research/' ? '#interests' : 'main';
       const triggerSel = `${scope} a[data-viewer="figures"]`;
       const trigger = page.locator(triggerSel).first();
       await trigger.scrollIntoViewIfNeeded();
@@ -242,7 +242,7 @@ test.describe('image viewer', () => {
 
   test('B4: mouse dblclick on media zooms to scale 2', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
-    await page.goto('/research/', { waitUntil: 'networkidle' });
+    await page.goto('/game/research/', { waitUntil: 'networkidle' });
     await settle(page);
     const { dialog } = await openFigure(page, '#interests');
     await expect(dialog).toHaveAttribute('data-state', 'open');
@@ -253,7 +253,7 @@ test.describe('image viewer', () => {
 
   test('B4/R12: CDP touch double-tap zooms to scale 2 at phone size', async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 812 });
-    await page.goto('/research/', { waitUntil: 'networkidle' });
+    await page.goto('/game/research/', { waitUntil: 'networkidle' });
     await settle(page);
     const { dialog } = await openFigure(page, '#interests');
     await expect(dialog).toHaveAttribute('data-state', 'open');
@@ -282,7 +282,7 @@ test.describe('image viewer', () => {
 
   test('B3: touch swipe changes the counter on /records/ at phone size', async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 812 });
-    await page.goto('/records/', { waitUntil: 'networkidle' });
+    await page.goto('/game/records/', { waitUntil: 'networkidle' });
     await settle(page);
     await page.locator('#awards a[data-viewer="certificates"]').first().click();
     const dialog = page.locator('dialog.image-viewer');
@@ -317,7 +317,7 @@ test.describe('image viewer', () => {
       { width: 1024, height: 600 },
     ]) {
       await page.setViewportSize(size);
-      await page.goto('/en/records/', { waitUntil: 'networkidle' });
+      await page.goto('/en/game/records/', { waitUntil: 'networkidle' });
       await settle(page);
       await page.locator('a[data-viewer="certificates"]').first().click();
       const dialog = page.locator('dialog.image-viewer');
@@ -368,7 +368,7 @@ test.describe('image viewer', () => {
       { width: 1440, height: 900 },
       { width: 375, height: 812 },
     ]) {
-      const ko = await rectsAt(vp.width, vp.height, '/research/');
+      const ko = await rectsAt(vp.width, vp.height, '/game/research/');
       expect(ko.text, `${vp.width} ko text`).toMatch(/×/);
       expect(ko.text, `${vp.width} ko text`).toMatch(/닫기/);
       expect(ko.name, `${vp.width} ko name`).toBe('닫기');
@@ -376,7 +376,7 @@ test.describe('image viewer', () => {
       expect(ko.aboveFrame, `${vp.width} ko above`).toBe(true);
       await page.keyboard.press('Escape');
 
-      const en = await rectsAt(vp.width, vp.height, '/en/research/');
+      const en = await rectsAt(vp.width, vp.height, '/en/game/research/');
       expect(en.text, `${vp.width} en text`).toMatch(/×/);
       expect(en.text, `${vp.width} en text`).toMatch(/Close/);
       expect(en.name, `${vp.width} en name`).toBe('Close');
@@ -393,7 +393,7 @@ test.describe('image viewer', () => {
       { width: 1440, height: 900 },
       { width: 2560, height: 1440 },
     ]) {
-      const info = await rectsAt(size.width, size.height, '/records/');
+      const info = await rectsAt(size.width, size.height, '/game/records/');
       expect(info.hitStrip, `${size.width}x${size.height} strip`).toBe(false);
       expect(info.hitCounter, `${size.width}x${size.height} counter`).toBe(false);
       await page.keyboard.press('Escape');
@@ -402,7 +402,7 @@ test.describe('image viewer', () => {
 
   test('B6: caption sits below the stage and inside the viewport', async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 812 });
-    for (const path of ['/projects/kickick-park/', '/en/projects/school-zone-blindspots/', '/en/records/', '/research/']) {
+    for (const path of ['/game/projects/kickick-park/', '/en/game/projects/school-zone-blindspots/', '/en/game/records/', '/game/research/']) {
       await page.goto(path, { waitUntil: 'networkidle' });
       await settle(page);
       const trigger = page.locator('a[data-viewer]').first();
@@ -432,7 +432,7 @@ test.describe('image viewer', () => {
       await expect(dialog).not.toHaveAttribute('open');
     }
     await page.setViewportSize({ width: 1440, height: 900 });
-    await page.goto('/en/records/', { waitUntil: 'networkidle' });
+    await page.goto('/en/game/records/', { waitUntil: 'networkidle' });
     await settle(page);
     await page.locator('a[data-viewer="certificates"]').first().click();
     const dialog = page.locator('dialog.image-viewer');
@@ -450,9 +450,9 @@ test.describe('image viewer', () => {
   });
 
   test('B2: deep link → ←/→ → Esc stays on /records/', async ({ page }) => {
-    await page.goto('/', { waitUntil: 'networkidle' });
+    await page.goto('/game/', { waitUntil: 'networkidle' });
     await settle(page);
-    await page.goto('/records/#view-busan-mayor-award', { waitUntil: 'networkidle' });
+    await page.goto('/game/records/#view-busan-mayor-award', { waitUntil: 'networkidle' });
     await settle(page);
     const dialog = page.locator('dialog.image-viewer');
     await expect(dialog).toHaveAttribute('open', '', { timeout: 5000 });
@@ -460,11 +460,11 @@ test.describe('image viewer', () => {
     await expect(dialog.locator('.image-viewer__counter')).toHaveText('2 / 3');
     await page.keyboard.press('Escape');
     await expect(dialog).not.toHaveAttribute('open');
-    await expect(page).toHaveURL(/\/records\/$/);
+    await expect(page).toHaveURL(/\/game\/records\/$/);
   });
 
   test('B2 variant: deep link → ←/→ → reload → Esc stays on /records/', async ({ page }) => {
-    await page.goto('/records/#view-busan-mayor-award', { waitUntil: 'networkidle' });
+    await page.goto('/game/records/#view-busan-mayor-award', { waitUntil: 'networkidle' });
     await settle(page);
     const dialog = page.locator('dialog.image-viewer');
     await expect(dialog).toHaveAttribute('open', '', { timeout: 5000 });
@@ -475,11 +475,11 @@ test.describe('image viewer', () => {
     await expect(page.locator('dialog.image-viewer')).toHaveAttribute('open', '', { timeout: 5000 });
     await page.keyboard.press('Escape');
     await expect(page.locator('dialog.image-viewer')).not.toHaveAttribute('open');
-    await expect(page).toHaveURL(/\/records\/$/);
+    await expect(page).toHaveURL(/\/game\/records\/$/);
   });
 
   test('S1: Esc shortly after ←/→ still closes', async ({ page }) => {
-    await page.goto('/research/', { waitUntil: 'networkidle' });
+    await page.goto('/game/research/', { waitUntil: 'networkidle' });
     await settle(page);
     const { dialog } = await openFigure(page, '#interests');
     await waitViewerSettled(dialog);
@@ -491,21 +491,21 @@ test.describe('image viewer', () => {
   });
 
   test('S4: dialog.close() while open removes the history entry', async ({ page }) => {
-    await page.goto('/', { waitUntil: 'networkidle' });
+    await page.goto('/game/', { waitUntil: 'networkidle' });
     await settle(page);
-    await page.goto('/records/', { waitUntil: 'networkidle' });
+    await page.goto('/game/records/', { waitUntil: 'networkidle' });
     await settle(page);
     await page.locator('#awards a[data-viewer="certificates"]').first().click();
     await expect(page.locator('dialog.image-viewer')).toHaveAttribute('open', '');
     await page.evaluate(() => document.querySelector<HTMLDialogElement>('dialog.image-viewer')!.close());
     await expect(page.locator('dialog.image-viewer')).not.toHaveAttribute('open');
-    await expect(page).toHaveURL(/\/records\/$/);
+    await expect(page).toHaveURL(/\/game\/records\/$/);
     await page.goBack();
-    await expect(page).toHaveURL(/\/$/);
+    await expect(page).toHaveURL(/\/game\/$/);
   });
 
   test('certificate on /records/: achievement fires exactly once on close', async ({ page }) => {
-    await page.goto('/records/', { waitUntil: 'networkidle' });
+    await page.goto('/game/records/', { waitUntil: 'networkidle' });
     await settle(page);
     const trigger = page.locator('#awards a[data-viewer="certificates"]').first();
     await trigger.click();
@@ -520,9 +520,9 @@ test.describe('image viewer', () => {
   });
 
   test('Esc removes exactly one history entry; goBack returns to previous document', async ({ page }) => {
-    await page.goto('/', { waitUntil: 'networkidle' });
+    await page.goto('/game/', { waitUntil: 'networkidle' });
     await settle(page);
-    await page.goto('/records/', { waitUntil: 'networkidle' });
+    await page.goto('/game/records/', { waitUntil: 'networkidle' });
     await settle(page);
     await page.locator('#awards a[data-viewer="certificates"]').first().click();
     await expect(page.locator('dialog.image-viewer')).toHaveAttribute('open', '');
@@ -530,14 +530,14 @@ test.describe('image viewer', () => {
     expect(await page.evaluate(() => !!(history.state && typeof history.state === 'object' && 'viewer' in history.state))).toBe(true);
     await page.keyboard.press('Escape');
     await expect(page.locator('dialog.image-viewer')).not.toHaveAttribute('open');
-    await expect(page).toHaveURL(/\/records\/$/);
+    await expect(page).toHaveURL(/\/game\/records\/$/);
     expect(await page.evaluate(() => !!(history.state && typeof history.state === 'object' && 'viewer' in history.state))).toBe(false);
     await page.goBack();
-    await expect(page).toHaveURL(/\/$/);
+    await expect(page).toHaveURL(/\/game\/$/);
   });
 
-  test('/records/#view-<id> opens the certificate on load', async ({ page }) => {
-    await page.goto('/records/#view-busan-mayor-award', { waitUntil: 'networkidle' });
+  test('/game/records/#view-<id> opens the certificate on load', async ({ page }) => {
+    await page.goto('/game/records/#view-busan-mayor-award', { waitUntil: 'networkidle' });
     await settle(page);
     await expect(page.locator('dialog.image-viewer')).toHaveAttribute('open', '', { timeout: 5000 });
     await expect(page.locator('dialog.image-viewer .image-viewer__img')).toBeVisible();
@@ -545,7 +545,7 @@ test.describe('image viewer', () => {
 
   test('B7: focused Next shows a visible accent focus ring', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
-    await page.goto('/research/', { waitUntil: 'networkidle' });
+    await page.goto('/game/research/', { waitUntil: 'networkidle' });
     await settle(page);
     const { dialog } = await openFigure(page, '#interests');
     // Tab from close → prev → next so :focus-visible applies.
@@ -562,9 +562,9 @@ test.describe('image viewer', () => {
     expect(outline.color).toMatch(/200,\s*240,\s*60/);
   });
 
-  test('/projects/ hash-only popstate keeps the tag filter selection', async ({ page }) => {
+  test('/game/projects/ hash-only popstate keeps the tag filter selection', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
-    await page.goto('/projects/', { waitUntil: 'networkidle' });
+    await page.goto('/game/projects/', { waitUntil: 'networkidle' });
     await settle(page);
     await page.locator('[data-tag-filter] button').nth(1).click();
     await expect(page.locator('[data-tag-filter] button').nth(1)).toHaveAttribute('aria-pressed', 'true');
