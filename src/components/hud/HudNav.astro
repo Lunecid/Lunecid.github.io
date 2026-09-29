@@ -94,114 +94,9 @@ const currentValue = exact ? 'page' : 'true';
 </header>
 
 <script>
-  import { lockScroll, unlockScroll } from '../../lib/scroll-lock';
-
-  const FOCUSABLE = 'a[href], button:not([disabled])';
-
-  document.querySelectorAll<HTMLElement>('[data-hud-nav]').forEach((nav) => {
-    const button = nav.querySelector<HTMLButtonElement>('[data-nav-toggle]');
-    const scrim = nav.querySelector<HTMLElement>('[data-nav-scrim]');
-    const panel = nav.querySelector<HTMLElement>('#hud-menu');
-    const bar = nav.querySelector<HTMLElement>('.hud-nav__bar');
-    if (!button || !panel) return;
-    // P2-3 (controller ruling 2): the open state is visible in the button's own text ("닫기 ×"/"Close ×") plus an
-    // accent outline (CSS, keyed on [data-open="true"]), a scrim behind the panel, and the body scroll locked
-    // while open — restored on close. Escape closes and returns focus to the button. Fix round 1 item 3: focus is
-    // also trapped inside [toggle, ...panel links] while open, so Tab/Shift+Tab never leave the open menu for the
-    // still-visible BGM/CV controls in the bar.
-    // Fix round 2 item 2: Escape used to be handled by a keydown listener on `nav` itself, which only ever sees
-    // events whose target is inside nav's subtree. If focus ends up on <body> (e.g. after a click that blurs the
-    // previously focused element without moving focus into the panel), a keydown there bubbles through
-    // <html>/document, never through nav, so Escape silently did nothing. Bind Escape on `document` instead, only
-    // while the menu is open (added here, removed on every close) so it can never fire for a closed menu.
-    const onDocumentEscape = (event: KeyboardEvent): void => {
-      if (event.key !== 'Escape') return;
-      setOpen(false); // setOpen is assigned just below; this closure only ever runs later, once open.
-      button.focus();
-    };
-    const setOpen = (open: boolean) => {
-      nav.dataset.open = String(open);
-      button.setAttribute('aria-expanded', String(open));
-      const closed = button.dataset.labelClosed ?? '메뉴';
-      const openRaw = button.dataset.labelOpen ?? '닫기';
-      // G-017: open state is a fixed-width "×" plus visually hidden Close/닫기 so the bar never widens.
-      const accessible = openRaw.replace(/\s*×\s*/g, '').trim() || openRaw;
-      if (open) {
-        const mark = document.createElement('span');
-        mark.setAttribute('aria-hidden', 'true');
-        mark.textContent = '×';
-        const sr = document.createElement('span');
-        sr.className = 'sr-only';
-        sr.textContent = accessible;
-        button.replaceChildren(mark, sr);
-      } else {
-        button.textContent = closed;
-      }
-      button.setAttribute('aria-label', open ? accessible : closed);
-      // Fix round 1 minor: lock by name (src/lib/scroll-lock.ts), not a direct class toggle — a resize-to-desktop
-      // auto-close (below) must never strip the lock out from under an open certificate <dialog>.
-      if (open) {
-        lockScroll('nav');
-        document.addEventListener('keydown', onDocumentEscape);
-      } else {
-        unlockScroll('nav');
-        document.removeEventListener('keydown', onDocumentEscape);
-      }
-      // Fix round 1 item 5 (320px): the bar can wrap to a second line when the open-state label is wide enough
-      // ("Close ×" at 320px, with BGM+CV also in the bar) — the scrim's CSS `top: var(--nav-h)` assumes a single
-      // line, so it would then cover whatever wrapped onto the second line (the toggle itself, or CV). Position
-      // it from the bar's own actual rendered height instead of that fixed token.
-      if (open && scrim && bar) scrim.style.top = `${bar.getBoundingClientRect().bottom}px`;
-    };
-    button.addEventListener('click', () => setOpen(button.getAttribute('aria-expanded') !== 'true'));
-    scrim?.addEventListener('click', () => {
-      setOpen(false);
-      button.focus();
-    });
-    nav.addEventListener('keydown', (event) => {
-      // Escape is handled by the document-level onDocumentEscape listener above (bound only while open), so it
-      // works regardless of where focus is; this listener only needs the Tab trap, which only matters once focus
-      // is already on one of the trapped elements.
-      if (nav.dataset.open !== 'true') return;
-      if (event.key !== 'Tab') return;
-      const trapped = [button, ...Array.from(panel.querySelectorAll<HTMLElement>(FOCUSABLE))];
-      const at = trapped.indexOf(document.activeElement as HTMLElement);
-      if (at === -1) return; // focus is somewhere else in the bar (e.g. BGM/CV) — leave native Tab alone
-      event.preventDefault();
-      const next = at + (event.shiftKey ? -1 : 1);
-      trapped[(next + trapped.length) % trapped.length]?.focus();
-    });
-    document.addEventListener('click', (event) => {
-      if (nav.dataset.open === 'true' && event.target instanceof Node && !nav.contains(event.target)) setOpen(false);
-    });
-    nav.querySelectorAll<HTMLAnchorElement>('#hud-menu a').forEach((link) => link.addEventListener('click', () => setOpen(false)));
-    if (typeof window.matchMedia === 'function') {
-      window.matchMedia('(min-width: 734px)').addEventListener('change', (query) => {
-        if (query.matches) setOpen(false);
-      });
-    }
-    // A page restored from bfcache (browser back/forward) can reappear with the menu still open and the scroll
-    // lock still applied from before navigation; force it closed so the lock is never stuck.
-    window.addEventListener('pageshow', (event) => {
-      if (event.persisted) setOpen(false);
-    });
-  });
-
-  // P2-6 (controller ruling 3): the language switch keeps location.hash (anchor ids are shared across languages),
-  // so a hash-scrolled page (e.g. /records/#job-fit) stays scrolled to the same section after switching language.
-  // Fix round 1 item 4: read the hash at click time and keep it live on hashchange (an in-page nav link to
-  // #job-fit changes location.hash without a reload), not once at load — the base href is cached per link so a
-  // later hash never appends onto an already-hash-bearing href.
-  function syncLangHrefs(): void {
-    document.querySelectorAll<HTMLAnchorElement>('[data-hud-nav] .hud-nav__lang a[hreflang]').forEach((link) => {
-      // setAttribute, not link.href = …: the href IDL property reads back a resolved absolute URL, and
-      // reassigning through it would turn the (relative) attribute into an absolute one.
-      const base = (link.dataset.baseHref ??= link.getAttribute('href') ?? '');
-      link.setAttribute('href', base + location.hash);
-    });
-  }
-  syncLangHrefs();
-  window.addEventListener('hashchange', syncLangHrefs);
+  import { initLangHashSync, initNavMenus } from '../../scripts/nav-menu';
+  initNavMenus('[data-hud-nav]');
+  initLangHashSync('[data-hud-nav] .hud-nav__lang a[hreflang]');
 </script>
 
 <style>
@@ -377,8 +272,12 @@ const currentValue = exact ? 'page' : 'true';
     .hud-nav[data-open="true"] .hud-nav__panel {
       display: block;
     }
+    /* F-025 (P-05): a 150ms entrance on open; closing is instant (no visibility transition, style guard). */
+    :global(html.js) .hud-nav[data-open="true"] .hud-nav__panel { animation: nav-panel-in 150ms var(--ease-out); }
+    :global(html.js) .hud-nav[data-open="true"] .hud-nav__scrim { animation: nav-scrim-in 150ms linear; }
     /* P2-3: a scrim behind the panel, from the nav bar down to the bottom of the viewport, so the panel never
-       blends into the dark hero behind it. The panel itself (opaque, z-index above) fully covers its own height. */
+       blends into the dark hero behind it. The panel itself (opaque, z-index above) fully covers its own height.
+       F-067 (P-05): the colour is the --scrim token. */
     :global(html.js) .hud-nav[data-open="true"] .hud-nav__scrim {
       display: block;
       position: fixed;
@@ -387,7 +286,7 @@ const currentValue = exact ? 'page' : 'true';
       top: var(--nav-h);
       bottom: 0;
       z-index: 1;
-      background: rgba(0, 0, 0, .55);
+      background: var(--scrim);
     }
     .hud-nav__list {
       flex-direction: column;
@@ -450,5 +349,13 @@ const currentValue = exact ? 'page' : 'true';
     .hud-nav__bar {
       padding-inline: var(--gutter);
     }
+  }
+  /* F-025 (P-05): the menu entrance keyframes (opacity and transform only) and their reduce paths. */
+  @keyframes nav-panel-in { from { opacity: 0; transform: translateY(-8px); } }
+  @keyframes nav-scrim-in { from { opacity: 0; } }
+  :global(:root[data-motion="reduce"]) .hud-nav__panel,
+  :global(:root[data-motion="reduce"]) .hud-nav__scrim { animation: none !important; }
+  @media (prefers-reduced-motion: reduce) {
+    .hud-nav__panel, .hud-nav__scrim { animation: none !important; }
   }
 </style>

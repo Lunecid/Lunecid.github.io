@@ -6,11 +6,17 @@ import {
 } from '../../src/variants';
 import { dataVariant } from '../../src/variants/data';
 import { gameVariant } from '../../src/variants/game';
+import { resolveFacts } from '../../src/lib/facts';
 import { loadFactSource } from '../helpers/fact-source';
 
 const facts = loadFactSource();
 
 describe('versions (spec §4.2, contract §1.6–§1.7)', () => {
+  it('NEUTRAL_IDENTITY.siteTitle is the resume.yaml name (the neutral header, DataNav and the footers show it without reading the collection)', () => {
+    const src = loadFactSource();
+    for (const lang of ['ko', 'en'] as const) expect(NEUTRAL_IDENTITY.siteTitle[lang], lang).toBe(resolveFacts('{person.name}', lang, src));
+  });
+
   it('registry, prefixes, modules, layout, theme, job-fit ids, nav', () => {
     expect(Object.keys(VARIANTS)).toEqual([...VARIANT_IDS]);
     for (const id of VARIANT_IDS) {
@@ -18,7 +24,7 @@ describe('versions (spec §4.2, contract §1.6–§1.7)', () => {
       expect(v.id).toBe(id);
       expect(v.prefix).toBe(VARIANT_PREFIX[id]);
       expect(v.modules).toBe(VARIANT_MODULES[id]); // the same array, never a copy
-      expect(v.layout).toBe('base'); // P2-2 sets data → 'data' (with the layout flip, contract §8.1 F-3)
+      expect(v.layout).toBe(id === 'data' ? 'data' : 'base'); // P2-2 flipped data → 'data' (with the layout flip, contract §8.1 F-3)
       expect(v.jobfit).toBe(id);
     }
     expect(gameVariant.theme).toBe('hud');

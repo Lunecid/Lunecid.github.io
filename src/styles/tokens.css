@@ -163,6 +163,11 @@
   --page-link: var(--nt-accent); --page-rule: var(--nt-rule); --page-rule-strong: var(--nt-ink);
   --page-fill: var(--nt-ink); --page-fill-ink: var(--nt-bg);
 }
+:root[data-variant="data"] {
+  --page-bg: var(--ed-bg); --page-ink: var(--ed-ink); --page-muted: var(--ed-muted); --page-focus: var(--ed-accent);
+  --page-link: var(--ed-accent); --page-rule: var(--ed-rule); --page-rule-strong: var(--ed-rule-strong);
+  --page-fill: var(--ed-fill); --page-fill-ink: var(--ed-fill-ink);
+}
 @media (min-width: 734px) {
   :root { --fs-name: 60px; --fs-display: 48px; --fs-h2: 28px; --fs-sub: 21px; --gutter: 32px; --section-pad-y: 44px; }
 }

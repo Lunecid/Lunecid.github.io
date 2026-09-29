@@ -96,3 +96,6 @@
 :root[data-variant="data"] article.ed-prose .footnote { font-size: var(--fs-small); color: var(--ed-muted); }
 :root[data-variant="data"] article.ed-prose .footnotes,
 :root[data-variant="data"] article.ed-prose [data-footnotes] { margin-top: 2.5em; padding-top: 1em; border-top: var(--ed-rule-w) solid var(--ed-rule); font-size: var(--fs-small); color: var(--ed-muted); }
+
+/* ── the version switch (P1-15) on general pages: a plain link in the accent (P2-2) ── */
+:root[data-variant="data"] .variant-switch { color: var(--ed-accent); }

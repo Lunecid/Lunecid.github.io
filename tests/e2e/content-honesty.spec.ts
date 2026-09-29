@@ -17,6 +17,8 @@ const ACHIEVEMENT_COUNT = availableAchievements(
 // Batch 3a (content facts): what the built pages show must match the owner decisions D-4, D-7, D-13 and P2-33.
 
 test.describe('D-7: the nav CV button opens the document that fits the page', () => {
+  /** P2-2: general pages carry DataNav, whose CV link is a.data-nav__cv (same href, title, name "CV — <label>" and ↓). */
+  const navCv = (route: string): string => (basePathOf(route).variant === 'data' ? 'a.data-nav__cv' : 'a.hud-nav__cv');
   const academic = [
     '/game/research/', '/en/game/research/', '/game/research/cog-2026-engagement/', '/en/game/research/cog-2026-engagement/',
     '/data/research/', '/en/data/research/cog-2026-engagement/',
@@ -29,7 +31,7 @@ test.describe('D-7: the nav CV button opens the document that fits the page', ()
   for (const route of academic) {
     test(`${route} → Academic CV`, async ({ page }) => {
       await page.goto(route);
-      const cv = page.locator('a.hud-nav__cv');
+      const cv = page.locator(navCv(route));
       await expect(cv).toHaveAttribute('href', DOCUMENTS['cv-academic']);
       await expect(cv).toHaveAttribute('title', 'Academic CV (PDF)');
       await expect(cv).toHaveAccessibleName(/^CV\s*—\s*Academic CV \(PDF\)$/);
@@ -42,7 +44,7 @@ test.describe('D-7: the nav CV button opens the document that fits the page', ()
       await page.goto(route);
       const en = route.startsWith('/en/');
       const { lang, variant } = basePathOf(route);
-      const cv = page.locator('a.hud-nav__cv');
+      const cv = page.locator(navCv(route));
       await expect(cv).toHaveAttribute('href', DOCUMENTS[getVariant(variant!).documents.resume[lang]]);
       await expect(cv).toHaveAttribute('title', en ? 'Résumé (PDF)' : '이력서 (PDF)');
     });

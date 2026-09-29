@@ -1,4 +1,4 @@
-import { test, expect, basePathOf, builtRoutes, horizontalOverflow, settle, textBelow12px } from './helpers';
+import { test, expect, basePathOf, builtRoutes, dataPath, horizontalOverflow, settle, textBelow12px } from './helpers';
 import { DOCUMENTS } from '../../src/config';
 import { getVariant } from '../../src/variants';
 
@@ -136,4 +136,52 @@ test.describe('N01: phone menu toggle width is stable', () => {
     expect(Math.abs(toggleOpen.y - brandOpen.y), 'still one row when open').toBeLessThanOrEqual(8);
     expect(toggleOpen.y + toggleOpen.height).toBeLessThanOrEqual(brandOpen.y + Math.max(brandOpen.height, 52) + 4);
   });
+});
+
+// P-05 / N01 (mirrors responsive.spec 'N01: phone menu panel scrolls at short heights' and 'toggle width is stable').
+// P2-2: DataNav's twins of the two game describes above. They live here, not in data-layout.spec.ts, because only this
+// spec runs on the mobile projects (playwright.config.ts testMatch); data-layout.spec.ts runs on the desktop project only.
+test.describe('DataNav N01: the phone menu panel scrolls at short heights', () => {
+  for (const height of [256, 200] as const) {
+    for (const route of [dataPath('/records/'), dataPath('/records/', 'en')]) {
+      test(`${route} at 320×${height}`, async ({ page }, testInfo) => {
+        test.skip(!testInfo.project.name.startsWith('mobile'), 'phone menu only below 734px');
+        await page.setViewportSize({ width: 320, height });
+        await page.goto(route, { waitUntil: 'networkidle' });
+        await settle(page);
+        const toggle = page.locator('[data-data-nav] [data-nav-toggle]');
+        await toggle.click();
+        await expect(toggle).toHaveAttribute('aria-expanded', 'true');
+        const panel = page.locator('#data-menu');
+        const overflow = await panel.evaluate((el) => ({ scrollHeight: el.scrollHeight, clientHeight: el.clientHeight }));
+        expect(overflow.scrollHeight, 'panel content taller than the viewport band').toBeGreaterThan(overflow.clientHeight);
+        for (const target of [panel.locator('.data-nav__list a[href$="/records/"]'), panel.locator('.data-nav__lang--panel a')]) {
+          await target.evaluate((el) => el.scrollIntoView({ block: 'nearest' }));
+          await expect(target).toBeInViewport();
+        }
+        expect(await page.evaluate(() => window.scrollY), 'body scroll stays locked').toBe(0);
+      });
+    }
+  }
+});
+
+test.describe('DataNav N01: the phone menu toggle width is stable', () => {
+  for (const width of [320, 375, 390] as const) {
+    for (const route of [dataPath('/'), dataPath('/', 'en')]) {
+      test(`${route} at ${width}px`, async ({ page }, testInfo) => {
+        test.skip(!testInfo.project.name.startsWith('mobile'), 'phone menu only below 734px');
+        await page.setViewportSize({ width, height: 720 });
+        await page.goto(route, { waitUntil: 'networkidle' });
+        await settle(page);
+        const toggle = page.locator('[data-data-nav] [data-nav-toggle]');
+        const box = () => toggle.evaluate((el) => { const r = el.getBoundingClientRect(); return { x: r.x, width: r.width }; });
+        const before = await box();
+        await toggle.click();
+        await expect(toggle).toHaveAttribute('aria-expanded', 'true');
+        const after = await box();
+        expect(after.x, 'toggle x unchanged when open').toBeCloseTo(before.x, 0);
+        expect(after.width, 'toggle width unchanged when open').toBeCloseTo(before.width, 0);
+      });
+    }
+  }
 });

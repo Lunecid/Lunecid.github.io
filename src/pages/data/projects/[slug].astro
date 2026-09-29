@@ -1,9 +1,9 @@
 ---
 // P2-2a: one page module per version (contract §2.2); see src/pages/game/index.astro.
 import type { GetStaticPaths } from 'astro';
-import BaseLayout from '../../../layouts/BaseLayout.astro';
+import DataLayout from '../../../layouts/DataLayout.astro';
 import ProjectView from '../../../views/ProjectView.astro';
 import { projectPathsFor } from '../../../lib/portfolio';
 export const getStaticPaths = (() => projectPathsFor('data', 'ko')) satisfies GetStaticPaths;
 ---
-<ProjectView lang="ko" variant="data" layout={BaseLayout} entry={Astro.props.entry} />
+<ProjectView lang="ko" variant="data" layout={DataLayout} entry={Astro.props.entry} />

@@ -99,7 +99,7 @@ html.js .site-ach__nojs { display: none; }
   html:not(.js) .pn__ptr { transform: none; }
 }
 
-/* P1-10 (contract §4.2): the neutral pages are light pages with a navy focus ring. P2-2 adds :root[data-variant="data"]
-   to both selectors together with the data role tokens (until then the data pages still wear the dark HUD theme). */
-:root[data-variant="neutral"] { color-scheme: light; }
-:root[data-variant="neutral"] :focus-visible { outline-color: var(--page-focus); }
+/* P1-10 + P2-2 (contract §4.2, §8.1 F-5): the general and neutral pages are light pages with a navy focus ring. The data
+   half lands with the layout flip (P2-2), when the general pages first render on DataLayout with the white body. */
+:root[data-variant="data"], :root[data-variant="neutral"] { color-scheme: light; }
+:root[data-variant="data"] :focus-visible, :root[data-variant="neutral"] :focus-visible { outline-color: var(--page-focus); }

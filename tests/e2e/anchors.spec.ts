@@ -21,7 +21,7 @@ async function landing(page: Page, id: string) {
     const el = document.getElementById(targetId);
     if (!el) return null;
     const rect = el.getBoundingClientRect();
-    const nav = document.querySelector('.hud-nav');
+    const nav = document.querySelector('.hud-nav, .data-nav');
     return {
       top: rect.top,
       height: rect.height,
@@ -72,7 +72,7 @@ test.describe('hero job-fit CTA lands on the job-fit heading', () => {
       await expect(heading).toContainText(t(lang, 'jobfit.title'));
       const pos = await heading.evaluate((h) => {
         const rect = h.getBoundingClientRect();
-        const nav = document.querySelector('.hud-nav');
+        const nav = document.querySelector('.hud-nav, .data-nav');
         return {
           top: rect.top,
           bottom: rect.bottom,

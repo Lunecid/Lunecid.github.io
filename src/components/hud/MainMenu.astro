@@ -171,6 +171,7 @@ const { lang, items, hint, side } = Astro.props;
     grid-area: ptr;
     color: var(--accent);
     opacity: 0;
+    transition: opacity var(--dur-hover) linear; /* F-025 (P-05) */
   }
   .mm__item[data-selected] .mm__ptr {
     opacity: 1;
@@ -178,9 +179,21 @@ const { lang, items, hint, side } = Astro.props;
   .mm__num {
     grid-area: num;
     font-variant-numeric: tabular-nums;
+    transition: color var(--dur-hover) linear; /* F-025 (P-05) */
   }
   .mm__item[data-selected] .mm__num {
     color: var(--accent);
+  }
+  /* F-025 (P-05): the pointer and number transitions are off under reduced motion (the toggle and, without JS, the OS). */
+  :global(:root[data-motion="reduce"]) .mm__ptr,
+  :global(:root[data-motion="reduce"]) .mm__num {
+    transition: none;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .mm__ptr,
+    .mm__num {
+      transition: none;
+    }
   }
   /* N14 / G-012: selected MAIN MENU row keeps an edge under forced colours. */
   @media (forced-colors: active) {

@@ -1,27 +1,38 @@
 ---
 // General-version layout (spec §5.2, §8; contract §1.1, §4): the common <head> (HeadMeta), the sans face only (no mono
-// preload; the Korean heading face arrives in P2-3 and is never preloaded), the editorial sheet, DataNav (P2-2) and
+// preload; the Korean heading face arrives in P2-3 and is never preloaded), the editorial sheet, DataNav and
 // DataFooter. No game module: no CRT intro, AchievementHost, BGM or data-sfx (§4.3), and no GhostArt (the game's Miku
 // watermark; the shared components render it on the game version only).
+// The two TRANSITIONAL imports (P2 Appendix A D-7) serve the HUD markup that Tasks 4–8 replace; Task 9 removes them.
 import '../styles/tokens.css';
 import '../styles/base.css';
+import '../styles/hud.css'; // TRANSITIONAL P2-2 → P2-9 (D-7)
+import '../styles/read.css'; // TRANSITIONAL P2-2 → P2-9 (D-7)
 import '../styles/editorial.css';
 import type { ComponentProps } from 'astro/types';
 import type BaseLayout from './BaseLayout.astro';
 import HeadMeta from './partials/HeadMeta.astro';
+import DataNav from '../components/data/DataNav.astro';
 import DataFooter from '../components/data/DataFooter.astro';
+import { DOCUMENTS } from '../config';
+import { langSwitchHref } from '../lib/links';
 import { otherLang, t } from '../i18n/utils';
 import { VIEWER_QUEUE_SCRIPT } from '../lib/viewer-queue';
 import { FONT_URL, fontFaceCss } from '../lib/fonts';
 import { HEAD_INIT_SCRIPT } from '../lib/head-init';
-import { langSwitchHref } from '../lib/links';
 import { getVariant } from '../variants';
 
 type Props = ComponentProps<typeof BaseLayout>;
-const { lang, variant, title, description, page, section, ogSlug, noindex = false, notices = [], altLangHref, jsonLd } = Astro.props;
+const { lang, variant, title, description, page, section, sectionIndex = false, ogSlug, noindex = false, notices = [], altLangHref, jsonLd } = Astro.props;
+const presentation = getVariant(variant);
 // og:site_name as BaseLayout reads it (P1-10): getFactSource() needs the content collections, which the vitest
 // container does not load, and the data siteTitle carries no fact token.
-const siteTitle = getVariant(variant).identity.siteTitle[lang];
+const siteTitle = presentation.identity.siteTitle[lang];
+// D-7: on research pages the CV link opens the Academic CV, elsewhere the general résumé in the page language.
+const cv =
+  section === 'research'
+    ? { href: DOCUMENTS[presentation.documents.academic], label: t(lang, 'nav.cvAcademic') }
+    : { href: DOCUMENTS[presentation.documents.resume[lang]], label: t(lang, 'nav.cvResume') };
 // The other-language twin, as BaseLayout computes it (P1-10): null = no twin, no hreflang links, no language switch.
 const altHref = altLangHref === undefined ? langSwitchHref(Astro.url.pathname, otherLang(lang)) : altLangHref;
 ---
@@ -41,6 +52,7 @@ const altHref = altLangHref === undefined ? langSwitchHref(Astro.url.pathname, o
   </head>
   <body>
     <a class="skip-link" href="#main">{t(lang, 'site.skipToContent')}</a>
+    <DataNav lang={lang} current={section} exact={sectionIndex} altLangHref={altHref} cvHref={cv.href} cvLabel={cv.label} />
     <main id="main" tabindex="-1"><slot /></main>
     <DataFooter lang={lang} notices={notices} builtAt={new Date()} />
   </body>

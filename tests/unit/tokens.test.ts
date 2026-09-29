@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { HUD_LABEL_LIME, NAV_HEIGHT_PX } from '../../src/config';
-import { contrast, parseRules as parseCss } from '../helpers/css';
+import { contrast, parseRules as parseCss, splitSelectors } from '../helpers/css';
 
 type Rule = { media: string | null; selector: string; decls: Map<string, string> };
 
@@ -294,5 +294,22 @@ describe('editorial palette, neutral aliases and role tokens (P2-1, spec §8, co
     expect(contrast(accent!, bg!)).toBeGreaterThanOrEqual(7);
     expect(contrast(accent!, bg!)).toBeGreaterThanOrEqual(3);
     expect(contrast(fillInk!, ink!)).toBeGreaterThanOrEqual(7);
+  });
+
+  it('P2-2: the general version\'s role tokens, set only with the layout flip (D-5)', () => {
+    const ROLES = ['--page-bg', '--page-ink', '--page-muted', '--page-focus', '--page-link', '--page-rule', '--page-rule-strong', '--page-fill', '--page-fill-ink'];
+    const data = declsOf(':root[data-variant="data"]');
+    expect(ROLES.map((r) => data.get(r))).toEqual(['var(--ed-bg)', 'var(--ed-ink)', 'var(--ed-muted)', 'var(--ed-accent)', 'var(--ed-accent)', 'var(--ed-rule)', 'var(--ed-rule-strong)', 'var(--ed-fill)', 'var(--ed-fill-ink)']);
+    for (const name of data.keys()) expect(name, `data sets ${name}`).toMatch(/^--page-/);
+  });
+
+  it('P2-2: base.css makes the general pages light with the navy focus ring, in the same rules as the neutral pages (contract §8.1 F-5)', () => {
+    const base = parseCss(read('src/styles/base.css')).filter((r) => r.media === null);
+    const scheme = base.find((r) => splitSelectors(r.selector).includes(':root[data-variant="data"]'));
+    expect(splitSelectors(scheme?.selector ?? '')).toEqual([':root[data-variant="data"]', ':root[data-variant="neutral"]']);
+    expect(scheme?.decls.get('color-scheme')).toBe('light');
+    const focus = base.find((r) => splitSelectors(r.selector).includes(':root[data-variant="data"] :focus-visible'));
+    expect(splitSelectors(focus?.selector ?? '')).toEqual([':root[data-variant="data"] :focus-visible', ':root[data-variant="neutral"] :focus-visible']);
+    expect(focus?.decls.get('outline-color')).toBe('var(--page-focus)');
   });
 });

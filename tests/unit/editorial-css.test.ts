@@ -43,10 +43,12 @@ describe('src/styles/editorial.css (P2-1, spec §8)', () => {
     expect(decl(`${SCOPE} .ed-prose a:not(.ed-btn)`, 'text-decoration')).toBe('underline');
   });
 
-  it('is imported by DataLayout only, and DataLayout imports neither hud.css nor read.css', () => {
+  it('is imported by DataLayout only; DataLayout imports hud.css and read.css only as the marked P2-2 → P2-9 transition (D-7; Task 9 restores "neither")', () => {
     const data = read('src/layouts/DataLayout.astro');
     expect(data).toMatch(/import '\.\.\/styles\/editorial\.css';/);
-    expect(data).not.toMatch(/styles\/(hud|read)\.css/);
+    expect([...data.matchAll(/styles\/(hud|read)\.css/g)].map((m) => m[1]), 'only the two marked transitional imports').toEqual(['hud', 'read']);
+    expect(data).toContain("import '../styles/hud.css'; // TRANSITIONAL P2-2 → P2-9 (D-7)");
+    expect(data).toContain("import '../styles/read.css'; // TRANSITIONAL P2-2 → P2-9 (D-7)");
     for (const f of ['BaseLayout', 'NeutralLayout']) expect(read(`src/layouts/${f}.astro`), f).not.toContain('editorial.css');
   });
 });

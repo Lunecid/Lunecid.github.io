@@ -1,0 +1,214 @@
+---
+// General-version nav (spec §5.5, §8): the name in the serif heading face → the general home, 연구 · 프로젝트 · 기록
+// (no numbers, no player log), the language switch and the version switch (bar ≥ 734px, panel below, contract §2.5),
+// the CV link (D-7: Academic CV on research pages) and the phone menu (src/scripts/nav-menu.ts).
+import VariantSwitch from '../common/VariantSwitch.astro';
+import type { Lang } from '../../i18n/ui';
+import { languages } from '../../i18n/ui';
+import { otherLang, t, type UiKey } from '../../i18n/utils';
+import { homeHref, pageHref } from '../../lib/links';
+import { parseRoute } from '../../lib/routes';
+import type { NavSection } from '../../types';
+import { NEUTRAL_IDENTITY, getVariant } from '../../variants';
+
+interface Props {
+  lang: Lang;
+  current?: NavSection;
+  exact?: boolean;
+  altLangHref: string | null;
+  cvHref: string;
+  /** Which PDF the CV link opens ("이력서 (PDF)" / "Academic CV (PDF)"): tooltip and part of the accessible name. */
+  cvLabel: string;
+}
+const { lang, current, exact = false, altLangHref, cvHref, cvLabel } = Astro.props;
+const other = otherLang(lang);
+// getPerson() reads the resume collection, which the vitest container does not load (as in DataFooter, P2-1 review);
+// the name is NEUTRAL_IDENTITY.siteTitle, the same { ko, en } as resume.yaml profile.name and NeutralHeader's brand.
+const person = { name: NEUTRAL_IDENTITY.siteTitle };
+const base = parseRoute(Astro.url.pathname)?.base ?? '/';
+const LABEL: Record<NavSection, UiKey> = { research: 'nav.research', projects: 'nav.projects', records: 'nav.records', 'player-log': 'nav.playerLog' };
+const items = getVariant('data').nav.map((item) => ({ key: item.key, label: t(lang, LABEL[item.key]), href: pageHref(item.base, { lang, variant: 'data' }) }));
+const currentValue = exact ? 'page' : 'true';
+---
+<header class="data-nav" data-open="false" data-data-nav>
+  <div class="data-nav__bar">
+    <a class="data-nav__brand" href={homeHref(lang, 'data')}>
+      <span class="data-nav__name" data-serif>{person.name[lang]}</span>
+      <span class="sr-only">{t(lang, 'nav.brandSr')}</span>
+    </a>
+    <nav id="data-menu" class="data-nav__panel" aria-label={t(lang, 'nav.label')}>
+      <ul class="data-nav__list" role="list">
+        {items.map((item) => (
+          <li><a href={item.href} aria-current={current === item.key ? currentValue : undefined}>{item.label}</a></li>
+        ))}
+      </ul>
+      {altLangHref !== null && (
+        <p class="data-nav__lang data-nav__lang--panel">
+          <a href={altLangHref} hreflang={other} lang={other}>{languages[other]}</a>
+        </p>
+      )}
+      <VariantSwitch lang={lang} variant="data" base={base} placement="panel" />
+    </nav>
+    <div class="data-nav__tools">
+      {altLangHref !== null && (
+        <p class="data-nav__lang data-nav__lang--bar">
+          <span class="data-nav__lang-cur">{lang.toUpperCase()}</span>
+          <span aria-hidden="true"> / </span>
+          <a href={altLangHref} hreflang={other} lang={other}>{other.toUpperCase()}<span class="sr-only"> {languages[other]}</span></a>
+        </p>
+      )}
+      <VariantSwitch lang={lang} variant="data" base={base} placement="bar" />
+      <a class="data-nav__cv" href={cvHref} title={cvLabel} download>{t(lang, 'nav.cv')} <span aria-hidden="true">↓</span><span class="sr-only"> — {cvLabel}</span></a>
+      <button
+        class="data-nav__toggle"
+        type="button"
+        aria-expanded="false"
+        aria-controls="data-menu"
+        data-nav-toggle
+        data-label-closed={t(lang, 'nav.menu')}
+        data-label-open={t(lang, 'nav.closeMenu')}
+      >{t(lang, 'nav.menu')}</button>
+    </div>
+  </div>
+  <div class="data-nav__scrim" data-nav-scrim aria-hidden="true"></div>
+</header>
+
+<script>
+  import { initLangHashSync, initNavMenus } from '../../scripts/nav-menu';
+  initNavMenus('[data-data-nav]');
+  initLangHashSync('[data-data-nav] .data-nav__lang a[hreflang]');
+</script>
+
+<style>
+  .data-nav {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background: var(--ed-bg);
+    border-bottom: var(--ed-rule-w) solid var(--ed-rule);
+  }
+  .data-nav__bar {
+    position: relative;
+    max-width: var(--container-hud);
+    min-height: var(--nav-h);
+    margin-inline: auto;
+    padding-inline: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    font-size: var(--fs-small);
+    line-height: 1;
+    color: var(--ed-ink);
+  }
+  .data-nav__brand {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--tap);
+    min-width: var(--tap);
+    color: var(--ed-ink);
+    text-decoration: none;
+  }
+  .data-nav__name { font-size: 20px; }
+  .data-nav__list { display: flex; gap: 24px; }
+  .data-nav__list a {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--tap);
+    color: var(--ed-ink);
+    text-decoration: none;
+    text-decoration-thickness: 2px;
+    text-underline-offset: .35em;
+    transition: text-decoration-color var(--dur-hover) linear;
+  }
+  @media (hover: hover) {
+    .data-nav__list a:hover { text-decoration: underline; text-decoration-color: var(--ed-rule); }
+  }
+  .data-nav__list a:active { text-decoration: underline; }
+  .data-nav__list a[aria-current] { text-decoration: underline; text-decoration-color: var(--ed-accent); }
+  .data-nav__tools { display: flex; align-items: center; gap: 14px; }
+  .data-nav__lang { color: var(--ed-muted); }
+  .data-nav__lang a {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: var(--tap);
+    min-width: var(--tap);
+    color: var(--ed-accent);
+  }
+  .data-nav__cv {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--tap);
+    color: var(--ed-accent);
+    font-weight: 600;
+  }
+  .data-nav__toggle {
+    /* G-017 (HudNav, 29c19b8): one fixed width, so the open "×" and the closed 메뉴/Menu never move the bar. */
+    box-sizing: border-box;
+    width: 56px;
+    min-height: var(--tap);
+    min-width: 0;
+    padding: 0;
+    border: var(--ed-rule-w) solid var(--ed-ink);
+    background: var(--ed-bg);
+    color: var(--ed-ink);
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .data-nav__toggle[aria-expanded="true"] { background: var(--ed-fill); color: var(--ed-fill-ink); }
+  .data-nav__scrim { display: none; }
+
+  @media (max-width: 733.98px) {
+    .data-nav__bar { flex-wrap: wrap; }
+    .data-nav__panel { order: 3; flex: 1 0 100%; padding: 4px 0 12px; }
+    :global(html.js) .data-nav__panel {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 100%;
+      z-index: 2;
+      display: none;
+      padding: 8px 16px 16px;
+      background: var(--ed-bg);
+      border-bottom: var(--ed-rule-w-strong) solid var(--ed-rule-strong);
+      /* N01 (HudNav G-011, 29c19b8): 100% = the sticky bar's height; the last items stay reachable at 400% zoom. */
+      max-height: calc(100dvh - 100%);
+      overflow-y: auto;
+      overscroll-behavior: contain;
+    }
+    .data-nav[data-open="true"] .data-nav__panel { display: block; }
+    /* F-025 (P-05): a 150ms entrance on open; closing is instant (no visibility transition, style guard). */
+    :global(html.js) .data-nav[data-open="true"] .data-nav__panel { animation: nav-panel-in 150ms var(--ease-out); }
+    :global(html.js) .data-nav[data-open="true"] .data-nav__scrim { animation: nav-scrim-in 150ms linear; }
+    :global(html.js) .data-nav[data-open="true"] .data-nav__scrim {
+      display: block;
+      position: fixed;
+      left: 0;
+      right: 0;
+      top: var(--nav-h);
+      bottom: 0;
+      z-index: 1;
+      background: var(--scrim);
+    }
+    .data-nav__list { flex-direction: column; gap: 0; }
+    .data-nav__list a { width: 100%; min-height: 48px; font-size: var(--fs-body); }
+    .data-nav__lang--bar { display: none; }
+    .data-nav__tools { gap: 6px; }
+    :global(html:not(.js)) .data-nav { position: relative; }
+    :global(html:not(.js)) .data-nav__toggle { display: none; }
+  }
+  @media (min-width: 734px) {
+    .data-nav__toggle, .data-nav__lang--panel { display: none; }
+  }
+  @media (min-width: 1068px) {
+    .data-nav__bar { padding-inline: 28px; }
+  }
+  @keyframes nav-panel-in { from { opacity: 0; transform: translateY(-8px); } }
+  @keyframes nav-scrim-in { from { opacity: 0; } }
+  :global(:root[data-motion="reduce"]) .data-nav__panel,
+  :global(:root[data-motion="reduce"]) .data-nav__scrim { animation: none !important; }
+  @media (prefers-reduced-motion: reduce) {
+    .data-nav__panel, .data-nav__scrim { animation: none !important; }
+  }
+</style>

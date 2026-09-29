@@ -56,3 +56,11 @@ test('neutral pages (chooser, shared pages, 404) inline neither version sheet', 
     assert.deepEqual(ED_OWN.filter((c) => has(p.css, c)), [], `${p.path}: editorial.css leaked`);
   }
 });
+
+test('data pages inline editorial.css (P2-2)', () => {
+  const data = ofVariant('data');
+  assert.ok(data.length > 0, 'no data page in dist');
+  for (const p of data) {
+    assert.deepEqual(ED_OWN.filter((c) => !has(p.css, c)), [], `${p.path}: editorial.css is not inlined`);
+  }
+});

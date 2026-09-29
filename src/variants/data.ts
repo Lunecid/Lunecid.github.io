@@ -8,7 +8,7 @@ export const dataVariant: Variant = {
   id: 'data',
   prefix: VARIANT_PREFIX.data,
   modules: VARIANT_MODULES.data,
-  layout: 'base',
+  layout: 'data',
   theme: 'editorial',
   identity: {
     headline: { ko: '데이터 분석가', en: 'Data Analyst' },
