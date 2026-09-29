@@ -1,4 +1,5 @@
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { load } from 'js-yaml';
 import { describe, expect, it } from 'vitest';
 import HelloProfile from '../../src/components/home/HelloProfile.astro';
@@ -9,8 +10,11 @@ const resume = load(readFileSync(new URL('../../src/data/resume.yaml', import.me
 };
 const primary = resume.skills.primary.map((skill) => skill.name);
 
+const HAS_GHOST = existsSync(join(process.cwd(), 'src/assets/ghost/miku-v6.webp')); // GhostArt renders nothing without its asset
+
 const base = {
   lang: 'ko' as const,
+  variant: 'game' as const,
   about: '부산대학교 데이터사이언스전문대학원 석사과정에서 게임 데이터를 연구하고 있습니다.',
   location: '부산 · Busan, South Korea',
   education: ['부산대학교 데이터사이언스전문대학원 데이터사이언스학과 석사과정 · 2025.03 – 2027.02 (졸업 예정)'],
@@ -110,5 +114,12 @@ describe('HelloProfile.astro', () => {
     const lcp = await renderAstro(HelloProfile, { props: { ...base, priority: true } });
     expect(lcp).toMatch(/<img[^>]*loading="eager"/);
     expect(lcp).toMatch(/<img[^>]*fetchpriority="high"/);
+  });
+
+  it('§1.8: the ghost art (characterArt) renders only on the game version', async () => {
+    const game = await renderAstro(HelloProfile, { props: base });
+    const data = await renderAstro(HelloProfile, { props: { ...base, variant: 'data' } });
+    expect(game.match(/data-ghost-art="right"/g) ?? []).toHaveLength(HAS_GHOST ? 1 : 0);
+    expect(data).not.toContain('ghost-art');
   });
 });

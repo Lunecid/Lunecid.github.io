@@ -181,4 +181,14 @@ describe('achievements runtime', () => {
     expect(panel('bib').hasAttribute('data-open')).toBe(true);
     expect(drainTriggers()).toEqual([]);
   });
+
+  it('§1.8: emitTrigger does nothing on a page without the achievements module', () => {
+    document.documentElement.setAttribute('data-variant', 'data');
+    const listener = vi.fn();
+    window.addEventListener(TRIGGER_EVENT, listener);
+    emitTrigger('open-certificate');
+    expect(window.__sbTriggers).toEqual([]);
+    expect(listener).not.toHaveBeenCalled();
+    window.removeEventListener(TRIGGER_EVENT, listener);
+  });
 });

@@ -290,6 +290,43 @@ describe('ImageViewer', () => {
     }
   });
 
+  it('§1.8: on a data page, opening and closing a certificate fetches no audio and queues no trigger', async () => {
+    const fetchMock = vi.fn(async () => ({ ok: true, arrayBuffer: async () => new ArrayBuffer(8) }));
+    class FakeAudioContext {
+      state = 'running';
+      destination = {};
+      resume = vi.fn(async () => undefined);
+      createGain = vi.fn(() => ({ gain: { value: 1 }, connect: vi.fn() }));
+      createBufferSource = vi.fn(() => ({ buffer: null, connect: vi.fn(), start: vi.fn() }));
+      decodeAudioData = vi.fn(async () => ({ duration: 0.2 }));
+    }
+    const g = globalThis as Record<string, unknown>;
+    const saved = { fetch: g.fetch, AudioContext: g.AudioContext };
+    g.fetch = fetchMock;
+    g.AudioContext = FakeAudioContext;
+    const seen: string[] = [];
+    const onTrigger = (event: Event) => seen.push((event as CustomEvent<{ trigger: string }>).detail.trigger);
+    window.addEventListener(TRIGGER_EVENT, onTrigger);
+    document.documentElement.setAttribute('data-variant', 'data');
+    document.documentElement.setAttribute('data-sfx', 'on');
+    localStorage.setItem('sb:sound', 'on');
+    try {
+      const { user, trigger, dialog } = setup();
+      await user.click(trigger);
+      expect(dialog).toHaveAttribute('open');
+      await user.keyboard('{Escape}');
+      await waitFor(() => expect(dialog).not.toHaveAttribute('open'));
+      expect(fetchMock).not.toHaveBeenCalled();
+      expect(seen).toEqual([]);
+      expect(window.__sbTriggers ?? []).toEqual([]);
+    } finally {
+      window.removeEventListener(TRIGGER_EVENT, onTrigger);
+      document.documentElement.removeAttribute('data-sfx');
+      g.fetch = saved.fetch;
+      g.AudioContext = saved.AudioContext;
+    }
+  });
+
   it('marks the pre-hydration queue ready once mounted', () => {
     delete window.__sbViewerReady;
     delete window.__sbViewerQueue;

@@ -19,7 +19,8 @@ import HudNav from '../components/hud/HudNav.astro';
 import SiteFooter from '../components/hud/SiteFooter.astro';
 import CrtIntro from '../components/hud/CrtIntro.astro';
 import AchievementHost from '../islands/AchievementHost';
-import { gameVariant } from '../variants/game';
+import { getVariant } from '../variants';
+import type { ModuleId, VariantId } from '../variants/ids';
 
 interface Props {
   lang: Lang;
@@ -33,6 +34,7 @@ interface Props {
   notices?: NoticeKey[];
   altLangHref?: string | null;
   jsonLd?: Record<string, unknown>;
+  variant: VariantId;
 }
 
 const {
@@ -47,13 +49,18 @@ const {
   notices = [],
   altLangHref,
   jsonLd,
+  variant,
 } = Astro.props;
+const v = getVariant(variant);
+const on = (m: ModuleId): boolean => v.modules.includes(m);
 
 const pathname = Astro.url.pathname;
 const altHref = altLangHref === undefined ? switchLocalePath(pathname, otherLang(lang)) : altLangHref;
 const canonical = canonicalUrl(pathname);
 const ogImage = `${SITE.url}/og/${ogSlug ?? ogSlugFor(pathname)}.png`;
 const sound = soundAvailability();
+const bgm = sound.bgm && on('bgm');
+const sfx = sound.sfx && on('sfx');
 // D-7: on the research pages (/research/, the paper page, /en/ mirrors) the nav CV button opens the Academic CV;
 // everywhere else the résumé in the page language.
 const cv =
@@ -61,7 +68,7 @@ const cv =
     ? { href: ACADEMIC_CV_HREF, label: t(lang, 'nav.cvAcademic') }
     : { href: CV_HREF[lang], label: t(lang, 'nav.cvResume') };
 const goatcounter = import.meta.env.PROD ? goatcounterScript(GOATCOUNTER.code, goatcounterSelfHosted()) : null;
-const defs: AchievementDef[] = availableAchievements((await getCollection('achievements')).map((entry) => entry.data), sound);
+const defs: AchievementDef[] = on('achievements') ? availableAchievements((await getCollection('achievements')).map((e) => e.data), { bgm }) : [];
 const jsonLdText = jsonLd ? JSON.stringify(jsonLd).replace(/</g, '\\u003c') : null;
 const achievementLabels = {
   region: t(lang, 'achievement.region'),
@@ -69,7 +76,7 @@ const achievementLabels = {
 };
 ---
 <!doctype html>
-<html lang={lang} data-page={page} data-section={section} data-motion="full" data-sfx={sound.sfx ? 'on' : undefined}>
+<html lang={lang} data-variant={variant} data-page={page} data-section={section} data-motion="full" data-sfx={sfx ? 'on' : undefined}>
   <head>
     <meta charset="utf-8" />
     <script is:inline set:html={HEAD_INIT_SCRIPT} />
@@ -81,7 +88,7 @@ const achievementLabels = {
     {!noindex && <link rel="canonical" href={canonical} />}
     {altHref !== null && alternateLinks(pathname).map((alt) => <link rel="alternate" hreflang={alt.hreflang} href={alt.href} />)}
     <meta property="og:type" content="website" />
-    <meta property="og:site_name" content={gameVariant.identity.siteTitle[lang]} />
+    <meta property="og:site_name" content={v.identity.siteTitle[lang]} />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
     {!noindex && <meta property="og:url" content={canonical} />}
@@ -119,10 +126,10 @@ const achievementLabels = {
   </head>
   <body>
     <a class="skip-link" href="#main">{t(lang, 'site.skipToContent')}</a>
-    {page === 'home' && <CrtIntro />}
-    <HudNav lang={lang} current={section} exact={sectionIndex} altLangHref={altHref} cvHref={cv.href} cvLabel={cv.label} bgmAvailable={sound.bgm} />
+    {page === 'home' && on('crtIntro') && <CrtIntro />}
+    <HudNav lang={lang} variant={variant} current={section} exact={sectionIndex} altLangHref={altHref} cvHref={cv.href} cvLabel={cv.label} bgmAvailable={bgm} />
     <main id="main" tabindex="-1"><slot /></main>
     <SiteFooter lang={lang} notices={notices} builtAt={new Date()} />
-    <AchievementHost client:idle lang={lang} defs={defs} labels={achievementLabels} />
+    {on('achievements') && <AchievementHost client:idle lang={lang} defs={defs} labels={achievementLabels} />}
   </body>
 </html>

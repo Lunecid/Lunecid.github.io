@@ -190,4 +190,18 @@ describe('HEAD_INIT_SCRIPT', () => {
     expect(HEAD_INIT_SCRIPT).not.toMatch(/\b(import|export|require)\b/);
     expect(HEAD_INIT_SCRIPT.trim().startsWith('(function')).toBe(true);
   });
+
+  it('A-19: the CRT intro plays only on the game home (never on a data or neutral home)', () => {
+    for (const variant of ['data', 'neutral']) {
+      root.setAttribute('data-variant', variant);
+      sessionStorage.clear();
+      runHeadScript('home');
+      expect(root.hasAttribute('data-intro'), variant).toBe(false);
+      expect(root.getAttribute('data-motion'), variant).toBe('full');
+    }
+    root.setAttribute('data-variant', 'game');
+    sessionStorage.clear();
+    runHeadScript('home');
+    expect(root.getAttribute('data-intro')).toBe('playing');
+  });
 });

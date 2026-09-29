@@ -50,7 +50,7 @@ const labels = {
   progress: t(lang, 'favorites.progress'),
 };
 ---
-<BaseLayout lang={lang} title={meta.title} description={meta.description} page="player-log" section="player-log" sectionIndex notices={notices}>
+<BaseLayout lang={lang} variant="game" title={meta.title} description={meta.description} page="player-log" section="player-log" sectionIndex notices={notices}>
   <Font cssVariable="--font-anton" slot="head" />
   <PageHeader lang={lang} label="PLAYER LOG" title={t(lang, 'playerLog.title')} intro={t(lang, 'playerLog.intro')} />
   <MembershipRow

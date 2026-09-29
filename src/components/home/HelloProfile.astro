@@ -8,9 +8,13 @@ import photo from '../../assets/photo/photo-id.webp';
 import type { Lang } from '../../i18n/ui';
 import { t } from '../../i18n/utils';
 import { fitWidths, sourceSize } from '../../lib/images';
+import { getVariant } from '../../variants';
+import type { VariantId } from '../../variants/ids';
 
 interface Props {
   lang: Lang;
+  /** §1.8: the ghost art is game-only (characterArt); contract §4.4 keeps this prop for the P2 editorial markup. */
+  variant: VariantId;
   id?: string;
   headingLevel?: 2 | 3;
   about: string;
@@ -27,7 +31,7 @@ interface Props {
   priority?: boolean;
 }
 
-const { lang, id = 'hello', headingLevel = 2, about, tagline, status, location, education, skills, records, contact, ids, priority = false } = Astro.props;
+const { lang, variant, id = 'hello', headingLevel = 2, about, tagline, status, location, education, skills, records, contact, ids, priority = false } = Astro.props;
 const Title = headingLevel === 3 ? 'h3' : 'h2';
 const Sub = headingLevel === 3 ? 'h4' : 'h3';
 const titleId = `${id}-title`;
@@ -45,7 +49,7 @@ const heads = {
 ---
 
 <section id={id} class="hello read" aria-labelledby={titleId}>
-  <GhostArt side="right" />
+  {getVariant(variant).modules.includes('characterArt') && <GhostArt side="right" />}
   <div class="container hello__grid">
     <Picture
       class="hello__photo"

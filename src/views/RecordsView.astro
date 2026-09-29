@@ -79,11 +79,12 @@ const skills = skillGroups(resume.skills, lang, titles);
 const documents = resume.documents.map((doc) => ({ id: doc.id, label: doc.label[lang], href: DOCUMENTS[doc.id] }));
 const meta = pageMetaFor('records', lang, variant, facts);
 ---
-<BaseLayout lang={lang} title={meta.title} description={meta.description} page="records" section="records" sectionIndex>
+<BaseLayout lang={lang} variant={variant} title={meta.title} description={meta.description} page="records" section="records" sectionIndex>
   <PageHeader lang={lang} label="RECORDS" title={t(lang, 'records.title')} />
   {/* P2-19: a short head (photo, name, status, one line, the three PDFs, an in-page bar), not the home profile again */}
   <RecordsHead
     lang={lang}
+    variant={variant}
     name={resume.profile.name[lang]}
     headline={identity.headline}
     status={identity.status}

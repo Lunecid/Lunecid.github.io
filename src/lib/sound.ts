@@ -4,6 +4,7 @@
 // ignores HTMLMediaElement.volume. Sound is decoration: every error is swallowed.
 import { MEDIA, STORAGE_KEYS } from '../config';
 import type { SfxName } from '../types';
+import { moduleOn } from './variant-runtime';
 
 export const SOUND_EVENT = 'sb:sound-change';
 
@@ -44,6 +45,7 @@ export function sfxUrl(name: SfxName): string {
 
 export async function playSfx(name: SfxName): Promise<void> {
   if (typeof document === 'undefined') return;
+  if (!moduleOn('sfx')) return; // §1.8: no sound on a version without the sfx module
   if (document.documentElement.dataset.sfx !== 'on' || !soundOn() || document.hidden) return;
   try {
     const c = audioContext();

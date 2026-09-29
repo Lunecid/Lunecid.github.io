@@ -11,9 +11,13 @@ import DocButtons from './DocButtons.astro';
 import type { Lang } from '../../i18n/ui';
 import { t } from '../../i18n/utils';
 import { fitWidths, sourceSize } from '../../lib/images';
+import { getVariant } from '../../variants';
+import type { VariantId } from '../../variants/ids';
 
 interface Props {
   lang: Lang;
+  /** §1.8: the ghost art is game-only (characterArt); contract §4.4 keeps this prop for the P2 editorial markup. */
+  variant: VariantId;
   name: string;
   /** Spec §9.1 role line (게임 데이터 분석가 · 연구자 / Game Data Analyst · Researcher). */
   headline: string;
@@ -24,7 +28,7 @@ interface Props {
   ids?: { scholar: string | null; orcid: string | null };
 }
 
-const { lang, name, headline, status, tagline, documents, contact, ids } = Astro.props;
+const { lang, variant, name, headline, status, tagline, documents, contact, ids } = Astro.props;
 const researcherLinks = [
   ids?.scholar ? { label: 'Google Scholar', href: ids.scholar } : null,
   ids?.orcid ? { label: 'ORCID', href: ids.orcid } : null,
@@ -40,7 +44,7 @@ const jumps = [
 ];
 ---
 <section id="profile" class="rhead read" aria-labelledby="profile-title">
-  <GhostArt side="right" />
+  {getVariant(variant).modules.includes('characterArt') && <GhostArt side="right" />}
   <div class="container">
     <div class="rhead__grid">
       <Picture

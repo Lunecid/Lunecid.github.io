@@ -2,6 +2,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import GitHubSection from '../../src/components/github/GitHubSection.astro';
 import { usableGitHub, type GitHubData, type GitHubDay, type GitHubRepo } from '../../src/lib/generated';
 import { renderAstro } from './helpers';
+import { existsSync } from 'node:fs';
+import { join } from 'node:path';
+
+const HAS_GHOST = existsSync(join(process.cwd(), 'src/assets/ghost/miku-v6.webp')); // GhostArt renders nothing without its asset
 
 const FIXED_NOW = new Date('2026-09-26T00:00:00.000Z');
 const DAY = 86_400_000;
@@ -72,15 +76,15 @@ describe('GitHubSection.astro', () => {
       fixture({ fetchedAt: '2026-09-10T00:00:00.000Z' }),
     ];
     for (const data of cases) {
-      const filtered = await renderAstro(GitHubSection, { props: { lang: 'ko', data: usableGitHub(data) } });
+      const filtered = await renderAstro(GitHubSection, { props: { lang: 'ko', variant: 'game', data: usableGitHub(data) } });
       expect(withoutScripts(filtered)).toBe('');
-      const raw = await renderAstro(GitHubSection, { props: { lang: 'ko', data } });
+      const raw = await renderAstro(GitHubSection, { props: { lang: 'ko', variant: 'game', data } });
       expect(withoutScripts(raw)).toBe('');
     }
   });
 
   it('renders one list of at most 6 repos (pinned first, archived dropped) and a 53-week calendar with level classes', async () => {
-    const html = await renderAstro(GitHubSection, { props: { lang: 'ko', data: fixture() } });
+    const html = await renderAstro(GitHubSection, { props: { lang: 'ko', variant: 'game', data: fixture() } });
     expect(html).toMatch(/<section[^>]*id="github"[^>]*class="gh read read-sec"/);
     // P1-9: light-HUD rows with a mono index, not a card grid; square calendar cells in a bracketed frame
     expect(html.match(/class="gh__repo lh-row"/g)).toHaveLength(6);
@@ -100,16 +104,16 @@ describe('GitHubSection.astro', () => {
   });
 
   it('carries data-fetched-at and data-max-age-days and includes the stale-guard script', async () => {
-    const html = await renderAstro(GitHubSection, { props: { lang: 'ko', data: fixture() } });
+    const html = await renderAstro(GitHubSection, { props: { lang: 'ko', variant: 'game', data: fixture() } });
     expect(html).toMatch(/<section[^>]*data-fetched-at="2026-09-25T18:30:00.000Z"[^>]*data-max-age-days="7"/);
     expect(html).toMatch(/<script\b[^>]*src="[^"]*GitHubSection\.astro\?astro&(?:amp;)?type=script/);
   });
 
   it('shows the as-of date', async () => {
-    const ko = await renderAstro(GitHubSection, { props: { lang: 'ko', data: fixture() } });
+    const ko = await renderAstro(GitHubSection, { props: { lang: 'ko', variant: 'game', data: fixture() } });
     expect(ko).toContain('기준 시각');
     expect(ko).toMatch(/<time[^>]*datetime="2026-09-25T18:30:00.000Z"[^>]*>2026\.09\.26<\/time>/);
-    const en = await renderAstro(GitHubSection, { props: { lang: 'en', data: fixture() } });
+    const en = await renderAstro(GitHubSection, { props: { lang: 'en', variant: 'game', data: fixture() } });
     expect(en).toContain('As of');
     expect(en).toMatch(/<time[^>]*datetime="2026-09-25T18:30:00.000Z"[^>]*>Sep 26, 2026<\/time>/);
     expect(en).toContain('Public repositories');
@@ -118,7 +122,7 @@ describe('GitHubSection.astro', () => {
 
   it('partial data without pinned repos or calendar still lists repositories', async () => {
     const html = await renderAstro(GitHubSection, {
-      props: { lang: 'ko', data: fixture({ status: 'partial', pinned: null, calendar: null, errors: ['no token'] }) },
+      props: { lang: 'ko', variant: 'game', data: fixture({ status: 'partial', pinned: null, calendar: null, errors: ['no token'] }) },
     });
     expect(html).toMatch(/id="github"/);
     expect(html).not.toMatch(/<svg\b/);
@@ -138,7 +142,7 @@ describe('GitHubSection.astro', () => {
         repo(6, { name: 'new-repo', description: '새 저장소', stars: 2 }),
       ],
     });
-    const ko = await renderAstro(GitHubSection, { props: { lang: 'ko', data } });
+    const ko = await renderAstro(GitHubSection, { props: { lang: 'ko', variant: 'game', data } });
     const names = [...ko.matchAll(/class="gh__name"[^>]*>([^<]+)</g)].map((m) => m[1]);
     expect(names).toEqual(['LOL_teamfight_Lab', 'MultiCamp_Final', 'busan-school-zone-blindspots', 'new-repo']);
     expect(ko).not.toMatch(/PUBG_Lab|AudioSync/);
@@ -151,11 +155,18 @@ describe('GitHubSection.astro', () => {
     // list title before the profile link (P1-17)
     expect(ko.indexOf('공개 저장소')).toBeLessThan(ko.indexOf('GitHub 프로필 @Lunecid'));
 
-    const en = await renderAstro(GitHubSection, { props: { lang: 'en', data } });
+    const en = await renderAstro(GitHubSection, { props: { lang: 'en', variant: 'game', data } });
     const text = en.replace(/<script\b[\s\S]*?<\/script>/g, '');
     expect(text).not.toMatch(/[가-힣]/); // no Hangul on /en/
     expect(text).toContain('Code for the IEEE CoG 2026 paper (v1.0-cog2026)');
     expect(text).not.toContain('0 stars');
     expect(text).toContain('2 stars');
+  });
+
+  it('§1.8: the ghost art (characterArt) renders only on the game version', async () => {
+    const game = await renderAstro(GitHubSection, { props: { lang: 'ko', variant: 'game', data: fixture() } });
+    const data = await renderAstro(GitHubSection, { props: { lang: 'ko', variant: 'data', data: fixture() } });
+    expect(game.match(/data-ghost-art="left"/g) ?? []).toHaveLength(HAS_GHOST ? 1 : 0);
+    expect(data).not.toContain('ghost-art');
   });
 });

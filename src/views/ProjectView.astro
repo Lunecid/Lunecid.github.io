@@ -72,7 +72,7 @@ const figure = data.cover
 const hasViewer = certificate !== null || data.figures.some((_, i) => i !== coverIndex);
 ---
 
-<BaseLayout lang={lang} title={meta.title} description={meta.description} page="project" section="projects" sectionIndex={false}>
+<BaseLayout lang={lang} variant={variant} title={meta.title} description={meta.description} page="project" section="projects" sectionIndex={false}>
   <ProjectDetails lang={lang} title={data.title} rows={rows} figure={figure} award={award}>
     <p>{data.summary}</p>
   </ProjectDetails>
@@ -86,7 +86,7 @@ const hasViewer = certificate !== null || data.figures.some((_, i) => i !== cove
       ),
     )}
   </article>
-  {data.audience && <ProjectAudience lang={lang} audience={data.audience} />}
+  {data.audience && <ProjectAudience lang={lang} audience={v.modules.includes('audienceGame') ? data.audience : { research: data.audience.research }} />}
   <FigureList lang={lang} figures={rest.map((index) => numbered[index]!)} />
   <ProjectLinks lang={lang} links={data.links} />
   {hasViewer && (

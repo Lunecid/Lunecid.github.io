@@ -5,13 +5,16 @@
  */
 import type { Lang } from '../../i18n/ui';
 import { languages } from '../../i18n/ui';
-import { localizeHref, otherLang, t } from '../../i18n/utils';
+import { localizeHref, otherLang, t, type UiKey } from '../../i18n/utils';
 import type { NavSection } from '../../types';
 import { MEDIA } from '../../config';
 import BgmToggle from '../../islands/BgmToggle';
+import { getVariant } from '../../variants';
+import type { VariantId } from '../../variants/ids';
 
 interface Props {
   lang: Lang;
+  variant: VariantId;
   current?: NavSection;
   exact?: boolean;
   altLangHref: string | null;
@@ -20,14 +23,16 @@ interface Props {
   cvLabel: string;
   bgmAvailable: boolean;
 }
-const { lang, current, exact = false, altLangHref, cvHref, cvLabel, bgmAvailable } = Astro.props;
+const { lang, variant, current, exact = false, altLangHref, cvHref, cvLabel, bgmAvailable } = Astro.props;
 const other = otherLang(lang);
-const items: { key: NavSection; num: string; label: string; href: string }[] = [
-  { key: 'research', num: '01', label: t(lang, 'nav.research'), href: localizeHref('/research/', lang) },
-  { key: 'projects', num: '02', label: t(lang, 'nav.projects'), href: localizeHref('/projects/', lang) },
-  { key: 'records', num: '03', label: t(lang, 'nav.records'), href: localizeHref('/records/', lang) },
-  { key: 'player-log', num: '04', label: t(lang, 'nav.playerLog'), href: localizeHref('/player-log/', lang) },
-];
+const NAV_LABEL: Record<NavSection, UiKey> = { research: 'nav.research', projects: 'nav.projects', records: 'nav.records', 'player-log': 'nav.playerLog' };
+// Numbering ('01'…) is game markup (contract §1.6), taken from the position in the version nav.
+const items = getVariant(variant).nav.map((item, i) => ({
+  key: item.key,
+  num: String(i + 1).padStart(2, '0'),
+  label: t(lang, NAV_LABEL[item.key]),
+  href: localizeHref(item.base, lang), // P1-11: pageHref(item.base, { lang, variant })
+}));
 const currentValue = exact ? 'page' : 'true';
 ---
 <header class="hud-nav" data-open="false" data-hud-nav>

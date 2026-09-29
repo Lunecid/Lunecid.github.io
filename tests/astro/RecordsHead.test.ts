@@ -1,5 +1,5 @@
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { existsSync, readFileSync } from 'node:fs';
+import { join, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import RecordsHead from '../../src/components/records/RecordsHead.astro';
 import { DOCUMENTS, SITE } from '../../src/config';
@@ -10,13 +10,16 @@ import { readSource, renderAstro } from './helpers';
 import { resolveIdentity } from '../../src/variants';
 import { gameVariant } from '../../src/variants/game';
 import { loadFactSource } from '../helpers/fact-source';
+import type { VariantId } from '../../src/variants/ids';
 
+const HAS_GHOST = existsSync(join(process.cwd(), 'src/assets/ghost/miku-v6.webp')); // GhostArt renders nothing without its asset
 const resume = resumeSchema.parse(parseYamlDocument(readFileSync(resolve(process.cwd(), 'src/data/resume.yaml'), 'utf8'), 'resume'));
 const identity = (lang: Lang) => resolveIdentity(gameVariant, lang, loadFactSource());
-const render = (lang: Lang) =>
+const render = (lang: Lang, variant: VariantId = 'game') =>
   renderAstro(RecordsHead, {
     props: {
       lang,
+      variant,
       name: resume.profile.name[lang],
       headline: identity(lang).headline,
       status: identity(lang).status,
@@ -84,5 +87,10 @@ describe('RecordsHead.astro (P2-19: a short head, not the home profile again)', 
     const src = readSource('src/components/records/RecordsHead.astro');
     expect(src).toMatch(/grid-template-columns: 112px minmax\(0, 1fr\); grid-template-areas: "photo intro" "more more"/);
     expect(src).toMatch(/\.rhead__photo\) \{[^}]*width: 112px;[^}]*border: 1px solid var\(--read-line\)/);
+  });
+
+  it('§1.8: the ghost art (characterArt) renders only on the game version', async () => {
+    expect((await render('ko')).match(/data-ghost-art="right"/g) ?? []).toHaveLength(HAS_GHOST ? 1 : 0);
+    expect(await render('ko', 'data')).not.toContain('ghost-art');
   });
 });

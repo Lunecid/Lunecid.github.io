@@ -26,6 +26,7 @@ function render(props: Record<string, unknown> = {}, url = '/projects/'): Promis
   return renderAstro(BaseLayout, {
     props: {
       lang: 'ko',
+      variant: 'game',
       title: '프로젝트 · 백성은',
       description: '데이터 분석 프로젝트 사례 연구.',
       page: 'projects',
@@ -179,5 +180,25 @@ describe('BaseLayout.astro', () => {
     expect(html).toContain('© All rights reserved by COGNOSPHERE. Other properties belong to their respective owners.');
     const none = await render();
     expect(none).not.toContain('COGNOSPHERE');
+  });
+
+  it('§1.8: data-variant on <html>; a data page renders no CRT, no achievement host, no BGM and no data-sfx', async () => {
+    vi.mocked(soundAvailability).mockReturnValue({ bgm: true, sfx: true });
+    const game = await render({ page: 'home', section: undefined }, '/');
+    expect(firstTag(game, /<html[^>]*>/)).toContain('data-variant="game"');
+    expect(firstTag(game, /<html[^>]*>/)).toContain('data-sfx="on"');
+    expect(game).toMatch(/<div[^>]*class="crt"/);
+    expect(game).toMatch(/component-url="[^"]*AchievementHost/);
+    expect(game).toMatch(/component-url="[^"]*BgmToggle/);
+    const data = await render({ variant: 'data', page: 'home', section: undefined }, '/');
+    const root = firstTag(data, /<html[^>]*>/);
+    expect(root).toContain('data-variant="data"');
+    expect(root).not.toContain('data-sfx');
+    expect(data).not.toMatch(/<div[^>]*class="crt"/);
+    expect(data).not.toContain('AchievementHost');
+    expect(data).not.toContain('ach-toast-region');
+    expect(data).not.toContain('BgmToggle');
+    expect(data).not.toContain('class="bgm"');
+    expect(data).toContain('<meta property="og:site_name" content="백성은 · 데이터 분석가"');
   });
 });

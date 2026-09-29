@@ -4,6 +4,7 @@ import { readSource, renderAstro } from './helpers';
 
 const KO = {
   lang: 'ko',
+  variant: 'game',
   altLangHref: '/en/research/',
   cvHref: '/cv/seongeun-baek-resume-ko.pdf',
   cvLabel: '이력서 (PDF)',
@@ -99,5 +100,12 @@ describe('HudNav.astro', () => {
     expect(source).not.toMatch(/(^|\n)\s*\.hud-nav__panel\s*\{[^}]*display:\s*none/);
     const html = await renderAstro(HudNav, { props: KO });
     expect(html).not.toMatch(/<style[^>]*>[^<]*hud-nav__panel/);
+  });
+
+  it('§1.8: items come from the version nav — no Player Log on the data version', async () => {
+    const data = await renderAstro(HudNav, { props: { ...KO, variant: 'data' } });
+    expect(sectionHrefs(data)).toEqual(['/research/', '/projects/', '/records/']);
+    expect(data).not.toContain('플레이 로그');
+    expect(data.match(/class="hud-nav__num"[^>]*>0[1-3]</g)).toHaveLength(3);
   });
 });

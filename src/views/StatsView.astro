@@ -24,7 +24,8 @@ const usable = GOATCOUNTER.code === null ? undefined : usableStats(stats);
 const pages = usable ? cleanPages(usable.pages, allRoutes()) : [];
 const referrers = usable ? cleanReferrers(usable.referrers) : [];
 ---
-<BaseLayout lang={lang} title={meta.title} description={meta.description} page="stats">
+{/* shared page: NeutralLayout from P1-10 (404: P1-16) */}
+<BaseLayout lang={lang} variant="game" title={meta.title} description={meta.description} page="stats">
   <PageHeader lang={lang} label="STATS" title={t(lang, 'stats.title')} />
   <StatsSummary lang={lang} stats={stats} code={GOATCOUNTER.code} />
   {usable && (

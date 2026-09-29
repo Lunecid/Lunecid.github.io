@@ -5,6 +5,7 @@
 // Timeline (ms from first-contentful-paint, N17 / F-016): overlay 0–400 → fade 400–700 → removed at 700 (≤1 s).
 // Any keydown/pointerdown/wheel/touchstart skips: fade, then done 150 ms later. Timers arm on FCP (or crt-on
 // animationstart fallback); a 3 s safety calls done() only.
+// CRT gate (A-19): only the game home plays the intro; this string cannot import VARIANT_MODULES, so tests/react/variant-runtime.test.ts pins the agreement.
 
 export const INTRO_TIMING = { releaseMs: 400, doneMs: 700, skipFadeMs: 150, safetyMs: 3000 } as const;
 
@@ -17,7 +18,7 @@ export const HEAD_INIT_SCRIPT = `(function () {
   try { os = typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) { os = false; }
   var reduce = off || os;
   d.setAttribute('data-motion', reduce ? 'reduce' : 'full');
-  if (reduce || d.getAttribute('data-page') !== 'home') return;
+  if (reduce || d.getAttribute('data-variant') !== 'game' || d.getAttribute('data-page') !== 'home') return;
   var seen = true;
   try {
     seen = window.sessionStorage.getItem('sb:intro') === '1';

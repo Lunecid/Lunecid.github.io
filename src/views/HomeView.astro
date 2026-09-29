@@ -22,7 +22,7 @@ import { toPaperCard, toPaperCartridge } from '../lib/publications';
 import { toPatchNotes } from '../lib/news';
 import { canonicalUrl, personJsonLd } from '../lib/seo';
 import { resolveDeep } from '../lib/facts';
-import type { VariantId } from '../variants/ids';
+import type { ModuleId, VariantId } from '../variants/ids';
 import { getVariant, pageMetaFor, resolveIdentity } from '../variants';
 
 interface Props {
@@ -32,6 +32,7 @@ interface Props {
 
 const { lang, variant } = Astro.props;
 const v = getVariant(variant);
+const on = (m: ModuleId): boolean => v.modules.includes(m);
 const facts = await getFactSource();
 
 const resumeData = await getResume();
@@ -43,15 +44,15 @@ const menu = resolveDeep(mainMenuCopy[lang], lang, facts);
 const home = resolveDeep(homeCopy[lang], lang, facts);
 
 // Character art is optional (Task 2): every call below returns [] / null / [] when it is missing.
-const heroChars = await getStageCharacters(['remielle', 'eula'], 'hero', lang);
+const heroChars = on('characterArt') ? await getStageCharacters(['remielle', 'eula'], 'hero', lang) : [];
 const leadChar = heroChars[0];
 // Final fix 2 item 10: the MAIN MENU side art never shows the hero's character. It prefers Eula and switches to
 // Remielle while the visitor has Eula on the hero (CharacterStage HERO_PICK_EVENT). With only one character's art
 // the side would repeat the hero, so it takes the no-art MAIN MENU layout instead.
-const sideCandidates = await getStageCharacters(['eula', 'remielle'], 'side', lang);
+const sideCandidates = on('characterArt') ? await getStageCharacters(['eula', 'remielle'], 'side', lang) : [];
 const sideChars = sideCandidates.some((c) => c.id !== leadChar?.id) ? sideCandidates : [];
-const notices = characters.notices(['remielle', 'eula']);
-const credit = characterCredit(['remielle', 'eula'], lang);
+const notices = on('characterArt') ? characters.notices(['remielle', 'eula']) : [];
+const credit = on('characterArt') ? characterCredit(['remielle', 'eula'], lang) : null;
 
 const toCard = (item: Awaited<ReturnType<typeof resolveOrder>>[number]): CartridgeProps =>
   item.kind === 'project' ? toCartridge(item.entry, lang) : toPaperCartridge(item.entry, lang, localizeHref(item.entry.data.caseStudy ?? '', lang));
@@ -69,7 +70,7 @@ const education = resumeData.education.map((e) => educationLine(e, lang));
 const location = lang === 'ko' ? `${profile.location.ko} · ${profile.location.en}` : profile.location.en;
 ---
 
-<BaseLayout lang={lang} title={meta.title} description={meta.description} page="home" notices={notices} jsonLd={personJsonLd(lang, { jobTitle: identity.headline, url: canonicalUrl(localizeHref('/', lang)) }, resumeData.researchIds)}>
+<BaseLayout lang={lang} variant={variant} title={meta.title} description={meta.description} page="home" notices={notices} jsonLd={personJsonLd(lang, { jobTitle: identity.headline, url: canonicalUrl(localizeHref('/', lang)) }, resumeData.researchIds)}>
   {leadChar && leadChar.image.avifSrcSet && (
     <link
       slot="head"
@@ -108,17 +109,20 @@ const location = lang === 'ko' ? `${profile.location.ko} · ${profile.location.e
     swap={hero.swap}
     playerCard={{ ...hero.playerCard, classLine: lang === 'ko' ? identity.headline : resolveIdentity(v, 'en', facts).headline.toUpperCase() }}
   />
-  <MainMenu
-    lang={lang}
-    items={menu.items.map((item) => ({ ...item, href: localizeHref(item.href, lang) }))}
-    hint={menu.hint}
-    side={sideChars}
-  />
+  {on('mainMenu') && (
+    <MainMenu
+      lang={lang}
+      items={menu.items.map((item) => ({ ...item, href: localizeHref(item.href, lang) }))}
+      hint={menu.hint}
+      side={sideChars}
+    />
+  )}
   <CartridgeSection lang={lang} cartridges={featured} moreHref={localizeHref('/projects/', lang)} moreLabel={home.moreProjects} />
   <ResearchHighlight lang={lang} paper={paper} nowPlaying={home.researchNowPlaying} figureLabel={hero.artifact.label} />
   <PatchNotes lang={lang} notes={notes} />
   <HelloProfile
     lang={lang}
+    variant={variant}
     about={identity.about}
     location={location}
     education={education}

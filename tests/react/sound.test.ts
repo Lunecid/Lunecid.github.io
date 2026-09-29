@@ -159,4 +159,14 @@ describe('sound', () => {
     expect(FakeAudioContext.instances).toHaveLength(1);
     expect(first.resume).toHaveBeenCalledTimes(1);
   });
+
+  it('§1.8: playSfx is a no-op on a page whose version has no sfx module, even with data-sfx=on and sound on', async () => {
+    const { playSfx, setSoundOn } = await loadSound();
+    setSoundOn(true);
+    document.documentElement.setAttribute('data-sfx', 'on');
+    document.documentElement.setAttribute('data-variant', 'data');
+    await playSfx('open');
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(FakeAudioContext.instances).toHaveLength(0);
+  });
 });

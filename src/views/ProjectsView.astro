@@ -38,7 +38,7 @@ const firstImage = cards.findIndex((card) => card.cover !== undefined);
 const github = usableGitHub(generated.github());
 ---
 
-<BaseLayout lang={lang} title={meta.title} description={meta.description} page="projects" section="projects" sectionIndex={true}>
+<BaseLayout lang={lang} variant={variant} title={meta.title} description={meta.description} page="projects" section="projects" sectionIndex={true}>
   <PageHeader lang={lang} label="SELECT YOUR PROJECT" title={t(lang, 'projects.title')} intro={meta.description} />
   <section id="project-list" class="sec hud-grid" aria-labelledby="project-list-title">
     <div class="container container--hud">
@@ -49,5 +49,5 @@ const github = usableGitHub(generated.github());
       </div>
     </div>
   </section>
-  <GitHubSection lang={lang} data={github} />
+  <GitHubSection lang={lang} variant={variant} data={github} />
 </BaseLayout>

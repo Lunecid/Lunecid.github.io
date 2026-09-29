@@ -6,6 +6,7 @@ import { STORAGE_KEYS } from '../config';
 import { NAV_SECTIONS, type AchievementTrigger, type NavSection } from '../types';
 import type { Lang } from '../i18n/ui';
 import type { AchievementData } from '../content/schemas';
+import { moduleOn } from './variant-runtime';
 
 export type AchievementDef = AchievementData;
 
@@ -53,6 +54,7 @@ function isLang(v: unknown): v is Lang {
 /** The ONLY API content code calls: queues the trigger (survives until the host hydrates) and dispatches TRIGGER_EVENT. */
 export function emitTrigger(trigger: AchievementTrigger): void {
   if (typeof window === 'undefined') return;
+  if (!moduleOn('achievements')) return; // §1.8
   (window.__sbTriggers ??= []).push(trigger);
   window.dispatchEvent(new CustomEvent(TRIGGER_EVENT, { detail: { trigger } }));
 }

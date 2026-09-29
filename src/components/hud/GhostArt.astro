@@ -1,7 +1,10 @@
 ---
-// Faint grey character watermark in the empty side margins of wide light bands (game version only).
-// CSS background lives only inside @media (min-width: 1600px), so narrower viewports never download it.
-// No CSS mask — plain opacity (masks draw Chrome edge hairlines). Optional: missing asset → render nothing.
+// Faint grey character art in the empty side margins of wide light bands. Game version only: the four hosts render it
+// behind characterArt (contract §1.8). Its rules sit in an inline style block right after the element and the image
+// URLs on the element's style attribute: a scoped block would be inlined into every page whose view imports a host,
+// rendered or not, so the general pages would carry the rules. The background exists only inside
+// @media (min-width: 1600px), so narrower viewports never download it. No CSS mask, plain opacity (masks draw Chrome
+// edge hairlines). Optional: a missing asset renders nothing.
 import { getImage } from 'astro:assets';
 import type { ImageMetadata } from 'astro';
 
@@ -20,14 +23,12 @@ if (!src) return;
 
 const webp = await getImage({ src, format: 'webp' });
 const avif = await getImage({ src, format: 'avif' });
-const webpUrl = webp.src;
-const avifUrl = avif.src;
+const vars = `--ghostWebp: url(${webp.src}); --ghostAvif: url(${avif.src})`;
 ---
 
-<div class={`ghost-art ghost-art--${side}`} aria-hidden="true" data-ghost-art={side}></div>
-
-<style define:vars={{ ghostWebp: `url(${webpUrl})`, ghostAvif: `url(${avifUrl})` }}>
-  /* Hidden below the first XL step: no background-image → no network fetch. */
+<div class={`ghost-art ghost-art--${side}`} aria-hidden="true" data-ghost-art={side} style={vars}></div>
+<style is:inline>
+  /* Hidden below the first XL step: no background-image, so no network fetch. */
   .ghost-art {
     display: none;
   }

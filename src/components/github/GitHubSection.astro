@@ -11,13 +11,17 @@ import type { Lang } from '../../i18n/ui';
 import { formatDate, formatNumber, t } from '../../i18n/utils';
 import { usableGitHub, type GitHubData, type GitHubDay } from '../../lib/generated';
 import { githubRepoList } from '../../lib/github';
+import { getVariant } from '../../variants';
+import type { VariantId } from '../../variants/ids';
 
 interface Props {
   lang: Lang;
+  /** §1.8: the ghost art is game-only (characterArt); contract §4.4 keeps this prop for the P2 editorial markup. */
+  variant: VariantId;
   data: GitHubData | undefined;
 }
 
-const { lang, data } = Astro.props;
+const { lang, variant, data } = Astro.props;
 const gh = usableGitHub(data);
 
 const CELL = 12;
@@ -41,7 +45,7 @@ const repoMeta = (language: string | null, stars: number): string =>
 {
   gh && (
     <section id="github" class="gh read read-sec" aria-labelledby="github-title" data-fetched-at={gh.fetchedAt} data-max-age-days={gh.maxAgeDays}>
-      <GhostArt side="left" />
+      {getVariant(variant).modules.includes('characterArt') && <GhostArt side="left" />}
       <div class="container">
         <SectionHead id="github-title" caption={t(lang, 'section.github')} title={t(lang, 'section.github.title')} />
 
