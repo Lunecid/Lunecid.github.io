@@ -3,9 +3,6 @@
     "collect": {
       "staticDistDir": "./dist",
       "url": [
-        "http://localhost/",
-        "http://localhost/game/",
-        "http://localhost/data/",
         "http://localhost/en/game/",
         "http://localhost/game/projects/",
         "http://localhost/game/research/cog-2026-engagement/",
@@ -17,10 +14,7 @@
         "http://localhost/404.html"
       ],
       "numberOfRuns": 1,
-      "settings": {
-        "preset": "desktop",
-        "chromeFlags": "--no-sandbox --headless=new"
-      }
+      "settings": { "chromeFlags": "--no-sandbox --headless=new" }
     },
     "assert": {
       "assertions": {
@@ -30,9 +24,6 @@
         "categories:seo": ["warn", { "minScore": 0.9 }]
       }
     },
-    "upload": {
-      "target": "filesystem",
-      "outputDir": "./.lighthouseci/reports-desktop"
-    }
+    "upload": { "target": "filesystem", "outputDir": "./.lighthouseci/reports-secondary" }
   }
 }

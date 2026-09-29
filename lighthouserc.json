@@ -4,11 +4,8 @@
       "staticDistDir": "./dist",
       "url": [
         "http://localhost/",
-        "http://localhost/en/",
-        "http://localhost/projects/",
-        "http://localhost/research/cog-2026-engagement/",
-        "http://localhost/records/",
-        "http://localhost/player-log/"
+        "http://localhost/game/",
+        "http://localhost/data/"
       ],
       "numberOfRuns": 3,
       "settings": {
