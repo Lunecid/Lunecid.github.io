@@ -125,6 +125,16 @@ describe('boxTables (final fix 2 item 19)', () => {
 });
 
 describe('linkFigureCitations (P-06 F-065: a figure the body cites is one click away)', () => {
+  it('P2-5 review: the ·, 및 and Figs. forms, no link for "그림 2개", and never inside a quoted attribute', () => {
+    expect(linkFigureCitations('<p>(그림 1·2)와 그림 1 및 2</p>', 2)).toBe(
+      '<p>(<a href="#figure-1">그림 1</a>·<a href="#figure-2">2</a>)와 <a href="#figure-1">그림 1</a> 및 <a href="#figure-2">2</a></p>',
+    );
+    expect(linkFigureCitations('<p>see Figs. 1 and 2</p>', 2)).toBe('<p>see <a href="#figure-1">Figs. 1</a> and <a href="#figure-2">2</a></p>');
+    expect(linkFigureCitations('<p>그림 2개를 비교했습니다</p>', 2)).toBe('<p>그림 2개를 비교했습니다</p>');
+    const img = '<p><img src="x.png" alt="a > 그림 1"> 그림 1</p>';
+    expect(linkFigureCitations(img, 1)).toBe('<p><img src="x.png" alt="a > 그림 1"> <a href="#figure-1">그림 1</a></p>');
+  });
+
   it('links "그림 N" / "Figure N" / "Fig. N" and the numbers listed after them to #figure-N', () => {
     expect(linkFigureCitations('<p>좁혔습니다(그림 1, 2). 판정했습니다(그림 3).</p>', 3)).toBe(
       '<p>좁혔습니다(<a href="#figure-1">그림 1</a>, <a href="#figure-2">2</a>). 판정했습니다(<a href="#figure-3">그림 3</a>).</p>',

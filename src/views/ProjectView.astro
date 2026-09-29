@@ -74,7 +74,7 @@ const award = awardRef
   : undefined;
 const cited = coverIndex >= 0 ? numbered[coverIndex] : undefined;
 const figure = data.cover
-  ? { src: data.cover.src, alt: data.cover.alt, label: data.cover.label, ...(cited ? { number: cited.number, caption: cited.caption } : {}) }
+  ? { src: data.cover.src, alt: data.cover.alt, label: data.cover.label, ...(cited ? { number: cited.number, caption: cited.caption, ...(cited.table ? { table: cited.table } : {}) } : {}) }
   : undefined;
 const hasViewer = certificate !== null || data.figures.some((_, i) => i !== coverIndex);
 ---

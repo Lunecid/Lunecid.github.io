@@ -12,6 +12,7 @@ import type { Lang } from '../../i18n/ui';
 import { t } from '../../i18n/utils';
 import type { Localized } from '../../i18n/utils';
 import { editorialFigureLabel } from '../../lib/figures';
+import FigureTable from './FigureTable.astro';
 import { FIGURE_SIZES, fitWidths, sourceSize } from '../../lib/images';
 import type { VariantId } from '../../variants';
 
@@ -73,15 +74,7 @@ const fullLabel = t(lang, 'action.fullSize');
         data-viewer-alt={alt}
       >{fullLabel}</a>
     </figcaption>
-    {table && (
-      <details class="chart__table">
-        <summary class="chart__summary" id={tableSummaryId}>{t(lang, 'action.viewAsTable')}</summary>
-        <div class="chart__table-scroll" data-table-scroll data-label-id={tableSummaryId}>
-          <table><thead><tr>{table.columns.map((c) => <th scope="col">{c[lang]}</th>)}</tr></thead>
-            <tbody>{table.rows.map((row) => <tr>{row.map((cell, i) => (i === 0 ? <th scope="row">{cell}</th> : <td>{cell}</td>))}</tr>)}</tbody></table>
-        </div>
-      </details>
-    )}
+    {table && tableSummaryId && <FigureTable lang={lang} table={table} summaryId={tableSummaryId} caption={caption} tone="read" />}
   </figure>
 ) : (
   <figure id={figureId} class:list={['ed-figure', className]}>
@@ -101,15 +94,7 @@ const fullLabel = t(lang, 'action.fullSize');
         data-viewer-alt={alt}
       >{fullLabel}</a>
     </figcaption>
-    {table && (
-      <details class="chart__table">
-        <summary class="chart__summary" id={tableSummaryId}>{t(lang, 'action.viewAsTable')}</summary>
-        <div class="chart__table-scroll" data-table-scroll data-label-id={tableSummaryId}>
-          <table class="ed-table"><thead><tr>{table.columns.map((c) => <th scope="col">{c[lang]}</th>)}</tr></thead>
-            <tbody>{table.rows.map((row) => <tr>{row.map((cell, i) => (i === 0 ? <th scope="row">{cell}</th> : <td>{cell}</td>))}</tr>)}</tbody></table>
-        </div>
-      </details>
-    )}
+    {table && tableSummaryId && <FigureTable lang={lang} table={table} summaryId={tableSummaryId} caption={caption} tone="editorial" />}
   </figure>
 )}
 
@@ -131,29 +116,5 @@ const fullLabel = t(lang, 'action.fullSize');
      (a plain min-height here doubles the wrapped line's height — P2-12); absolute floor is 24x24 (spec §5). */
   .figure__full { display: inline-flex; align-items: center; padding-block: 12px; margin-block: -12px; margin-left: .5em; font-weight: 600; }
 
-  /* F-007 step 2 (P-06): the figure's data as a table, AucOverallChart's "view as table" pattern: a <details> after the
-     caption whose table scrolls inside its own box on a narrow phone (src/scripts/table-scroll.ts makes the box a
-     focusable region, named by the summary, only while it overflows). The general version's table takes editorial.css
-     (.ed-table, the case-study body's table rules) and an ink summary. */
-  .chart__table { margin-top: 8px; }
-  .chart__summary {
-    display: inline-flex;
-    align-items: center;
-    min-height: var(--tap);
-    padding: 0 12px;
-    border: 1px solid var(--read-line-strong);
-    font: 600 var(--fs-label)/1 var(--font-mono);
-    color: var(--read-text);
-    list-style: none;
-    cursor: pointer;
-  }
-  .chart__summary::-webkit-details-marker { display: none; }
-  .chart__summary:lang(ko) { font-family: var(--font-sans); letter-spacing: 0; }
-  .chart__table-scroll { margin-top: 8px; max-width: 100%; overflow-x: auto; }
-  .chart__table table { width: 100%; border-collapse: collapse; font-size: var(--fs-small); line-height: 1.5; font-variant-numeric: tabular-nums; }
-  .chart__table tbody th { white-space: nowrap; }
-  .figure .chart__table th,
-  .figure .chart__table td { padding: 6px 8px; text-align: left; border-bottom: 1px solid var(--read-line); overflow-wrap: normal; }
-  .figure .chart__table thead th { font-size: var(--fs-caption); font-weight: 600; color: var(--read-muted); }
-  .ed-figure .chart__summary { border-color: var(--ed-ink); color: var(--ed-ink); font-family: var(--font-sans); }
+  /* F-007 step 2 (P-06): the figure's data table is FigureTable.astro (shared with the case-study cover). */
 </style>

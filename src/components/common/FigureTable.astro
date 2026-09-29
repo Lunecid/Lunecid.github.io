@@ -1,0 +1,69 @@
+---
+// A figure's data as a table (P-06 F-007 step 2, contract §1.9): AucOverallChart's "view as table" pattern, a
+// <details> after the caption whose table scrolls inside its own box on a narrow phone (src/scripts/table-scroll.ts,
+// loaded by ProjectView, makes the box a focusable region named by the summary only while it overflows).
+// One component for every place a figure is drawn, so the case-study cover (ProjectDetails) shows the same table as
+// an inline figure (P2-5 review). `tone` follows the surface: 'read' (the light figure panel), 'hud' (the dark
+// PROJECT DETAILS band) or 'editorial' (the general version, .ed-table from editorial.css).
+// The table is named by an sr-only caption; a numeric cell is right-aligned (class "num").
+import type { Lang } from '../../i18n/ui';
+import { t } from '../../i18n/utils';
+import type { Localized } from '../../i18n/utils';
+
+interface Props {
+  lang: Lang;
+  table: { columns: Localized[]; rows: string[][] };
+  /** Id of the summary (it names the scroll region); unique on the page. */
+  summaryId: string;
+  /** The table's accessible name: the figure's caption or label. */
+  caption: string;
+  tone: 'read' | 'hud' | 'editorial';
+}
+
+const { lang, table, summaryId, caption, tone } = Astro.props;
+const NUMBER = /^[-−]?\d+(?:[.,]\d+)?%?$/;
+---
+
+<details class:list={['chart__table', `chart__table--${tone}`]}>
+  <summary class="chart__summary" id={summaryId}>{t(lang, 'action.viewAsTable')}</summary>
+  <div class="chart__table-scroll" data-table-scroll data-label-id={summaryId}>
+    <table class:list={[{ 'ed-table': tone === 'editorial' }]}>
+      <caption class="sr-only">{caption}</caption>
+      <thead><tr>{table.columns.map((c) => <th scope="col">{c[lang]}</th>)}</tr></thead>
+      <tbody>{table.rows.map((row) => <tr>{row.map((cell, i) => (i === 0 ? <th scope="row">{cell}</th> : <td class:list={[{ num: NUMBER.test(cell) }]}>{cell}</td>))}</tr>)}</tbody>
+    </table>
+  </div>
+</details>
+
+<style>
+  .chart__table { margin-top: 8px; }
+  .chart__summary {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--tap);
+    padding: 0 12px;
+    border: 1px solid var(--read-line-strong);
+    font: 600 var(--fs-label)/1 var(--font-mono);
+    color: var(--read-text);
+    list-style: none;
+    cursor: pointer;
+  }
+  .chart__summary::-webkit-details-marker { display: none; }
+  .chart__summary:lang(ko) { font-family: var(--font-sans); letter-spacing: 0; }
+  .chart__table-scroll { margin-top: 8px; max-width: 100%; overflow-x: auto; }
+  .chart__table table { width: 100%; border-collapse: collapse; font-size: var(--fs-small); line-height: 1.5; font-variant-numeric: tabular-nums; }
+  .chart__table tbody th { white-space: nowrap; }
+  .chart__table--read th,
+  .chart__table--read td,
+  .chart__table--hud th,
+  .chart__table--hud td { padding: 6px 8px; text-align: left; overflow-wrap: normal; }
+  .chart__table td.num { text-align: right; }
+  .chart__table--read th,
+  .chart__table--read td { border-bottom: 1px solid var(--read-line); }
+  .chart__table--read thead th { font-size: var(--fs-caption); font-weight: 600; color: var(--read-muted); }
+  .chart__table--hud .chart__summary { border-color: var(--hud-line); color: var(--hud-text); }
+  .chart__table--hud th,
+  .chart__table--hud td { border-bottom: 1px dashed var(--hud-line-dash); color: var(--hud-text); }
+  .chart__table--hud thead th { font-size: var(--fs-caption); font-weight: 600; color: var(--hud-muted); }
+  .chart__table--editorial .chart__summary { border-color: var(--ed-ink); color: var(--ed-ink); font-family: var(--font-sans); }
+</style>

@@ -126,4 +126,16 @@ describe('ProjectDetails.astro', () => {
     expect(src).toMatch(/@media \(min-width: 734px\) and \(max-width: 1067\.98px\) \{[\s\S]*?\.pd__fig\s*\{[\s\S]*?max-width:\s*600px/);
     expect(src).toMatch(/@media \(min-width: 734px\) and \(max-width: 1067\.98px\) \{[\s\S]*?max-height:\s*min\(60vh,\s*300px\)[\s\S]*?object-fit:\s*contain/);
   });
+  it('P-06 F-007 step 2 (P2-5 review): the cover, when it is the body figure N, shows that figure\'s data table', async () => {
+    const table = { columns: [{ ko: '변수', en: 'Feature' }, { ko: '군집 0', en: 'Cluster 0' }], rows: [['a', '-0.13']] };
+    const html = await renderAstro(ProjectDetails, {
+      props: { lang: 'ko', variant: 'game', title: 't', rows: [], figure: { src: cover, alt: 'alt', label: 'RISK HEATMAP', number: 1, caption: 'cap', table } },
+    });
+    expect(html).toMatch(/<details class="chart__table chart__table--hud"[^>]*>\s*<summary class="chart__summary" id="figure-1-table"/);
+    expect(html).toMatch(/<td class="num"[^>]*>-0\.13<\/td>/);
+    const none = await renderAstro(ProjectDetails, {
+      props: { lang: 'ko', variant: 'game', title: 't', rows: [], figure: { src: cover, alt: 'alt', label: 'RISK HEATMAP', number: 1, caption: 'cap' } },
+    });
+    expect(none).not.toContain('chart__table');
+  });
 });

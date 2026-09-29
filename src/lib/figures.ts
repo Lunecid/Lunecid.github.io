@@ -164,10 +164,11 @@ function fileKey(image: { src: string }): string {
 /** Elements whose text never gains a citation link: an existing link, code, headings, captions and raw text. */
 const NO_CITATION_LINK = new Set(['a', 'code', 'pre', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'figcaption', 'script', 'style']);
 /**
- * A figure citation in running text: the word and its number ("그림 1", "Figure 3", "Fig. 2") and the numbers listed
- * after it ("그림 1, 2", "Figures 1 and 2"). A listed number followed by a letter or digit ("2개") is not a figure.
+ * A figure citation in running text: the word and its number ("그림 1", "Figure 3", "Fig. 2", "Figs. 1") and the numbers
+ * listed after it ("그림 1, 2", "그림 1·2", "그림 1 및 2", "Figures 1 and 2"). A number followed by a letter or digit
+ * ("그림 2개", "2개") is not a figure; a range ("그림 1–3") links only its first number.
  */
-const CITATION = /(?<![\p{L}\p{N}])(그림|Figures?|Fig\.)(\s?)(\d+)((?:(?:,\s*|\s+and\s+)\d+(?![\p{L}\p{N}]))*)/gu;
+const CITATION = /(?<![\p{L}\p{N}])(그림|Figures?|Figs?\.)(\s?)(\d+)(?![\p{L}\p{N}])((?:(?:,\s*|\s*·\s*|\s+(?:and|및)\s+)\d+(?![\p{L}\p{N}]))*)/gu;
 
 /**
  * P-06 F-065: the body's figure citations link to the figure they cite (`#figure-N`, the id on Figure's <figure>, or
@@ -177,7 +178,8 @@ const CITATION = /(?<![\p{L}\p{N}])(그림|Figures?|Fig\.)(\s?)(\d+)((?:(?:,\s*|
  * placeFigures looks for) stays the same. Well-formed HTML is assumed (Markdown output, as topLevelBlocks).
  */
 export function linkFigureCitations(html: string, count: number): string {
-  const tag = /<!--[\s\S]*?-->|<\/?([a-zA-Z][a-zA-Z0-9-]*)\b[^>]*>/g;
+  // A quoted attribute value may hold a raw '>' (Sätteri writes alt="a > b"): the tag runs to the first '>' outside quotes.
+  const tag = /<!--[\s\S]*?-->|<\/?([a-zA-Z][a-zA-Z0-9-]*)\b(?:[^>"']|"[^"]*"|'[^']*')*>/g;
   const cites = (n: string): boolean => Number(n) >= 1 && Number(n) <= count;
   const link = (n: string, text: string): string => (cites(n) ? `<a href="#figure-${Number(n)}">${text}</a>` : text);
   const linkText = (text: string): string =>

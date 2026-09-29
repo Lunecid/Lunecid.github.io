@@ -101,10 +101,10 @@ describe('Figure.astro', () => {
 
   it('P-06 F-007 step 2: game branch — the table view after the caption, headers in the page language, the first cell a row header', async () => {
     const ko = await renderAstro(Figure, { props: { variant: 'game', lang: 'ko', src: ranking, alt: 'a', caption: 'c', number: 2, table } });
-    expect(ko).toMatch(/<\/figcaption>\s*<details class="chart__table"[^>]*>\s*<summary class="chart__summary" id="figure-2-table"[^>]*>표로 보기<\/summary>/);
+    expect(ko).toMatch(/<\/figcaption>\s*<details class="chart__table chart__table--read"[^>]*>\s*<summary class="chart__summary" id="figure-2-table"[^>]*>표로 보기<\/summary>/);
     expect(ko).toMatch(/<div class="chart__table-scroll" data-table-scroll data-label-id="figure-2-table"/);
     expect(ko).toMatch(/<th scope="col"[^>]*>열 가<\/th><th scope="col"[^>]*>열 나<\/th>/);
-    expect(ko).toMatch(/<tr[^>]*><th scope="row"[^>]*>행 1<\/th><td[^>]*>0\.5<\/td><\/tr>/);
+    expect(ko).toMatch(/<tr[^>]*><th scope="row"[^>]*>행 1<\/th><td class="num"[^>]*>0\.5<\/td><\/tr>/); // numbers right-aligned (P2-5 review)
     expect(ko).not.toContain('Column A');
     expect(ko.indexOf('</details>')).toBeLessThan(ko.indexOf('</figure>'));
     const en = await renderAstro(Figure, { props: { variant: 'game', lang: 'en', src: ranking, alt: 'a', caption: 'c', number: 2, table } });
@@ -117,8 +117,8 @@ describe('Figure.astro', () => {
 
   it('P-06 F-007 step 2: general branch — the same table as an editorial table', async () => {
     const en = await renderAstro(Figure, { props: { variant: 'data', lang: 'en', src: ranking, alt: 'a', caption: 'c', number: 3, table } });
-    expect(en).toMatch(/<details class="chart__table"[^>]*>\s*<summary class="chart__summary" id="figure-3-table"[^>]*>View as table<\/summary>/);
-    expect(en).toMatch(/<table class="ed-table"[^>]*><thead[^>]*><tr[^>]*><th scope="col"[^>]*>Column A<\/th>/);
+    expect(en).toMatch(/<details class="chart__table chart__table--editorial"[^>]*>\s*<summary class="chart__summary" id="figure-3-table"[^>]*>View as table<\/summary>/);
+    expect(en).toMatch(/<table class="ed-table"[^>]*>\s*<caption class="sr-only"[^>]*>c<\/caption>\s*<thead[^>]*><tr[^>]*><th scope="col"[^>]*>Column A<\/th>/); // named by the figure caption (P2-5 review)
     expect(en).toMatch(/<th scope="row"[^>]*>행 2<\/th><td[^>]*>1\.5<\/td>/);
     expect(en).not.toContain('열 가');
     const ko = await renderAstro(Figure, { props: { variant: 'data', lang: 'ko', src: ranking, alt: 'a', caption: 'c', number: 3, table } });
