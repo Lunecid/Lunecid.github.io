@@ -282,4 +282,14 @@ describe('FavoriteGames', () => {
     expect(TL.lineStagger).toBe(0.08);
     expect(TL.count).toBe(0.8);
   });
+
+  it('F-088: aria-orientation is horizontal with ≤3 games (tabs-row)', () => {
+    render(<FavoriteGames {...props({ games: GAMES.slice(0, 2) })} />);
+    expect(screen.getByRole('tablist')).toHaveAttribute('aria-orientation', 'horizontal');
+  });
+
+  it('F-088: aria-orientation is vertical with more than 3 games', () => {
+    render(<FavoriteGames {...props()} />);
+    expect(screen.getByRole('tablist')).toHaveAttribute('aria-orientation', 'vertical');
+  });
 });

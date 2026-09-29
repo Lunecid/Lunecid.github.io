@@ -68,6 +68,13 @@ describe('toolchain', () => {
     expect(pkg.scripts['test:ops']).toBe('node --test "tests/ops/*.test.mjs"');
   });
 
+  it('external linkinator config has no skip and the npm script pins --config', () => {
+    const pkg = JSON.parse(read('package.json')) as { scripts: Record<string, string> };
+    const external = JSON.parse(read('linkinator.external.json')) as Record<string, unknown>;
+    expect(Object.hasOwn(external, 'skip')).toBe(false);
+    expect(pkg.scripts['test:links:external']).toContain('--config linkinator.external.json');
+  });
+
   it('tsconfig excludes .claude/worktrees and .gitignore lists it', () => {
     const tsconfig = JSON.parse(read('tsconfig.json')) as { extends: string; exclude: string[]; compilerOptions: Record<string, string> };
     expect(tsconfig.extends).toBe('astro/tsconfigs/strict');

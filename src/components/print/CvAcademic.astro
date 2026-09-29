@@ -155,7 +155,7 @@ const h = model.header;
         {model.training.map((x) => (
           <li class="print__item">
             <p class="print__row"><strong>{x.name}</strong><span class="print__date">{x.period}</span></p>
-            <p class="print__meta">{x.org} · {x.hours}</p>
+            <p class="print__meta">{x.hours ? `${x.org} · ${x.hours}` : x.org}</p>
           </li>
         ))}
       </ul>

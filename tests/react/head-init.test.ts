@@ -21,6 +21,24 @@ function stubOsReduce(reduce: boolean): void {
   );
 }
 
+/** N17: arm intro timers as if FCP just fired (PerformanceObserver path). */
+function stubFcpObserver(): void {
+  class FakePO {
+    private cb: (list: { getEntries: () => PerformanceEntry[] }) => void;
+    constructor(cb: (list: { getEntries: () => PerformanceEntry[] }) => void) {
+      this.cb = cb;
+    }
+    observe(): void {
+      this.cb({
+        getEntries: () => [{ name: 'first-contentful-paint', entryType: 'paint', startTime: 0, duration: 0, toJSON: () => ({}) }],
+      });
+    }
+    disconnect(): void {}
+  }
+  vi.stubGlobal('PerformanceObserver', FakePO);
+  vi.spyOn(performance, 'getEntriesByType').mockReturnValue([]);
+}
+
 function runHeadScript(page: string): void {
   root.setAttribute('data-page', page);
   new Function(HEAD_INIT_SCRIPT)();
@@ -35,6 +53,7 @@ function resetRoot(): void {
 beforeEach(() => {
   vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
   stubOsReduce(false);
+  stubFcpObserver();
   resetRoot();
 });
 
@@ -88,8 +107,8 @@ describe('HEAD_INIT_SCRIPT', () => {
     expect(sessionStorage.getItem(STORAGE_KEYS.intro)).toBeNull();
   });
 
-  it('intro releases at 400ms and finishes at 700ms, dispatching sb:intro-done', () => {
-    expect(INTRO_TIMING).toEqual({ releaseMs: 400, doneMs: 700, skipFadeMs: 150 });
+  it('intro releases at 400ms and finishes at 700ms from FCP, dispatching sb:intro-done', () => {
+    expect(INTRO_TIMING).toEqual({ releaseMs: 400, doneMs: 700, skipFadeMs: 150, safetyMs: 3000 });
     const onDone = vi.fn();
     window.addEventListener('sb:intro-done', onDone);
     runHeadScript('home');
@@ -152,6 +171,17 @@ describe('HEAD_INIT_SCRIPT', () => {
     vi.stubGlobal('matchMedia', undefined);
     expect(() => runHeadScript('records')).not.toThrow();
     expect(root.getAttribute('data-motion')).toBe('full');
+  });
+
+  it('safety timeout calls done without arming the release path when FCP never arrives', () => {
+    vi.stubGlobal('PerformanceObserver', undefined);
+    vi.spyOn(performance, 'getEntriesByType').mockReturnValue([]);
+    runHeadScript('home');
+    expect(root.getAttribute('data-intro')).toBe('playing');
+    vi.advanceTimersByTime(INTRO_TIMING.safetyMs - 1);
+    expect(root.getAttribute('data-intro')).toBe('playing');
+    vi.advanceTimersByTime(1);
+    expect(root.hasAttribute('data-intro')).toBe(false);
   });
 
   it('script uses the STORAGE_KEYS literals', () => {

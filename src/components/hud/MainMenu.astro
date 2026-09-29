@@ -11,6 +11,7 @@ import { t } from '../../i18n/utils';
 import type { StageCharacter } from '../../islands/CharacterStage';
 import CharacterStage from '../../islands/CharacterStage';
 import SectionHead from './SectionHead.astro';
+import { creditParts } from '../../lib/credit';
 
 interface Props {
   lang: Lang;
@@ -32,7 +33,11 @@ const { lang, items, hint, side } = Astro.props;
               <span class="mm__ptr" aria-hidden="true">▶</span>
               <span class="mm__num" aria-hidden="true">{item.num}</span>
               <span class="mm__title">{item.title}</span>
-              <span class="mm__cap">{item.caption}</span>
+              <span class="mm__cap">
+                {creditParts(item.caption).map((part, i) => (
+                  <>{i > 0 && ' '}<span class="mm__cap-part">{part}</span></>
+                ))}
+              </span>
             </a>
           </li>
         ))}
@@ -46,6 +51,26 @@ const { lang, items, hint, side } = Astro.props;
 <script>
   import { playSfx } from '../../lib/sound';
 
+  // N19 / F-010: ignore synthetic pointerenter from keyboard focus when the mouse is parked.
+  let lastPointerX = Number.NaN;
+  let lastPointerY = Number.NaN;
+  let lastInput: 'key' | 'pointer' = 'key';
+  window.addEventListener(
+    'pointermove',
+    (event) => {
+      lastPointerX = event.clientX;
+      lastPointerY = event.clientY;
+      lastInput = 'pointer';
+    },
+    { passive: true },
+  );
+  window.addEventListener('pointerdown', () => {
+    lastInput = 'pointer';
+  });
+  window.addEventListener('keydown', () => {
+    lastInput = 'key';
+  });
+
   document.querySelectorAll<HTMLElement>('[data-main-menu]').forEach((nav) => {
     const items = [...nav.querySelectorAll<HTMLLIElement>('.mm__item')];
     const links = items.map((item) => item.querySelector('a')).filter((a): a is HTMLAnchorElement => a !== null);
@@ -58,7 +83,9 @@ const { lang, items, hint, side } = Astro.props;
     };
     links.forEach((link, index) => {
       link.addEventListener('focus', () => select(index));
-      link.addEventListener('pointerenter', () => {
+      link.addEventListener('pointerenter', (event) => {
+        if (event.clientX === lastPointerX && event.clientY === lastPointerY) return;
+        if (lastInput !== 'pointer') return;
         select(index);
         // Keep a single cursor (spec §5 "▶ 포인터"): if keyboard focus is already inside the menu,
         // move it to the hovered link so the selection frame and the focus ring never disagree.
@@ -155,6 +182,10 @@ const { lang, items, hint, side } = Astro.props;
   .mm__item[data-selected] .mm__num {
     color: var(--accent);
   }
+  /* N14 / G-012: selected MAIN MENU row keeps an edge under forced colours. */
+  @media (forced-colors: active) {
+    .mm__item[data-selected] .mm__link { border: 1px solid CanvasText; }
+  }
   .mm__title {
     grid-area: title;
     color: var(--hud-text);
@@ -171,12 +202,21 @@ const { lang, items, hint, side } = Astro.props;
   .mm__cap:lang(ko) {
     font-family: var(--font-sans);
   }
+  /* F-029: middot units stay unbroken so a line never starts with '·'. */
+  .mm__cap-part {
+    white-space: nowrap;
+  }
   /* Hangul letter-spacing stays 0 (Global Constraints); only the English hint is tracked out like v4 */
   .mm__hint {
     margin-top: 12px;
     font: 500 var(--fs-caption)/1.5 var(--font-mono);
     letter-spacing: 0;
     color: var(--hud-muted);
+  }
+  /* F-002: Korean hint uses sans so spaces/middots stay narrow. */
+  .mm__hint:lang(ko) {
+    font-family: var(--font-sans);
+    letter-spacing: 0;
   }
   .mm__hint:lang(en) {
     letter-spacing: .1em;

@@ -8,11 +8,27 @@ export interface StatsLiveTotalProps {
   initialTotal: number | null;
   lang: Lang;
   label: string;
+  startingLabel: string;
+  unavailableLabel: string;
 }
 
-/** Running total from GoatCounter's public counter (CORS *, no token). Keeps initialTotal on failure; renders nothing when both are null. */
-export default function StatsLiveTotal({ code, initialTotal, lang, label }: StatsLiveTotalProps): JSX.Element | null {
+/**
+ * One reserved slot for the live visit total (F-014).
+ * - 0 → "starting" (do not show a large 0 or pair it with "unavailable")
+ * - null after a failed/empty fetch with no build data → unavailable only
+ * - a positive count → the live total
+ * Keep initialTotal when the live fetch fails so build data still shows.
+ */
+export default function StatsLiveTotal({
+  code,
+  initialTotal,
+  lang,
+  label,
+  startingLabel,
+  unavailableLabel,
+}: StatsLiveTotalProps): JSX.Element {
   const [total, setTotal] = useState<number | null>(initialTotal);
+  const [settled, setSettled] = useState(false);
 
   useEffect(() => {
     let alive = true;
@@ -21,18 +37,33 @@ export default function StatsLiveTotal({ code, initialTotal, lang, label }: Stat
       .then((res) => (res.ok ? res.json() : Promise.reject(new Error(`counter ${res.status}`))))
       .then((body: { count?: unknown }) => {
         const n = parseCount(String(body.count ?? ''));
-        if (alive && n !== null) setTotal(n);
+        if (!alive) return;
+        if (n !== null) setTotal(n);
+        setSettled(true);
       })
-      .catch(() => undefined);
+      .catch(() => {
+        if (alive) setSettled(true);
+      });
     return () => {
       alive = false;
     };
   }, [code]);
 
-  if (total === null) return null;
-  return (
-    <p className="stats__live">
-      <span className="stats__live-label">{label}</span> <strong className="stats__live-num tnum">{formatNumber(total, lang)}</strong>
-    </p>
-  );
+  let body: JSX.Element;
+  if (total === 0) {
+    body = <p className="stats__note stats__live-note">{startingLabel}</p>;
+  } else if (total !== null) {
+    body = (
+      <p className="stats__live">
+        <span className="stats__live-label">{label}</span>{' '}
+        <strong className="stats__live-num tnum">{formatNumber(total, lang)}</strong>
+      </p>
+    );
+  } else if (settled) {
+    body = <p className="stats__note stats__live-note">{unavailableLabel}</p>;
+  } else {
+    body = <p className="stats__live stats__live--pending" aria-hidden="true" />;
+  }
+
+  return <div className="stats__live-slot">{body}</div>;
 }

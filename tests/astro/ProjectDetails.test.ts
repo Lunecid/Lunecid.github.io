@@ -41,7 +41,10 @@ describe('ProjectDetails.astro', () => {
       },
     });
     expect(html).toMatch(/<span[^>]*class="badge badge--tier"[^>]*>[\s\S]*?최우수상\(부산광역시장상\)<\/span>/);
-    expect(html).toMatch(/<a[^>]*href="\/_astro\/busan\.1280w\.webp"[^>]*data-cert-id="busan-mayor-award"[^>]*aria-haspopup="dialog"[^>]*>상장 보기/);
+    expect(html).toMatch(/data-cert-id="busan-mayor-award"/);
+    expect(html).toMatch(/data-viewer="certificates"/);
+    expect(html).toMatch(/aria-haspopup="dialog"[^>]*>상장 보기/);
+    expect(html).toMatch(/href="\/_astro\/busan\.1280w\.webp"/);
     // P2-14/D-7: a certificate button opens an in-page modal, not a symbol reserved for links that leave the site.
     expect(html).not.toContain('↗');
     const noImage = await renderAstro(ProjectDetails, {
@@ -64,6 +67,7 @@ describe('ProjectDetails.astro', () => {
     expect(withCaption).toMatch(/<picture\b/);
     expect(withCaption).toMatch(/<img[^>]*alt="부산 전역 사고 예측 히트맵"/);
     expect(withCaption).toMatch(/<img[^>]*loading="eager"/);
+    expect(withCaption).toMatch(/<img[^>]*fetchpriority="high"/);
     expect(withCaption).toMatch(/<figcaption class="pd__figcap" lang="en"[^>]*><span class="pd__figcap-tag"[^>]*>FIG<\/span> · RISK HEATMAP<\/figcaption>/);
     expect(withCaption.indexOf('<figcaption')).toBeGreaterThan(withCaption.indexOf('<picture')); // under the figure
     const noLabel = await renderAstro(ProjectDetails, {
@@ -112,6 +116,12 @@ describe('ProjectDetails.astro', () => {
     expect(html).not.toMatch(/\b840w\b/);
     expect(html).toMatch(/<img[^>]*src="[^"]*(?:\.webp|f=webp)"/);
     expect(html).not.toMatch(/f=png|\.png\b/);
-    expect(html).toMatch(/<source[^>]*sizes="\(min-width: 1800px\) 659px, \(min-width: 1600px\) 626px, \(min-width: 1068px\) 540px, \(min-width: 734px\) calc\(100vw - 66px\), calc\(100vw - 34px\)"/);
+    expect(html).toMatch(/<source[^>]*sizes="\(min-width: 1800px\) 659px, \(min-width: 1600px\) 626px, \(min-width: 1068px\) 540px, \(min-width: 734px\) 600px, calc\(100vw - 34px\)"/);
+  });
+
+  it('F-006: stacked cover is capped at 600px / 60vh between 734 and 1067 only', () => {
+    const src = readSource('src/components/projects/ProjectDetails.astro');
+    expect(src).toMatch(/@media \(min-width: 734px\) and \(max-width: 1067\.98px\) \{[\s\S]*?\.pd__fig\s*\{[\s\S]*?max-width:\s*600px/);
+    expect(src).toMatch(/@media \(min-width: 734px\) and \(max-width: 1067\.98px\) \{[\s\S]*?max-height:\s*min\(60vh,\s*300px\)[\s\S]*?object-fit:\s*contain/);
   });
 });

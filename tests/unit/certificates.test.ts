@@ -32,8 +32,8 @@ describe('certificate lookup', () => {
     expect(ko?.id).toBe('busan-mayor-award');
     expect(ko?.caption).toBe('최우수상(부산광역시장상) · 2025 Big Data 활용 대회 · 빅데이터 분석 부문');
     expect(ko?.alt).toBe(busan.certificate.alt.ko);
-    expect(ko?.width).toBe(1600);
-    expect(ko?.height).toBe(2262);
+    expect(ko?.width).toBe(1280);
+    expect(ko?.height).toBe(1810);
     expect(ko?.sizes).toBe(CERT_SIZES);
     for (const w of CERT_WIDTHS) expect(ko?.srcSet).toContain(`${w}w`);
     const en = await lookup.build(busan, 'en');

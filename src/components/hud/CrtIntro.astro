@@ -2,8 +2,9 @@
 /*
  * CRT intro overlay (spec §5: home only, once per session, ≤1 s over the finished hero, any input skips,
  * one flash only, static faint scanlines, absent with reduced motion). BaseLayout renders it only when
- * page === 'home'. Visibility and timing come from HEAD_INIT_SCRIPT (src/lib/head-init.ts), which sets
- * <html data-intro="playing|fading"> before first paint; without JS the overlay never shows.
+ * page === 'home'. Visibility comes from HEAD_INIT_SCRIPT (src/lib/head-init.ts), which sets
+ * <html data-intro="playing|fading"> before first paint; release/done timers arm on FCP (N17).
+ * Without JS the overlay never shows.
  * Colours come from tokens only (color-mix for the translucent scanlines, glow and bar frame); no accent or
  * gold, because the overlay is not clickable and gold is reserved for badges.
  */

@@ -112,12 +112,22 @@ const currentValue = exact ? 'page' : 'true';
     const setOpen = (open: boolean) => {
       nav.dataset.open = String(open);
       button.setAttribute('aria-expanded', String(open));
-      const label = open ? (button.dataset.labelOpen ?? button.textContent ?? '') : (button.dataset.labelClosed ?? button.textContent ?? '');
-      button.textContent = label;
-      // Fix round 1 minor: the open-state label carries a visual "×" ("닫기 ×"/"Close ×"); a screen reader would
-      // otherwise announce it (e.g. "multiplication sign"), so the accessible name drops it via aria-label
-      // instead of relying on the text content.
-      button.setAttribute('aria-label', label.replace(' ×', ''));
+      const closed = button.dataset.labelClosed ?? '메뉴';
+      const openRaw = button.dataset.labelOpen ?? '닫기';
+      // G-017: open state is a fixed-width "×" plus visually hidden Close/닫기 so the bar never widens.
+      const accessible = openRaw.replace(/\s*×\s*/g, '').trim() || openRaw;
+      if (open) {
+        const mark = document.createElement('span');
+        mark.setAttribute('aria-hidden', 'true');
+        mark.textContent = '×';
+        const sr = document.createElement('span');
+        sr.className = 'sr-only';
+        sr.textContent = accessible;
+        button.replaceChildren(mark, sr);
+      } else {
+        button.textContent = closed;
+      }
+      button.setAttribute('aria-label', open ? accessible : closed);
       // Fix round 1 minor: lock by name (src/lib/scroll-lock.ts), not a direct class toggle — a resize-to-desktop
       // auto-close (below) must never strip the lock out from under an open certificate <dialog>.
       if (open) {
@@ -189,12 +199,21 @@ const currentValue = exact ? 'page' : 'true';
     position: sticky;
     top: 0;
     z-index: 50;
+    /* F-024: near-opaque fill on the sticky shell. Blur lives on ::before so it does not turn
+       position:fixed descendants (the menu scrim) into a zero-height containing-block trap. */
+    background: var(--hud-bg);
     background: var(--hud-nav-bg);
-    /* The nav bar's own background is translucent (spec token); without this, scrolled-under body text
-       reads straight through it (P2-1). A blur keeps the intended see-through look but stops it being legible. */
-    backdrop-filter: blur(12px) saturate(140%);
-    -webkit-backdrop-filter: blur(12px) saturate(140%);
     border-bottom: 1px solid var(--hud-line);
+  }
+  .hud-nav::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background: var(--hud-nav-bg);
+    -webkit-backdrop-filter: blur(12px) saturate(140%);
+    backdrop-filter: blur(12px) saturate(140%);
   }
   .hud-nav__bar {
     position: relative;
@@ -217,6 +236,7 @@ const currentValue = exact ? 'page' : 'true';
     min-width: var(--tap); /* P2-24: below 1068px only "[SB]" shows, so the link needs its own 44px width */
     color: var(--hud-text);
     text-decoration: none;
+    transition: color var(--dur-hover) linear;
   }
   .hud-nav__logo {
     color: var(--accent);
@@ -240,9 +260,6 @@ const currentValue = exact ? 'page' : 'true';
     text-decoration: none;
     transition: color var(--dur-hover) linear;
   }
-  .hud-nav__list a:hover {
-    color: var(--hud-text);
-  }
   .hud-nav__list a[aria-current] {
     color: var(--accent);
   }
@@ -265,6 +282,7 @@ const currentValue = exact ? 'page' : 'true';
     min-width: var(--tap); /* P2-24: "EN"/"KO" alone was ~24px wide on tablet */
     padding-inline: 4px;
     color: var(--hud-text);
+    transition: color var(--dur-hover) linear;
   }
   .hud-nav__cv {
     display: inline-flex;
@@ -281,15 +299,32 @@ const currentValue = exact ? 'page' : 'true';
     font-weight: 600;
   }
   .hud-nav__toggle {
+    /* G-017: fixed ≤60px so open "×" and closed "Menu"/"메뉴" share one width (72px wraps EN at 305px). */
+    box-sizing: border-box;
+    width: 56px;
     min-height: var(--tap);
-    min-width: var(--tap);
-    padding: 0 12px;
+    min-width: 0;
+    padding: 0;
     background: none;
     cursor: pointer;
     border: 1px solid var(--hud-line);
     color: var(--hud-text);
     font: 600 13px/1 var(--font-sans);
+    text-align: center;
+    transition: border-color var(--dur-hover) linear, color var(--dur-hover) linear;
   }
+  /* F-021 / F-022: colour hover only on hover-capable pointers; press states hold in both motion modes. */
+  @media (hover: hover) {
+    .hud-nav__list a:hover { color: var(--hud-text); }
+    .hud-nav__brand:hover { color: var(--accent); }
+    .hud-nav__lang a:hover { color: var(--accent); }
+    .hud-nav__cv:hover .hud-nav__chip { --cut-fill: var(--accent-wash-strong); }
+    .hud-nav__toggle:hover { border-color: var(--accent); color: var(--accent); }
+  }
+  .hud-nav__brand:active { color: var(--accent); }
+  .hud-nav__lang a:active { color: var(--accent); }
+  .hud-nav__cv:active .hud-nav__chip { --cut-fill: var(--accent-wash-strong); }
+  .hud-nav__toggle:active { border-color: var(--accent); }
   /* P2-3 (controller ruling 2): the open state reads at a glance, not only through aria-expanded. */
   .hud-nav__toggle[aria-expanded="true"] {
     border-color: var(--accent);
@@ -319,6 +354,10 @@ const currentValue = exact ? 'page' : 'true';
       padding: 8px 16px 16px;
       background: var(--hud-bg);
       border-bottom: 1px solid var(--hud-line);
+      /* G-011: 100% = sticky bar height (positioned containing block); keep last items reachable at 400% zoom. */
+      max-height: calc(100dvh - 100%);
+      overflow-y: auto;
+      overscroll-behavior: contain;
     }
     .hud-nav[data-open="true"] .hud-nav__panel {
       display: block;
@@ -378,6 +417,12 @@ const currentValue = exact ? 'page' : 'true';
     }
     .hud-nav__list {
       gap: 22px;
+    }
+  }
+  /* F-023: match .container gutters only where the EN bar still fits; keep 16/28px below. */
+  @media (min-width: 1200px) {
+    .hud-nav__bar {
+      padding-inline: var(--gutter);
     }
   }
 </style>

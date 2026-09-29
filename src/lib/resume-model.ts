@@ -41,7 +41,7 @@ export interface ResumeModel {
   activities: { text: string; date: string }[];
   certifications: { name: string; issuer: string; date: string }[];
   languages: { name: string; level: string; date: string | null; validUntil: string | null; expired: boolean }[];
-  training: { name: string; org: string; period: string; hours: string }[];
+  training: { name: string; org: string; period: string; hours: string | null }[];
   skills: { primary: string[]; familiar: string[] };
 }
 
@@ -196,7 +196,7 @@ export function buildResumeModel(input: ResumeInputs): ResumeModel {
       name: x.name[lang],
       org: x.org[lang],
       period: x.start === x.end ? formatYm(x.start, lang) : formatPeriod(x.start, x.end, lang),
-      hours: t(lang, 'records.hours', { n: x.hours }),
+      hours: x.hours === undefined ? null : t(lang, 'records.hours', { n: x.hours }),
     })),
     skills: resume.skills.pdf[flag]
       ? { primary: resume.skills.primary.map((s) => s.name), familiar: resume.skills.familiar.map((s) => s.name) }

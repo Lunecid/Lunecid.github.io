@@ -1,6 +1,7 @@
 ---
 // One figure: <picture> (AVIF + WebP), a caption optionally prefixed "그림 N" / "Figure N",
 // and a "크게 보기" link to a single WebP no wider than 1600px (D4: sources are ≤1600w).
+// The link is also an ImageViewer trigger (data-viewer=figures); without JS it still opens the WebP.
 import type { ImageMetadata } from 'astro';
 import { Picture, getImage } from 'astro:assets';
 import type { Lang } from '../../i18n/ui';
@@ -25,7 +26,7 @@ const {
   alt,
   caption,
   number,
-  widths = [720, 1080, 1440],
+  widths = [720, 800, 1080, 1440],
   sizes = FIGURE_SIZES,
   loading = 'lazy',
   class: className,
@@ -34,6 +35,8 @@ const {
 const pictureWidths = fitWidths(widths, sourceSize(src).width);
 const full = await getImage({ src, width: Math.min(1600, sourceSize(src).width), format: 'webp' });
 const numberLabel = number !== undefined ? t(lang, 'project.figure', { n: number }) : null;
+const stripLabel = number !== undefined ? `FIG · ${number}` : null;
+const viewerLabel = stripLabel ?? numberLabel ?? alt;
 const fullLabel = t(lang, 'action.fullSize');
 ---
 
@@ -42,7 +45,18 @@ const fullLabel = t(lang, 'action.fullSize');
   <figcaption class="figure__cap">
     {numberLabel && <span class="figure__num">{numberLabel}</span>}
     <span class="figure__text">{caption}</span>
-    <a class="figure__full" href={full.src} aria-label={`${fullLabel} · ${numberLabel ?? alt}`}>{fullLabel}</a>
+    <a
+      class="figure__full"
+      href={full.src}
+      aria-label={`${fullLabel} · ${numberLabel ?? alt}`}
+      aria-haspopup="dialog"
+      data-viewer="figures"
+      data-viewer-w={full.attributes.width}
+      data-viewer-h={full.attributes.height}
+      data-viewer-label={viewerLabel}
+      data-viewer-caption={caption}
+      data-viewer-alt={alt}
+    >{fullLabel}</a>
   </figcaption>
 </figure>
 

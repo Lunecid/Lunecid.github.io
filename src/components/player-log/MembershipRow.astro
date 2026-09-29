@@ -43,6 +43,12 @@ const showMeter = tiles.length < tileSlots;
   .pl-intro { padding-block: var(--section-pad-y); }
   .pl-intro__grid { display: grid; gap: 24px; }
   .pl-intro__side { display: grid; gap: 24px; min-width: 0; }
+  /* F-009: 734–1067 stack/centre so a side-by-side void is never left (no placeholder panel, D-13). */
+  @media (min-width: 734px) and (max-width: 1067.98px) {
+    .pl-intro__grid { justify-items: center; }
+    .pl-intro__side { width: 100%; max-width: 780px; }
+    .pl-intro__side :global(.fav-tiles) { justify-items: stretch; }
+  }
   @media (min-width: 1068px) {
     .pl-intro__grid { grid-template-columns: minmax(0, 440px) 1fr; gap: 36px; align-items: center; }
     /* the progress panel matches the card's height instead of floating in the middle of an empty column */

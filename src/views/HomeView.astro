@@ -78,7 +78,20 @@ const location = lang === 'ko' ? `${profile.location.ko} · ${profile.location.e
 ---
 
 <BaseLayout lang={lang} title={meta.title} description={meta.description} page="home" notices={notices} jsonLd={personJsonLd(lang, resume.data.researchIds)}>
-  {leadChar && <link slot="head" rel="preload" as="image" imagesrcset={leadChar.image.srcSet} imagesizes={HERO_SIZES} fetchpriority="high" />}
+  {leadChar && leadChar.image.avifSrcSet && (
+    <link
+      slot="head"
+      rel="preload"
+      as="image"
+      type="image/avif"
+      imagesrcset={leadChar.image.avifSrcSet}
+      imagesizes={HERO_SIZES}
+      fetchpriority="high"
+    />
+  )}
+  {leadChar && !leadChar.image.avifSrcSet && (
+    <link slot="head" rel="preload" as="image" imagesrcset={leadChar.image.srcSet} imagesizes={HERO_SIZES} fetchpriority="high" />
+  )}
   <Hero
     lang={lang}
     chars={heroChars}

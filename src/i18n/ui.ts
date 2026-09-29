@@ -187,7 +187,7 @@ export const ui = {
     'news.kind.site': '사이트',
 
     // 기록·이력서
-    'records.title': '기록',
+    'records.title': '기록·이력서',
     'records.education': '학력',
     'records.publications': '논문·발표',
     'records.awards': '수상',
@@ -200,6 +200,7 @@ export const ui = {
     'records.skillsPrimary': '주력',
     'records.skillsFamiliar': '사용해 본 기술',
     'records.evidence': '근거',
+    'records.daconRecord': 'DACON 기록',
     'records.paperCode': '{venue} 논문 코드',
     'records.resumes': '이력서 PDF',
     'records.gpa': '학점',
@@ -255,9 +256,13 @@ export const ui = {
     'achievement.locked': '잠김',
     'achievement.region': '업적 알림',
 
-    // 상장 모달
+    // 이미지 뷰어 (그림 · 상장)
     'modal.certificate': '상장',
+    'modal.viewer': '이미지 보기',
     'modal.closeHint': 'Esc 키나 바깥을 눌러 닫을 수 있습니다.',
+    'viewer.previous': '이전 이미지',
+    'viewer.next': '다음 이미지',
+    'viewer.counter': '{current} / {total}',
 
     // 방문 통계
     'stats.title': '방문 통계',
@@ -266,6 +271,7 @@ export const ui = {
     'stats.referrers': '유입 경로',
     'stats.source': 'GoatCounter 공개 통계(쿠키 없음)',
     'stats.unavailable': '통계를 불러오지 못했습니다.',
+    'stats.starting': '방문 집계를 시작하는 중입니다.',
     'stats.notCollecting': '아직 방문 통계를 모으지 않습니다.',
     'stats.offline': '방문 통계는 GoatCounter를 연결한 뒤 이 페이지에 공개합니다.',
     'stats.privacyLink': '통계를 켜면 모을 항목 보기 (개인정보 처리방침)',
@@ -470,7 +476,7 @@ export const ui = {
     'news.kind.site': 'Site',
 
     // Records and résumé
-    'records.title': 'Records',
+    'records.title': 'Records & CV',
     'records.education': 'Education',
     'records.publications': 'Publications and talks',
     'records.awards': 'Awards',
@@ -483,6 +489,7 @@ export const ui = {
     'records.skillsPrimary': 'Primary',
     'records.skillsFamiliar': 'Also used',
     'records.evidence': 'Evidence',
+    'records.daconRecord': 'DACON record',
     'records.paperCode': '{venue} paper code',
     'records.resumes': 'Résumé PDFs',
     'records.gpa': 'GPA',
@@ -538,9 +545,13 @@ export const ui = {
     'achievement.locked': 'Locked',
     'achievement.region': 'Achievement notifications',
 
-    // Certificate modal
+    // Image viewer (figures · certificates)
     'modal.certificate': 'Certificate',
+    'modal.viewer': 'Image viewer',
     'modal.closeHint': 'Press Esc or click outside to close.',
+    'viewer.previous': 'Previous image',
+    'viewer.next': 'Next image',
+    'viewer.counter': '{current} / {total}',
 
     // Visitor stats
     'stats.title': 'Visitor stats',
@@ -549,6 +560,7 @@ export const ui = {
     'stats.referrers': 'Referrers',
     'stats.source': 'Public GoatCounter data (no cookies)',
     'stats.unavailable': 'Could not load the statistics.',
+    'stats.starting': 'Visit counting is just getting started.',
     'stats.notCollecting': 'Visitor statistics are not being collected yet.',
     'stats.offline': 'Visitor statistics will be published on this page once GoatCounter is connected.',
     'stats.privacyLink': 'What would be collected (privacy policy)',

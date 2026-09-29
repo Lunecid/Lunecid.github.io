@@ -4,7 +4,7 @@ import { lockScroll, unlockScroll } from '../../src/lib/scroll-lock';
 afterEach(() => {
   // The module's own owner Set persists across tests (module-level state); leave it empty for the next test.
   unlockScroll('nav');
-  unlockScroll('cert-modal');
+  unlockScroll('image-viewer');
   document.documentElement.classList.remove('is-scroll-locked');
 });
 
@@ -18,15 +18,15 @@ describe('scroll-lock.ts (fix round 1 minor)', () => {
   });
 
   it('one owner unlocking never removes another owner\'s lock', () => {
-    lockScroll('cert-modal'); // e.g. a certificate <dialog> is open
+    lockScroll('image-viewer'); // e.g. an image <dialog> is open
     lockScroll('nav'); // the mobile menu also opened
     expect(document.documentElement).toHaveClass('is-scroll-locked');
 
     // HudNav's resize-to-desktop auto-close (or Escape, or a link click) unlocks its own "nav" ownership only.
     unlockScroll('nav');
-    expect(document.documentElement, 'the certificate modal still owns the lock').toHaveClass('is-scroll-locked');
+    expect(document.documentElement, 'the image viewer still owns the lock').toHaveClass('is-scroll-locked');
 
-    unlockScroll('cert-modal');
+    unlockScroll('image-viewer');
     expect(document.documentElement).not.toHaveClass('is-scroll-locked');
   });
 

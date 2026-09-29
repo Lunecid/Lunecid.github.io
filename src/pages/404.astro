@@ -97,4 +97,12 @@ const meta = PAGE_META['not-found'].ko;
   .go__actions { margin-top: 20px; display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; }
   .go__en { margin-top: 16px; font-size: 14px; color: var(--hud-muted); }
   .go__en a { display: inline-flex; align-items: center; min-height: var(--tap); padding-inline: 6px; color: var(--accent); }
+  /* G-019 interim: landscape phones — keep 404 actions clear of the bottom GAME OVER toast (toast stays bottom). */
+  @media (orientation: landscape) and (max-height: 500px) {
+    .go {
+      place-items: start center;
+      padding-block: 24px calc(120px + env(safe-area-inset-bottom));
+      overflow-y: auto;
+    }
+  }
 </style>

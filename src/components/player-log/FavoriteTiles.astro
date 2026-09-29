@@ -1,5 +1,5 @@
 ---
-import { Image } from 'astro:assets';
+import { Picture } from 'astro:assets';
 import type { Lang } from '../../i18n/ui';
 import { t } from '../../i18n/utils';
 import { TILE_SIZES, TILE_WIDTHS } from '../../lib/characters';
@@ -20,10 +20,11 @@ const { lang, tiles } = Astro.props;
       const [game, ...tag] = tile.caption.split(' · ');
       return (
         <li class="fav-tile">
-          <Image
+          <Picture
             src={tile.image}
             alt=""
             aria-hidden="true"
+            formats={['avif', 'webp']}
             widths={TILE_WIDTHS}
             sizes={TILE_SIZES}
             loading="eager"
@@ -38,26 +39,29 @@ const { lang, tiles } = Astro.props;
 )}
 
 <style>
+  /* F-009: 3-column grid from 734px (no fixed 176px flex row that overflowed at 1068–1159). */
   .fav-tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin: 0; padding: 0; list-style: none; }
-  @media (min-width: 734px) { .fav-tiles { display: flex; gap: 14px; } }
+  @media (min-width: 734px) { .fav-tiles { gap: 14px; } }
   .fav-tile { position: relative; aspect-ratio: 176 / 280; border: 1px solid var(--hud-line); overflow: hidden; background: var(--hud-panel); }
-  @media (min-width: 734px) { .fav-tile { width: 176px; height: 280px; aspect-ratio: auto; } }
-  /* D-2 XL steps: the tiles share the wider row (up to 250px each) instead of leaving its right end empty */
-  @media (min-width: 1600px) { .fav-tile { flex: 1 1 0; width: auto; max-width: 250px; } }
+  @media (min-width: 734px) { .fav-tile { width: auto; max-width: 250px; height: 280px; aspect-ratio: auto; } }
   .fav-tile :global(img) { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; pointer-events: none; }
   .fav-tile__cap { position: absolute; left: 0; right: 0; bottom: 0; margin: 0; padding: 10px 14px 12px; background: var(--hud-bg); }
   .fav-tile__cap::before { content: ""; position: absolute; left: 0; right: 0; bottom: 100%; height: 36px; background: linear-gradient(transparent, var(--hud-bg)); pointer-events: none; }
-  .fav-tile__kicker { display: block; white-space: nowrap; font: 600 12px/1.4 var(--font-mono); letter-spacing: .14em; color: var(--hud-label); }
+  /* HUD mono label (lang=en on the kicker); wrap allowed so mid-width tiles never clip "FAVORITE". */
+  .fav-tile__kicker { display: block; font: 600 12px/1.4 var(--font-mono); letter-spacing: .14em; color: var(--hud-label); }
   .fav-tile__cap strong { display: block; margin-top: 2px; font-size: 20px; color: var(--hud-strong); }
   @media (max-width: 733.98px) {
     .fav-tile__cap { padding: 8px; }
-    .fav-tile__kicker { letter-spacing: .06em; }
+    .fav-tile__kicker { white-space: nowrap; letter-spacing: .06em; }
     .fav-tile__tag { display: none; }
     .fav-tile__cap strong { font-size: 16px; }
   }
-  /* 176px tiles: "GENSHIN · FAVORITE" (18 mono characters) fits the 152px line at .08em tracking */
+  /* Narrow 3-col tiles (~144px at 1068): drop tracking and let "GENSHIN ·" / "FAVORITE" wrap — no ellipsis/clip. */
   @media (min-width: 734px) and (max-width: 1599.98px) {
     .fav-tile__cap { padding-inline: 12px; }
-    .fav-tile__kicker { letter-spacing: .08em; }
+    .fav-tile__kicker { letter-spacing: .04em; overflow-wrap: anywhere; }
+  }
+  @media (min-width: 1600px) {
+    .fav-tile__kicker { white-space: nowrap; }
   }
 </style>

@@ -34,6 +34,10 @@ body {
   background: var(--read-bg);
 }
 h1, h2, h3, h4, p, ol, ul, dl, dd, figure, blockquote { margin: 0; }
+/* F-029: balance multi-line headings/titles so the last line is not a single orphan word. */
+h1, h2, h3, .cart__title, .pd__title, .pub__title, .psum__title, .award__title, .mcard__title, .mm__cap {
+  text-wrap: balance;
+}
 ol, ul { padding: 0; list-style: none; } /* styled lists carry role="list" (Safari/VoiceOver) */
 img, svg, video { display: block; max-width: 100%; height: auto; }
 button { font: inherit; color: inherit; }
@@ -81,7 +85,11 @@ html:not(.js) .bgm,
 html:not(.js) [data-motion-toggle],
 html:not(.js) .fg__list { display: none; }
 
-/* No JS + OS reduced motion: stop the first-paint keyframe entrances (JS users get the per-component fades). */
+/* No JS + OS reduced motion: stop the first-paint keyframe entrances (JS users get the per-component fades).
+   F-069: also twin the [data-motion=reduce] lift / press / slide rules — without JS that attribute is never set.
+   (Cart lift + shell wash live in ProjectCartridge.astro so the shell colour literal stays out of base.css.) */
 @media (prefers-reduced-motion: reduce) {
   html:not(.js) .char-stage__img, html:not(.js) .char-stage__streak, html:not(.js) .hero__copy > * { animation: none !important; }
+  html:not(.js) .btn:active { transform: none; }
+  html:not(.js) .pn__ptr { transform: none; }
 }

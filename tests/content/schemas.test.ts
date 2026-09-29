@@ -205,6 +205,8 @@ describe('resumeSchema', () => {
     const withActivity = (activity: Record<string, unknown>) => ({ ...validResume, activities: [{ id: 'lg-aimers-7', text: L('LG Aimers', 'LG Aimers'), pdf: flags, ...activity }] });
     expect(resumeSchema.safeParse(withActivity({ date: '2025-07', end: '2025-09' })).success).toBe(true);
     expect(resumeSchema.safeParse(withActivity({ date: '2025' })).success).toBe(true);
+    expect(resumeSchema.safeParse(withActivity({ date: '2025-08', href: 'https://dacon.io/myprofile/530929/competition' })).success).toBe(true);
+    expect(resumeSchema.safeParse(withActivity({ date: '2025-08', href: 'not-a-url' })).success).toBe(false);
     const bad = resumeSchema.safeParse(withActivity({ date: '2025', end: '2025-09' }));
     expect(bad.success).toBe(false);
     expect(bad.error?.issues.map((i) => i.message)).toContain('end requires date YYYY-MM');

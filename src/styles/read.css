@@ -47,7 +47,11 @@
 }
 .lh-chip--mono { font-family: var(--font-mono); font-size: 13px; }
 a.lh-chip { color: var(--accent-deep); transition: border-color var(--dur-hover) linear, background-color var(--dur-hover) linear; }
-a.lh-chip:hover { border-color: var(--accent-deep); background: var(--read-bg); }
+@media (hover: hover) {
+  a.lh-chip:hover { border-color: var(--accent-deep); background: var(--read-bg); }
+  /* G-016: thicker underline on light-band links so hover is visible without a colour-only change. */
+  .read a:hover { text-decoration-thickness: 2px; }
+}
 a.lh-chip::after { content: ""; position: absolute; left: 0; right: 0; top: 50%; height: max(100%, var(--tap)); transform: translateY(-50%); }
 /* Small tag (status, kind): square, mono caps. */
 .lh-tag {
@@ -64,10 +68,11 @@ a.lh-chip::after { content: ""; position: absolute; left: 0; right: 0; top: 50%;
    edge; long-form prose is this centred reading column, and its figures, audience blocks and links share it. */
 .prose.read, .read-column { max-width: none; padding-inline: max(var(--gutter), calc(50% - var(--measure) / 2)); }
 .prose.read { padding-block: var(--section-pad-y); }
-
 .prose > * + * { margin-top: 1em; }
 .prose h2 { margin-top: 2em; font-size: var(--fs-h2); font-weight: 800; line-height: var(--lh-h2); }
 .prose h3 { margin-top: 1.6em; font-size: var(--fs-sub); font-weight: 700; line-height: var(--lh-sub); }
+/* F-041: after the h2/h3 rules so the first body heading does not inherit their large top margin as empty lead-in. */
+.prose > :first-child { margin-top: 0; }
 .prose h2 + *, .prose h3 + * { margin-top: .6em; }
 .prose ul, .prose ol { padding-left: 1.4em; }
 .prose ul { list-style: disc; }

@@ -103,6 +103,8 @@ export interface CredentialItem {
   secondary?: string;
   meta?: string;
   badge?: string;
+  /** Optional evidence URL (e.g. DACON competition record). Shown on /records/ only; PDFs omit the link. */
+  href?: string;
 }
 
 /** Items for the four CredentialList sections. Languages with `records: false` are PDF-only and skipped. */
@@ -112,7 +114,11 @@ export function credentialItems(
   today: string,
 ): { activities: CredentialItem[]; certifications: CredentialItem[]; languages: CredentialItem[]; training: CredentialItem[] } {
   return {
-    activities: resume.activities.map((a) => ({ primary: a.text[lang], meta: activityDate(a, lang) })),
+    activities: resume.activities.map((a) => ({
+      primary: a.text[lang],
+      meta: activityDate(a, lang),
+      ...(a.href ? { href: a.href } : {}),
+    })),
     certifications: resume.certifications.map((c) => ({
       primary: c.name[lang],
       secondary: c.issuer[lang],
@@ -133,11 +139,14 @@ export function credentialItems(
         badge: expired ? t(lang, 'records.expired') : undefined,
       };
     }),
-    training: resume.training.map((tr) => ({
-      primary: tr.name[lang],
-      secondary: tr.org[lang],
-      meta: `${tr.start === tr.end ? formatYm(tr.start, lang) : formatPeriod(tr.start, tr.end, lang)} · ${t(lang, 'records.hours', { n: tr.hours })}`,
-    })),
+    training: resume.training.map((tr) => {
+      const period = tr.start === tr.end ? formatYm(tr.start, lang) : formatPeriod(tr.start, tr.end, lang);
+      return {
+        primary: tr.name[lang],
+        secondary: tr.org[lang],
+        meta: tr.hours === undefined ? period : `${period} · ${t(lang, 'records.hours', { n: tr.hours })}`,
+      };
+    }),
   };
 }
 
@@ -150,9 +159,25 @@ export interface AwardItem {
   dateIso: string;
   medal: { tier: 'gold' | 'silver'; label: string };
   certHref: string | null;
+  certWidth: number | null;
+  certHeight: number | null;
+  certSrcSet: string | null;
+  certSizes: string | null;
+  certAlt: string | null;
+  certCaption: string | null;
   /** null when nothing on the certificate is hidden (P2-19): no caption then. */
   redactionNote: string | null;
   projectHref: string | null;
+}
+
+export interface AwardCertMeta {
+  href: string;
+  width: number;
+  height: number;
+  srcSet?: string;
+  sizes?: string;
+  alt: string;
+  caption: string;
 }
 
 /** Award cards in resume.yaml `awards[]` order; certHref = the certificate's no-JS WebP link (null without an image). */
@@ -160,12 +185,14 @@ export function awardItems(
   refs: readonly { ref: CertificateId }[],
   awards: readonly AwardData[],
   lang: Lang,
-  certHrefs: Partial<Record<CertificateId, string>>,
+  certs: Partial<Record<CertificateId, string | AwardCertMeta>>,
 ): AwardItem[] {
   return refs.map(({ ref }) => {
     const award = awards.find((a) => a.id === ref);
     if (!award) throw new Error(`records: unknown award ref "${ref}"`);
     const medal = AWARD_MEDAL[award.id];
+    const cert = certs[award.id];
+    const meta = typeof cert === 'string' ? { href: cert, width: null, height: null, srcSet: null, sizes: null, alt: null, caption: null } : cert ?? null;
     return {
       id: award.id,
       title: award.name[lang],
@@ -174,7 +201,13 @@ export function awardItems(
       date: formatDate(award.date, lang),
       dateIso: award.date,
       medal: { tier: medal.tier, label: medal.label[lang] },
-      certHref: certHrefs[award.id] ?? null,
+      certHref: meta?.href ?? null,
+      certWidth: meta && typeof meta.width === 'number' ? meta.width : null,
+      certHeight: meta && typeof meta.height === 'number' ? meta.height : null,
+      certSrcSet: meta && typeof meta.srcSet === 'string' ? meta.srcSet : null,
+      certSizes: meta && typeof meta.sizes === 'string' ? meta.sizes : null,
+      certAlt: meta && typeof meta.alt === 'string' ? meta.alt : null,
+      certCaption: meta && typeof meta.caption === 'string' ? meta.caption : null,
       redactionNote: award.redactionNote ? award.redactionNote[lang] : null,
       projectHref: award.project ? localizeHref(`/projects/${award.project}/`, lang) : null,
     };

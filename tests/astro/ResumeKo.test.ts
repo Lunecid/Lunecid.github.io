@@ -38,6 +38,12 @@ describe('ResumeKo', () => {
     expect([...order].sort((a, b) => a - b)).toEqual(order);
     expect(html).toContain('4.0/4.5');
     expect(html).toContain('(졸업 예정)');
+    expect(html).toContain('CDS빅데이터 교육');
+    expect(html).toContain('부산대학교');
+    expect(html).toContain('CCAIM Machine Learning for Healthcare Summer School 2026');
+    expect(html).toMatch(/print__meta">부산대학교<\/p>/);
+    expect(html).not.toMatch(/부산대학교 · /);
+    expect(html).not.toMatch(/print__meta">케임브리지대학교 CCAIM\(Cambridge Centre for AI in Medicine\) · 온라인 참가 · /);
     expect(html).not.toMatch(/<img[\s>]/);
   });
 });

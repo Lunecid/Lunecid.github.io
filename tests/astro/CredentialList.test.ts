@@ -24,9 +24,13 @@ const LANGUAGES: ResumeData['languages'] = [
 const ACTIVITIES: ResumeData['activities'] = [
   {
     id: 'lg-aimers-7',
-    text: { ko: 'LG Aimers 7기 해커톤 참가', en: 'LG Aimers (7th cohort) hackathon — participant' },
+    text: {
+      ko: 'LG Aimers 7기 온라인 해커톤(리조트 식음업장 메뉴 수요 예측) 817팀 중 32위 · 상위 4%',
+      en: 'LG Aimers (7th cohort) online hackathon, resort menu demand forecasting — 32nd of 817 teams (top 4%)',
+    },
     date: '2025-07',
     end: '2025-09',
+    href: 'https://dacon.io/myprofile/530929/competition',
     pdf: { ko: true, en: false, academic: false },
   },
 ];
@@ -59,10 +63,50 @@ describe('CredentialList.astro: one INVENTORY table (P1-9)', () => {
   it('an activity with an end month renders a period in the date column', async () => {
     const fixture = { ...resume, activities: ACTIVITIES };
     const ko = await renderAstro(CredentialList, { props: { lang: 'ko', groups: groupsOf(fixture, 'ko', '2026-01-01') } });
-    expect(ko).toContain('LG Aimers 7기 해커톤 참가');
+    expect(ko).toContain('LG Aimers 7기 온라인 해커톤(리조트 식음업장 메뉴 수요 예측) 817팀 중 32위 · 상위 4%');
+    expect(ko).toMatch(/<a class="creds__ev"[^>]*href="https:\/\/dacon\.io\/myprofile\/530929\/competition"[^>]*>\s*DACON 기록<span class="creds__ev-arrow"[^>]*>↗<\/span>\s*<\/a>/);
     expect(ko).toMatch(/<td class="creds__meta"[^>]*>2025\.07 – 2025\.09<\/td>/);
     const en = await renderAstro(CredentialList, { props: { lang: 'en', groups: groupsOf(fixture, 'en', '2026-01-01') } });
+    expect(en).toMatch(/<a class="creds__ev"[^>]*href="https:\/\/dacon\.io\/myprofile\/530929\/competition"[^>]*>\s*DACON record<span class="creds__ev-arrow"[^>]*>↗<\/span>\s*<\/a>/);
     expect(en).toMatch(/<td class="creds__meta"[^>]*>Jul 2025 – Sep 2025<\/td>/);
     expect(en).toMatch(/<h2[^>]*>Activities, certificates, languages and training<\/h2>/);
+  });
+
+  it('activities without href render text only (no DACON evidence link)', async () => {
+    const { href: _omit, ...withoutHref } = ACTIVITIES[0];
+    const fixture = { ...resume, activities: [withoutHref] };
+    const ko = await renderAstro(CredentialList, { props: { lang: 'ko', groups: groupsOf(fixture, 'ko', '2026-01-01') } });
+    expect(ko).not.toContain('creds__ev');
+    expect(ko).not.toContain('DACON 기록');
+  });
+
+  it('CDS and CCAIM training show name, organiser, period, and no hours text', async () => {
+    const ko = await renderAstro(CredentialList, { props: { lang: 'ko', groups: groupsOf(resume, 'ko', '2026-01-01') } });
+    expect(ko).toContain('CDS빅데이터 교육');
+    expect(ko).toContain('부산대학교');
+    expect(ko).toMatch(/<td class="creds__meta"[^>]*>2024\.07 – 2024\.08<\/td>/);
+    expect(ko).toContain('CCAIM Machine Learning for Healthcare Summer School 2026');
+    expect(ko).toContain('케임브리지대학교 CCAIM(Cambridge Centre for AI in Medicine) · 온라인 참가');
+    expect(ko).toMatch(/<td class="creds__meta"[^>]*>2026\.09<\/td>/);
+    const trainingBlock = ko.match(/<tbody id="training"[\s\S]*?<\/tbody>/)?.[0] ?? '';
+    expect(trainingBlock).not.toMatch(/0시간|undefined| · <\/td>/);
+    const orderKo = ['멀티잇', 'CDS빅데이터', 'OxML', '참여연구원', 'CCAIM'];
+    const positionsKo = orderKo.map((name) => trainingBlock.indexOf(name));
+    expect(positionsKo.every((i) => i >= 0)).toBe(true);
+    expect([...positionsKo].sort((a, b) => a - b)).toEqual(positionsKo);
+
+    const en = await renderAstro(CredentialList, { props: { lang: 'en', groups: groupsOf(resume, 'en', '2026-01-01') } });
+    expect(en).toContain('CDS Big Data Training');
+    expect(en).toContain('Pusan National University');
+    expect(en).toMatch(/<td class="creds__meta"[^>]*>Jul 2024 – Aug 2024<\/td>/);
+    expect(en).toContain('CCAIM Machine Learning for Healthcare Summer School 2026');
+    expect(en).toContain('Cambridge Centre for AI in Medicine (CCAIM), University of Cambridge (online)');
+    expect(en).toMatch(/<td class="creds__meta"[^>]*>Sep 2026<\/td>/);
+    const trainingEn = en.match(/<tbody id="training"[\s\S]*?<\/tbody>/)?.[0] ?? '';
+    expect(trainingEn).not.toMatch(/0 hours|undefined| · <\/td>/);
+    const orderEn = ['Multi-IT', 'CDS Big Data', 'OxML', 'Research Ethics', 'CCAIM'];
+    const positionsEn = orderEn.map((name) => trainingEn.indexOf(name));
+    expect(positionsEn.every((i) => i >= 0)).toBe(true);
+    expect([...positionsEn].sort((a, b) => a - b)).toEqual(positionsEn);
   });
 });

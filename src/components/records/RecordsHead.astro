@@ -20,7 +20,7 @@ interface Props {
   status: string;
   tagline: string;
   documents: { id: string; label: string; href: string }[];
-  contact: { email: string; github: string };
+  contact: { email: string; github: string; dacon: string };
   ids?: { scholar: string | null; orcid: string | null };
 }
 
@@ -31,6 +31,8 @@ const researcherLinks = [
 ].filter((link): link is { label: string; href: string } => link !== null);
 const jumps = [
   { href: '#education', label: t(lang, 'records.education') },
+  // F-098 (b): one Publications jump for PhD readers; keep the other five recruiter links.
+  { href: '#publications', label: lang === 'ko' ? '논문' : 'Publications' },
   { href: '#awards', label: t(lang, 'records.awards') },
   { href: '#skills', label: t(lang, 'records.skills') },
   { href: '#job-fit', label: t(lang, 'jobfit.title') },
@@ -64,6 +66,7 @@ const jumps = [
         <ul class="rhead__contact" role="list">
           <li><a href={`mailto:${contact.email}`}>{contact.email}</a></li>
           <li><a href={contact.github}>GitHub</a></li>
+          <li><a href={contact.dacon}>DACON</a></li>
           {researcherLinks.map((link) => <li><a href={link.href}>{link.label}</a></li>)}
         </ul>
       </div>

@@ -36,79 +36,84 @@ const sizes = wide ? CARTRIDGE_SIZES.wide : CARTRIDGE_SIZES.normal;
 ---
 
 <article class:list={['cart', { 'cart--wide': wide, 'cart--static': !href }]} data-tags={tagKeys.join(' ')}>
-  <div class="cart__shell" aria-hidden="true"></div>
-  <div class:list={['cart__label', { 'cart__label--text': !cover && !chart }]}>
-    {
-      chart ? (
-        <div class:list={['cart__chart', { 'cart__chart--stickered': !!sticker }]}>
-          <AucLabel lang={chart.lang} />
-        </div>
-      ) : cover ? (
-        <Picture
-          class:list={['cart__img', { 'cart__img--contain': coverFit === 'contain', 'cart__img--stickered': !!sticker }]}
-          src={cover}
-          alt=""
-          formats={CARD_FORMATS}
-          fallbackFormat="webp"
-          widths={widths}
-          sizes={sizes}
-          priority={priority}
-          loading={!priority && eager ? 'eager' : undefined}
-          fetchpriority={!priority && eager ? 'low' : undefined}
-          style={`object-position: ${coverPosition}`}
-        />
-      ) : (
-        <div class="cart__plate" aria-hidden="true">
-          {plate && (
-            <Fragment>
-              <span class="cart__plate-id" lang="en">{plate.id}</span>
-              <span class="cart__plate-foot">
-                <span class="cart__plate-period">{plate.period}</span>
-                {plate.tag && (
-                  <span class="cart__plate-tag">
-                    <svg class="cart__plate-icon" viewBox="0 0 16 16" width="14" height="14" aria-hidden="true" focusable="false"><path d="M2 2h6.5L14 7.5 8.5 13 2 6.5z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" /><circle cx="5.2" cy="5.2" r="1.2" fill="currentColor" /></svg>
-                    {plate.tag}
-                  </span>
-                )}
-              </span>
-            </Fragment>
-          )}
-        </div>
-      )
-    }
-    <Heading class="cart__title">{href ? <a class="cart__link" href={href}>{title}</a> : title}</Heading>
-    <p class="cart__meta">{meta}</p>
-    {/* Final fix 2 round 2 item 2: the summary and tags share the label's fourth row (see .cart-grid below). */}
-    <div class="cart__foot">
-    {!href && summary && <p class="cart__summary">{summary}</p>}
-    {/* fix round 1 minor: a real aria-hidden span, not CSS ::after content (some browser/AT pairs do announce
-        generated content, reading a bare "middle dot" between every tag).
-        Fix round 2 item 9: the separator trails its OWN tag (every item but the last), not leads the next one —
-        this list wraps (flex-wrap), and a leading separator ends up as the first thing on the wrapped line
-        (a line starting with a stray "·") whenever the wrap happens to fall right before it. Trailing keeps the
-        dot attached to the line it is ending, exactly like the original CSS ::after this replaced did. */}
-    {
-      shownTags.length > 0 && (
-        <ul class="cart__tags" role="list">
-          {shownTags.map((tag, i) => <li>{tag}{i < shownTags.length - 1 && <span class="cart__tag-sep" aria-hidden="true">·</span>}</li>)}
-        </ul>
-      )
-    }
+  {/* F-008: lift moves .cart__body only; .cart and .cart__link::after stay still so the hit box does not bounce. */}
+  <div class="cart__body">
+    <div class="cart__shell" aria-hidden="true"></div>
+    <div class:list={['cart__label', { 'cart__label--text': !cover && !chart }]}>
+      {
+        chart ? (
+          <div class:list={['cart__chart', { 'cart__chart--stickered': !!sticker }]}>
+            <AucLabel lang={chart.lang} />
+          </div>
+        ) : cover ? (
+          <Picture
+            class:list={['cart__img', { 'cart__img--contain': coverFit === 'contain', 'cart__img--stickered': !!sticker }]}
+            src={cover}
+            alt=""
+            formats={CARD_FORMATS}
+            fallbackFormat="webp"
+            widths={widths}
+            sizes={sizes}
+            priority={priority}
+            loading={!priority && eager ? 'eager' : undefined}
+            fetchpriority={!priority && eager ? 'low' : undefined}
+            style={`object-position: ${coverPosition}`}
+          />
+        ) : (
+          <div class="cart__plate" aria-hidden="true">
+            {plate && (
+              <Fragment>
+                <span class="cart__plate-id" lang="en">{plate.id}</span>
+                <span class="cart__plate-foot">
+                  <span class="cart__plate-period">{plate.period}</span>
+                  {plate.tag && (
+                    <span class="cart__plate-tag">
+                      <svg class="cart__plate-icon" viewBox="0 0 16 16" width="14" height="14" aria-hidden="true" focusable="false"><path d="M2 2h6.5L14 7.5 8.5 13 2 6.5z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" /><circle cx="5.2" cy="5.2" r="1.2" fill="currentColor" /></svg>
+                      {plate.tag}
+                    </span>
+                  )}
+                </span>
+              </Fragment>
+            )}
+          </div>
+        )
+      }
+      <Heading class="cart__title">{href ? <a class="cart__link" href={href}>{title}</a> : title}</Heading>
+      <p class="cart__meta">{meta}</p>
+      {/* Final fix 2 round 2 item 2: the summary and tags share the label's fourth row (see .cart-grid below). */}
+      <div class="cart__foot">
+      {!href && summary && <p class="cart__summary">{summary}</p>}
+      {/* fix round 1 minor: a real aria-hidden span, not CSS ::after content (some browser/AT pairs do announce
+          generated content, reading a bare "middle dot" between every tag).
+          Fix round 2 item 9: the separator trails its OWN tag (every item but the last), not leads the next one —
+          this list wraps (flex-wrap), and a leading separator ends up as the first thing on the wrapped line
+          (a line starting with a stray "·") whenever the wrap happens to fall right before it. Trailing keeps the
+          dot attached to the line it is ending, exactly like the original CSS ::after this replaced did. */}
+      {
+        shownTags.length > 0 && (
+          <ul class="cart__tags" role="list">
+            {shownTags.map((tag, i) => <li>{tag}{i < shownTags.length - 1 && <span class="cart__tag-sep" aria-hidden="true">·</span>}</li>)}
+          </ul>
+        )
+      }
+      </div>
     </div>
+    {
+      sticker && (
+        <p class:list={['cart__sticker', `cart__sticker--${sticker.kind}`]}>
+          <span lang={sticker.kind === 'oral' ? 'en' : undefined}>{sticker.text}</span>
+          {sticker.sr && <span class="sr-only">{` ${sticker.sr}`}</span>}
+        </p>
+      )
+    }
   </div>
-  {
-    sticker && (
-      <p class:list={['cart__sticker', `cart__sticker--${sticker.kind}`]}>
-        <span lang={sticker.kind === 'oral' ? 'en' : undefined}>{sticker.text}</span>
-        {sticker.sr && <span class="sr-only">{` ${sticker.sr}`}</span>}
-      </p>
-    )
-  }
 </article>
 
 <style>
-  .cart { position: relative; isolation: isolate; padding: 22px 14px 34px; transition: transform .25s var(--ease-out); }
+  .cart { position: relative; isolation: isolate; }
   .cart[hidden] { display: none; }
+  /* F-008: padding and lift live on the body so the article hit box (and ::after) never moves. */
+  .cart__body { position: relative; padding: 22px 14px 34px; transition: transform .25s var(--ease-out); }
   .cart__shell {
     position: absolute; inset: 0; z-index: -1;
     background: #C9CED6; border-radius: 10px 10px 6px 6px; box-shadow: inset 0 -26px 0 #AEB4BE;
@@ -197,13 +202,23 @@ const sizes = wide ? CARTRIDGE_SIZES.wide : CARTRIDGE_SIZES.normal;
     .cart__label--text .cart__title { font-size: 16px; }
   }
   @media (hover: hover) {
-    .cart:not(.cart--static):hover { transform: translateY(-16px); }
+    .cart:not(.cart--static):hover .cart__body,
+    .cart:not(.cart--static):focus-within .cart__body { transform: translateY(-16px); }
   }
-  .cart:not(.cart--static):focus-within { transform: translateY(-16px); }
-  /* reduced motion: no lift (the transform never changes, so nothing animates) */
-  :global(:root[data-motion="reduce"]) .cart:hover,
-  :global(:root[data-motion="reduce"]) .cart:focus-within { transform: none; }
+  /* reduced motion: no lift; shell wash still signals hover */
+  :global(:root[data-motion="reduce"]) .cart:hover .cart__body,
+  :global(:root[data-motion="reduce"]) .cart:focus-within .cart__body { transform: none; }
   :global(:root[data-motion="reduce"]) .cart:not(.cart--static):hover .cart__shell { background: #D5D9E0; }
+  /* F-069: no-JS twin — OS reduce without data-motion (colour literal stays in this component, not base.css). */
+  @media (prefers-reduced-motion: reduce) {
+    :global(html:not(.js)) .cart:hover .cart__body,
+    :global(html:not(.js)) .cart:focus-within .cart__body { transform: none; }
+    :global(html:not(.js)) .cart:not(.cart--static):hover .cart__shell { background: #D5D9E0; }
+  }
+  /* G-014 / N14: cartridge edge survives forced colours (shell fill is otherwise flattened). */
+  @media (forced-colors: active) {
+    .cart__shell { border: 1px solid CanvasText; }
+  }
 </style>
 
 <style is:global>
@@ -215,6 +230,7 @@ const sizes = wide ? CARTRIDGE_SIZES.wide : CARTRIDGE_SIZES.normal;
      cards); the grid's negative margin takes the last row's back. */
   .cart-grid { display: grid; grid-template-columns: minmax(0, 1fr); column-gap: 26px; row-gap: 0; padding-top: 18px; margin-bottom: -26px; }
   .cart-grid > .cart { grid-row: span 4; display: grid; grid-template-rows: subgrid; row-gap: 0; margin-bottom: 26px; }
+  .cart-grid > .cart > .cart__body { grid-row: 1 / -1; display: grid; grid-template-rows: subgrid; row-gap: 0; min-width: 0; }
   @media (min-width: 734px) {
     .cart-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .cart-grid > .cart--wide { grid-column: span 2; }

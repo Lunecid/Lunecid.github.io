@@ -299,6 +299,28 @@ describe('project case-study files', () => {
     // Owner, 2026-09-28: the field visits are real (photos), so the survey sentence stays (item 18 above).
   });
 
+  it('KickKick figure 1 caption/alt name the dashboard total only (no "점수" / score composition claim)', () => {
+    const ko = data('ko', 'kickick-park');
+    const en = data('en', 'kickick-park');
+    const fig1Ko = ko.figures[0];
+    const fig1En = en.figures[0];
+    expect(fig1Ko.caption).not.toContain('점수');
+    expect(fig1Ko.alt).not.toContain('점수');
+    expect(fig1Ko.caption).toMatch(/합계/);
+    expect(fig1Ko.caption).toMatch(/역삼2동/);
+    expect(fig1Ko.caption).toMatch(/M\s*=\s*백만|M=백만/);
+    expect(fig1En.caption).not.toMatch(/\bscore\b/i);
+    expect(fig1En.alt).not.toMatch(/\bscore\b/i);
+    expect(fig1En.caption).toMatch(/total|합계/i);
+    expect(fig1En.caption).toMatch(/Yeoksam 2-dong/);
+    expect(fig1En.caption).toMatch(/M\s*=\s*million/i);
+    // Figure 2: "합계 점수" → "합계"
+    expect(ko.figures[1].caption).not.toContain('합계 점수');
+    expect(ko.figures[1].alt).not.toContain('합계 점수');
+    expect(en.figures[1].caption).not.toMatch(/total score/i);
+    expect(en.figures[1].alt).not.toMatch(/total score/i);
+  });
+
   it("KickKick Park and the youth start-up case split the team's tools from mine (D-9)", () => {
     for (const lang of LANGS) {
       const d = data(lang, 'kickick-park');

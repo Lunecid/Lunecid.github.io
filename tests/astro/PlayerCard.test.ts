@@ -25,7 +25,7 @@ describe('PlayerCard.astro', () => {
     const ko = await renderAstro(PlayerCard, { props: PROPS });
     expect(ko).toMatch(/<p class="player-card__class" lang="ko"[^>]*>게임 데이터 분석가 · 연구자<\/p>/);
     expect(ko.match(/<li class="badge badge--tier"/g)).toHaveLength(2);
-    expect(ko).toContain('IEEE CoG 2026 ORAL');
+    expect(ko).toMatch(/<li class="badge badge--tier" lang="en"[^>]*>[\s\S]*IEEE CoG 2026 ORAL/);
     expect(ko).toContain('최우수상 ×2');
     expect(ko).not.toMatch(/\d{3},\d{3}/); // no granular-number headline on the player card
 

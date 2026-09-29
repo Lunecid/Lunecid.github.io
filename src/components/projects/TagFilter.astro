@@ -99,8 +99,8 @@ const countTemplateOne = ui[lang]['projects.countOne'];
     const hadInvalidParam = rawParam !== null && !validKeys.has(rawParam);
     apply(fromUrl(), { updateUrl: hadInvalidParam, announce: false });
     // Fix round 2 item 8: only announce (and only re-apply at all) when the tag this popstate lands on actually
-    // differs from the one already showing — a #hash-only history entry (e.g. the skip link) fires popstate too,
-    // but ?tag= never changed, so there is nothing to announce.
+    // differs from the one already showing — a #hash-only history entry (e.g. the skip link, or ImageViewer's
+    // `#view-<id>`) fires popstate too, but ?tag= never changed, so there is nothing to announce.
     window.addEventListener('popstate', () => {
       const next = fromUrl();
       if (next === current) return;
@@ -120,7 +120,11 @@ const countTemplateOne = ui[lang]['projects.countOne'];
     font: 600 13px/1 var(--font-sans); cursor: pointer;
     transition: color var(--dur-hover) linear, background-color var(--dur-hover) linear, border-color var(--dur-hover) linear, transform var(--dur-press) var(--ease-out);
   }
-  .tag-filter__btn:hover { border-color: var(--accent); }
+  @media (hover: hover) {
+    .tag-filter__btn:hover { border-color: var(--accent); }
+  }
   .tag-filter__btn[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
   .tag-filter__btn:active { transform: scale(.96); }
+  /* F-022: no scale under reduce; pressed/aria colour states stay. */
+  :global(:root[data-motion="reduce"]) .tag-filter__btn:active { transform: none; }
 </style>

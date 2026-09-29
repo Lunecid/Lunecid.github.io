@@ -139,9 +139,22 @@ test.describe('P1-7: case-study figures in one reading column, after the paragra
       expect(f.x + f.width / 2, 'centred on the reading column').toBeCloseTo(p.x + p.width / 2, 0);
     }
     await expect(page.locator('#figures')).toHaveCount(0); // every figure is inline
-    for (const selector of ['#for-game-teams', '#links .sec-head', '#links .plinks__list']) {
+    // F-040 / decision 9 (b): at ≥1068 the audience band breaks out beyond the reading column.
+    const audience = await box(page.locator('.audience'));
+    expect(audience.x + audience.width / 2, 'audience centred on the reading column').toBeCloseTo(p.x + p.width / 2, 0);
+    expect(audience.width, 'audience wider than the prose column').toBeGreaterThan(p.width);
+    const pageBox = await box(page.locator('.pd.container, .container.container--hud').first());
+    expect(audience.x, 'audience stays inside the page container').toBeGreaterThanOrEqual(pageBox.x - 0.5);
+    expect(audience.x + audience.width, 'audience stays inside the page container').toBeLessThanOrEqual(pageBox.x + pageBox.width + 0.5);
+    for (const selector of ['#links .sec-head', '#links .plinks__list']) {
       expect((await box(page.locator(selector))).x, `${selector} shares the prose's left edge`).toBeCloseTo(p.x, 0);
     }
+  });
+
+  test('school-zone below 1068: audience shares the prose\'s left edge', async ({ page }) => {
+    await open(page, '/projects/school-zone-blindspots/', 1024);
+    const p = await box(page.locator('.prose.read > p').first());
+    expect((await box(page.locator('#for-game-teams'))).x, '#for-game-teams shares the prose\'s left edge').toBeCloseTo(p.x, 0);
   });
 
   for (const route of ['/projects/youth-startup-location/', '/en/projects/youth-startup-location/']) {
@@ -232,7 +245,7 @@ test.describe('P2-19 / P2-22: the records head and the photo', () => {
     expect(photo.width).toBeLessThanOrEqual(120);
     expect(hello.x).toBeGreaterThan(photo.x + photo.width);
     await expect(page.locator('#profile .doc-btns a')).toHaveCount(3);
-    await expect(page.locator('#profile .rnav__link')).toHaveText(['학력', '수상', '기술', '지원 요건 대응', 'PDF']);
+    await expect(page.locator('#profile .rnav__link')).toHaveText(['학력', '논문', '수상', '기술', '지원 요건 대응', 'PDF']);
     // the head repeats no education list (QUEST LOG below is the only one)
     await expect(page.locator('#profile')).not.toContainText('나노메카트로닉스');
     expect(await page.locator('.rhead__photo').evaluate((el) => getComputedStyle(el).borderTopWidth)).toBe('1px');

@@ -23,11 +23,14 @@ const IMAGES = {
   'kill-gap': { src: killGap, copy: figureCopy.killGap, label: 'KILL-GAP KDE' },
   'label-horizon': { src: labelHorizon, copy: figureCopy.labelHorizon, label: 'ENGAGEMENT WINDOWS' },
 } as const;
-const fullLinks = Object.fromEntries(
+const fullImages = Object.fromEntries(
   await Promise.all(
-    Object.entries(IMAGES).map(async ([key, image]) => [key, (await getImage({ src: image.src, width: Math.min(1600, sourceSize(image.src).width), format: 'webp' })).src] as const),
+    Object.entries(IMAGES).map(async ([key, image]) => {
+      const full = await getImage({ src: image.src, width: Math.min(1600, sourceSize(image.src).width), format: 'webp' });
+      return [key, full] as const;
+    }),
   ),
-) as Record<keyof typeof IMAGES, string>;
+) as Record<keyof typeof IMAGES, Awaited<ReturnType<typeof getImage>>>;
 const fullLabel = t(lang, 'action.fullSize');
 // Final fix 2 item 13: the first image figure is the largest thing in the first desktop screen of /research/ (its LCP at
 // 1440x900 and 2560x1440), so it loads eagerly; the rest stay lazy. No fetchpriority: on phones it is below the fold,
@@ -58,14 +61,25 @@ const firstImageFigure = interests.find((item) => item.figure !== 'auc')?.figure
                 alt={IMAGES[item.figure].copy.alt[lang]}
                 formats={['avif', 'webp']}
                 fallbackFormat="webp"
-                widths={fitWidths([360, 540, 720], sourceSize(IMAGES[item.figure].src).width)}
+                widths={fitWidths([360, 400, 540, 720], sourceSize(IMAGES[item.figure].src).width)}
                 sizes={INTEREST_FIGURE_SIZES}
                 loading={item.figure === firstImageFigure ? 'eager' : 'lazy'}
               />
               <figcaption class="interests__cap">
                 <span class="interests__strip" lang="en"><span class="interests__strip-tag">FIG</span> · {IMAGES[item.figure].label}</span>
                 <span class="interests__cap-text">{IMAGES[item.figure].copy.caption[lang]}</span>
-                <a class="interests__full" href={fullLinks[item.figure]} aria-label={`${fullLabel} · ${IMAGES[item.figure].label}`}>{fullLabel}</a>
+                <a
+                  class="interests__full"
+                  href={fullImages[item.figure].src}
+                  aria-label={`${fullLabel} · ${IMAGES[item.figure].label}`}
+                  aria-haspopup="dialog"
+                  data-viewer="figures"
+                  data-viewer-w={fullImages[item.figure].attributes.width}
+                  data-viewer-h={fullImages[item.figure].attributes.height}
+                  data-viewer-label={`FIG · ${IMAGES[item.figure].label}`}
+                  data-viewer-caption={IMAGES[item.figure].copy.caption[lang]}
+                  data-viewer-alt={IMAGES[item.figure].copy.alt[lang]}
+                >{fullLabel}</a>
               </figcaption>
             </figure>
           )}
@@ -85,7 +99,14 @@ const firstImageFigure = interests.find((item) => item.figure !== 'auc')?.figure
      a 280px box to keep its text at 12px or more), the text column from 734px, its own column from 1068px. */
   .interests__fig { grid-column: 1 / -1; min-width: 0; margin: 0; padding: 12px; background: var(--read-card); }
   .interests__fig--chart { padding-inline: 0; }
-  .interests__fig--chart .interests__strip { padding-inline: 12px; }
+  /* F-066: below 734, inset caption / table / strip; SVG scroll boxes stay edge-to-edge. */
+  @media (max-width: 733.98px) {
+    .interests__fig--chart .interests__strip,
+    .interests__fig--chart :global(.chart__caption),
+    .interests__fig--chart :global(.chart__table) {
+      padding-inline: 12px;
+    }
+  }
   .interests__fig :global(img) { display: block; width: 100%; height: auto; }
   .interests__fig--chart :global(.chart__scroll) { border: 0; }
   /* the compact dot plot drawn at most ~1.15× (labels ~15px) so this row matches the two image rows */
@@ -100,7 +121,6 @@ const firstImageFigure = interests.find((item) => item.figure !== 'auc')?.figure
   @media (min-width: 734px) {
     .interests__fig { grid-column: 2; max-width: 560px; }
     .interests__fig--chart { padding-inline: 12px; }
-    .interests__fig--chart .interests__strip { padding-inline: 0; }
   }
   @media (min-width: 1068px) {
     .interests__row { grid-template-columns: 4.5em minmax(0, 1fr) minmax(0, 400px); column-gap: 32px; align-items: start; }

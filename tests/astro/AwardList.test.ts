@@ -34,6 +34,7 @@ describe('AwardList.astro', () => {
     expect(triggers.map((m) => m[1])).toEqual(REFS.map((r) => r.ref));
     for (const m of triggers) {
       expect(m[0]).toContain('aria-haspopup="dialog"');
+      expect(m[0]).toContain('data-viewer="certificates"');
       expect(attr(m[0], 'href')).toBe(CERT_HREFS[m[1] as CertificateId]);
     }
     expect(html.match(/상장 보기/g)).toHaveLength(3);

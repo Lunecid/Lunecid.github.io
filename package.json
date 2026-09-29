@@ -20,7 +20,7 @@
     "test:ops": "node --test \"tests/ops/*.test.mjs\"",
     "test:e2e": "playwright test",
     "test:links": "linkinator dist --config linkinator.config.json",
-    "test:links:external": "linkinator https://lunecid.github.io --recurse --verbosity error",
+    "test:links:external": "linkinator https://lunecid.github.io/ --config linkinator.external.json",
     "test:lh": "lhci autorun && lhci autorun --config=lighthouserc.desktop.json",
     "verify": "npm run check && npm test && npm run build && npm run build:pdf && npm run test:ops && npm run test:e2e && npm run test:links"
   },

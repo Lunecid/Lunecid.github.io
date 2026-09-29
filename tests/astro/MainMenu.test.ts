@@ -50,7 +50,9 @@ describe('MainMenu.astro', () => {
     expect(items).toHaveLength(4);
     expect(items[0]).toContain('data-selected');
     expect(items.slice(1).some((tag) => tag.includes('data-selected'))).toBe(false);
-    expect(html).toContain('League of Legends engagement prediction · PUBG survival model');
+    // F-029: caption is middot nowrap units; visible text stays the same.
+    expect(html).toMatch(/mm__cap-part[^>]*>League of Legends engagement prediction ·</);
+    expect(html).toMatch(/mm__cap-part[^>]*>PUBG survival model</);
     expect(html).not.toContain('aria-current'); // ▶ is data-selected, not the current page
   });
 

@@ -54,3 +54,54 @@ test('LCP images are eager with fetchpriority high; the other cartridges stay la
   await page.goto('/player-log/');
   await expect(page.locator('.mcard__photo img')).toHaveAttribute('loading', 'eager');
 });
+
+// N06 code parts: duplicate alt cleared; caption inset; srcset ladders near 1x slot.
+test.describe('N06: research figures code parts (F-057, F-066, F-081)', () => {
+  test('/research/: Fig. 1 alt appears once (pub thumb is decorative)', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/research/');
+    const alts = await page.locator('img[alt]').evaluateAll((imgs) =>
+      imgs
+        .map((img) => img.getAttribute('alt') ?? '')
+        .filter((a) => /Figure 1 of the paper|\uB17C\uBB38 \uADF8\uB9BC 1/.test(a)),
+    );
+    // Publication thumb is alt=""; the interest-row label-horizon keeps the long alt once.
+    expect(alts.length, alts.join(' | ')).toBe(1);
+    await expect(page.locator('.pub__media img')).toHaveAttribute('alt', '');
+  });
+
+  test('at 375 chart caption starts 12px inside the frame', async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 812 });
+    await page.goto('/research/');
+    const report = await page.evaluate(() => {
+      const fig = document.querySelector('.interests__fig--chart');
+      const cap = fig?.querySelector('.chart__caption');
+      if (!fig || !cap) return { ok: false, reason: 'missing' };
+      const fr = fig.getBoundingClientRect();
+      const text = cap.querySelector('.chart__caption-text') ?? cap;
+      const cr = text.getBoundingClientRect();
+      const inset = Math.round(cr.left - fr.left);
+      return { ok: inset >= 11 && inset <= 14, inset };
+    });
+    expect(report.ok, JSON.stringify(report)).toBe(true);
+  });
+
+  test('at 1440 DPR1 figure currentSrc natural width / slot <= 1.15', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/research/', { waitUntil: 'networkidle' });
+    const report = await page.evaluate(async () => {
+      const imgs = [...document.querySelectorAll('.interests__fig img')] as HTMLImageElement[];
+      await Promise.all(
+        imgs.map((img) => (img.complete ? Promise.resolve() : new Promise((r) => { img.onload = () => r(null); }))),
+      );
+      return imgs.map((img) => {
+        const slot = img.getBoundingClientRect().width;
+        const natural = img.naturalWidth;
+        return { slot, natural, ratio: slot > 0 ? natural / slot : 0, src: img.currentSrc };
+      });
+    });
+    for (const row of report) {
+      expect(row.ratio, JSON.stringify(row)).toBeLessThanOrEqual(1.15);
+    }
+  });
+});

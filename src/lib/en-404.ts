@@ -1,7 +1,7 @@
 // src/lib/en-404.ts — inline page-end script for src/pages/404.astro (P2-15, fix round 1 item 5).
 // GitHub Pages serves this one dist/404.html for every unmatched path, ko or en, always rendered in Korean; this
 // script rewrites it to the English 1:1 equivalent when the attempted path started with /en/.
-// The emitted script is self-contained, like head-init.ts and cert-queue.ts: no runtime imports, so 404.astro
+// The emitted script is self-contained, like head-init.ts and viewer-queue.ts: no runtime imports, so 404.astro
 // inlines it with <script is:inline set:html={EN_404_SCRIPT} />. It is deliberately NOT an ES module (Astro's own
 // <script> tags in a component become type="module", which defers execution until after the document has fully
 // parsed — long enough for the browser to paint the Korean version first, a visible flash). A plain classic script

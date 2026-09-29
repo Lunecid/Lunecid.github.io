@@ -8,10 +8,12 @@ import SectionHead from '../components/hud/SectionHead.astro';
 import InterestCards from '../components/research/InterestCards.astro';
 import InProgressList from '../components/research/InProgressList.astro';
 import PublicationItem from '../components/research/PublicationItem.astro';
+import ImageViewer from '../islands/ImageViewer';
 import { researchPage } from '../data/research-page';
 import { PAGE_META } from '../data/copy/pages';
 import { getPublications, toPaperCard } from '../lib/publications';
 import type { Lang } from '../i18n/ui';
+import { ui } from '../i18n/ui';
 import { t } from '../i18n/utils';
 import { ACADEMIC_CV_HREF } from '../config';
 
@@ -65,6 +67,16 @@ const forLabs = researchPage.forLabs;
       </div>
     </div>
   </section>
+  <ImageViewer
+    client:idle
+    labels={{
+      dialog: t(lang, 'modal.viewer'),
+      close: t(lang, 'action.close'),
+      previous: t(lang, 'viewer.previous'),
+      next: t(lang, 'viewer.next'),
+      counter: ui[lang]['viewer.counter'],
+    }}
+  />
 </BaseLayout>
 
 <style>

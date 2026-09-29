@@ -13,13 +13,13 @@ teamTools: ['scikit-learn', 'LightGBM', 'XGBoost', 'QGIS', 'Streamlit'] # D-9: t
 tags: ['머신러닝', '공공데이터', '시각화']
 cover:
   src: '../../../assets/projects/youth-startup-location/cluster-zscore-heatmap.webp'
-  alt: '군집별 핵심 변수 Z-score 히트맵. 군집 1은 야간 유동인구가, 군집 2는 중장년 비율과 경쟁 강도가 높습니다.'
+  alt: '군집별 핵심 변수 Z-score 히트맵. 군집 0은 지표가 평균 근처, 군집 1은 야간 유동인구가, 군집 2는 중장년 비율과 경쟁 강도가, 군집 3은 유동·주거 비율이 높습니다.'
   label: 'CLUSTER PROFILES'
   fit: contain # P1-6: the heatmap (the old PCA scatter had a Plotly tooltip baked in), whole, never cut mid-line
 figures:
   - src: '../../../assets/projects/youth-startup-location/cluster-zscore-heatmap.webp'
-    alt: '군집별 핵심 변수 Z-score 히트맵. 군집 1은 야간 유동인구가, 군집 2는 중장년 비율과 경쟁 강도가 높습니다.'
-    caption: '군집별 핵심 변수의 Z-score. 붉을수록 평균보다 높습니다. 이 차이를 보고 네 상권 유형의 이름을 붙였습니다.'
+    alt: '군집별 핵심 변수 Z-score 히트맵. 군집 0은 지표가 평균 근처, 군집 1은 야간 유동인구가, 군집 2는 중장년 비율과 경쟁 강도가, 군집 3은 유동·주거 비율이 높습니다.'
+    caption: '군집별 핵심 변수의 Z-score. 붉을수록 평균보다 높습니다. 군집 0=일반 주거지역, 1=번화가·야간, 2=중장년층 중심, 3=주거·교통 허브.'
     inlineAfter: '그림 1'
 links:
   github: 'https://github.com/Lunecid/busan-youth-startup-location'
@@ -61,12 +61,12 @@ status: 'published'
 
 부산의 외식 상권은 성격이 다른 네 유형으로 나뉘었습니다(그림 1).
 
-| 유형 | 특징 | 제안 업종 |
-|---|---|---|
-| 일반 주거지역 상권 | 모든 지표가 평균 이하, 경쟁이 약함 | 배달 전문점, 가족 단위 생활밀착형 식당 |
-| 번화가·야간 상권 | 밤 10시–새벽 1시 유동인구와 청년 비율이 높음 | 주점·바, 야식, 패스트푸드 |
-| 중장년층 중심 상권 | 중장년 비율과 경쟁 강도가 높음 | 건강식·전통 음식점(차별화 필요) |
-| 주거·교통 허브 상권 | 상주인구 대비 유동인구 비율만 높음 | 출퇴근 시간대 브런치 카페, 픽업·간편식 |
+| 유형 | 군집 | 특징 | 제안 업종 |
+|---|---|---|---|
+| 일반 주거지역 상권 | 0 | 모든 지표가 평균 이하, 경쟁이 약함 | 배달 전문점, 가족 단위 생활밀착형 식당 |
+| 번화가·야간 상권 | 1 | 밤 10시–새벽 1시 유동인구와 청년 비율이 높음 | 주점·바, 야식, 패스트푸드 |
+| 중장년층 중심 상권 | 2 | 중장년 비율과 경쟁 강도가 높음 | 건강식·전통 음식점(차별화 필요) |
+| 주거·교통 허브 상권 | 3 | 상주인구 대비 유동인구 비율만 높음 | 출퇴근 시간대 브런치 카페, 픽업·간편식 |
 
 매출 예측은 로그 변환한 LightGBM이 가장 잘 맞았습니다. Potential Gap이 큰 동네는 사하구 하단2동, 부산진구 부전1동, 북구 구포1동 순이었습니다.
 

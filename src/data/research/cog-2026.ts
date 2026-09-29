@@ -29,18 +29,19 @@ export const figureCopy: Readonly<Record<'aucOverall' | 'killGap' | 'labelHorizo
       en: 'Test AUC on patch 15.16, mean of three seeds. The vertical line marks chance (0.5).',
     },
     alt: {
-      ko: '모델별 AUC 점 그래프. LightGBM 0.675, 같은 입력의 MLP 0.626, Bi-GRU 0.581, 결합 모델 0.581, Transformer 0.576, 교차 어텐션 0.571, ST-GNN 0.569, GraphSAGE 0.569. 모두 우연 수준 0.5보다 높다.',
+      ko: '모델별 AUC 점 그래프. LightGBM 0.675, 같은 입력의 MLP 0.626, Bi-GRU 0.581, 결합 모델 0.581, Transformer 0.576, 교차 어텐션 0.571, ST-GNN 0.569, GraphSAGE 0.569. 모두 우연 수준 0.5보다 높습니다.',
       en: 'Dot plot of AUC by model: LightGBM 0.675, MLP on the same input 0.626, Bi-GRU 0.581, layered fusion 0.581, Transformer 0.576, cross-attention 0.571, ST-GNN 0.569, GraphSAGE 0.569. All are above chance at 0.5.',
     },
   },
   // kill-gap-kde.webp (follow-up work, not in the CoG paper): caption/alt from the removed case-study Markdown (D-15).
+  // Caption numbers are the labels printed on the figure itself (shaded ARI band, valley G, modes, n).
   killGap: {
     caption: {
-      ko: '후속 연구: 세 패치에서 이어진 킬 사이 간격의 분포(로그 척도)입니다.',
-      en: 'Follow-up work: the distribution of gaps between consecutive kills across three patches (log scale).',
+      ko: '후속 연구: 세 패치에서 이어진 킬 사이 간격(n = 10,417,458)의 로그 척도 분포입니다. 봉우리는 5.72초와 62.73초이고, 그 사이 골짜기 G는 13.72초입니다. 음영 구간은 ARI ≥ 0.9인 10–18초입니다.',
+      en: 'Follow-up work: the distribution of inter-kill gaps across three patches (n = 10,417,458, log scale). Modes at 5.72 s and 62.73 s; valley G at 13.72 s. The shaded band is ARI ≥ 0.9 (10–18 s).',
     },
     alt: {
-      ko: '킬 간격 분포 곡선. 5.72초와 62.73초에 두 봉우리가 있고 그 사이 13.72초에 골짜기가 있다. 10초에서 18초 사이가 음영으로 표시되어 있다.',
+      ko: '킬 간격 분포 곡선. 5.72초와 62.73초에 두 봉우리가 있고 그 사이 13.72초에 골짜기가 있습니다. 10초에서 18초 사이가 음영으로 표시되어 있습니다.',
       en: 'Density curve of inter-kill intervals with peaks at 5.72 and 62.73 seconds and a valley at 13.72 seconds. The band from 10 to 18 seconds is shaded.',
     },
   },

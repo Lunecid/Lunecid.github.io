@@ -53,17 +53,26 @@
   font: 800 14px/1 var(--font-sans); text-decoration: none; cursor: pointer;
   transition: color var(--dur-hover) linear, transform var(--dur-press) var(--ease-out);
 }
-.btn:active { transform: scale(.96); }
+.btn:active { transform: scale(.96); --cut-fill: var(--accent-wash-strong); }
 .btn--fill { color: var(--accent-ink); --cut-fill: var(--accent); }
-.btn--fill:hover { --cut-fill: var(--accent-hover); }
 .btn--line { color: var(--accent); --cut-line: var(--accent); --cut-fill: var(--accent-wash); }
-.btn--line:hover { --cut-fill: var(--accent-wash-strong); }
 .btn--sm { min-height: 36px; padding: 0 14px; font-size: 13px; } /* add .hit when it stands alone */
+/* F-022: under reduce, drop only the scale; the :active fill change above still holds. */
 :root[data-motion="reduce"] .btn:active { transform: none; }
 /* Light areas never use --accent (spec §4): buttons there switch to --accent-deep. */
 .read .btn--fill, .read-section .btn--fill { color: var(--read-card); --cut-fill: var(--accent-deep); }
 .read .btn--line, .read-section .btn--line { color: var(--accent-deep); --cut-line: var(--accent-deep); --cut-fill: var(--read-card); }
-.read .btn--line:hover, .read-section .btn--line:hover { --cut-fill: var(--read-bg); }
+/* F-021 / G-016: colour hover only when the device can hover; touch keeps :active and aria states. */
+@media (hover: hover) {
+  .btn--fill:hover { --cut-fill: var(--accent-hover); text-decoration: underline; text-underline-offset: .2em; }
+  /* Stronger wash than idle --accent-wash, but not a full accent fill (primary stays distinct). */
+  .btn--line:hover { --cut-fill: var(--hud-line-strong); }
+  /* G-016: beat the light-band idle rules (same specificity as .read .btn--fill) by placing after them. */
+  .read .btn--fill:hover, .read-section .btn--fill:hover { --cut-fill: var(--read-text); }
+  .read .btn--line:hover, .read-section .btn--line:hover { --cut-fill: var(--accent-deep); color: var(--read-card); }
+}
+.read .btn--fill:active, .read-section .btn--fill:active { --cut-fill: var(--read-text); }
+.read .btn--line:active, .read-section .btn--line:active { --cut-fill: var(--accent-deep); color: var(--read-card); }
 
 /* ── HUD label: "[ ■ ] ENGLISH", a numberless bracket mark (D-8: [ NN ] numbers only in the nav) ── */
 .hud-label { font: 600 var(--fs-label)/1.5 var(--font-mono); letter-spacing: var(--ls-label); color: var(--hud-label); text-wrap: balance; }
@@ -99,6 +108,8 @@
 /* ── Badges ── */
 .badge { display: inline-flex; align-items: center; gap: 6px; padding: 3px 8px; font: 800 var(--fs-label)/1.4 var(--font-mono); letter-spacing: 0; }
 .badge--tier { color: var(--gold); border: 1px solid var(--gold-line); background: var(--gold-wash); }
+/* F-002: Hangul in gold tier badges uses sans so middot/space advances stay narrow; Latin badges keep mono via lang=en. */
+.badge--tier:lang(ko) { font-family: var(--font-sans); letter-spacing: 0; }
 .badge--kw { color: var(--hud-text); border: 1px solid var(--hud-line); }
 
 /* ── Panel (e.g. NOW PLAYING); combine with .bracket.bracket--sm for corners ── */
@@ -111,5 +122,31 @@
   font: 700 15px/1.3 var(--font-sans); color: var(--accent); text-decoration: none;
   transition: color var(--dur-hover) linear;
 }
-.sec-more:hover { color: var(--accent-hover); text-decoration: underline; text-underline-offset: .2em; }
+@media (hover: hover) {
+  .sec-more:hover { color: var(--accent-hover); text-decoration: underline; text-underline-offset: .2em; }
+}
 .read .sec-more, .read-section .sec-more { color: var(--accent-deep); }
+
+/* ── Forced colours (N14 / G-012..G-014): system borders and Highlight selected states. ── */
+@media (forced-colors: active) {
+  .cut { border: 1px solid ButtonText; }
+  a.cut { border-color: LinkText; }
+  /* 2px border on filled CTAs; shrink padding 1px so the box stays the same size under border-box. */
+  .btn--fill.cut { border-width: 2px; padding-inline: 21px; }
+  .btn--fill.btn--sm.cut { padding-inline: 13px; }
+  .tag-filter__btn[aria-pressed="true"],
+  .char-stage__btn[aria-pressed="true"],
+  .fg__tab[aria-selected="true"] {
+    forced-color-adjust: none;
+    background: Highlight;
+    color: HighlightText;
+    border-color: Highlight;
+  }
+  .tag-filter__btn[aria-pressed="true"] b,
+  .tag-filter__btn[aria-pressed="true"] small,
+  .char-stage__btn[aria-pressed="true"] b,
+  .char-stage__btn[aria-pressed="true"] small,
+  .fg__tab[aria-selected="true"] b,
+  .fg__tab[aria-selected="true"] small { color: HighlightText; }
+  .hud-label__sq { forced-color-adjust: none; background: CanvasText; }
+}

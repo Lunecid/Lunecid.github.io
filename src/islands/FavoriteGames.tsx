@@ -121,7 +121,10 @@ export default function FavoriteGames({ lang, heading, games, initialId, account
     setHydrated(true);
   }, []);
   const busy = useRef(false);
+  const pending = useRef<GameId | null>(null);
   const alive = useRef(true);
+  const currentRef = useRef(current);
+  currentRef.current = current;
   const tabs = useRef(new Map<GameId, HTMLButtonElement>());
   const uid = useId();
   // Index-based ids: game ids such as lol or dnf never appear in DOM ids that could serve as #fragments.
@@ -147,12 +150,10 @@ export default function FavoriteGames({ lang, heading, games, initialId, account
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const select = useCallback(
+  const applyGame = useCallback(
     (id: GameId) => {
       const g = games.find((x) => x.id === id);
-      if (!g || g.locked || id === selected || busy.current) return;
-      // Locked until AnimatePresence finishes the exit. Before the scene arms nothing exits (onExitComplete never
-      // fires), so a selection made then must not lock the tab list.
+      if (!g || g.locked) return;
       busy.current = armed;
       setSelected(id);
       void playSfx('select');
@@ -160,7 +161,26 @@ export default function FavoriteGames({ lang, heading, games, initialId, account
         if (alive.current) setCurrent(id);
       });
     },
-    [armed, games, selected],
+    [armed, games],
+  );
+
+  const select = useCallback(
+    (id: GameId) => {
+      const g = games.find((x) => x.id === id);
+      if (!g || g.locked) return;
+      // F-038: while an exit is in flight, update aria-selected immediately and queue the pick for onExitComplete.
+      if (busy.current) {
+        setSelected(id);
+        pending.current = id;
+        return;
+      }
+      if (id === selected) return;
+      // Locked until AnimatePresence finishes the exit. Before the scene arms nothing exits (onExitComplete never
+      // fires), so a selection made then must not lock the tab list.
+      pending.current = null;
+      applyGame(id);
+    },
+    [applyGame, games, selected],
   );
 
   const onTabKey = (e: KeyboardEvent<HTMLDivElement>) => {
@@ -189,7 +209,7 @@ export default function FavoriteGames({ lang, heading, games, initialId, account
               <span className="hud-label__en" lang="en">{heading.caption}</span>
             </p>
           </header>
-          <div className="fg__list" role="tablist" aria-label={labels.tablist} aria-orientation="vertical" onKeyDown={onTabKey}>
+          <div className="fg__list" role="tablist" aria-label={labels.tablist} aria-orientation={tabsRow ? 'horizontal' : 'vertical'} onKeyDown={onTabKey}>
             {games.map((g) => (
               <button
                 key={g.id}
@@ -245,6 +265,9 @@ export default function FavoriteGames({ lang, heading, games, initialId, account
               mode="wait"
               onExitComplete={() => {
                 busy.current = false;
+                const id = pending.current;
+                pending.current = null;
+                if (id !== null && id !== currentRef.current) applyGame(id);
               }}
             >
               {armed && <Scene key={current} game={game} accounts={accounts} labels={labels} lang={lang} reduce={reduce} factsPanel={!hasArt} />}
@@ -296,16 +319,32 @@ function Scene({ game, accounts, labels, lang, reduce, factsPanel }: {
       {game.art && (
         <motion.div className="fg__chr" variants={v(chrV)} aria-hidden="true">
           <div className="fg__chr-clip">
-            <img
-              src={game.art.image.src}
-              srcSet={game.art.image.srcSet}
-              sizes={game.art.image.sizes}
-              width={game.art.image.width}
-              height={game.art.image.height}
-              alt=""
-              decoding="async"
-              style={{ objectPosition: game.art.objectPosition }}
-            />
+            {game.art.image.avifSrcSet ? (
+              <picture>
+                <source type="image/avif" srcSet={game.art.image.avifSrcSet} sizes={game.art.image.sizes} />
+                <img
+                  src={game.art.image.src}
+                  srcSet={game.art.image.srcSet}
+                  sizes={game.art.image.sizes}
+                  width={game.art.image.width}
+                  height={game.art.image.height}
+                  alt=""
+                  decoding="async"
+                  style={{ objectPosition: game.art.objectPosition }}
+                />
+              </picture>
+            ) : (
+              <img
+                src={game.art.image.src}
+                srcSet={game.art.image.srcSet}
+                sizes={game.art.image.sizes}
+                width={game.art.image.width}
+                height={game.art.image.height}
+                alt=""
+                decoding="async"
+                style={{ objectPosition: game.art.objectPosition }}
+              />
+            )}
           </div>
         </motion.div>
       )}

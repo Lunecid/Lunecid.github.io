@@ -1,6 +1,6 @@
 ---
 // PROJECT DETAILS (spec §5): the page's only <h1>, ≤6 rows with <th scope="row">, award badge with a
-// "상장 보기" trigger (CertificateModal, no-JS link = certificate WebP), and the cover in a HUD bracket frame with a
+// "상장 보기" trigger (ImageViewer, no-JS link = certificate WebP), and the cover in a HUD bracket frame with a
 // "FIG · <label>" caption strip (P2-21; a name, never a number headline). From 1068px the figure is centred beside
 // a taller table instead of leaving an empty block under it. Mobile order: head, table, award, figure. The default
 // slot (summary) sits under the <h1>.
@@ -18,7 +18,17 @@ interface Props {
   rows: { label: string; value: string }[];
   /** number/caption: the cover is also the body's figure N (shown once, here; fix round 1). */
   figure?: { src: ImageMetadata; alt: string; label?: string; number?: number; caption?: string };
-  award?: { name: string; certificateId?: CertificateId; certificateHref?: string };
+  award?: {
+    name: string;
+    certificateId?: CertificateId;
+    certificateHref?: string;
+    certificateWidth?: number;
+    certificateHeight?: number;
+    certificateSrcSet?: string;
+    certificateSizes?: string;
+    certificateAlt?: string;
+    certificateCaption?: string;
+  };
 }
 
 const { lang, title, rows, figure, award } = Astro.props;
@@ -61,7 +71,20 @@ const hasLead = Astro.slots.has('default');
           <span class="badge badge--tier"><span aria-hidden="true">◆</span> {award.name}</span>
           {/* P2-14/D-7: ↗ means "leaves the site"; a certificate button opens an in-page modal, so it gets no symbol. */}
           {award.certificateId && award.certificateHref && (
-            <a class="btn btn--line cut cut--line" href={award.certificateHref} data-cert-id={award.certificateId} aria-haspopup="dialog">{t(lang, 'action.viewCertificate')}</a>
+            <a
+              class="btn btn--line cut cut--line"
+              href={award.certificateHref}
+              data-cert-id={award.certificateId}
+              data-viewer="certificates"
+              data-viewer-w={award.certificateWidth}
+              data-viewer-h={award.certificateHeight}
+              data-viewer-srcset={award.certificateSrcSet}
+              data-viewer-sizes={award.certificateSizes}
+              data-viewer-label={t(lang, 'modal.certificate')}
+              data-viewer-caption={award.certificateCaption}
+              data-viewer-alt={award.certificateAlt}
+              aria-haspopup="dialog"
+            >{t(lang, 'action.viewCertificate')}</a>
           )}
         </div>
       )
@@ -69,7 +92,7 @@ const hasLead = Astro.slots.has('default');
     {
       figure && (
         <figure class="pd__fig bracket">
-          <Picture class="pd__img" src={figure.src} alt={figure.alt} formats={['avif', 'webp']} fallbackFormat="webp" widths={figWidths} sizes={DETAIL_FIGURE_SIZES} loading="eager" />
+          <Picture class="pd__img" src={figure.src} alt={figure.alt} formats={['avif', 'webp']} fallbackFormat="webp" widths={figWidths} sizes={DETAIL_FIGURE_SIZES} priority />
           {
             label && figure.number !== undefined ? (
               <figcaption id={`figure-${figure.number}`} class="pd__figcap pd__figcap--cited">
@@ -103,6 +126,12 @@ const hasLead = Astro.slots.has('default');
   .pd__award { grid-area: award; display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
   .pd__fig { grid-area: fig; margin: 0; }
   .pd__fig :global(img) { display: block; width: 100%; height: auto; background: var(--read-card); }
+  /* F-006: on tablet widths the stacked cover was taller than a viewport; keep the phone full-bleed and the ≥1068 side-by-side layout. */
+  @media (min-width: 734px) and (max-width: 1067.98px) {
+    .pd__fig { max-width: 600px; margin-inline: auto; }
+    /* Cap below 60vh when needed so the first body h2 stays within ~1100px at 1024 (award + table + cover). */
+    .pd__fig :global(img) { max-height: min(60vh, 300px); object-fit: contain; }
+  }
   .pd__figcap {
     padding: 8px 12px; border-top: 1px solid var(--hud-line); background: var(--hud-panel);
     font: 600 13px/1.5 var(--font-mono); letter-spacing: .14em; color: var(--hud-label);

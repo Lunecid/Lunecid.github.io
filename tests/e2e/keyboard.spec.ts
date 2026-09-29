@@ -37,18 +37,49 @@ test('MAIN MENU arrow keys move focus and Enter follows', async ({ page }, testI
   await expect(page).toHaveURL(target);
 });
 
+// N19 / F-010: parked mouse must not steal Tab order via synthetic pointerenter.
+test('MAIN MENU Tab order is stable with the mouse parked over a later row', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'desktop', 'keyboard check runs on desktop');
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/', { waitUntil: 'load' });
+  await settle(page);
+  await page.goto('/en/', { waitUntil: 'load' });
+  await settle(page);
+  const links = page.locator('#main-menu a.mm__link');
+  await expect(links).toHaveCount(4);
+  await page.mouse.move(400, 520);
+  await page.locator('body').focus();
+  // Tab from the page top through the four MAIN MENU items in order.
+  const focusedHrefs: string[] = [];
+  for (let i = 0; i < 40 && focusedHrefs.length < 4; i++) {
+    await page.keyboard.press('Tab');
+    const href = await page.evaluate(() => {
+      const el = document.activeElement;
+      return el instanceof HTMLAnchorElement && el.classList.contains('mm__link') ? el.getAttribute('href') : null;
+    });
+    if (href && (focusedHrefs.length === 0 || focusedHrefs[focusedHrefs.length - 1] !== href)) {
+      focusedHrefs.push(href);
+    }
+  }
+  const expected = await links.evaluateAll((anchors) => anchors.map((a) => a.getAttribute('href') ?? ''));
+  expect(focusedHrefs).toEqual(expected);
+  await links.nth(0).focus();
+  await page.keyboard.press('ArrowDown');
+  await expect(links.nth(1)).toBeFocused();
+});
+
 test('certificate modal opens with Enter, traps Tab, closes with Esc and restores focus', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== 'desktop', 'keyboard check runs on desktop');
   await page.goto('/records/', { waitUntil: 'load' });
   await settle(page);
   // Before hydration the trigger is a plain link to the image (no-JS fallback); wait for the island.
-  await expect(page.locator('astro-island:not([ssr]) dialog.cert-modal')).toHaveCount(1);
-  const dialog = page.locator('dialog.cert-modal');
+  await expect(page.locator('astro-island:not([ssr]) dialog.image-viewer')).toHaveCount(1);
+  const dialog = page.locator('dialog.image-viewer');
   const trigger = page.locator('#awards a[data-cert-id]').first();
   const focusInDialog = () =>
     page.evaluate(() => {
       const active = document.activeElement;
-      return !!active && active !== document.body && active.closest('dialog.cert-modal') !== null;
+      return !!active && active !== document.body && active.closest('dialog.image-viewer') !== null;
     });
 
   await trigger.focus();
@@ -110,9 +141,8 @@ test('mobile menu opens and closes with Esc (375px)', async ({ page }, testInfo)
 
   await toggle.click();
   await expect(toggle).toHaveAttribute('aria-expanded', 'true');
-  // P2-3 (controller ruling 2): the open state is visible in the button's own text, not only aria-expanded.
-  await expect(toggle).toHaveText('닫기 ×');
-  // Fix round 1 minor: the "×" is visual only — a screen reader must not announce it as part of the name.
+  // G-017 / N01: open state is a fixed-width "×" plus visually hidden Close/닫기 (not "닫기 ×").
+  await expect(toggle.locator('[aria-hidden="true"]')).toHaveText('×');
   await expect(toggle).toHaveAccessibleName('닫기');
   await expect(firstLink).toBeVisible();
   await expect(html).toHaveClass(/is-scroll-locked/);

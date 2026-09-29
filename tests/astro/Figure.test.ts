@@ -13,6 +13,8 @@ describe('Figure.astro', () => {
     expect(en).toMatch(/<span[^>]*class="figure__num"[^>]*>Figure 2<\/span>/);
     expect(en).toContain('Districts ranked by total score.');
     expect(en).toMatch(/<a[^>]*class="figure__full"[^>]*href="[^"]+"[^>]*aria-label="View full size · Figure 2"[^>]*>View full size<\/a>/);
+    expect(en).toMatch(/<a[^>]*class="figure__full"[^>]*data-viewer="figures"/);
+    expect(en).toMatch(/<a[^>]*class="figure__full"[^>]*aria-haspopup="dialog"/);
     expect(en).toMatch(/<picture\b/);
     expect(en).toMatch(/<source[^>]*type="image\/avif"/);
     expect(en).toMatch(/<img[^>]*alt="Bar chart of district scores"/);
@@ -45,6 +47,7 @@ describe('Figure.astro', () => {
     expect(blocks.width).toBe(877);
     const html = await renderAstro(Figure, { props: { lang: 'ko', src: blocks, alt: 'a', caption: 'c' } });
     expect(html).toMatch(/\b720w\b/);
+    expect(html).toMatch(/\b800w\b/);
     expect(html).toMatch(/\b877w\b/);
     expect(html).not.toMatch(/\b1080w\b/);
   });
@@ -60,5 +63,10 @@ describe('Figure.astro', () => {
     const src = readSource('src/components/common/Figure.astro');
     expect(src).not.toMatch(/\.figure__full\s*\{[^}]*min-height/);
     expect(src).toMatch(/\.figure__full\s*\{[^}]*padding-block:\s*12px[^}]*margin-block:\s*-12px/);
+  });
+
+  it('F-081: default srcset ladder includes an 800 step near the 1× desktop slot', () => {
+    const src = readSource('src/components/common/Figure.astro');
+    expect(src).toMatch(/widths\s*=\s*\[720,\s*800,\s*1080,\s*1440\]/);
   });
 });

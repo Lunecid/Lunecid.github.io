@@ -23,11 +23,14 @@ export interface CharacterStageProps {
 }
 
 export type StagePhase = 'idle' | 'entering' | 'shown' | 'exiting';
+export type StageCause = 'replay' | 'select';
 export interface StageState {
   phase: StagePhase;
   currentId: CharacterId;
   nextId: CharacterId | null;
   play: number;
+  /** Why the current (or pending) entrance was requested — copy reset only for replay (F-011). */
+  cause: StageCause | null;
 }
 export type StageAction =
   | { type: 'START' }
@@ -45,18 +48,20 @@ export function stageReducer(s: StageState, a: StageAction): StageState {
     case 'ENTER_END':
       return s.phase === 'entering' ? { ...s, phase: 'shown' } : s;
     case 'SELECT':
-      if (s.phase === 'idle' || s.phase === 'exiting') return s;
-      if (a.id === s.currentId) return { ...s, phase: 'entering', play: s.play + 1 };
-      return { ...s, phase: 'exiting', nextId: a.id };
+      if (s.phase === 'idle') return s;
+      // F-038: while exiting, queue the pending pick instead of dropping the click.
+      if (s.phase === 'exiting') return a.id === s.nextId ? s : { ...s, nextId: a.id, cause: 'select' };
+      if (a.id === s.currentId) return { ...s, phase: 'entering', play: s.play + 1, cause: 'select' };
+      return { ...s, phase: 'exiting', nextId: a.id, cause: 'select' };
     case 'REPLAY':
       if (s.phase === 'idle' || s.phase === 'exiting') return s;
-      return { ...s, phase: 'entering', play: s.play + 1 };
+      return { ...s, phase: 'entering', play: s.play + 1, cause: 'replay' };
     case 'SET':
       // before the first entrance only: swap the character without playing an exit
       return s.phase === 'idle' ? { ...s, currentId: a.id, nextId: null } : s;
     case 'EXIT_END':
       return s.phase === 'exiting' && s.nextId !== null
-        ? { phase: 'entering', currentId: s.nextId, nextId: null, play: s.play + 1 }
+        ? { phase: 'entering', currentId: s.nextId, nextId: null, play: s.play + 1, cause: s.cause ?? 'select' }
         : s;
     default:
       return s;
@@ -98,6 +103,7 @@ export default function CharacterStage({
       currentId: initialId ?? characters[0]?.id ?? 'remielle',
       nextId: null,
       play: 0,
+      cause: null,
     }),
   );
   const current = characters.find((c) => c.id === state.currentId) ?? characters[0];
@@ -121,15 +127,15 @@ export default function CharacterStage({
     };
   }, [trigger, current]);
 
-  // entering → shown; user-triggered plays tell the Hero to replay its copy rise.
+  // entering → shown; replay-only plays tell the Hero to restart its copy rise (F-011).
   useEffect(() => {
     if (state.phase !== 'entering') return;
-    if (state.play > 0) {
-      window.dispatchEvent(new CustomEvent('sb:stage-enter', { detail: { variant, play: state.play } }));
+    if (state.play > 0 && state.cause === 'replay') {
+      window.dispatchEvent(new CustomEvent('sb:stage-enter', { detail: { variant, play: state.play, cause: state.cause } }));
     }
     const timer = window.setTimeout(() => dispatch({ type: 'ENTER_END' }), ENTER_SETTLE_MS);
     return () => window.clearTimeout(timer);
-  }, [state.phase, state.play, variant]);
+  }, [state.phase, state.play, state.cause, variant]);
 
   // exiting → entering(next) after the exit AND the next image decode.
   useEffect(() => {
@@ -178,11 +184,28 @@ export default function CharacterStage({
   useEffect(() => {
     if (wantedId === null || wantedId === pressedId) return;
     if (state.phase === 'idle') dispatch({ type: 'SET', id: wantedId });
-    else if (state.phase !== 'exiting') dispatch({ type: 'SELECT', id: wantedId }); // an exit in progress: retry after it
+    else dispatch({ type: 'SELECT', id: wantedId }); // F-038: SELECT while exiting updates nextId
   }, [wantedId, pressedId, state.phase]);
 
   // Every hook has run above (rules of hooks); no art → no stage at all.
   if (!current) return null;
+
+  const img = (
+    <img
+      key={`${current.id}-${state.play}`}
+      className="char-stage__img"
+      src={current.image.src}
+      srcSet={current.image.srcSet}
+      sizes={current.image.sizes}
+      width={current.image.width}
+      height={current.image.height}
+      alt=""
+      decoding="async"
+      loading={priority ? 'eager' : 'lazy'}
+      fetchPriority={priority ? 'high' : 'auto'}
+      style={{ objectPosition: current.objectPosition }}
+    />
+  );
 
   return (
     <div className={`char-stage char-stage--${variant}`} data-phase={state.phase} data-pick={variant === 'hero' ? pressedId : undefined}>
@@ -196,20 +219,14 @@ export default function CharacterStage({
       <div className="char-stage__frame" aria-hidden="true">
         {/* Unmasked clip: art stays ≥2px inside the masked frame's faded edges. The img keeps the designed --W box. */}
         <div className="char-stage__clip">
-          <img
-            key={`${current.id}-${state.play}`}
-            className="char-stage__img"
-            src={current.image.src}
-            srcSet={current.image.srcSet}
-            sizes={current.image.sizes}
-            width={current.image.width}
-            height={current.image.height}
-            alt=""
-            decoding="async"
-            loading={priority ? 'eager' : 'lazy'}
-            fetchPriority={priority ? 'high' : 'auto'}
-            style={{ objectPosition: current.objectPosition }}
-          />
+          {current.image.avifSrcSet ? (
+            <picture>
+              <source type="image/avif" srcSet={current.image.avifSrcSet} sizes={current.image.sizes} />
+              {img}
+            </picture>
+          ) : (
+            img
+          )}
         </div>
       </div>
       {controls && hydrated && (
@@ -229,6 +246,9 @@ export default function CharacterStage({
                     void preloadImage(c.image);
                   }}
                   onClick={() => {
+                    // F-038: SFX only when the reducer actually changes state.
+                    const next = stageReducer(state, { type: 'SELECT', id: c.id });
+                    if (next === state) return;
                     void playSfx('select');
                     dispatch({ type: 'SELECT', id: c.id });
                   }}

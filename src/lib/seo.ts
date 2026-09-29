@@ -36,12 +36,12 @@ const PERSON = {
   },
 } as const;
 
-/** schema.org Person for the home page (spec §12: same name everywhere; sameAs = GitHub + research ids that exist). */
+/** schema.org Person for the home page (spec §12: same name everywhere; sameAs = GitHub + DACON + research ids that exist). */
 export function personJsonLd(
   lang: Lang,
   researchIds?: { scholar: string | null; orcid: string | null },
 ): Record<string, unknown> {
-  const sameAs = [SITE.githubUrl, researchIds?.scholar ?? null, researchIds?.orcid ?? null].filter(
+  const sameAs = [SITE.githubUrl, SITE.daconUrl, researchIds?.scholar ?? null, researchIds?.orcid ?? null].filter(
     (value): value is string => typeof value === 'string' && value.length > 0,
   );
   return {

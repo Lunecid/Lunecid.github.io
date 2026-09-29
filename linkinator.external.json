@@ -1,0 +1,5 @@
+{
+  "recurse": true,
+  "verbosity": "error",
+  "timeout": 20000
+}

@@ -147,6 +147,22 @@ describe('records data files', () => {
     expect(data.languages.find((l) => l.id === 'korean')?.records).toBe(false);
   });
 
+  it('LG Aimers activity cites the DACON team rank without claiming a final or award', () => {
+    const aimers = resume().activities.find((a) => a.id === 'lg-aimers-7');
+    expect(aimers).toMatchObject({
+      date: '2025-08',
+      href: 'https://dacon.io/myprofile/530929/competition',
+      text: {
+        ko: 'LG Aimers 7기 온라인 해커톤(리조트 식음업장 메뉴 수요 예측) 817팀 중 32위 · 상위 4%',
+        en: 'LG Aimers (7th cohort) online hackathon, resort menu demand forecasting — 32nd of 817 teams (top 4%)',
+      },
+    });
+    for (const lang of ['ko', 'en'] as const) {
+      expect(aimers?.text[lang], lang).not.toMatch(/본선|수상|\bfinal\b|\baward\b/i);
+    }
+    expect(SITE.daconUrl).toBe('https://dacon.io/myprofile/530929/home');
+  });
+
   it('awards.project is null or a project with a page', () => {
     for (const award of awards()) {
       if (award.project !== null) expect(PROJECT_PAGE_SLUGS as readonly string[], award.id).toContain(award.project);

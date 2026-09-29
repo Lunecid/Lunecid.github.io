@@ -25,7 +25,8 @@ const gloss = lang === 'ko' ? paper.titleGloss : null;
 <article class:list={['pub', { 'pub--compact': compact, 'pub--oral': paper.oral, 'bracket bracket--sm': paper.oral }]} data-paper={paper.id}>
   {!compact && (
     <div class="pub__media">
-      <Image src={paper.thumb} alt={paper.thumbAlt} widths={[240, 480, 720]} sizes="(min-width: 734px) 200px, 100vw" />
+      {/* F-057: decorative thumbnail — Fig. 1 alt lives on the interest-row figure only (/research/). */}
+      <Image src={paper.thumb} alt="" widths={[240, 480, 720]} sizes="(min-width: 734px) 200px, 100vw" />
     </div>
   )}
   <div class="pub__body">

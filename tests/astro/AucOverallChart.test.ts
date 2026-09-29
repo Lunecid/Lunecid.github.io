@@ -49,7 +49,7 @@ describe('AucOverallChart.astro', () => {
       const descId = attr(svg, 'aria-describedby');
       expect(titleId).toBeTruthy();
       expect(descId).toBeTruthy();
-      expect(part).toMatch(new RegExp(`<title[^>]*id="${titleId}"[^>]*>${escapeRe(CAPTION)}</title>`));
+      expect(part).toMatch(new RegExp(`<title[^>]*id="${titleId}"[^>]*>모델별 AUC 점 그래프</title>`));
       expect(part).toMatch(new RegExp(`<desc[^>]*id="${descId}"[^>]*>${escapeRe(ALT)}</desc>`));
       return titleId;
     });
@@ -145,18 +145,21 @@ describe('AucOverallChart.astro', () => {
     expect(en).toContain('engineered tabular');
   });
 
-  it('each .chart__scroll is a named region wrapping its svg (project convention: tabindex=0 role=region aria-labelledby)', async () => {
+  it('each .chart__scroll uses data-table-scroll (overflow-only tab stop); SVG title is a short name', async () => {
     const html = await render('ko');
+    const shortTitle = '모델별 AUC 점 그래프';
     for (const name of LAYOUTS) {
       const part = layoutOf(html, name);
-      expect(part).toMatch(new RegExp(`^<div(?=[^>]*class="chart__scroll chart__scroll--${name}")(?=[^>]*tabindex="0")[^>]*>\\s*<svg`));
+      expect(part).toMatch(new RegExp(`^<div(?=[^>]*class="chart__scroll chart__scroll--${name}")(?=[^>]*data-table-scroll)[^>]*>\\s*<svg`));
       const scroll = openTags(part, 'div', 'chart__scroll')[0];
-      expect(attr(scroll, 'role')).toBe('region');
-      const labelledBy = attr(scroll, 'aria-labelledby');
-      expect(labelledBy).toBeTruthy();
-      // The referenced id must exist in the rendered HTML and carry readable text (no new ui.ts keys).
-      expect(part).toMatch(new RegExp(`id="${labelledBy}"[^>]*>[^<]+<`));
+      expect(attr(scroll, 'tabindex')).toBeUndefined();
+      expect(attr(scroll, 'role')).toBeUndefined();
+      const labelId = attr(scroll, 'data-label-id');
+      expect(labelId).toBeTruthy();
+      expect(part).toMatch(new RegExp(`id="${labelId}"[^>]*>${escapeRe(shortTitle)}<`));
     }
+    const en = await render('en');
+    expect(layoutOf(en, 'wide')).toContain('>AUC by model, dot plot<');
   });
 
   it('wide chart svg keeps min-width 560px; compact and narrow carry no such floor', () => {

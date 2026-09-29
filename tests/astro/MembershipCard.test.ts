@@ -19,7 +19,13 @@ describe('MembershipCard', () => {
     expect(html.match(/<dt[\s>]/g)).toHaveLength(3);
     for (const f of FIELDS) {
       expect(html).toMatch(new RegExp(`<dt[^>]*>${f.label}</dt>`));
-      expect(html).toMatch(new RegExp(`<dd[^>]*>${f.value}</dd>`));
+      if (f.label === 'CLASS') {
+        expect(html).toMatch(/mcard__role-part/);
+        expect(html).toContain('게임 데이터 분석가 ·');
+        expect(html).toContain('연구자');
+      } else {
+        expect(html).toContain(f.value);
+      }
     }
     expect(html).toMatch(/class="mcard__sticker"[^>]*>CoG 2026 ORAL</);
     expect(html).toMatch(/class="mcard__band"[^>]*><span[^>]*>MEMBER SINCE 2025<\/span>/);

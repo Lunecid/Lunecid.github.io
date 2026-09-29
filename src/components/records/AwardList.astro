@@ -1,7 +1,7 @@
 ---
 // ACHIEVEMENTS: the awards (namecard-awards `.aw`, mockup-port §7) as light-HUD rows (P1-9): a square medal tag,
 // name, contest, organiser · date, the redaction note when something is hidden (none for an award shown as issued,
-// P2-19), and square link chips: "상장 보기" (a plain link to the 1280w WebP without JS; CertificateModal intercepts
+// P2-19), and square link chips: "상장 보기" (a plain link to the 1280w WebP without JS; ImageViewer intercepts
 // plain clicks) and the related project when awards.yaml names one.
 import SectionHead from '../hud/SectionHead.astro';
 import type { AwardItem } from '../../lib/records';
@@ -32,7 +32,22 @@ const { lang, awards } = Astro.props;
             <ul class="award__links lh-chips" role="list">
               {/* P2-14/D-7: ↗ means "leaves the site"; a certificate button opens an in-page modal, so it gets no symbol. */}
               {award.certHref && (
-                <li><a class="award__cert lh-chip" href={award.certHref} data-cert-id={award.id} aria-haspopup="dialog">{t(lang, 'action.viewCertificate')}</a></li>
+                <li>
+                  <a
+                    class="award__cert lh-chip"
+                    href={award.certHref}
+                    data-cert-id={award.id}
+                    data-viewer="certificates"
+                    data-viewer-w={award.certWidth ?? undefined}
+                    data-viewer-h={award.certHeight ?? undefined}
+                    data-viewer-srcset={award.certSrcSet ?? undefined}
+                    data-viewer-sizes={award.certSizes ?? undefined}
+                    data-viewer-label={t(lang, 'modal.certificate')}
+                    data-viewer-caption={award.certCaption ?? undefined}
+                    data-viewer-alt={award.certAlt ?? undefined}
+                    aria-haspopup="dialog"
+                  >{t(lang, 'action.viewCertificate')}</a>
+                </li>
               )}
               {award.projectHref && <li><a class="award__project lh-chip" href={award.projectHref}>{t(lang, 'action.viewProject')}</a></li>}
             </ul>

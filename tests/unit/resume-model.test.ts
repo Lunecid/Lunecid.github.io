@@ -188,6 +188,35 @@ describe('buildResumeModel', () => {
     expect(line('2026-09-26')?.expired).toBe(until < '2026-09-26');
   });
 
+  it('CDS and CCAIM training appear on Korean résumé and Academic CV, not English résumé; hours stay optional', () => {
+    const names = {
+      cds: { ko: 'CDS빅데이터 교육', en: 'CDS Big Data Training' },
+      ccaim: 'CCAIM Machine Learning for Healthcare Summer School 2026',
+    };
+    const ko = buildResumeModel(inputs('resume-ko'));
+    expect(ko.training.map((x) => x.name)).toEqual(expect.arrayContaining([names.cds.ko, names.ccaim]));
+    expect(ko.training.find((x) => x.name === names.cds.ko)).toMatchObject({
+      org: '부산대학교',
+      period: '2024.07 – 2024.08',
+      hours: null,
+    });
+    expect(ko.training.find((x) => x.name === names.ccaim)).toMatchObject({
+      org: '케임브리지대학교 CCAIM(Cambridge Centre for AI in Medicine) · 온라인 참가',
+      period: '2026.09',
+      hours: null,
+    });
+    const cv = buildResumeModel(inputs('cv-academic'));
+    expect(cv.training.map((x) => x.name)).toEqual(expect.arrayContaining([names.cds.en, names.ccaim]));
+    expect(cv.training.find((x) => x.name === names.cds.en)?.hours).toBeNull();
+    expect(cv.training.find((x) => x.name === names.ccaim)?.hours).toBeNull();
+    const en = buildResumeModel(inputs('resume-en'));
+    expect(en.training.map((x) => x.name)).not.toContain(names.cds.en);
+    expect(en.training.map((x) => x.name)).not.toContain(names.ccaim);
+    for (const withHours of ko.training.filter((x) => x.hours !== null)) {
+      expect(withHours.hours).toMatch(/시간/);
+    }
+  });
+
   it('unresolved refs throw', () => {
     // kbo-attendance/seoul-apartment-automl are pdf:{ko:false,en:false,academic:false} (merged into projectsNote
     // instead, batch 3b), so they are filtered out before the ref lookup runs; use a still-flagged ref here.

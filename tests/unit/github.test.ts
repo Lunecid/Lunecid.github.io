@@ -26,8 +26,8 @@ const pin = (name: string, overrides: Partial<GitHubPinned> = {}): GitHubPinned 
 });
 
 describe('githubRepoList (P1-17)', () => {
-  it('the site lists: PUBG_Lab and AudioSync excluded (with the reason in a comment), the CoG code first', () => {
-    expect([...GITHUB_EXCLUDED].sort()).toEqual(['AudioSync', 'Child_Abuse', 'PUBG_Lab']);
+  it('the site lists: PUBG_Lab, AudioSync, Child_Abuse and TIL excluded (with the reason in a comment), the CoG code first', () => {
+    expect([...GITHUB_EXCLUDED].sort()).toEqual(['AudioSync', 'Child_Abuse', 'PUBG_Lab', 'TIL']);
     expect(GITHUB_FIRST).toEqual(['LOL_teamfight_Lab']);
     expect(GITHUB_DESCRIPTIONS['LOL_teamfight_Lab']?.en).toBe('Code for the IEEE CoG 2026 paper (v1.0-cog2026)');
     for (const [name, text] of Object.entries(GITHUB_DESCRIPTIONS)) expect(text.en, name).not.toMatch(/[가-힣]/);
@@ -77,9 +77,9 @@ describe('githubRepoList (P1-17)', () => {
       repo('insta_practice', '2026-09-26T00:00:00Z', { description: '' }),
       repo('blank', '2026-09-25T00:00:00Z', { description: '   ' }),
       repo('LOL_teamfight_Lab', '2026-09-24T00:00:00Z', { description: '' }), // has a site-side description
-      repo('TIL', '2026-09-23T00:00:00Z', { description: 'Today I learned ' }),
+      repo('notes-ok', '2026-09-23T00:00:00Z', { description: 'Today I learned ' }),
     ];
-    expect(githubRepoList({ repos, pinned: null }, 'ko').map((r) => r.name)).toEqual(['LOL_teamfight_Lab', 'TIL']);
+    expect(githubRepoList({ repos, pinned: null }, 'ko').map((r) => r.name)).toEqual(['LOL_teamfight_Lab', 'notes-ok']);
     // a new repository that gets a GitHub description later appears without any code change
     const described = repos.map((r) => (r.name === 'insta_practice' ? { ...r, description: 'Now described' } : r));
     expect(githubRepoList({ repos: described, pinned: null }, 'ko').map((r) => r.name)).toContain('insta_practice');
@@ -91,12 +91,22 @@ describe('githubRepoList (P1-17)', () => {
     const repos = [
       repo('LOL_teamfight_Lab', '2026-09-20T00:00:00Z', { description: '' }),
       repo('ko-only', '2026-09-19T00:00:00Z', { description: '한국어 설명' }),
-      repo('TIL', '2026-09-18T00:00:00Z', { description: 'Today I learned ' }),
+      repo('notes-ok', '2026-09-18T00:00:00Z', { description: 'Today I learned ' }),
     ];
     const ko = Object.fromEntries(githubRepoList({ repos, pinned: null }, 'ko').map((r) => [r.name, r.description]));
-    expect(ko).toEqual({ LOL_teamfight_Lab: 'IEEE CoG 2026 논문 코드 (v1.0-cog2026)', 'ko-only': '한국어 설명', TIL: 'Today I learned' });
+    expect(ko).toEqual({ LOL_teamfight_Lab: 'IEEE CoG 2026 논문 코드 (v1.0-cog2026)', 'ko-only': '한국어 설명', 'notes-ok': 'Today I learned' });
     const en = Object.fromEntries(githubRepoList({ repos, pinned: null }, 'en').map((r) => [r.name, r.description]));
-    expect(en).toEqual({ LOL_teamfight_Lab: 'Code for the IEEE CoG 2026 paper (v1.0-cog2026)', 'ko-only': '', TIL: 'Today I learned' });
+    expect(en).toEqual({ LOL_teamfight_Lab: 'Code for the IEEE CoG 2026 paper (v1.0-cog2026)', 'ko-only': '', 'notes-ok': 'Today I learned' });
+  });
+
+  it('TIL is excluded (F-096 / decision 17)', () => {
+    const repos = [
+      repo('TIL', '2026-09-28T12:00:00Z', { description: 'Today I learned' }),
+      repo('visible', '2026-09-27T00:00:00Z'),
+    ];
+    for (const lang of ['ko', 'en'] as const) {
+      expect(githubRepoList({ repos, pinned: null }, lang).map((r) => r.name), lang).toEqual(['visible']);
+    }
   });
 
   // P2-14 (src/lib/github.ts:59-63): a site-side description present but with an explicit empty string for this

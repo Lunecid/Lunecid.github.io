@@ -198,12 +198,13 @@ awards:
     pdf: { ko: true, en: true, academic: true }
 
 activities:
-  # 본선에는 진출하지 못했다(소유자 답변, 2026-09-28).
+  # 본선에는 진출하지 못했다(소유자 답변, 2026-09-28). 아래 결과는 DACON 프로필 기록이다.
   - id: lg-aimers-7
     text:
-      ko: LG Aimers 7기 해커톤 참가
-      en: LG Aimers (7th cohort) hackathon — participant
-    date: '2025'
+      ko: LG Aimers 7기 온라인 해커톤(리조트 식음업장 메뉴 수요 예측) 817팀 중 32위 · 상위 4%
+      en: LG Aimers (7th cohort) online hackathon, resort menu demand forecasting — 32nd of 817 teams (top 4%)
+    date: '2025-08'
+    href: https://dacon.io/myprofile/530929/competition
     pdf: { ko: true, en: false, academic: false }
 
 # 자격 번호는 싣지 않는다.
@@ -257,6 +258,16 @@ training:
     end: '2024-03'
     hours: 956
     pdf: { ko: true, en: true, academic: false }
+  - id: cds-bigdata-training-2024
+    name:
+      ko: CDS빅데이터 교육
+      en: CDS Big Data Training
+    org:
+      ko: 부산대학교
+      en: Pusan National University
+    start: '2024-07'
+    end: '2024-08'
+    pdf: { ko: true, en: false, academic: true }
   - id: oxml-2025
     name:
       ko: OxML 2025 — MLx Representation Learning & Generative AI
@@ -280,6 +291,16 @@ training:
     hours: 2
     # batch 3b P2-32: a 2-hour line reads as padding on the industry résumé; keep it only on the Academic CV.
     pdf: { ko: false, en: false, academic: true }
+  - id: ccaim-mlhc-2026
+    name:
+      ko: CCAIM Machine Learning for Healthcare Summer School 2026
+      en: CCAIM Machine Learning for Healthcare Summer School 2026
+    org:
+      ko: 케임브리지대학교 CCAIM(Cambridge Centre for AI in Medicine) · 온라인 참가
+      en: Cambridge Centre for AI in Medicine (CCAIM), University of Cambridge (online)
+    start: '2026-09'
+    end: '2026-09'
+    pdf: { ko: true, en: false, academic: true }
 
 # 스킬은 숙련도 막대 없이 '주력'과 '사용해 본 기술'로만 나누고, 기술마다 근거를 붙인다.
 # evidence.kind: project → /projects/<id>/ (상세 페이지가 있는 프로젝트만), research → /research/<id>/,

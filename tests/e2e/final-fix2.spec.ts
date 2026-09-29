@@ -34,7 +34,11 @@ async function servedVsPainted(img: Locator): Promise<{ served: number; largest:
     if (!el.complete) await new Promise((resolve) => el.addEventListener('load', resolve, { once: true }));
     const r = el.getBoundingClientRect();
     const aspect = Number(el.getAttribute('width')) / Number(el.getAttribute('height'));
-    const candidates = el.srcset.split(',').map((c) => c.trim().split(/\s+/)).map(([url, w]) => ({ url, w: parseInt(w ?? '0', 10) }));
+    // F-039: <picture><source type=avif> means currentSrc is AVIF; prefer that source's srcset over the img fallback.
+    const picture = el.closest('picture');
+    const avif = picture?.querySelector('source[type="image/avif"]');
+    const srcset = (avif?.getAttribute('srcset') || el.srcset || '').trim();
+    const candidates = srcset.split(',').map((c) => c.trim().split(/\s+/)).map(([url, w]) => ({ url, w: parseInt(w ?? '0', 10) }));
     const current = new URL(el.currentSrc).pathname;
     const hit = candidates.find((c) => new URL(c.url, location.href).pathname === current);
     return { served: hit?.w ?? 0, largest: Math.max(...candidates.map((c) => c.w)), painted: Math.max(r.width, r.height * aspect), widths: candidates.map((c) => c.w) };

@@ -35,6 +35,8 @@ describe('sizes (P2-39)', () => {
   it('figures sit in the reading column; cards and the detail cover plan for the XL containers', () => {
     // P1-7: figures in the reading column, 760px wide from 900px
     expect(FIGURE_SIZES).toBe('(min-width: 900px) 760px, (min-width: 734px) 646px, calc(100vw - 32px)');
+    expect(DETAIL_FIGURE_SIZES).toContain('(min-width: 734px) 600px');
+    expect(DETAIL_FIGURE_SIZES).not.toContain('calc(100vw - 66px)');
     for (const sizes of [DETAIL_FIGURE_SIZES, CARTRIDGE_SIZES.normal, CARTRIDGE_SIZES.wide]) {
       expect(sizes).toMatch(/^\(min-width: 1800px\) \d+px, \(min-width: 1600px\) \d+px, \(min-width: 1068px\) \d+px, /);
     }

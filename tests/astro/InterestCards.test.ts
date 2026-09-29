@@ -39,7 +39,14 @@ describe('InterestCards.astro (P1-9: indexed light-HUD rows, one real figure eac
     expect(row('readable')).toContain(figureCopy.aucOverall.alt.ko);
     for (const id of ['logs', 'graphs', 'readable']) expect(row(id), id).toMatch(/class="interests__fig[^"]*bracket bracket--sm"/);
     expect(html).not.toMatch(/telemetry|participantFrames/);
-    // "크게 보기" links go to the full-size WebP of the two image figures
+    // "크게 보기" links go to the full-size WebP of the two image figures and act as ImageViewer triggers
     expect(html.match(/class="interests__full"/g)).toHaveLength(2);
+    expect(html.match(/data-viewer="figures"/g)).toHaveLength(2);
+  });
+
+  it('F-066/F-081: phone chart caption inset and a 400-wide ladder step', () => {
+    const src = readSource('src/components/research/InterestCards.astro');
+    expect(src).toMatch(/@media \(max-width: 733\.98px\) \{[\s\S]*?\.chart__caption[\s\S]*?padding-inline:\s*12px/);
+    expect(src).toMatch(/fitWidths\(\[360,\s*400,\s*540,\s*720\]/);
   });
 });

@@ -41,11 +41,12 @@ export function fitWidths(ladder: readonly number[], sourceWidth: number): numbe
 export const FIGURE_SIZES = '(min-width: 900px) 760px, (min-width: 734px) 646px, calc(100vw - 32px)';
 
 /**
- * The PROJECT DETAILS cover (1px bracket border): full width below 1068px; from 1068px the 1.1fr column of a
- * two-column grid with a 34px gap inside the HUD container (540px, then 626px / 659px in the XL containers).
+ * The PROJECT DETAILS cover (1px bracket border): full width below 734px; capped at 600px from 734–1067 (F-006);
+ * from 1068px the 1.1fr column of a two-column grid with a 34px gap inside the HUD container (540px, then
+ * 626px / 659px in the XL containers).
  */
 export const DETAIL_FIGURE_SIZES =
-  '(min-width: 1800px) 659px, (min-width: 1600px) 626px, (min-width: 1068px) 540px, (min-width: 734px) calc(100vw - 66px), calc(100vw - 34px)';
+  '(min-width: 1800px) 659px, (min-width: 1600px) 626px, (min-width: 1068px) 540px, (min-width: 734px) 600px, calc(100vw - 34px)';
 
 /**
  * Cartridge labels share one ladder, format list and quality (the research highlight on / shows the AUC chart since

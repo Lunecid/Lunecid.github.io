@@ -12,7 +12,7 @@ test.describe('P2-2: achievement toast', () => {
     await page.goto('/records/', { waitUntil: 'networkidle' });
     await settle(page);
     const trigger = page.locator('#awards a[data-cert-id]').first();
-    const dialog = page.locator('dialog.cert-modal');
+    const dialog = page.locator('dialog.image-viewer');
     await trigger.click();
     await expect(dialog).toHaveAttribute('open', '');
     await page.keyboard.press('Escape');
@@ -20,6 +20,16 @@ test.describe('P2-2: achievement toast', () => {
 
     const toast = page.locator('.ach-toast');
     await expect(toast).toBeVisible();
+    // Wait for entrance animation to finish (state, not wall clock) so close hit-target is stable under parallel load.
+    await expect
+      .poll(async () =>
+        toast.evaluate((el) => {
+          const anims = el.getAnimations?.() ?? [];
+          if (anims.length === 0) return getComputedStyle(el).opacity === '1';
+          return anims.every((a) => a.playState === 'finished');
+        }),
+      )
+      .toBe(true);
     await expect(toast.locator('.ach-toast__kicker')).toHaveText('ACHIEVEMENT UNLOCKED');
     await expect(toast).toContainText('상장 확인');
     // The fill is drawn by the shared .cut/.cut--line mechanic's ::after layer, inset 1px inside the ::before
@@ -43,7 +53,7 @@ test.describe('P2-2: achievement toast', () => {
     await page.goto('/records/', { waitUntil: 'networkidle' });
     await settle(page);
     const trigger = page.locator('#awards a[data-cert-id]').first();
-    const dialog = page.locator('dialog.cert-modal');
+    const dialog = page.locator('dialog.image-viewer');
     await trigger.click();
     await expect(dialog).toHaveAttribute('open', '');
     // The achievement toast (open-certificate -> "상장 확인") must not exist while the dialog is open.
@@ -161,9 +171,9 @@ test.describe('P2-9: publication panels', () => {
 });
 
 test.describe('P2-13: certificate modal before hydration', () => {
-  test('a click on [data-cert-id] before the island hydrates opens the modal instead of navigating away', async ({ page }) => {
-    // Delay every JS module response so the click below lands well before CertificateModal's React effect runs,
-    // while the head's inline queue script (src/lib/cert-queue.ts) has already registered its capture listener.
+  test('a click on [data-viewer] before the island hydrates opens the modal instead of navigating away', async ({ page }) => {
+    // Delay every JS module response so the click below lands well before ImageViewer's React effect runs,
+    // while the head's inline queue script (src/lib/viewer-queue.ts) has already registered its capture listener.
     await page.route('**/*.js', async (route) => {
       await new Promise((resolve) => setTimeout(resolve, 400));
       await route.continue();
@@ -173,8 +183,8 @@ test.describe('P2-13: certificate modal before hydration', () => {
     await trigger.waitFor({ state: 'attached' });
     await trigger.click();
     // Still on /records/ (no navigation to the bare certificate image) once hydration completes.
-    await expect(page.locator('dialog.cert-modal')).toHaveAttribute('open', '', { timeout: 5000 });
-    await expect(page).toHaveURL(/\/records\/$/);
+    await expect(page.locator('dialog.image-viewer')).toHaveAttribute('open', '', { timeout: 5000 });
+    await expect(page).toHaveURL(/\/records\/(#view-[^#]+)?$/);
     await expect(page.getByRole('button', { name: '닫기' })).toBeFocused();
   });
 });
@@ -271,7 +281,8 @@ test.describe('P2-15: the English 404', () => {
     expect(cvBoxBefore.y + cvBoxBefore.height, 'CV stays on the bar\'s single line').toBeLessThanOrEqual(barBox.y + barBox.height + 1);
 
     await toggle.click();
-    await expect(toggle).toHaveText('Close ×');
+    // G-017 / N01: open label is "×" + visually hidden Close (stable toggle width).
+    await expect(toggle.locator('[aria-hidden="true"]')).toHaveText('×');
     await expect(toggle).toHaveAccessibleName('Close');
     // The panel variant is now visible inside the opened menu.
     const panelSwitch = page.locator('.nf-lang-switch--panel a');
@@ -496,5 +507,202 @@ test.describe('P2-25: legal-page tables stack below 734px', () => {
     await expect(enStatus).toHaveText('Shown when linked');
     const enStyle = await enStatus.evaluate((el) => getComputedStyle(el).fontFamily.toLowerCase());
     expect(enStyle).toContain('jetbrains');
+  });
+});
+
+// N20 / F-027: BGM remembers position across same-origin navigations and keeps a stable waiting chip.
+test.describe('N20: BGM resume and waiting state', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.addInitScript(() => {
+      const audios: HTMLAudioElement[] = [];
+      (window as unknown as { __sbBgmAudios: HTMLAudioElement[] }).__sbBgmAudios = audios;
+      const OrigAudio = window.Audio;
+      window.Audio = class extends OrigAudio {
+        constructor(src?: string) {
+          super(src);
+          audios.push(this);
+        }
+      } as typeof Audio;
+      HTMLMediaElement.prototype.play = async function play() {
+        Object.defineProperty(this, 'paused', { configurable: true, get: () => false });
+        return undefined;
+      };
+    });
+  });
+
+  test('button width is equal across off, on and waiting at 375', async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 812 });
+    await page.goto('/', { waitUntil: 'networkidle' });
+    await settle(page);
+    const button = page.locator('button.bgm');
+    await expect(button).toBeVisible();
+    const offWidth = (await button.boundingBox())!.width;
+
+    await button.click();
+    await expect(button).toHaveAttribute('aria-pressed', 'true');
+    await expect(button).not.toHaveAttribute('data-state', 'waiting');
+    const onWidth = (await button.boundingBox())!.width;
+
+    await page.evaluate(() => {
+      localStorage.setItem('sb:sound', 'on');
+      sessionStorage.setItem('sb:bgm-t', JSON.stringify({ t: 20, at: Date.now() }));
+    });
+    await page.addInitScript(() => {
+      HTMLMediaElement.prototype.play = async function play() {
+        throw new DOMException('NotAllowedError');
+      };
+    });
+    await page.reload({ waitUntil: 'networkidle' });
+    await settle(page);
+    const waiting = page.locator('button.bgm');
+    await expect(waiting).toHaveAttribute('data-state', 'waiting');
+    await expect(waiting).toHaveAttribute('aria-pressed', 'true');
+    const waitingWidth = (await waiting.boundingBox())!.width;
+    expect(Math.abs(onWidth - offWidth), 'on vs off').toBeLessThanOrEqual(1);
+    expect(Math.abs(waitingWidth - onWidth), 'waiting vs on').toBeLessThanOrEqual(1);
+  });
+
+  test('after navigation, playback resumes within ±2s of the saved time', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 720 });
+    await page.goto('/', { waitUntil: 'networkidle' });
+    await settle(page);
+    const button = page.locator('button.bgm');
+    await expect(button).toBeVisible();
+    await button.click();
+    await expect(button).toHaveAttribute('aria-pressed', 'true');
+
+    const savedAt = 47;
+    await page.waitForFunction(() => (window as unknown as { __sbBgmAudios: HTMLAudioElement[] }).__sbBgmAudios?.length > 0);
+    await page.evaluate((t) => {
+      const audio = (window as unknown as { __sbBgmAudios: HTMLAudioElement[] }).__sbBgmAudios[0]!;
+      audio.currentTime = t;
+      sessionStorage.setItem('sb:bgm-t', JSON.stringify({ t, at: Date.now() }));
+    }, savedAt);
+
+    await page.locator('.hud-nav__list a[href="/records/"]').click();
+    await page.waitForURL('**/records/');
+    await settle(page);
+
+    const nextButton = page.locator('button.bgm');
+    await expect(nextButton).toHaveAttribute('aria-pressed', 'true');
+    await page.waitForFunction(() => (window as unknown as { __sbBgmAudios: HTMLAudioElement[] }).__sbBgmAudios?.length > 0);
+    // Autoplay may be blocked → waiting; a non-link gesture resumes from the saved position.
+    const state = await nextButton.getAttribute('data-state');
+    if (state === 'waiting') {
+      await page.locator('main').click({ position: { x: 20, y: 20 } });
+    }
+    await expect.poll(async () =>
+      page.evaluate(() => (window as unknown as { __sbBgmAudios: HTMLAudioElement[] }).__sbBgmAudios.at(-1)?.currentTime ?? -1),
+    ).toBeGreaterThan(0);
+    const time = await page.evaluate(
+      () => (window as unknown as { __sbBgmAudios: HTMLAudioElement[] }).__sbBgmAudios.at(-1)?.currentTime ?? 0,
+    );
+    expect(Math.abs(time - savedAt), `resumed at ${time}, expected ~${savedAt}`).toBeLessThanOrEqual(2);
+    expect(time, 'must not restart at 0').toBeGreaterThan(2);
+  });
+});
+
+test.describe('N08: cartridge hover lifts the body, not the hit box', () => {
+  for (const route of ['/projects/', '/'] as const) {
+    test(`${route}: pointer near the bottom keeps :hover; .cart top stays put`, async ({ page }) => {
+      await page.setViewportSize({ width: 1440, height: 900 });
+      await page.goto(route, { waitUntil: 'networkidle' });
+      await settle(page);
+      const cart = page.locator('.cart:not(.cart--static)').first();
+      await expect(cart).toBeVisible();
+      await cart.scrollIntoViewIfNeeded();
+
+      const box = (await cart.boundingBox())!;
+      const restTop = box.y;
+      const x = box.x + box.width / 2;
+
+      for (const above of [4, 6, 10] as const) {
+        const y = box.y + box.height - above;
+        for (let i = 0; i < 20; i += 1) {
+          await page.mouse.move(box.x + 10 + i, y);
+          const state = await cart.evaluate((el) => ({
+            hovered: el.matches(':hover'),
+            top: el.getBoundingClientRect().top,
+          }));
+          expect(state.hovered, `sample ${i} at ${above}px above bottom`).toBe(true);
+          expect(state.top, `.cart top must not bounce`).toBeCloseTo(restTop, 0);
+        }
+      }
+
+      // Well above the bottom: body still lifts -16px.
+      await page.mouse.move(x, box.y + box.height - 20);
+      const lift = await cart.evaluate((el) => {
+        const body = el.querySelector('.cart__body') as HTMLElement;
+        return getComputedStyle(body).transform;
+      });
+      expect(lift, 'body lifts -16px').toMatch(/matrix\(|translate/i);
+      const ty = await cart.evaluate((el) => {
+        const body = el.querySelector('.cart__body') as HTMLElement;
+        const t = getComputedStyle(body).transform;
+        if (t === 'none') return 0;
+        const m = new DOMMatrixReadOnly(t);
+        return m.m42;
+      });
+      expect(ty).toBeCloseTo(-16, 0);
+    });
+  }
+
+  test('no-JS + OS reduced motion: hover transform is none', async ({ browser }) => {
+    const context = await browser.newContext({ javaScriptEnabled: false, reducedMotion: 'reduce' });
+    const page = await context.newPage();
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/projects/', { waitUntil: 'networkidle' });
+    const cart = page.locator('.cart:not(.cart--static)').first();
+    await expect(cart).toBeVisible();
+    await cart.scrollIntoViewIfNeeded();
+    const box = (await cart.boundingBox())!;
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+    const transform = await cart.evaluate((el) => {
+      const body = el.querySelector('.cart__body') as HTMLElement | null;
+      return body ? getComputedStyle(body).transform : 'missing';
+    });
+    expect(transform).toBe('none');
+    await context.close();
+  });
+});
+
+test.describe('N13: sticky hover cleared on touch; press fill holds', () => {
+  test('tag filter: tap on then off restores idle border on touch', async ({ browser }) => {
+    // Chromium only sets (hover: none) when isMobile is true; also tap away so sticky :hover cannot linger.
+    const context = await browser.newContext({
+      viewport: { width: 375, height: 812 },
+      hasTouch: true,
+      isMobile: true,
+    });
+    const page = await context.newPage();
+    await page.goto('/projects/', { waitUntil: 'networkidle' });
+    await settle(page);
+    const hoverNone = await page.evaluate(() => matchMedia('(hover: hover)').matches);
+    expect(hoverNone, 'touch context must not claim hover:hover').toBe(false);
+    const buttons = page.locator('.tag-filter__btn');
+    await expect(buttons.first()).toBeVisible();
+    const second = buttons.nth(1);
+    const idleBorder = await buttons.nth(2).evaluate((el) => getComputedStyle(el).borderColor);
+    await second.tap();
+    await expect(second).toHaveAttribute('aria-pressed', 'true');
+    await second.tap();
+    await expect(second).toHaveAttribute('aria-pressed', 'false');
+    await page.locator('h1').tap();
+    await expect
+      .poll(() => second.evaluate((el) => getComputedStyle(el).borderColor), { timeout: 2000 })
+      .toBe(idleBorder);
+    await context.close();
+  });
+
+  test('/records/ primary PDF button --cut-fill changes on hover', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/records/', { waitUntil: 'networkidle' });
+    await settle(page);
+    const btn = page.locator('.read .btn--fill, .read-section .btn--fill').first();
+    await expect(btn).toBeVisible();
+    const before = await btn.evaluate((el) => getComputedStyle(el).getPropertyValue('--cut-fill').trim());
+    await btn.hover();
+    const after = await btn.evaluate((el) => getComputedStyle(el).getPropertyValue('--cut-fill').trim());
+    expect(after, 'hover changes --cut-fill').not.toBe(before);
   });
 });

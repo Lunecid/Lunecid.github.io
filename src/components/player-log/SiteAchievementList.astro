@@ -88,12 +88,14 @@ const progressTemplate = ui[lang]['achievement.progress'];
 <style>
   .site-ach__progress { margin-top: 16px; font: 700 15px/1.4 var(--font-mono); color: var(--read-text); }
   .site-ach__progress:lang(ko) { font-family: var(--font-sans); } /* "0 / 8 달성" */
+  /* Shared list packing: align-content:start so state tags stay 24px (F-055); game lists reuse the same idea. */
   .site-ach__list { margin-top: 16px; padding: 0; list-style: none; border-top: 1px solid var(--read-line-strong); }
   @media (min-width: 734px) {
-    .site-ach__list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 40px; }
+    .site-ach__list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 40px; align-content: start; }
   }
   .site-ach__item {
     display: grid; grid-template-columns: 32px minmax(0, 1fr); grid-template-areas: "icon body" "icon state"; gap: 4px 14px;
+    align-content: start;
     padding-block: 16px; border-bottom: 1px solid var(--read-line);
   }
   .site-ach__icon {
@@ -105,7 +107,10 @@ const progressTemplate = ui[lang]['achievement.progress'];
   .site-ach__title { font-size: 17px; font-weight: 700; line-height: 1.4; color: var(--read-text); }
   .site-ach__desc { margin-top: 2px; font-size: 15px; color: var(--read-text); }
   .site-ach__hint { margin-top: 2px; font-size: 14px; color: var(--read-muted); }
-  .site-ach__state { grid-area: state; display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+  .site-ach__state { grid-area: state; display: flex; flex-wrap: wrap; align-items: flex-start; gap: 6px; margin-top: 4px; }
+  /* F-055 height + flex align, but not on [hidden] — author display would beat the UA [hidden] { display: none }. */
+  .site-ach__state-tag:not([hidden]) { height: 24px; box-sizing: border-box; display: inline-flex; align-items: center; }
+  .site-ach__state-tag[hidden] { display: none; }
   .site-ach__state-tag--on { color: var(--gold-ink); background: var(--gold); border-color: var(--gold); }
   .site-ach__note { margin-top: 14px; font-size: 14px; color: var(--read-muted); }
 </style>

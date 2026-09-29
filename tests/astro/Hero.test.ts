@@ -83,7 +83,12 @@ describe('Hero.astro', () => {
     );
     expect(html).toContain('플레이어를 예측하는 데서 멈추지 않고,');
     expect(html).toContain('이해하는 데이터를 만듭니다.');
-    expect(html).toContain('부산대학교 데이터사이언스 석사과정 · 게임 텔레메트리 · 그래프 ML');
+    // F-029: meta is middot nowrap units; visible text stays the same.
+    expect(textOf(html, 'hero__meta').replace(/\s+/g, ' ').trim()).toBe(
+      '부산대학교 데이터사이언스 석사과정 · 게임 텔레메트리 · 그래프 ML',
+    );
+    expect(html).toMatch(/hero__meta-part/);
+    expect(html).toMatch(/hero__slogan-lead/);
   });
 
   it('final fix 2 item 11: the English hero has no title card repeating the name above the H1', async () => {

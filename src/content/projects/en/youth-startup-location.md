@@ -13,13 +13,13 @@ teamTools: ['scikit-learn', 'LightGBM', 'XGBoost', 'QGIS', 'Streamlit'] # D-9: t
 tags: ['Machine learning', 'Public data', 'Visualization']
 cover:
   src: '../../../assets/projects/youth-startup-location/cluster-zscore-heatmap.webp'
-  alt: 'Heatmap of key-feature z-scores by cluster. Cluster 1 is high on late-night foot traffic; cluster 2 is high on middle-aged share and competition.'
+  alt: 'Heatmap of key-feature z-scores by cluster. Cluster 0 is near average; cluster 1 is high on late-night foot traffic; cluster 2 on middle-aged share and competition; cluster 3 on the floating-to-resident ratio.'
   label: 'CLUSTER PROFILES'
   fit: contain # P1-6: the heatmap (the old PCA scatter had a Plotly tooltip baked in), whole, never cut mid-line
 figures:
   - src: '../../../assets/projects/youth-startup-location/cluster-zscore-heatmap.webp'
-    alt: 'Heatmap of key-feature z-scores by cluster. Cluster 1 is high on late-night foot traffic; cluster 2 is high on middle-aged share and competition.'
-    caption: 'Z-scores of key features by cluster; redder means above average. The four commercial-area types were named from these differences.'
+    alt: 'Heatmap of key-feature z-scores by cluster. Cluster 0 is near average; cluster 1 is high on late-night foot traffic; cluster 2 on middle-aged share and competition; cluster 3 on the floating-to-resident ratio.'
+    caption: 'Z-scores of key features by cluster; redder means above average. Cluster 0=Residential, 1=Nightlife, 2=Middle-aged, 3=Residential and transit hub.'
     inlineAfter: 'Figure 1'
 links:
   github: 'https://github.com/Lunecid/busan-youth-startup-location'
@@ -61,12 +61,12 @@ The team ran the analysis below.
 
 Busan's restaurant districts fell into four distinct types (Figure 1).
 
-| Type | Profile | Suggested businesses |
-|---|---|---|
-| Residential | All indicators below average, weak competition | Delivery-only kitchens, family restaurants |
-| Nightlife | High foot traffic from 10 p.m. to 1 a.m., many young visitors | Bars, late-night food, fast food |
-| Middle-aged | Highest middle-aged share, strong competition | Health food and traditional cuisine, with clear differentiation |
-| Residential and transit hub | Only the floating-to-resident ratio is high | Commuter brunch cafés, pickup and grab-and-go |
+| Type | Cluster | Profile | Suggested businesses |
+|---|---|---|---|
+| Residential | 0 | All indicators below average, weak competition | Delivery-only kitchens, family restaurants |
+| Nightlife | 1 | High foot traffic from 10 p.m. to 1 a.m., many young visitors | Bars, late-night food, fast food |
+| Middle-aged | 2 | Highest middle-aged share, strong competition | Health food and traditional cuisine, with clear differentiation |
+| Residential and transit hub | 3 | Only the floating-to-resident ratio is high | Commuter brunch cafés, pickup and grab-and-go |
 
 For sales, LightGBM with a log-transformed target fit best. The districts with the largest Potential Gap were Hadan 2-dong (Saha-gu), Bujeon 1-dong (Busanjin-gu) and Gupo 1-dong (Buk-gu).
 

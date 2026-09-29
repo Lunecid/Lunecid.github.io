@@ -8,8 +8,9 @@ import type { Localized } from '../i18n/utils';
  * - AudioSync: unrelated to this portfolio.
  * - PUBG_Lab: not shown until the owner marks the repository ready. Remove it from this list only then.
  * - Child_Abuse: code of a manuscript under double-anonymised review; not shown until the review has ended (owner decides).
+ * - TIL: owner decision 17 (F-096) — hide from the public GitHub list.
  */
-export const GITHUB_EXCLUDED: readonly string[] = ['AudioSync', 'PUBG_Lab', 'Child_Abuse'];
+export const GITHUB_EXCLUDED: readonly string[] = ['AudioSync', 'PUBG_Lab', 'Child_Abuse', 'TIL'];
 
 /** Shown first, in this order, when present in the fetched data. */
 export const GITHUB_FIRST: readonly string[] = ['LOL_teamfight_Lab'];

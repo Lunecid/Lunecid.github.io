@@ -32,26 +32,28 @@ afterEach(() => {
 
 describe('stageReducer', () => {
   it('stageReducer transition table', () => {
-    const shown: StageState = { phase: 'shown', currentId: 'remielle', nextId: null, play: 0 };
+    const shown: StageState = { phase: 'shown', currentId: 'remielle', nextId: null, play: 0, cause: null };
     const idle: StageState = { ...shown, phase: 'idle' };
     const entering: StageState = { ...shown, phase: 'entering' };
-    const exiting: StageState = { ...shown, phase: 'exiting', nextId: 'eula' };
+    const exiting: StageState = { ...shown, phase: 'exiting', nextId: 'eula', cause: 'select' };
 
     expect(stageReducer(idle, { type: 'START' })).toEqual(entering);
     expect(stageReducer(shown, { type: 'START' })).toBe(shown);
     expect(stageReducer(entering, { type: 'ENTER_END' })).toEqual(shown);
     expect(stageReducer(shown, { type: 'ENTER_END' })).toBe(shown);
-    expect(stageReducer(shown, { type: 'SELECT', id: 'remielle' })).toEqual({ ...shown, phase: 'entering', play: 1 });
-    expect(stageReducer(entering, { type: 'SELECT', id: 'eula' })).toEqual({ ...shown, phase: 'exiting', nextId: 'eula' });
-    expect(stageReducer(shown, { type: 'REPLAY' })).toEqual({ ...shown, phase: 'entering', play: 1 });
-    expect(stageReducer(exiting, { type: 'EXIT_END' })).toEqual({ phase: 'entering', currentId: 'eula', nextId: null, play: 1 });
+    expect(stageReducer(shown, { type: 'SELECT', id: 'remielle' })).toEqual({ ...shown, phase: 'entering', play: 1, cause: 'select' });
+    expect(stageReducer(entering, { type: 'SELECT', id: 'eula' })).toEqual({ ...shown, phase: 'exiting', nextId: 'eula', cause: 'select' });
+    expect(stageReducer(shown, { type: 'REPLAY' })).toEqual({ ...shown, phase: 'entering', play: 1, cause: 'replay' });
+    expect(stageReducer(exiting, { type: 'EXIT_END' })).toEqual({ phase: 'entering', currentId: 'eula', nextId: null, play: 1, cause: 'select' });
     expect(stageReducer(shown, { type: 'EXIT_END' })).toBe(shown);
     expect(stageReducer(idle, { type: 'SET', id: 'eula' })).toEqual({ ...idle, currentId: 'eula' }); // before the first entrance
     expect(stageReducer(shown, { type: 'SET', id: 'eula' })).toBe(shown); // later changes animate (SELECT)
-    for (const action of [{ type: 'SELECT', id: 'eula' }, { type: 'REPLAY' }] as const) {
-      expect(stageReducer(idle, action)).toBe(idle); // ignored while idle
-      expect(stageReducer(exiting, action)).toBe(exiting); // ignored while busy
-    }
+    // F-038: SELECT while exiting updates nextId; identical nextId is a no-op
+    expect(stageReducer(exiting, { type: 'SELECT', id: 'remielle' })).toEqual({ ...exiting, nextId: 'remielle' });
+    expect(stageReducer(exiting, { type: 'SELECT', id: 'eula' })).toBe(exiting);
+    expect(stageReducer(idle, { type: 'SELECT', id: 'eula' })).toBe(idle);
+    expect(stageReducer(idle, { type: 'REPLAY' })).toBe(idle);
+    expect(stageReducer(exiting, { type: 'REPLAY' })).toBe(exiting);
   });
 });
 
@@ -219,19 +221,55 @@ describe('CharacterStage', () => {
     expect(sideChoice(['eula'], 'eula', 'eula')).toBe('eula'); // nothing else to show (HomeView then drops the side art)
   });
 
-  it('replay increments play and dispatches sb:stage-enter', () => {
-    const seen: { variant: string; play: number }[] = [];
-    const onEnter = (event: Event) => seen.push((event as CustomEvent<{ variant: string; play: number }>).detail);
+  it('replay increments play and dispatches sb:stage-enter; select does not (F-011)', async () => {
+    vi.useFakeTimers();
+    const seen: { variant: string; play: number; cause?: string }[] = [];
+    const onEnter = (event: Event) => seen.push((event as CustomEvent<{ variant: string; play: number; cause?: string }>).detail);
     window.addEventListener('sb:stage-enter', onEnter);
-    const { container } = render(<CharacterStage variant="hero" trigger="load" characters={[REMIELLE]} controls={CONTROLS} />);
+    const { container } = render(<CharacterStage variant="hero" trigger="load" characters={[REMIELLE, EULA]} controls={CONTROLS} />);
     expect(seen).toEqual([]); // the first-paint entrance is not a replay
+
+    // Select while shown: art changes, no copy-reset event.
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(900); // settle initial entrance → shown
+    });
+    fireEvent.click(screen.getByRole('button', { name: '유라 · 원신' }));
+    expect(seen).toEqual([]);
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(260);
+    });
+    expect(container.querySelector('.char-stage__img')?.getAttribute('src')).toBe('/_astro/eula.webp');
+    expect(seen).toEqual([]); // EXIT_END re-enter is still cause=select
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(900); // settle select entrance → shown
+    });
     const firstImg = container.querySelector('.char-stage__img');
     fireEvent.click(screen.getByRole('button', { name: /등장 다시 보기/ }));
-    expect(seen).toEqual([{ variant: 'hero', play: 1 }]);
-    expect(container.querySelector('.char-stage__img')).not.toBe(firstImg); // remounted → keyframes restart
+    expect(seen).toEqual([{ variant: 'hero', play: 2, cause: 'replay' }]); // play was 1 after select
+    expect(container.querySelector('.char-stage__img')).not.toBe(firstImg);
     fireEvent.click(screen.getByRole('button', { name: /등장 다시 보기/ }));
-    expect(seen.at(-1)).toEqual({ variant: 'hero', play: 2 });
+    expect(seen.at(-1)).toEqual({ variant: 'hero', play: 3, cause: 'replay' });
     window.removeEventListener('sb:stage-enter', onEnter);
+  });
+
+  it('F-038: a second swap while exiting keeps the later pick and plays SFX once per change', async () => {
+    vi.useFakeTimers();
+    const { container } = render(
+      <CharacterStage variant="hero" trigger="load" characters={[REMIELLE, EULA]} controls={CONTROLS} />,
+    );
+    const stage = container.querySelector<HTMLElement>('.char-stage');
+    fireEvent.click(screen.getByRole('button', { name: '유라 · 원신' }));
+    expect(stage?.dataset.phase).toBe('exiting');
+    expect(playSfx).toHaveBeenCalledTimes(1);
+    fireEvent.click(screen.getByRole('button', { name: '레미엘 · ZZZ' }));
+    expect(playSfx).toHaveBeenCalledTimes(2);
+    expect(screen.getByRole('button', { name: '레미엘 · ZZZ' })).toHaveAttribute('aria-pressed', 'true');
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(260);
+    });
+    expect(stage?.dataset.phase).toBe('entering');
+    expect(container.querySelector('.char-stage__img')?.getAttribute('src')).toBe('/_astro/remielle.webp');
   });
 
   it('preloadImage never rejects, resolves at capMs and caches per srcSet', async () => {

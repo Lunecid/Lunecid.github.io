@@ -32,7 +32,7 @@ const has = (id: CharacterId) => art.includes(id);
 /** Ghost watermark asset (src/assets/ghost/miku-v6.webp); credit text follows file presence. */
 const hasGhostMiku = existsSync(join(root, 'src/assets/ghost/miku-v6.webp'));
 const GHOST_CREDIT = {
-  ko: '이 사이트는 하츠네 미쿠의 변형물(흑백·투명도 처리)을 포함합니다. Hatsune Miku, © Crypton Future Media, Inc. 2007, licensed under a CC BY-NC: https://creativecommons.org/licenses/by-nc/3.0/',
+  ko: '이 사이트는 하츠네 미쿠의 변형물(흑백·투명도 처리)을 포함합니다. <span lang="en">Hatsune Miku, © Crypton Future Media, Inc. 2007, licensed under a CC BY-NC: https://creativecommons.org/licenses/by-nc/3.0/</span>',
   en: 'This site features an adaptation of Hatsune Miku, © Crypton Future Media, Inc. 2007, licensed under a CC BY-NC: https://creativecommons.org/licenses/by-nc/3.0/',
 } as const;
 
@@ -157,17 +157,17 @@ describe('legal content', () => {
     const on = RIOT_NOTICE_ON_PAGES;
     const ko = raw('ko', 'credits').split('\n').find((l) => l.startsWith('| 라이엇 게임즈 |'));
     const en = raw('en', 'credits').split('\n').find((l) => l.startsWith('| Riot Games |'));
-    expect(ko).toBe(`| 라이엇 게임즈 | ${ui.ko['notice.riot']} | ${on ? 'CoG 논문 페이지에 표시' : '연동 시 표시'} |`);
+    expect(ko).toBe(`| 라이엇 게임즈 | <span lang="en">${ui.ko['notice.riot']}</span> | ${on ? 'CoG 논문 페이지에 표시' : '연동 시 표시'} |`);
     expect(en).toBe(`| Riot Games | ${ui.en['notice.riot']} | ${on ? 'Shown on the CoG paper page' : 'Shown when linked'} |`);
     // The research-data paragraph always names the Riot Games API source.
-    expect(raw('ko', 'credits')).toContain('Riot Games API로 모은 공개 경기 데이터');
+    expect(raw('ko', 'credits')).toContain('Riot Games API</span>로 모은 공개 경기 데이터');
     expect(raw('en', 'credits')).toContain('public match data collected through the Riot Games API');
   });
 
   it('credits Valve row starts with "Powered by Steam." (spec §8, P2-33)', () => {
     const ko = raw('ko', 'credits').split('\n').find((l) => l.startsWith('| Valve(Steam) |'));
     const en = raw('en', 'credits').split('\n').find((l) => l.startsWith('| Valve (Steam) |'));
-    expect(ko).toMatch(/^\| Valve\(Steam\) \| Powered by Steam\. /);
+    expect(ko).toMatch(/^\| Valve\(Steam\) \| <span lang="en">Powered by Steam\.<\/span>/);
     expect(en).toMatch(/^\| Valve \(Steam\) \| Powered by Steam\. /);
   });
 

@@ -12,13 +12,14 @@ interface Props {
   photoAlt: string;
 }
 const { lang, label, classLine, badges, photoAlt } = Astro.props;
+const badgeLang = (badge: string): 'en' | undefined => (/\p{Script=Hangul}/u.test(badge) ? undefined : 'en');
 ---
 <div class="player-card cut cut--line" role="group" aria-label={label}>
   <Image class="player-card__photo" src={photo} alt={photoAlt} width={46} densities={[1, 2]} loading="eager" />
   <div class="player-card__body">
     <p class="player-card__class" lang={lang}>{classLine}</p>
     <ul class="player-card__badges" role="list">
-      {badges.map((badge) => <li class="badge badge--tier"><span aria-hidden="true">◆</span>{badge}</li>)}
+      {badges.map((badge) => <li class="badge badge--tier" lang={badgeLang(badge)}><span aria-hidden="true">◆</span>{badge}</li>)}
     </ul>
   </div>
 </div>

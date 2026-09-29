@@ -17,24 +17,24 @@ award:
   certificate: 'busan-mayor-award'
 cover:
   src: '../../../assets/projects/school-zone-blindspots/risk-heatmap.webp'
-  alt: 'Heatmap of predicted child-pedestrian accident probability across Busan road points. Redder means higher probability; red dots are recorded accidents.'
+  alt: 'Heatmap of predicted child-pedestrian accident probability across Busan road points. Colour: predicted accident probability (teal low → red/black high); red dots: recorded accidents; pink lines: existing school zones.'
   label: 'RISK HEATMAP'
 figures:
   - src: '../../../assets/projects/school-zone-blindspots/spatial-cv-blocks.webp'
-    alt: 'Scatter plot of all analysis points in Busan, colored into 10 geographic blocks ordered by longitude'
-    caption: 'The 10 geographic blocks used for spatial cross-validation. Points in the same block go only to training or only to validation.'
+    alt: 'Scatter plot of all analysis points in Busan, colored into 10 geographic blocks ordered by projected X (EPSG:5186, metres). Axes are metres, not latitude/longitude.'
+    caption: 'The 10 geographic blocks used for spatial cross-validation. Points in the same block go only to training or only to validation. Axes are projected metres (EPSG:5186), not lat/long.'
     inlineAfter: 'Figure 1'
   - src: '../../../assets/projects/school-zone-blindspots/false-positive-areas.webp'
-    alt: 'Busan-wide heatmap of false positives: areas with no recorded accident that the model rated high-risk are shown in red.'
-    caption: 'Areas with no recorded accident that the model rated high-risk. These became the candidates for blind spots.'
+    alt: 'Busan-wide false-positive heatmap. Colour: predicted accident probability (teal low → red/black high). Red dots: recorded accidents. Pink lines: existing school zones. Areas with no recorded accident that the model rated high-risk appear red.'
+    caption: 'Areas with no recorded accident that the model rated high-risk. Colour: predicted accident probability (teal low → red/black high) · red dots: recorded accidents · pink lines: existing school zones.'
     inlineAfter: 'Figure 2'
   - src: '../../../assets/projects/school-zone-blindspots/gupo-existing-zone.webp'
-    alt: 'Heatmap around Gupo-dong. Existing school zones, drawn in pink, overlap the high-risk area.'
-    caption: 'Gupo-dong: the model also rates an existing school zone as high-risk, which supports the current designation.'
+    alt: 'Heatmap around Gupo-dong. Colour: predicted accident probability (teal low → red/black high). Red dots: recorded accidents. Pink lines: existing school zones overlapping the high-risk area.'
+    caption: 'Gupo-dong: the model also rates an existing school zone as high-risk. Colour: predicted accident probability (teal low → red/black high) · red dots: recorded accidents · pink lines: existing school zones.'
     inlineAfter: 'Figure 3'
   - src: '../../../assets/projects/school-zone-blindspots/yeonsan-unprotected.webp'
-    alt: 'Heatmap around Yeonsan-dong. A wide high-risk area with almost no pink school-zone roads.'
-    caption: 'Yeonsan-dong: high risk but almost no school zone. Listed as a policy blind-spot candidate.'
+    alt: 'Heatmap around Yeonsan-dong. Colour: predicted accident probability (teal low → red/black high). Red dots: recorded accidents. Almost no pink school-zone lines.'
+    caption: 'Yeonsan-dong: high risk but almost no school zone. Colour: predicted accident probability (teal low → red/black high) · red dots: recorded accidents · pink lines: existing school zones.'
     inlineAfter: 'Figure 4'
 links:
   github: 'https://github.com/Lunecid/busan-school-zone-blindspots'
@@ -73,7 +73,7 @@ Sixteen public datasets in total. Placing a point every 30 m along road centerli
 
 ## Result
 
-The model found most of the areas where accidents actually happened: under spatial block cross-validation, recall on accident areas was 0.87, with precision 0.62 and F1 0.72. Because I favored fewer misses, the number of points predicted as risky but without a recorded accident also grew (Figure 2).
+The model found most of the areas where accidents actually happened: under spatial block cross-validation, recall on accident areas was 0.87, with precision 0.62 and F1 0.72. Because I favored fewer misses, the number of points predicted as risky but without a recorded accident also grew (Figure 2). On the heatmaps, colour is predicted accident probability (teal low → red/black high), red dots are recorded accidents, and pink lines are existing school zones.
 
 Instead of discarding these false positives, I split them in two.
 

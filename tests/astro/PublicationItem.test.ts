@@ -145,9 +145,10 @@ describe('PublicationItem.astro', () => {
     expect(noCode).not.toContain('LOL_teamfight_Lab');
   });
 
-  it('compact variant has no thumbnail', async () => {
+  it('compact variant has no thumbnail; full row uses empty alt (F-057: Fig. 1 alt is on the interest figure only)', async () => {
     const full = await render({ lang: 'ko', paper: ko });
-    expect(full).toMatch(/<img[^>]*alt="논문 그림 1\. 킬 사건과 60초 타임라인 프레임이 하나의 교전이 된다\."/);
+    expect(full).toMatch(/<img[^>]*\salt(?:="")?[\s>]/);
+    expect(full).not.toMatch(/alt="논문 그림 1/);
     const compact = await render({ lang: 'ko', paper: ko, compact: true });
     expect(compact).not.toMatch(/<img\b/);
     expect(compact).not.toContain('pub__media');

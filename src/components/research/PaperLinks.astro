@@ -79,7 +79,9 @@ const bibtexId = `${idBase}-bibtex`;
     transition: color var(--dur-hover) linear, border-color var(--dur-hover) linear;
   }
   .pub__btn:lang(ko), .pub__pending:lang(ko) { font-family: var(--font-sans); } /* Hangul: no mono-width spaces (P1-10) */
-  .pub__btn:hover { color: var(--accent-deep); border-color: var(--accent-deep); }
+  @media (hover: hover) {
+    .pub__btn:hover { color: var(--accent-deep); border-color: var(--accent-deep); }
+  }
   .pub__btn[aria-expanded="true"] { color: var(--accent-deep); border-color: var(--accent-deep); }
   .pub__pending { cursor: default; color: var(--read-muted); border-style: dashed; }
   /* Fix round 3 item 3: without JS, disclosure-trigger.ts never attaches a click handler, so these two buttons

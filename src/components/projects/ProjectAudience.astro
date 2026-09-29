@@ -44,4 +44,14 @@ const blocks = [
     .audience__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
     .audience__grid--single { grid-template-columns: minmax(0, 1fr); }
   }
+  /* F-040 / decision 9 (b): at ≥1068px widen beyond the reading column so each card is ≥34em; keep 2 columns. */
+  @media (min-width: 1068px) {
+    .audience {
+      max-width: var(--container-hud);
+      margin-inline: auto;
+      padding-inline: var(--gutter);
+      box-sizing: border-box;
+    }
+    .audience__grid { align-items: start; }
+  }
 </style>

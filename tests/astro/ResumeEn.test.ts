@@ -38,6 +38,8 @@ describe('ResumeEn', () => {
     expect([...order].sort((a, b) => a - b)).toEqual(order);
     expect(html).not.toMatch(/<h2[^>]*>Activities<\/h2>/); // no activity is flagged for the English résumé
     expect(html).toContain('(expected)');
+    expect(html).not.toContain('CDS Big Data Training');
+    expect(html).not.toContain('CCAIM Machine Learning for Healthcare Summer School 2026');
     expect(html).not.toMatch(/<img[\s>]/);
   });
 

@@ -135,10 +135,50 @@ describe('records helpers', () => {
     expect(ko.certifications.map((item) => item.primary)).toEqual(resume.certifications.map((c) => c.name.ko));
     expect(ko.certifications[0]).toEqual({ primary: '데이터분석 준전문가(ADsP)', secondary: '한국데이터산업진흥원', meta: '2024.09.06' });
     expect(ko.training.find((item) => item.primary.startsWith('참여연구원'))?.meta).toBe('2025.10 · 2시간');
+    expect(ko.training.map((item) => item.primary)).toEqual(resume.training.map((tr) => tr.name.ko));
+    const cdsKo = ko.training.find((item) => item.primary === 'CDS빅데이터 교육');
+    expect(cdsKo).toEqual({
+      primary: 'CDS빅데이터 교육',
+      secondary: '부산대학교',
+      meta: '2024.07 – 2024.08',
+    });
+    expect(cdsKo?.meta).not.toMatch(/시간|undefined| · $/);
+    const ccaimKo = ko.training.find((item) => item.primary.startsWith('CCAIM'));
+    expect(ccaimKo).toEqual({
+      primary: 'CCAIM Machine Learning for Healthcare Summer School 2026',
+      secondary: '케임브리지대학교 CCAIM(Cambridge Centre for AI in Medicine) · 온라인 참가',
+      meta: '2026.09',
+    });
+    expect(ccaimKo?.meta).not.toMatch(/시간|undefined| · $/);
     const en = credentialItems(resume, 'en', '2026-01-01');
     expect(en.training.find((item) => item.primary.startsWith('Multi-IT'))?.meta).toBe('Sep 2023 – Mar 2024 · 956 hours');
     expect(en.training.find((item) => item.primary.startsWith('OxML'))?.meta).toBe('Aug 2025 · 25 hours');
+    expect(en.training.map((item) => item.primary)).toEqual(resume.training.map((tr) => tr.name.en));
+    const cdsEn = en.training.find((item) => item.primary === 'CDS Big Data Training');
+    expect(cdsEn).toEqual({
+      primary: 'CDS Big Data Training',
+      secondary: 'Pusan National University',
+      meta: 'Jul 2024 – Aug 2024',
+    });
+    expect(cdsEn?.meta).not.toMatch(/hours|undefined| · $/);
+    const ccaimEn = en.training.find((item) => item.primary.startsWith('CCAIM'));
+    expect(ccaimEn).toEqual({
+      primary: 'CCAIM Machine Learning for Healthcare Summer School 2026',
+      secondary: 'Cambridge Centre for AI in Medicine (CCAIM), University of Cambridge (online)',
+      meta: 'Sep 2026',
+    });
+    expect(ccaimEn?.meta).not.toMatch(/hours|undefined| · $/);
     expect(en.activities).toHaveLength(resume.activities.length);
+    expect(en.activities[0]).toEqual({
+      primary: resume.activities[0].text.en,
+      meta: 'Aug 2025',
+      href: 'https://dacon.io/myprofile/530929/competition',
+    });
+    expect(ko.activities[0]).toEqual({
+      primary: resume.activities[0].text.ko,
+      meta: '2025.08',
+      href: 'https://dacon.io/myprofile/530929/competition',
+    });
   });
 
   it('awardItems keeps resume order and links certificates and projects', () => {
@@ -157,6 +197,12 @@ describe('records helpers', () => {
       dateIso: '2025-07-11',
       medal: { tier: 'gold', label: '최우수' },
       certHref: '/_astro/busan-mayor-award_1280.webp',
+      certWidth: null,
+      certHeight: null,
+      certSrcSet: null,
+      certSizes: null,
+      certAlt: null,
+      certCaption: null,
       redactionNote: null, // nothing hidden: no caption (P2-19)
       projectHref: '/projects/school-zone-blindspots/',
     });

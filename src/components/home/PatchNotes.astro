@@ -72,7 +72,9 @@ const { lang, notes } = Astro.props;
   .pn__link:hover { color: var(--accent-hover); text-decoration: underline; }
   .pn__text { margin-top: 2px; max-width: var(--measure); font-size: var(--fs-small); line-height: 1.6; color: var(--hud-muted); }
   @media (min-width: 734px) {
-    .pn__item { grid-template-columns: 76px 104px 64px minmax(0, 1fr); grid-template-areas: "ver date tag body"; align-items: baseline; column-gap: 16px; padding-block: 18px; }
+    /* F-017: max-content tag column so EN "Research" stays one line; nowrap on the tag itself. */
+    .pn__item { grid-template-columns: 76px 104px max-content minmax(0, 1fr); grid-template-areas: "ver date tag body"; align-items: baseline; column-gap: 16px; padding-block: 18px; }
+    .pn__tag { white-space: nowrap; overflow-wrap: normal; }
     .pn__ptr { left: -20px; top: 23px; }
   }
 </style>

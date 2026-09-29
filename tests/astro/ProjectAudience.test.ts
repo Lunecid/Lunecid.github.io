@@ -31,10 +31,10 @@ describe('ProjectAudience.astro (P1-8)', () => {
     expect(none.trim()).toBe('');
   });
 
-  it('sits in the same centred text column as the case-study body (--measure: 38em / 36em)', () => {
+  it('sits in the reading column below 1068px; at ≥1068 breaks out to the HUD container (F-040)', () => {
     const src = readSource('src/components/projects/ProjectAudience.astro');
-    // the shared .read-column (read.css), not a re-derived padding formula
     expect(src).toContain('<div class="audience read read-column">');
-    expect(src).not.toMatch(/\.audience\s*\{[^}]*padding-inline/);
+    expect(src).toMatch(/@media \(min-width: 1068px\) \{[\s\S]*?\.audience\s*\{[\s\S]*?max-width:\s*var\(--container-hud\)/);
+    expect(src).toMatch(/@media \(min-width: 1068px\) \{[\s\S]*?\.audience__grid\s*\{[\s\S]*?align-items:\s*start/);
   });
 });

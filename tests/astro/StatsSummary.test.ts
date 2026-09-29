@@ -34,11 +34,16 @@ describe('StatsSummary', () => {
     expect(on).not.toContain('OFFLINE');
   });
 
-  it('stats.unavailable with a code but no usable stats', async () => {
+  it('stats.unavailable with a code but no usable stats is owned by the live slot (F-014)', async () => {
     for (const s of [undefined, stats({ status: 'error' }), stats({ fetchedAt: '2026-01-01T00:00:00.000Z' })]) {
       const html = await renderAstro(StatsSummary, { props: { lang: 'ko', stats: s, code: 'lunecid' } });
-      expect(html).toContain('통계를 불러오지 못했습니다.');
+      // No contradictory SSR pair: unavailable lives in the island; build numbers are absent.
       expect(html).not.toContain('data-fetched-at');
+      expect(html).not.toMatch(/stats__total-num/);
+      expect(html).toMatch(/<astro-island[^>]*client="idle"/);
+      expect(html).toContain('통계를 불러오지 못했습니다.'); // island prop for client render
+      expect(html).toContain('방문 집계를 시작하는 중입니다.');
+      expect(html).toContain('&quot;initialTotal&quot;:[0,null]');
     }
   });
 
@@ -52,6 +57,7 @@ describe('StatsSummary', () => {
     expect(html).toContain('기준 시각');
     expect(html).toContain(`<time datetime="${s.fetchedAt}"`);
     expect(html).toMatch(/<script[^>]*type="module"/); // stale-guard
+    expect(html).toContain('&quot;initialTotal&quot;:[0,1234]');
     const en = await renderAstro(StatsSummary, { props: { lang: 'en', stats: s, code: 'lunecid' } });
     expect(en).toContain('Last 30 days');
     expect(en).toContain('As of');
@@ -59,8 +65,7 @@ describe('StatsSummary', () => {
 
   it('live total island and dashboard link only with a code', async () => {
     const withCode = await renderAstro(StatsSummary, { props: { lang: 'ko', stats: stats(), code: 'lunecid' } });
-    // client:idle, not client:visible: the island SSR-renders nothing (initialTotal null), and Astro's visible
-    // directive observes the island's children, so an empty island would never hydrate.
+    // client:idle: the island owns the live slot (min-height reserved); initialTotal comes from build data.
     expect(withCode).toMatch(/<astro-island[^>]*client="idle"/);
     expect(withCode).toContain('&quot;lunecid&quot;');
     expect(withCode).toMatch(/<a[^>]*href="https:\/\/lunecid\.goatcounter\.com\/"[^>]*>GoatCounter 전체 대시보드 보기<\/a>/);

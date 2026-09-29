@@ -96,7 +96,7 @@ test.describe('D-4 and P1-8: project cards and case studies', () => {
       await expect(page.locator('a[href*="kbo-attendance"], a[href*="seoul-apartment-automl"]')).toHaveCount(0);
       const github = page.locator('#github');
       if ((await github.count()) > 0) {
-        await expect(github).not.toContainText(/PUBG_Lab|AudioSync/);
+        await expect(github).not.toContainText(/PUBG_Lab|AudioSync|TIL/);
         if (route.startsWith('/en/')) expect(await github.innerText()).not.toMatch(/[가-힣]/);
       }
     });
@@ -113,4 +113,13 @@ test.describe('D-4 and P1-8: project cards and case studies', () => {
       expect(blockTop).toBeGreaterThanOrEqual(bodyBottom - 1);
     });
   }
+
+  test('/projects/kickick-park/: figure 1 caption no longer claims a "점수"', async ({ page }) => {
+    await page.goto('/projects/kickick-park/');
+    const fig1 = page.locator('article.prose figure.figure').first();
+    await expect(fig1.locator('.figure__text')).toBeVisible();
+    const caption = await fig1.locator('.figure__text').innerText();
+    expect(caption).not.toContain('점수');
+    expect(caption).toMatch(/합계/);
+  });
 });

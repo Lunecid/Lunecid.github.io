@@ -1,5 +1,5 @@
-/* src/islands/BgmToggle.css — HUD nav BGM toggle (mockup-port §12). ≥44×44 hit area, state via aria-pressed only
-   (the accessible name stays "BGM"); accent marks it as clickable/pressed. */
+/* src/islands/BgmToggle.css — HUD nav BGM toggle (mockup-port §12). ≥44×44 hit area, state via aria-pressed;
+   waiting (remembered on, not yet playing) keeps the ON label and width, dimmed, with no looping animation (N20). */
 .bgm {
   position: relative;
   display: inline-flex;
@@ -26,8 +26,15 @@
   pointer-events: none;
   transition: border-color var(--dur-hover) linear;
 }
-.bgm:hover {
-  color: var(--hud-text);
+.bgm__glyph {
+  display: inline-block;
+  min-width: 1ch;
+  text-align: center;
+}
+@media (hover: hover) {
+  .bgm:hover {
+    color: var(--hud-text);
+  }
 }
 .bgm[aria-pressed='true'] {
   color: var(--accent);
@@ -35,8 +42,22 @@
 .bgm[aria-pressed='true']::before {
   border-color: var(--accent);
 }
+/* Waiting: still "BGM ON", dimmed static chip — no animation, same layout box as playing ON. */
+.bgm[aria-pressed='true'][data-state='waiting'] {
+  color: var(--hud-muted);
+}
+.bgm[aria-pressed='true'][data-state='waiting']::before {
+  border-color: var(--hud-line);
+}
+.bgm[aria-pressed='true'][data-state='waiting'] .bgm__glyph {
+  color: var(--hud-muted);
+}
 .bgm:active {
   transform: scale(.96);
+}
+:root[data-motion='reduce'] .bgm:active {
+  transform: none;
+  color: var(--hud-text);
 }
 .bgm__state {
   min-width: 3ch;

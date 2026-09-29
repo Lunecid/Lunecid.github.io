@@ -45,6 +45,18 @@ test('site is usable without JavaScript at 375px', async ({ page, request }) => 
     await expect(page).toHaveURL(/\.webp$/);
   });
 
+  await test.step('/research/: a figure 크게 보기 link opens the WebP', async () => {
+    await page.goto('/research/');
+    const figure = page.locator('#interests a[data-viewer="figures"]').first();
+    const href = await figure.getAttribute('href');
+    expect(href, 'figure link href').toMatch(/\.webp$/);
+    const image = await request.get(href!);
+    expect(image.status(), href!).toBe(200);
+    expect(image.headers()['content-type'], href!).toContain('image/webp');
+    await figure.click();
+    await expect(page).toHaveURL(/\.webp$/);
+  });
+
   await test.step('/research/: the abstract and BibTeX read inline, visible; the (dead-without-JS) toggle buttons are not exposed (fix round 1 item 7, fix round 3 item 3)', async () => {
     await page.goto('/research/');
     const abstract = page.locator('#cog-2026-engagement-abstract .pub__abstract').first();

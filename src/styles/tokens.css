@@ -29,7 +29,7 @@
   --accent-streak: rgba(200, 240, 60, .75);   /* light streak core */
   --hud-divider: #1C2027;                     /* section top border */
   --hud-frame: #22262E;                       /* outer frame border */
-  --hud-nav-bg: rgba(11, 13, 17, .92);
+  --hud-nav-bg: rgba(11, 13, 17, .985); /* F-024: ≥.97 alpha; solid #0B0D11 fallback on .hud-nav */
   --hud-panel-92: rgba(21, 24, 31, .92);
   --hud-panel-75: rgba(21, 24, 31, .75);
   --hud-track: rgba(255, 255, 255, .08);      /* progress track */

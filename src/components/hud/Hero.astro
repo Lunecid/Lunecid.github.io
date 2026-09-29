@@ -34,6 +34,7 @@ interface Props {
 }
 const { lang, chars, name, roman, label, slogan, meta, status, ctas, contact, artifact, credit, swap, playerCard } = Astro.props;
 const hasArt = chars.length > 0;
+const metaParts = creditParts(meta);
 ---
 <section class:list={['hero', 'hud-grid', hasArt ? 'hero--art' : 'hero--no-art']} aria-labelledby="hero-name">
   <div class="hero__inner">
@@ -46,8 +47,12 @@ const hasArt = chars.length > 0;
     <div class="hero__copy">
       <p class="hero__label" lang="en">{label}</p>
       <h1 id="hero-name" class="hero__name">{name}</h1>
-      <p class="hero__slogan">{slogan[0]}{slogan[1] && <><br class="hero__br" /> {slogan[1]}</>}</p>
-      <p class="hero__meta">{meta}</p>
+      <p class="hero__slogan"><span class="hero__slogan-lead">{slogan[0]}</span>{slogan[1] && <><br class="hero__br" /> {slogan[1]}</>}</p>
+      <p class="hero__meta">
+        {metaParts.map((part, i) => (
+          <>{i > 0 && ' '}<span class="hero__meta-part">{part}</span></>
+        ))}
+      </p>
       <p class="hero__status"><span class="hero__status-label" lang="en">{t(lang, 'hero.status')}</span><span class="hero__status-value">{status}</span></p>
       <div class="hero__ctas">
         <a class="btn btn--fill cut" href={ctas.primary.href}>{ctas.primary.label} <span aria-hidden="true">→</span></a>
@@ -122,11 +127,12 @@ const hasArt = chars.length > 0;
 </section>
 
 <script>
-  /* v4 replay()/pick() restart the whole hero: rerun the copy rise on user-triggered plays only. */
+  /* F-011: only replay restarts the hero copy rise; character select changes art only. Skip under reduced motion. */
   const copy = document.querySelector<HTMLElement>('.hero__copy');
   window.addEventListener('sb:stage-enter', (event) => {
-    const detail = (event as CustomEvent<{ variant: 'hero' | 'side'; play: number }>).detail;
+    const detail = (event as CustomEvent<{ variant: 'hero' | 'side'; play: number; cause?: string }>).detail;
     if (!copy || detail.variant !== 'hero' || detail.play === 0) return;
+    if (document.documentElement.dataset.motion === 'reduce') return;
     copy.classList.add('is-reset');
     void copy.offsetWidth;
     copy.classList.add('is-replayed');
@@ -181,6 +187,11 @@ const hasArt = chars.length > 0;
     line-height: var(--lh-sub);
     color: var(--hud-strong);
     text-wrap: balance;
+  }
+  /* F-029: keep the first slogan unit (e.g. '멈추지 않고,') unbroken; '·' stays at the end of meta pieces. */
+  .hero__slogan-lead,
+  .hero__meta-part {
+    white-space: nowrap;
   }
   .hero__br {
     display: none;
@@ -284,6 +295,11 @@ const hasArt = chars.length > 0;
      the whole line (a 320px phone). */
   .hero__credit-part {
     display: inline-block;
+  }
+  /* F-002: Hangul credit pieces use sans so middot/space advances stay narrow. */
+  .hero__credit-part:lang(ko) {
+    font-family: var(--font-sans);
+    letter-spacing: 0;
   }
 
   /* no-art artifact (D-1): the CoG AUC chart in a HUD bracket frame */
@@ -454,12 +470,14 @@ const hasArt = chars.length > 0;
       margin-left: var(--gutter); /* same left edge as the copy column (P1-1) */
       padding: 32px 0 0;
     }
-    /* In the stage's fully transparent bottom band (CharacterStage.css), right-aligned, at most two lines. */
+    /* In the stage's fully transparent bottom band (CharacterStage.css), right-aligned, at most two lines.
+       F-018: reserve the left player-card box (photo + body + padding + border ≈ 520px) plus gutter so the
+       credit's left edge stays clear of .hero__pcard at 1068–1140. */
     .hero__credit {
       position: absolute;
       right: 28px;
       bottom: 14px;
-      max-width: 50%;
+      max-width: calc(100% - var(--gutter) - 520px);
       margin: 0;
       text-align: right;
     }
@@ -518,6 +536,19 @@ const hasArt = chars.length > 0;
     }
     .hero--no-art .hero__inner {
       grid-template-columns: min(760px, calc((100% + 2 * var(--gutter)) * .52)) minmax(0, 1fr);
+    }
+  }
+
+  /* G-018 (decision 8a): short landscape viewports — compress spacing/min-height only; keep titlecard and label. */
+  @media (min-width: 734px) and (max-height: 500px) {
+    .hero--art .hero__inner {
+      min-height: 0;
+    }
+    .hero__copy {
+      padding-top: 12px;
+    }
+    .hero__name {
+      font-size: min(var(--fs-display), 12svh);
     }
   }
 </style>

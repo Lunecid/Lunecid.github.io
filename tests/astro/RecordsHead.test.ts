@@ -18,7 +18,7 @@ const render = (lang: Lang) =>
       status: resume.profile.status[lang],
       tagline: resume.profile.tagline[lang],
       documents: resume.documents.map((d) => ({ id: d.id, label: d.label[lang], href: DOCUMENTS[d.id] })),
-      contact: { email: SITE.email, github: SITE.githubUrl },
+      contact: { email: SITE.email, github: SITE.githubUrl, dacon: SITE.daconUrl },
       ids: resume.researchIds,
     },
   });
@@ -34,6 +34,9 @@ describe('RecordsHead.astro (P2-19: a short head, not the home profile again)', 
     expect(ko).toContain(resume.profile.status.ko);
     expect(ko).toContain(resume.profile.tagline.ko);
     expect(ko).toContain(`mailto:${SITE.email}`);
+    expect(ko).toContain(`href="${SITE.githubUrl}"`);
+    expect(ko).toContain(`href="${SITE.daconUrl}"`);
+    expect(ko).toMatch(/<a[^>]*href="https:\/\/dacon\.io\/myprofile\/530929\/home"[^>]*>DACON<\/a>/);
     for (const e of resume.education) expect(ko).not.toContain(e.school.ko);
     expect(ko).not.toContain('hello__chips');
   });
@@ -50,13 +53,27 @@ describe('RecordsHead.astro (P2-19: a short head, not the home profile again)', 
     expect(buttons.map((m) => m[3])).toEqual(resume.documents.map((d) => `${d.label.ko} · PDF`));
   });
 
-  it('an in-page bar: 학력 · 수상 · 기술 · 지원 요건 대응 · PDF', async () => {
+  it('an in-page bar: 학력 · 논문 · 수상 · 기술 · 지원 요건 대응 · PDF', async () => {
     const ko = await render('ko');
     const jumps = [...ko.matchAll(/<a class="rnav__link" href="([^"]+)"[^>]*>([^<]+)<\/a>/g)].map((m) => [m[1], m[2]]);
-    expect(jumps).toEqual([['#education', '학력'], ['#awards', '수상'], ['#skills', '기술'], ['#job-fit', '지원 요건 대응'], ['#documents', 'PDF']]);
+    expect(jumps).toEqual([
+      ['#education', '학력'],
+      ['#publications', '논문'],
+      ['#awards', '수상'],
+      ['#skills', '기술'],
+      ['#job-fit', '지원 요건 대응'],
+      ['#documents', 'PDF'],
+    ]);
     expect(ko).toMatch(/<nav class="rnav" aria-label="기록 바로 가기"/);
     const en = await render('en');
-    expect([...en.matchAll(/class="rnav__link"[^>]*>([^<]+)</g)].map((m) => m[1])).toEqual(['Education', 'Awards', 'Skills', 'Job requirements fit', 'PDF']);
+    expect([...en.matchAll(/class="rnav__link"[^>]*>([^<]+)</g)].map((m) => m[1])).toEqual([
+      'Education',
+      'Publications',
+      'Awards',
+      'Skills',
+      'Job requirements fit',
+      'PDF',
+    ]);
   });
 
   it('the photo is 112px beside the greeting on phones (P2-19), with a hairline border (P2-22)', () => {

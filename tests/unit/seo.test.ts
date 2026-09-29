@@ -41,7 +41,7 @@ describe('seo helpers', () => {
     ]);
   });
 
-  it('personJsonLd names Seongeun Baek with GitHub in sameAs and adds only non-null researchIds', () => {
+  it('personJsonLd names Seongeun Baek with GitHub and DACON in sameAs and adds only non-null researchIds', () => {
     const ko = personJsonLd('ko');
     expect(ko).toMatchObject({
       '@context': 'https://schema.org',
@@ -50,13 +50,13 @@ describe('seo helpers', () => {
       alternateName: 'Seongeun Baek',
       url: 'https://lunecid.github.io/',
       email: SITE.email,
-      sameAs: [SITE.githubUrl],
+      sameAs: [SITE.githubUrl, SITE.daconUrl],
     });
     const en = personJsonLd('en', { scholar: 'https://scholar.google.com/citations?user=abc', orcid: null });
     expect(en.name).toBe('Seongeun Baek');
     expect(en.alternateName).toBe('백성은');
     expect(en.url).toBe('https://lunecid.github.io/en/');
-    expect(en.sameAs).toEqual([SITE.githubUrl, 'https://scholar.google.com/citations?user=abc']);
+    expect(en.sameAs).toEqual([SITE.githubUrl, SITE.daconUrl, 'https://scholar.google.com/citations?user=abc']);
     expect(en.affiliation).toMatchObject({
       name: 'Data Science Lab (DataLab), Graduate School of Data Science, Pusan National University', // P2-28: full name first
       url: SITE.labUrl,

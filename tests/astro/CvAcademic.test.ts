@@ -42,6 +42,12 @@ describe('CvAcademic', () => {
     expect([...order].sort((a, b) => a - b)).toEqual(order);
     if (ACADEMIC_EXTRAS.abstract) expect(html).toContain('We study how much pre-engagement signal');
     expect(html).toContain('DataLab');
+    expect(html).toContain('CDS Big Data Training');
+    expect(html).toContain('Pusan National University');
+    expect(html).toContain('CCAIM Machine Learning for Healthcare Summer School 2026');
+    expect(html).toMatch(/print__meta">Pusan National University<\/p>/);
+    expect(html).not.toMatch(/Pusan National University · /);
+    expect(html).not.toMatch(/print__meta">Cambridge Centre for AI in Medicine \(CCAIM\), University of Cambridge \(online\) · /);
     expect(html).not.toMatch(/<img[\s>]/);
   });
 

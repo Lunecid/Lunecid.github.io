@@ -10,7 +10,7 @@ import type { Lang } from '../i18n/ui';
 import { otherLang, switchLocalePath, t } from '../i18n/utils';
 import { FONT_URL, fontFaceCss } from '../lib/fonts';
 import { HEAD_INIT_SCRIPT } from '../lib/head-init';
-import { CERT_QUEUE_SCRIPT } from '../lib/cert-queue';
+import { VIEWER_QUEUE_SCRIPT } from '../lib/viewer-queue';
 import { alternateLinks, canonicalUrl, ogSlugFor } from '../lib/seo';
 import { goatcounterScript } from '../lib/analytics';
 import { goatcounterSelfHosted, soundAvailability } from '../lib/public-assets';
@@ -72,7 +72,7 @@ const achievementLabels = {
   <head>
     <meta charset="utf-8" />
     <script is:inline set:html={HEAD_INIT_SCRIPT} />
-    <script is:inline set:html={CERT_QUEUE_SCRIPT} />
+    <script is:inline set:html={VIEWER_QUEUE_SCRIPT} />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{title}</title>
     <meta name="description" content={description} />

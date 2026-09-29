@@ -22,7 +22,9 @@ describe('DailyChart', () => {
     expect(html).toMatch(/<h2 id="stats-daily-title"/);
     expect(html).toMatch(/<summary id="stats-daily-table-label"[^>]*>표로 보기<\/summary>/);
     expect(html.match(/<rect[\s>]/g)).toHaveLength(30);
-    expect(html).not.toMatch(/<text[\s>]/); // labels live in HTML (12px rule at every width)
+    expect(html).toMatch(/class="stats__chart-max tnum"[^>]*>22</); // F-064: dashed max line label
+    expect(html).toMatch(/<line class="stats__max-line"/);
+    expect(html).not.toMatch(/<text[\s>]/); // bar labels stay in HTML (12px rule at every width)
     expect(html).toMatch(/<details[^>]*>[\s\S]*<summary[^>]*>표로 보기<\/summary>[\s\S]*<table/);
     expect(html.match(/<tr[\s>]/g)).toHaveLength(31); // header + 30 days
     expect(html).toContain('2026.09.01');

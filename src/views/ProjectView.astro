@@ -10,8 +10,10 @@ import FigureList from '../components/projects/FigureList.astro';
 import ProjectLinks from '../components/projects/ProjectLinks.astro';
 import ProjectAudience from '../components/projects/ProjectAudience.astro';
 import Figure from '../components/common/Figure.astro';
-import CertificateModal, { type Certificate } from '../islands/CertificateModal';
+import ImageViewer from '../islands/ImageViewer';
+import type { Certificate } from '../lib/certificates';
 import type { Lang } from '../i18n/ui';
+import { ui } from '../i18n/ui';
 import { t } from '../i18n/utils';
 import { projectPageMeta } from '../data/copy/pages';
 import { projectDetailRows } from '../lib/projects';
@@ -41,12 +43,27 @@ const awardRef = data.award;
 const awardEntry = awardRef ? (await getCollection('awards')).find((a) => a.id === awardRef.certificate) : undefined;
 const certificate: Certificate | null = awardEntry ? await buildCertificate(awardEntry.data, lang) : null;
 const award = awardRef
-  ? { name: awardRef.name, ...(certificate ? { certificateId: certificate.id, certificateHref: certificate.fullSrc } : {}) }
+  ? {
+      name: awardRef.name,
+      ...(certificate
+        ? {
+            certificateId: certificate.id,
+            certificateHref: certificate.fullSrc,
+            certificateWidth: certificate.width,
+            certificateHeight: certificate.height,
+            certificateSrcSet: certificate.srcSet,
+            certificateSizes: certificate.sizes,
+            certificateAlt: certificate.alt,
+            certificateCaption: certificate.caption,
+          }
+        : {}),
+    }
   : undefined;
 const cited = coverIndex >= 0 ? numbered[coverIndex] : undefined;
 const figure = data.cover
   ? { src: data.cover.src, alt: data.cover.alt, label: data.cover.label, ...(cited ? { number: cited.number, caption: cited.caption } : {}) }
   : undefined;
+const hasViewer = certificate !== null || data.figures.some((_, i) => i !== coverIndex);
 ---
 
 <BaseLayout lang={lang} title={meta.title} description={meta.description} page="project" section="projects" sectionIndex={false}>
@@ -66,7 +83,18 @@ const figure = data.cover
   {data.audience && <ProjectAudience lang={lang} audience={data.audience} />}
   <FigureList lang={lang} figures={rest.map((index) => numbered[index]!)} />
   <ProjectLinks lang={lang} links={data.links} />
-  {certificate && <CertificateModal client:idle certificates={[certificate]} labels={{ dialog: t(lang, 'modal.certificate'), close: t(lang, 'action.close') }} />}
+  {hasViewer && (
+    <ImageViewer
+      client:idle
+      labels={{
+        dialog: t(lang, 'modal.viewer'),
+        close: t(lang, 'action.close'),
+        previous: t(lang, 'viewer.previous'),
+        next: t(lang, 'viewer.next'),
+        counter: ui[lang]['viewer.counter'],
+      }}
+    />
+  )}
 </BaseLayout>
 
 <script>

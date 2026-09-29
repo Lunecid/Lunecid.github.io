@@ -5,13 +5,37 @@ import { getImage } from 'astro:assets';
 import type { CertificateId } from '../types';
 import type { AwardData } from '../content/schemas';
 import type { Lang } from '../i18n/ui';
-import type { Certificate } from '../islands/CertificateModal';
 import { sourceSize } from './images';
-import { islandImage } from './island-image.server';
+
+export interface Certificate {
+  id: CertificateId;
+  src: string;
+  srcSet: string;
+  sizes: string;
+  width: number;
+  height: number;
+  alt: string;
+  caption: string;
+  fullSrc: string;
+}
 
 export const CERT_WIDTHS = [640, 960, 1280];
 export const CERT_SIZES = '(orientation: portrait) 88vw, 58vh';
 const FULL_WIDTH = 1280;
+
+/** Srcset ladder only — no islandImage fallback `src` (that emitted an unreferenced source-width WebP). */
+async function certSrcSet(src: ImageMetadata): Promise<string> {
+  const sourceW = sourceSize(src).width;
+  const ladder = CERT_WIDTHS.filter((w) => w <= sourceW);
+  const widths = ladder.length > 0 ? ladder : [sourceW];
+  const parts = await Promise.all(
+    widths.map(async (w) => {
+      const img = await getImage({ src, width: w, format: 'webp', quality: 80 });
+      return `${img.src} ${img.attributes.width}w`;
+    }),
+  );
+  return parts.join(', ');
+}
 
 /** Factory over an import.meta.glob map of '../assets/certificates/*.webp' (tests pass a plain object). */
 export function createCertificateLookup(files: Record<string, ImageMetadata>): {
@@ -30,16 +54,18 @@ export function createCertificateLookup(files: Record<string, ImageMetadata>): {
     async build(award, lang) {
       const src = byId.get(award.id);
       if (!src) return null;
-      const img = await islandImage(src, CERT_WIDTHS, CERT_SIZES);
       // The no-JS href of every "상장 보기" link: one WebP, never upscaled.
       const full = await getImage({ src, width: Math.min(FULL_WIDTH, sourceSize(src).width), format: 'webp' });
+      const srcSet = await certSrcSet(src);
       return {
         id: award.id,
-        src: img.src,
-        srcSet: img.srcSet,
-        sizes: img.sizes,
-        width: img.width,
-        height: img.height,
+        // Same URL as fullSrc (the trigger href); no separate unused variant.
+        src: full.src,
+        srcSet,
+        sizes: CERT_SIZES,
+        // Intrinsic size of the linked full WebP (not the source file), so the viewer frame matches (N3).
+        width: full.attributes.width,
+        height: full.attributes.height,
         alt: award.certificate.alt[lang],
         caption: `${award.name[lang]} · ${award.contest[lang]}`,
         fullSrc: full.src,

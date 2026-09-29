@@ -120,6 +120,19 @@ const links = [
     font: 500 var(--fs-caption)/1.6 var(--font-mono);
     color: var(--hud-muted);
   }
+  /* F-002: Korean footer mono labels use sans so spaces stay narrow. */
+  .site-footer__copy:lang(ko) {
+    font-family: var(--font-sans);
+    letter-spacing: 0;
+  }
+  .site-footer__updated:lang(ko) {
+    font-family: var(--font-sans);
+    letter-spacing: 0;
+  }
+  .site-footer a:lang(ko) {
+    font-family: var(--font-sans);
+    letter-spacing: 0;
+  }
   .site-footer__inner {
     display: grid;
     gap: 8px;
@@ -134,7 +147,12 @@ const links = [
     align-items: center;
     min-height: var(--tap);
     color: var(--hud-text);
+    transition: color var(--dur-hover) linear;
   }
+  @media (hover: hover) {
+    .site-footer a:hover { color: var(--accent); }
+  }
+  .site-footer a:active { color: var(--accent); }
   .site-footer__motion {
     justify-self: start;
     min-height: var(--tap);

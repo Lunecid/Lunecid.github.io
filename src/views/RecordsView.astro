@@ -14,15 +14,16 @@ import CredentialList from '../components/records/CredentialList.astro';
 import SkillList from '../components/records/SkillList.astro';
 import JobFitTable from '../components/records/JobFitTable.astro';
 import DocumentList from '../components/records/DocumentList.astro';
-import CertificateModal from '../islands/CertificateModal';
-import type { Certificate } from '../islands/CertificateModal';
+import ImageViewer from '../islands/ImageViewer';
 import { buildCertificate } from '../lib/certificates';
+import type { Certificate } from '../lib/certificates';
 import { getProjects, projectSlug } from '../lib/projects';
 import { getPublications, toPaperCard } from '../lib/publications';
-import { awardItems, credentialItems, projectSummaryItems, skillGroups, todayIso } from '../lib/records';
+import { awardItems, credentialItems, projectSummaryItems, skillGroups, todayIso, type AwardCertMeta } from '../lib/records';
 import { PAGE_META } from '../data/copy/pages';
 import { DOCUMENTS, SITE } from '../config';
 import type { Lang } from '../i18n/ui';
+import { ui } from '../i18n/ui';
 import { t } from '../i18n/utils';
 import type { CertificateId } from '../types';
 
@@ -50,7 +51,12 @@ const papers = resume.publications.map(({ ref }) => {
 const certificates = (await Promise.all(awards.map((award) => buildCertificate(award, lang)))).filter(
   (certificate): certificate is Certificate => certificate !== null,
 );
-const certHrefs: Partial<Record<CertificateId, string>> = Object.fromEntries(certificates.map((c) => [c.id, c.fullSrc]));
+const certMeta: Partial<Record<CertificateId, AwardCertMeta>> = Object.fromEntries(
+  certificates.map((c) => [
+    c.id,
+    { href: c.fullSrc, width: c.width, height: c.height, srcSet: c.srcSet, sizes: c.sizes, alt: c.alt, caption: c.caption },
+  ]),
+);
 
 const titles = {
   projects: Object.fromEntries(projects.map((project) => [projectSlug(project), project.data.title])),
@@ -80,7 +86,7 @@ const meta = PAGE_META.records[lang];
     status={resume.profile.status[lang]}
     tagline={resume.profile.tagline[lang]}
     documents={documents}
-    contact={{ email: SITE.email, github: SITE.githubUrl }}
+    contact={{ email: SITE.email, github: SITE.githubUrl, dacon: SITE.daconUrl }}
     ids={resume.researchIds}
   />
   <div class="read">
@@ -96,7 +102,7 @@ const meta = PAGE_META.records[lang];
       </div>
     </section>
     <ProjectSummaryList lang={lang} items={projectSummaryItems(resume.projects, projects, lang)} />
-    <AwardList lang={lang} awards={awardItems(resume.awards, awards, lang, certHrefs)} />
+    <AwardList lang={lang} awards={awardItems(resume.awards, awards, lang, certMeta)} />
     <CredentialList
       lang={lang}
       groups={[
@@ -110,10 +116,15 @@ const meta = PAGE_META.records[lang];
     <JobFitTable lang={lang} data={jobfitEntry.data} />
     <DocumentList lang={lang} documents={documents} />
   </div>
-  <CertificateModal
+  <ImageViewer
     client:idle
-    certificates={certificates}
-    labels={{ dialog: t(lang, 'modal.certificate'), close: t(lang, 'action.close') }}
+    labels={{
+      dialog: t(lang, 'modal.viewer'),
+      close: t(lang, 'action.close'),
+      previous: t(lang, 'viewer.previous'),
+      next: t(lang, 'viewer.next'),
+      counter: ui[lang]['viewer.counter'],
+    }}
   />
 </BaseLayout>
 

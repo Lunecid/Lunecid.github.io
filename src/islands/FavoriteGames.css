@@ -23,7 +23,9 @@
 .fg__tab b { font-size: 15px; font-weight: 700; color: var(--hud-text); }
 .fg__tab small { font: 600 12px/1.4 var(--font-mono); letter-spacing: .1em; }
 .fg__tab small:lang(ko) { font-family: var(--font-sans); letter-spacing: 0; }
-.fg__tab:hover:not([aria-disabled="true"]) { border-color: var(--accent); }
+@media (hover: hover) {
+  .fg__tab:hover:not([aria-disabled="true"]) { border-color: var(--accent); }
+}
 .fg__tab:active:not([aria-disabled="true"]) { transform: scale(.96); }
 .fg__tab[aria-selected="true"] { border-color: var(--accent); background: linear-gradient(90deg, var(--accent-wash-16), var(--hud-panel-75)); }
 .fg__tab[aria-selected="true"] b { color: var(--hud-strong); }
@@ -69,13 +71,14 @@
 .fg__sub { margin-top: 8px; font-size: var(--fs-small); color: var(--hud-muted); }
 .fg__why { margin-top: 22px; font-size: 16px; line-height: 1.75; color: var(--hud-text); }
 .fg__meta { margin-top: 16px; display: flex; flex-wrap: wrap; gap: 8px; }
-.fg__meta li { padding: 4px 9px; border: 1px solid var(--hud-line); font: 700 12px/1.4 var(--font-mono); color: var(--hud-text); }
+.fg__meta li { padding: 4px 9px; border: 1px solid var(--hud-line); font: 700 var(--fs-caption)/1.4 var(--font-mono); color: var(--hud-text); }
+.fg__meta li:lang(ko) { font-family: var(--font-sans); letter-spacing: 0; }
 /* no-art facts panel (D-1): the game's facts as bracketed HUD rows instead of chips */
 .fg__meta--panel { display: grid; gap: 0; padding: 6px 16px; background: var(--hud-panel-75); }
-.fg__meta--panel li { padding: 10px 0; border: 0; border-bottom: 1px dashed var(--hud-line-dash); font-size: 13px; }
+.fg__meta--panel li { padding: 10px 0; border: 0; border-bottom: 1px dashed var(--hud-line-dash); font-size: var(--fs-caption); }
 .fg__meta--panel li:last-child { border-bottom: 0; }
-.fg__meta--panel li:lang(ko) { font-family: var(--font-sans); letter-spacing: 0; } /* Hangul: no mono-width spaces (P1-10) */
-.fg__credit { grid-area: credit; font: 500 12px/1.5 var(--font-mono); color: var(--hud-muted); }
+.fg__credit { grid-area: credit; font: 500 var(--fs-caption)/1.5 var(--font-mono); color: var(--hud-muted); }
+.fg__credit:lang(ko) { font-family: var(--font-sans); letter-spacing: 0; }
 .fg__credit-part { display: inline-block; } /* breaks between pieces (lib/credit.ts); inside one only if it outgrows the line */
 
 /* account card (spec §7 common card) */
@@ -193,4 +196,8 @@ html:not(.js) .fg .fg__stage { min-height: 0; }
   html:not(.js) .fg--art .fg__layout { padding: 24px 32px 20px; }
 }
 :root[data-motion="reduce"] .fg__tint { transition-duration: .2s; }
-:root[data-motion="reduce"] .fg__tab:active { transform: none; }
+:root[data-motion="reduce"] .fg__tab:active {
+  transform: none;
+  border-color: var(--accent);
+  color: var(--hud-text);
+}

@@ -10,17 +10,25 @@ updated: '2026-09-26'
 
 레미엘(젠레스 존 제로), 유라·모나(원신)의 공식 일러스트는 HoYoverse 공식 홈페이지에 공개된 원본을 비상업적 개인 용도로 이 사이트에 직접 올려 쓰고 있습니다. 이미지의 권리는 권리자에게 있습니다.
 
-이 사이트는 하츠네 미쿠의 변형물(흑백·투명도 처리)을 포함합니다. Hatsune Miku, © Crypton Future Media, Inc. 2007, licensed under a CC BY-NC: https://creativecommons.org/licenses/by-nc/3.0/
+이 사이트는 하츠네 미쿠의 변형물(흑백·투명도 처리)을 포함합니다. <span lang="en">Hatsune Miku, © Crypton Future Media, Inc. 2007, licensed under a CC BY-NC: https://creativecommons.org/licenses/by-nc/3.0/</span>
 
 원신 법률 FAQ(HoYoLAB, 2021-01-20)에 따른 고지:
 
+<div lang="en">
+
 > © All rights reserved by COGNOSPHERE. Other properties belong to their respective owners.
 
+</div>
+
 젠레스 존 제로 2차 창작 가이드 v1.0(HoYoLAB, 2024-06-20)에 따른 고지:
+
+<div lang="en">
 
 > © All rights reserved by miHoYo
 >
 > Other properties and any right, title, and interest thereof and therein (intellectual property rights included) not derived from Zenless Zone Zero belong to their respective owners.
+
+</div>
 
 - 원신 법률 FAQ: https://www.hoyolab.com/article/143107
 - 젠레스 존 제로 2차 창작 가이드: https://www.hoyolab.com/article/30075725
@@ -32,17 +40,17 @@ updated: '2026-09-26'
 | 플랫폼 | 고지 | 상태 |
 |---|---|---|
 | 네오플 | 네오플 오픈 API 서비스를 이용한 데이터입니다. | 연동 시 표시 |
-| 라이엇 게임즈 | Seongeun Baek's portfolio isn't endorsed by Riot Games and doesn't reflect the views or opinions of Riot Games or anyone officially involved in producing or managing Riot Games properties. Riot Games, and all associated properties are trademarks or registered trademarks of Riot Games, Inc. | 연동 시 표시 |
-| Valve(Steam) | Powered by Steam. Steam 데이터는 Steam Web API에서 받아 있는 그대로(as is) 보여 주며 정확성을 보증하지 않습니다. 이 사이트는 Valve와 제휴하거나 Valve의 보증을 받지 않았습니다. Valve, Steam, the Valve logo and the Steam logo are registered trademarks of Valve Corporation. | 연동 시 표시 |
+| 라이엇 게임즈 | <span lang="en">Seongeun Baek's portfolio isn't endorsed by Riot Games and doesn't reflect the views or opinions of Riot Games or anyone officially involved in producing or managing Riot Games properties. Riot Games, and all associated properties are trademarks or registered trademarks of Riot Games, Inc.</span> | 연동 시 표시 |
+| Valve(Steam) | <span lang="en">Powered by Steam.</span> Steam 데이터는 Steam Web API에서 받아 있는 그대로(<span lang="en">as is</span>) 보여 주며 정확성을 보증하지 않습니다. 이 사이트는 Valve와 제휴하거나 Valve의 보증을 받지 않았습니다. <span lang="en">Valve, Steam, the Valve logo and the Steam logo are registered trademarks of Valve Corporation.</span> | 연동 시 표시 |
 | Enka.Network | 원신·젠레스 존 제로 계정 정보는 Enka.Network(<https://enka.network>)에서 받습니다. | 연동 시 표시 |
 
 ## 연구 데이터
 
-CoG 2026 논문은 Riot Games API로 모은 공개 경기 데이터를 사용했습니다. 논문 PDF는 IEEE Xplore에 DOI가 나온 뒤 IEEE 저작권 문구를 붙인 저자 최종본으로 올립니다.
+CoG 2026 논문은 <span lang="en">Riot Games API</span>로 모은 공개 경기 데이터를 사용했습니다. 논문 PDF는 <span lang="en">IEEE Xplore</span>에 DOI가 나온 뒤 IEEE 저작권 문구를 붙인 저자 최종본으로 올립니다.
 
 ## 배경음악
 
-- 배경음악: “Everything You Ever Dreamed.” — HoliznaCC0, 앨범 *Lo-fi And Chill*, Free Music Archive. [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/)
+- 배경음악: <span lang="en">“Everything You Ever Dreamed.”</span> — <span lang="en">HoliznaCC0</span>, 앨범 <span lang="en">*Lo-fi And Chill*</span>, <span lang="en">Free Music Archive</span>. [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/)
   https://freemusicarchive.org/music/holiznacc0/lo-fi-and-chill/everything-you-ever-dreamed/
 
 CC0 자료는 출처 표기 의무가 없지만 만든 분을 밝혀 둡니다.
@@ -51,12 +59,12 @@ CC0 자료는 출처 표기 의무가 없지만 만든 분을 밝혀 둡니다.
 
 | 글꼴 | 만든 이 | 라이선스 |
 |---|---|---|
-| [Pretendard](https://github.com/orioncactus/pretendard) | 길형진 | SIL Open Font License 1.1 |
-| [JetBrains Mono](https://github.com/JetBrains/JetBrainsMono) | The JetBrains Mono Project Authors | SIL Open Font License 1.1 |
-| [Anton](https://github.com/googlefonts/AntonFont) | The Anton Project Authors | SIL Open Font License 1.1 |
-| [Noto Serif KR](https://github.com/notofonts/noto-cjk) | Adobe, Google | SIL Open Font License 1.1 |
+| [Pretendard](https://github.com/orioncactus/pretendard) | 길형진 | <span lang="en">SIL Open Font License 1.1</span> |
+| [JetBrains Mono](https://github.com/JetBrains/JetBrainsMono) | <span lang="en">The JetBrains Mono Project Authors</span> | <span lang="en">SIL Open Font License 1.1</span> |
+| [Anton](https://github.com/googlefonts/AntonFont) | <span lang="en">The Anton Project Authors</span> | <span lang="en">SIL Open Font License 1.1</span> |
+| [Noto Serif KR](https://github.com/notofonts/noto-cjk) | <span lang="en">Adobe, Google</span> | <span lang="en">SIL Open Font License 1.1</span> |
 
-본문 글꼴 “SB Sans”는 이 사이트를 위해 Pretendard(SIL Open Font License 1.1)에서 사이트에 쓰는 글자만 추려 만든 서브셋입니다. “Pretendard”는 예약 글꼴 이름(Reserved Font Name)이라 서브셋에는 다른 이름을 붙였고, 원본의 저작권·라이선스 고지는 글꼴 파일 안에 그대로 두었습니다. 논문 페이지의 한글에 쓰는 Noto Serif KR도 같은 방식으로 그 페이지에 필요한 글자만 추려 씁니다.
+본문 글꼴 “SB Sans”는 이 사이트를 위해 Pretendard(<span lang="en">SIL Open Font License 1.1</span>)에서 사이트에 쓰는 글자만 추려 만든 서브셋입니다. “Pretendard”는 예약 글꼴 이름(<span lang="en">Reserved Font Name</span>)이라 서브셋에는 다른 이름을 붙였고, 원본의 저작권·라이선스 고지는 글꼴 파일 안에 그대로 두었습니다. 논문 페이지의 한글에 쓰는 Noto Serif KR도 같은 방식으로 그 페이지에 필요한 글자만 추려 씁니다.
 
 ## 사진·그림·상장
 
@@ -67,7 +75,7 @@ CC0 자료는 출처 표기 의무가 없지만 만든 분을 밝혀 둡니다.
 
 ## 만든 도구
 
-[Astro](https://astro.build), [React](https://react.dev), [Motion](https://motion.dev) — 모두 MIT 라이선스.
+[Astro](https://astro.build), [React](https://react.dev), [Motion](https://motion.dev) — 모두 <span lang="en">MIT</span> 라이선스.
 
 ## 이 사이트
 

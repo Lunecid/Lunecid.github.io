@@ -87,8 +87,10 @@
   cursor: pointer;
   transition: color var(--dur-hover) linear;
 }
-.ach-toast__close:hover {
-  color: var(--hud-text);
+@media (hover: hover) {
+  .ach-toast__close:hover {
+    color: var(--hud-text);
+  }
 }
 .ach-toast__close:focus-visible {
   outline-color: var(--accent);

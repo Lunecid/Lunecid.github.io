@@ -1,6 +1,7 @@
 ---
 import { Image } from 'astro:assets';
 import photo from '../../assets/photo/photo-id.webp';
+import { creditParts } from '../../lib/credit';
 
 interface Props {
   headingLevel?: 2 | 3;
@@ -17,7 +18,18 @@ const Heading = headingLevel === 2 ? 'h2' : 'h3';
 <article class="mcard" aria-label={`${title} ${subtitle}`}>
   <Heading class="mcard__title" lang="en">{title}<small>{subtitle}</small></Heading>
   <dl class="mcard__fields">
-    {fields.map((f) => <div class="mcard__field"><dt lang="en">{f.label}</dt><dd>{f.value}</dd></div>)}
+    {fields.map((f) => (
+      <div class="mcard__field">
+        <dt lang="en">{f.label}</dt>
+        <dd>
+          {f.label === 'CLASS'
+            ? creditParts(f.value).map((part, i) => (
+                <>{i > 0 && ' '}<span class="mcard__role-part">{part}</span></>
+              ))
+            : f.value}
+        </dd>
+      </div>
+    ))}
   </dl>
   <div class="mcard__photo-wrap">
     <div class="mcard__photo"><Image src={photo} alt={photoAlt} width={112} densities={[1, 2, 3]} loading="eager" /></div>
@@ -44,6 +56,8 @@ const Heading = headingLevel === 2 ? 'h2' : 'h3';
   .mcard__fields { grid-column: 1; grid-row: 2; display: grid; align-content: start; row-gap: 6px; margin: 0; padding: 9px 0 16px 22px; }
   .mcard__field dt { font-size: 13px; line-height: 1.2; letter-spacing: .14em; color: var(--mc-label); } /* P2-24 */
   .mcard__field dd { margin: 2px 0 0; font-size: 15px; line-height: 1.3; font-weight: 700; letter-spacing: 0; }
+  /* F-029: CLASS role units stay unbroken so a line never starts with '·'. */
+  .mcard__role-part { white-space: nowrap; }
   .mcard__photo-wrap { grid-column: 2; grid-row: 1 / 3; position: relative; width: 112px; margin-top: 20px; }
   .mcard__photo { width: 112px; height: 146px; border: 2px solid var(--mc-ink); border-radius: 8px; overflow: hidden; background: var(--mc-photo-bg); }
   .mcard__photo :global(img) { width: 100%; height: 100%; object-fit: cover; object-position: 50% 18%; }

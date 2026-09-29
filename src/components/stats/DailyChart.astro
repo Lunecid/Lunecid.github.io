@@ -27,13 +27,17 @@ const last = bars[bars.length - 1]?.day ?? '';
   <section id="daily" class="stats read" aria-labelledby="stats-daily-title" data-fetched-at={fetchedAt} data-max-age-days={maxAgeDays}>
     <div class="container">
       <SectionHead id="stats-daily-title" caption={t(lang, 'section.dailyVisits')} title={t(lang, 'stats.daily')} />
-      <div class="stats__chart-scroll" tabindex="0" role="region" aria-labelledby="stats-daily-title">
-        <svg class="stats__chart" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" role="img" aria-labelledby="stats-daily-svg-title">
-          <title id="stats-daily-svg-title">{`${t(lang, 'stats.daily')}: ${formatDate(first, lang)} – ${formatDate(last, lang)}`}</title>
-          {bars.map((b) => (
-            <rect class="stats__bar" x={b.x} y={b.y} width={b.w} height={b.h}><title>{`${formatDate(b.day, lang)} · ${formatNumber(b.count, lang)}`}</title></rect>
-          ))}
-        </svg>
+      <div class="stats__chart-wrap">
+        <p class="stats__chart-max tnum" aria-hidden="true">{formatNumber(max, lang)}</p>
+        <div class="stats__chart-scroll" tabindex="0" role="region" aria-labelledby="stats-daily-title">
+          <svg class="stats__chart" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" role="img" aria-labelledby="stats-daily-svg-title">
+            <title id="stats-daily-svg-title">{`${t(lang, 'stats.daily')}: ${formatDate(first, lang)} – ${formatDate(last, lang)}; max ${formatNumber(max, lang)}`}</title>
+            <line class="stats__max-line" x1="0" y1="4" x2={W} y2="4" />
+            {bars.map((b) => (
+              <rect class="stats__bar" x={b.x} y={b.y} width={b.w} height={b.h}><title>{`${formatDate(b.day, lang)} · ${formatNumber(b.count, lang)}`}</title></rect>
+            ))}
+          </svg>
+        </div>
       </div>
       <p class="stats__axis"><span>{formatDate(first, lang)}</span><span>{formatDate(last, lang)}</span></p>
       <details class="stats__details">
@@ -57,9 +61,15 @@ const last = bars[bars.length - 1]?.day ?? '';
 
 <style>
   .stats { padding-block: 0 var(--section-pad-y); }
-  .stats__chart-scroll { margin-top: 16px; overflow-x: auto; }
+  .stats__chart-wrap { margin-top: 16px; position: relative; }
+  .stats__chart-max {
+    position: absolute; top: 0; right: 0; z-index: 1; margin: 0; padding: 0 2px;
+    font: 600 12px/1.2 var(--font-mono); color: var(--read-muted); background: var(--read-card);
+  }
+  .stats__chart-scroll { overflow-x: auto; }
   .stats__chart { display: block; width: 100%; height: 160px; }
   .stats__bar { fill: var(--read-muted); }
+  .stats__max-line { stroke: var(--read-muted); stroke-width: 1; stroke-dasharray: 4 3; vector-effect: non-scaling-stroke; }
   .stats__axis { display: flex; justify-content: space-between; margin-top: 6px; font: 500 13px/1.4 var(--font-mono); color: var(--read-muted); }
   .stats__details { margin-top: 12px; }
   .stats__details summary { display: inline-flex; align-items: center; min-height: var(--tap); cursor: pointer; color: var(--accent-deep); }

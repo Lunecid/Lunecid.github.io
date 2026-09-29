@@ -79,6 +79,19 @@ describe('CoG chart data (kept for reuse after D-15)', () => {
       }
     }
   });
+
+  it('F-084: kill-gap KDE caption names the shaded ARI band, valley G, modes and n from the figure', () => {
+    for (const lang of ['ko', 'en'] as const) {
+      const caption = figureCopy.killGap.caption[lang];
+      expect(caption).toMatch(/ARI\s*≥\s*0\.9/);
+      expect(caption).toMatch(/10[–-]18/);
+      expect(caption).toContain('13.72');
+      expect(caption).toContain('5.72');
+      expect(caption).toContain('62.73');
+      expect(caption).toMatch(/10[,.]417[,.]458/);
+    }
+    expect(figureCopy.killGap.caption.ko).toMatch(/\uC785\uB2C8\uB2E4/); // 입니다 (합니다체)
+  });
 });
 
 describe('news', () => {

@@ -67,16 +67,24 @@ astro-island[data-loading] .char-stage__streak { animation-play-state: paused; }
 @keyframes char-fade-out { from { opacity: 1; } to { opacity: 0; } }
 
 /* controls: swap group + replay (hero only) — opaque background so text never sits on visible art */
-.char-stage__controls { position: absolute; z-index: 5; display: flex; flex-wrap: wrap; gap: 6px; pointer-events: auto; }
-.char-stage__swap { display: flex; gap: 6px; }
+.char-stage__controls { position: absolute; z-index: 5; display: flex; flex-wrap: wrap; gap: 8px; pointer-events: auto; }
+.char-stage__swap { display: flex; gap: 8px; }
 .char-stage__btn {
   padding: 6px 11px; cursor: pointer;
   font: 700 13px/1.3 var(--font-mono); color: var(--hud-muted);
   background: var(--hud-bg); border: 1px solid var(--hud-line);
   transition: color var(--dur-hover) linear, border-color var(--dur-hover) linear, transform var(--dur-press) var(--ease-out);
 }
-.char-stage__btn:hover { color: var(--hud-text); }
+.char-stage__btn:lang(ko) { font-family: var(--font-sans); letter-spacing: 0; }
+@media (hover: hover) {
+  .char-stage__btn:hover { color: var(--hud-text); }
+}
 .char-stage__btn:active { transform: scale(.96); }
+:root[data-motion="reduce"] .char-stage__btn:active {
+  transform: none;
+  color: var(--hud-text);
+  border-color: var(--accent);
+}
 .char-stage__btn[aria-pressed="true"] { color: var(--accent); border-color: var(--accent); }
 .char-stage__replay { font-weight: 600; }
 

@@ -2,20 +2,39 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { renderToString } from 'react-dom/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import BgmToggle, { BGM_FADE_IN, BGM_FADE_OUT, BGM_VOLUME } from '../../src/islands/BgmToggle';
+import BgmToggle, {
+  BGM_FADE_IN,
+  BGM_FADE_OUT,
+  BGM_NAV_FADE_OUT,
+  BGM_RESUME_FADE_IN,
+  BGM_TIME_KEY,
+  BGM_TIME_MAX_AGE_MS,
+  BGM_VOLUME,
+  isLeavingLink,
+  isSameOriginLeave,
+  readBgmTime,
+  saveBgmTime,
+} from '../../src/islands/BgmToggle';
 import { STORAGE_KEYS } from '../../src/config';
 
 const SRC = '/audio/bgm/everything-you-ever-dreamed.mp3';
 
 class FakeAudio {
   static instances: FakeAudio[] = [];
+  static playImpl: () => Promise<void> = async () => undefined;
   src: string;
   preload = '';
   loop = true;
   currentTime = 0;
   duration = Number.NaN;
-  play = vi.fn(async () => undefined);
-  pause = vi.fn();
+  paused = true;
+  play = vi.fn(async () => {
+    await FakeAudio.playImpl();
+    this.paused = false;
+  });
+  pause = vi.fn(() => {
+    this.paused = true;
+  });
   addEventListener = vi.fn();
   constructor(src: string) {
     this.src = src;
@@ -61,15 +80,89 @@ function setHidden(hidden: boolean): void {
   Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => (hidden ? 'hidden' : 'visible') });
 }
 
+function memoryStorage(): Storage {
+  const map = new Map<string, string>();
+  return {
+    get length() {
+      return map.size;
+    },
+    clear: () => map.clear(),
+    getItem: (key: string) => map.get(key) ?? null,
+    setItem: (key: string, value: string) => {
+      map.set(key, String(value));
+    },
+    removeItem: (key: string) => {
+      map.delete(key);
+    },
+    key: (index: number) => [...map.keys()][index] ?? null,
+  };
+}
+
 beforeEach(() => {
   FakeAudio.instances = [];
   FakeGain.instances = [];
+  FakeAudio.playImpl = async () => undefined;
   window.__sbTriggers = [];
+  sessionStorage.clear();
+  localStorage.clear();
+  document.body.innerHTML = '';
+  document.documentElement.lang = 'en';
 });
 
 afterEach(() => {
   Reflect.deleteProperty(document, 'hidden');
   Reflect.deleteProperty(document, 'visibilityState');
+});
+
+describe('bgm time helpers', () => {
+  it('saves and restores a position within the age and duration window', () => {
+    const storage = memoryStorage();
+    const now = 1_000_000;
+    saveBgmTime(42.5, now, storage);
+    expect(JSON.parse(storage.getItem(BGM_TIME_KEY)!)).toEqual({ t: 42.5, at: now });
+    expect(readBgmTime(now + 1000, 180, storage)).toBe(42.5);
+  });
+
+  it('ignores stale, negative, past-duration and malformed saves', () => {
+    const storage = memoryStorage();
+    const now = 1_000_000;
+    saveBgmTime(10, now - BGM_TIME_MAX_AGE_MS - 1, storage);
+    expect(readBgmTime(now, 180, storage)).toBeNull();
+    saveBgmTime(200, now, storage);
+    expect(readBgmTime(now, 180, storage)).toBeNull();
+    storage.setItem(BGM_TIME_KEY, '{');
+    expect(readBgmTime(now, 180, storage)).toBeNull();
+    storage.setItem(BGM_TIME_KEY, JSON.stringify({ t: -1, at: now }));
+    expect(readBgmTime(now, 180, storage)).toBeNull();
+  });
+
+  it('isLeavingLink is true for navigations off the page and false for hash-only', () => {
+    const loc = { href: 'http://127.0.0.1/records/', origin: 'http://127.0.0.1', pathname: '/records/', search: '' };
+    document.body.innerHTML = `
+      <a id="nav" href="/projects/">projects</a>
+      <a id="hash" href="#awards">awards</a>
+      <a id="ext" href="https://example.com/">ext</a>
+      <a id="cv" href="/cv.pdf" download>cv</a>
+      <button id="btn">x</button>
+    `;
+    expect(isLeavingLink(document.getElementById('nav'), loc)).toBe(true);
+    expect(isSameOriginLeave(document.getElementById('nav'), loc)).toBe(true);
+    expect(isLeavingLink(document.getElementById('hash'), loc)).toBe(false);
+    expect(isLeavingLink(document.getElementById('ext'), loc)).toBe(true);
+    expect(isSameOriginLeave(document.getElementById('ext'), loc)).toBe(false);
+    expect(isLeavingLink(document.getElementById('cv'), loc)).toBe(true);
+    expect(isSameOriginLeave(document.getElementById('cv'), loc)).toBe(false);
+    expect(isLeavingLink(document.getElementById('btn'), loc)).toBe(false);
+    expect(
+      isSameOriginLeave(document.getElementById('nav'), loc, {
+        button: 0,
+        ctrlKey: true,
+        metaKey: false,
+        shiftKey: false,
+        altKey: false,
+      }),
+    ).toBe(false);
+  });
 });
 
 describe('BgmToggle', () => {
@@ -79,6 +172,7 @@ describe('BgmToggle', () => {
     expect(button).toHaveAttribute('type', 'button');
     expect(button).toHaveAttribute('aria-pressed', 'false');
     expect(button).toHaveTextContent('♪ BGM OFF');
+    expect(button).not.toHaveAttribute('data-state');
     expect(FakeAudio.instances).toHaveLength(0); // nothing loads before a click
   });
 
@@ -97,7 +191,7 @@ describe('BgmToggle', () => {
     expect(FakeAudio.instances, 'nothing loads before the visitor turns music on').toHaveLength(0);
     await user.click(button);
     expect(FakeAudio.instances).toHaveLength(1);
-    expect(lastAudio().preload, "final fix 2 item 15: stream the 8.8 MB track, don't buffer it all").toBe('none');
+    expect(lastAudio().preload, 'final fix 2 item 15: stream the track, do not buffer it all').toBe('none');
     expect(button).toHaveAttribute('aria-pressed', 'true');
     expect(button).toHaveTextContent('♪ BGM ON');
     expect(localStorage.getItem(STORAGE_KEYS.sound)).toBe('on');
@@ -123,22 +217,91 @@ describe('BgmToggle', () => {
     await vi.waitFor(() => expect(audio.pause).toHaveBeenCalledTimes(1), { timeout: 1000 });
   });
 
-  it("remembered 'on' shows pressed after mount but waits for the first outside gesture", async () => {
+  it("remembered 'on' tries play on mount and clears waiting when it succeeds", async () => {
     localStorage.setItem(STORAGE_KEYS.sound, 'on');
+    sessionStorage.setItem(BGM_TIME_KEY, JSON.stringify({ t: 33, at: Date.now() }));
+    render(<BgmToggle src={SRC} />);
+    const button = document.querySelector('.bgm') as HTMLButtonElement;
+    expect(button).toHaveAttribute('aria-pressed', 'true');
+    await vi.waitFor(() => expect(FakeAudio.instances).toHaveLength(1));
+    expect(lastAudio().currentTime).toBe(33);
+    await vi.waitFor(() => expect(lastAudio().play).toHaveBeenCalled());
+    await vi.waitFor(() => expect(lastGain().gain.linearRampToValueAtTime).toHaveBeenCalledWith(BGM_VOLUME, BGM_RESUME_FADE_IN));
+    await vi.waitFor(() => expect(button).not.toHaveAttribute('data-state'));
+    expect(button).toHaveAccessibleName('BGM');
+    expect(window.__sbTriggers).not.toContain('bgm-on');
+  });
+
+  it("remembered 'on' stays waiting when autoplay is blocked, then resumes from the saved time on a gesture", async () => {
+    localStorage.setItem(STORAGE_KEYS.sound, 'on');
+    sessionStorage.setItem(BGM_TIME_KEY, JSON.stringify({ t: 17.5, at: Date.now() }));
+    FakeAudio.playImpl = async () => {
+      throw new DOMException('NotAllowedError');
+    };
     render(
       <>
         <BgmToggle src={SRC} />
         <p>outside</p>
+        <a href="/projects/">leave</a>
       </>,
     );
-    const button = screen.getByRole('button', { name: 'BGM' });
+    const button = await screen.findByRole('button', { name: 'BGM' });
+    await vi.waitFor(() => expect(button).toHaveAttribute('data-state', 'waiting'));
     expect(button).toHaveAttribute('aria-pressed', 'true');
-    expect(FakeAudio.instances).toHaveLength(0);
-    fireEvent.pointerDown(button); // the button handles its own clicks
-    expect(FakeAudio.instances).toHaveLength(0);
+    expect(button).toHaveTextContent('♪ BGM ON');
+    expect(button).toHaveAccessibleDescription(/Background music is on/);
+    expect(lastAudio().currentTime).toBe(17.5);
+
+    FakeAudio.playImpl = async () => undefined;
+    const playsBeforeLeave = lastAudio().play.mock.calls.length;
+    fireEvent.pointerDown(screen.getByText('leave')); // leaving link must not kick
+    expect(lastAudio().play.mock.calls.length).toBe(playsBeforeLeave);
+
     fireEvent.pointerDown(screen.getByText('outside'));
-    await vi.waitFor(() => expect(lastAudio().play).toHaveBeenCalledTimes(1));
-    expect(window.__sbTriggers).not.toContain('bgm-on'); // resuming is not a new opt-in
+    await vi.waitFor(() => expect(lastAudio().play.mock.calls.length).toBeGreaterThan(playsBeforeLeave));
+    expect(lastAudio().currentTime).toBe(17.5);
+    await vi.waitFor(() => expect(button).not.toHaveAttribute('data-state'));
+    expect(window.__sbTriggers).not.toContain('bgm-on');
+  });
+
+  it('while waiting, clicking the BGM button retries play instead of turning off', async () => {
+    localStorage.setItem(STORAGE_KEYS.sound, 'on');
+    FakeAudio.playImpl = async () => {
+      throw new DOMException('NotAllowedError');
+    };
+    const user = userEvent.setup();
+    render(<BgmToggle src={SRC} />);
+    const button = await screen.findByRole('button', { name: 'BGM' });
+    await vi.waitFor(() => expect(button).toHaveAttribute('data-state', 'waiting'));
+    FakeAudio.playImpl = async () => undefined;
+    await user.click(button);
+    await vi.waitFor(() => expect(button).not.toHaveAttribute('data-state'));
+    expect(button).toHaveAttribute('aria-pressed', 'true');
+    expect(localStorage.getItem(STORAGE_KEYS.sound)).toBe('on');
+  });
+
+  it('pagehide saves currentTime and a same-origin leave click starts the nav fade', async () => {
+    const user = userEvent.setup();
+    render(
+      <>
+        <BgmToggle src={SRC} />
+        <a href="/records/">records</a>
+        <a href="/cv.pdf" download>
+          cv
+        </a>
+      </>,
+    );
+    await user.click(screen.getByRole('button', { name: 'BGM' }));
+    const audio = lastAudio();
+    await vi.waitFor(() => expect(audio.play).toHaveBeenCalled());
+    audio.currentTime = 55;
+    const rampsBefore = lastGain().gain.linearRampToValueAtTime.mock.calls.length;
+    fireEvent.click(screen.getByText('cv')); // download must not fade
+    expect(lastGain().gain.linearRampToValueAtTime.mock.calls.length).toBe(rampsBefore);
+    fireEvent.click(screen.getByText('records'));
+    expect(lastGain().gain.linearRampToValueAtTime).toHaveBeenCalledWith(0, BGM_NAV_FADE_OUT);
+    window.dispatchEvent(new Event('pagehide'));
+    expect(JSON.parse(sessionStorage.getItem(BGM_TIME_KEY)!)).toMatchObject({ t: 55 });
   });
 
   it('hidden tab pauses and visible tab resumes when on', async () => {
@@ -147,9 +310,11 @@ describe('BgmToggle', () => {
     await user.click(screen.getByRole('button', { name: 'BGM' }));
     const audio = lastAudio();
     await vi.waitFor(() => expect(audio.play).toHaveBeenCalledTimes(1));
+    audio.currentTime = 12;
     setHidden(true);
     document.dispatchEvent(new Event('visibilitychange'));
     expect(audio.pause).toHaveBeenCalledTimes(1);
+    expect(JSON.parse(sessionStorage.getItem(BGM_TIME_KEY)!)).toMatchObject({ t: 12 });
     setHidden(false);
     document.dispatchEvent(new Event('visibilitychange'));
     expect(audio.play).toHaveBeenCalledTimes(2);

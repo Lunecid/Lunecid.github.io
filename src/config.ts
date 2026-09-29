@@ -4,6 +4,7 @@ export const SITE = {
   email: 'todtjddms104204@pusan.ac.kr',
   githubLogin: 'Lunecid',
   githubUrl: 'https://github.com/Lunecid',
+  daconUrl: 'https://dacon.io/myprofile/530929/home',
   labUrl: 'https://datalab.pusan.ac.kr/datalab/index.do',
   repoUrl: 'https://github.com/Lunecid/Lunecid.github.io',
 } as const;

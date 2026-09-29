@@ -291,11 +291,21 @@ describe('style rules over src/**', () => {
   // positive letter-spacing, the :lang(ko) override must zero it too (spec §4 "Hangul letter-spacing 0").
   const KO_MONO_TO_SANS: { file: string; selector: string; alsoZeroesTracking: boolean }[] = [
     { file: 'src/styles/hud.css', selector: '.hud-label:lang(ko)', alsoZeroesTracking: true },
+    { file: 'src/styles/hud.css', selector: '.badge--tier:lang(ko)', alsoZeroesTracking: true },
     { file: 'src/components/hud/MainMenu.astro', selector: '.mm__title:lang(ko)', alsoZeroesTracking: false },
     { file: 'src/components/hud/MainMenu.astro', selector: '.mm__cap:lang(ko)', alsoZeroesTracking: false },
+    { file: 'src/components/hud/MainMenu.astro', selector: '.mm__hint:lang(ko)', alsoZeroesTracking: true },
     { file: 'src/components/projects/ProjectCartridge.astro', selector: '.cart__tags li:lang(ko)', alsoZeroesTracking: true },
     { file: 'src/components/hud/SiteFooter.astro', selector: '.site-footer__motion:lang(ko)', alsoZeroesTracking: false },
+    { file: 'src/components/hud/SiteFooter.astro', selector: '.site-footer__copy:lang(ko)', alsoZeroesTracking: true },
+    { file: 'src/components/hud/SiteFooter.astro', selector: '.site-footer__updated:lang(ko)', alsoZeroesTracking: true },
+    { file: 'src/components/hud/SiteFooter.astro', selector: '.site-footer a:lang(ko)', alsoZeroesTracking: true },
+    { file: 'src/components/hud/Hero.astro', selector: '.hero__credit-part:lang(ko)', alsoZeroesTracking: true },
+    { file: 'src/components/stats/StatsSummary.astro', selector: ':global(.stats__live-label:lang(ko))', alsoZeroesTracking: true },
     { file: 'src/islands/FavoriteGames.css', selector: '.fg__tab small:lang(ko)', alsoZeroesTracking: true },
+    { file: 'src/islands/FavoriteGames.css', selector: '.fg__meta li:lang(ko)', alsoZeroesTracking: true },
+    { file: 'src/islands/FavoriteGames.css', selector: '.fg__credit:lang(ko)', alsoZeroesTracking: true },
+    { file: 'src/islands/CharacterStage.css', selector: '.char-stage__btn:lang(ko)', alsoZeroesTracking: true },
     { file: 'src/components/research/AucOverallChart.astro', selector: '.chart__summary:lang(ko)', alsoZeroesTracking: true },
     { file: 'src/components/hud/PlayerCard.astro', selector: '.player-card__class:lang(ko)', alsoZeroesTracking: true },
   ];

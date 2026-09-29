@@ -83,9 +83,9 @@ const summaryId = `${idPrefix}-table-summary`;
 const columns = lang === 'ko' ? ['모델', '입력 표현', 'AUC'] : ['Model', 'Input view', 'AUC'];
 ---
 <figure class:list={['chart', 'chart--overall', { 'chart--hud': tone === 'hud' }]}>
-  <div class="chart__scroll chart__scroll--wide" tabindex="0" role="region" aria-labelledby={titleIdWide}>
+  <div class="chart__scroll chart__scroll--wide" data-table-scroll data-label-id={titleIdWide}>
     <svg class="chart__svg" viewBox={`0 0 ${wideLayout.w} ${wide.h}`} role="img" aria-labelledby={titleIdWide} aria-describedby={descIdWide}>
-      <title id={titleIdWide}>{caption}</title>
+      <title id={titleIdWide}>{lang === 'ko' ? '모델별 AUC 점 그래프' : 'AUC by model, dot plot'}</title>
       <desc id={descIdWide}>{alt}</desc>
       <line class="chart__axis-line" x1={wideLayout.left} x2={wideLayout.right} y1={wide.axisY} y2={wide.axisY} />
       {TICKS.map((v) => (
@@ -106,9 +106,9 @@ const columns = lang === 'ko' ? ['모델', '입력 표현', 'AUC'] : ['Model', '
       ))}
     </svg>
   </div>
-  <div class="chart__scroll chart__scroll--compact" tabindex="0" role="region" aria-labelledby={titleIdCompact}>
+  <div class="chart__scroll chart__scroll--compact" data-table-scroll data-label-id={titleIdCompact}>
     <svg class="chart__svg chart__svg--compact" viewBox={`0 0 ${compactLayout.w} ${compact.h}`} role="img" aria-labelledby={titleIdCompact} aria-describedby={descIdCompact}>
-      <title id={titleIdCompact}>{caption}</title>
+      <title id={titleIdCompact}>{lang === 'ko' ? '모델별 AUC 점 그래프' : 'AUC by model, dot plot'}</title>
       <desc id={descIdCompact}>{alt}</desc>
       <line class="chart__axis-line" x1={compactLayout.left} x2={compactLayout.right} y1={compact.axisY} y2={compact.axisY} />
       {COMPACT_TICKS.map((v) => (
@@ -129,9 +129,9 @@ const columns = lang === 'ko' ? ['모델', '입력 표현', 'AUC'] : ['Model', '
       ))}
     </svg>
   </div>
-  <div class="chart__scroll chart__scroll--narrow" tabindex="0" role="region" aria-labelledby={titleIdNarrow}>
+  <div class="chart__scroll chart__scroll--narrow" data-table-scroll data-label-id={titleIdNarrow}>
     <svg class="chart__svg chart__svg--narrow" viewBox={`0 0 ${narrowLayout.w} ${narrow.h}`} role="img" aria-labelledby={titleIdNarrow} aria-describedby={descIdNarrow}>
-      <title id={titleIdNarrow}>{caption}</title>
+      <title id={titleIdNarrow}>{lang === 'ko' ? '모델별 AUC 점 그래프' : 'AUC by model, dot plot'}</title>
       <desc id={descIdNarrow}>{alt}</desc>
       <line class="chart__axis-line" x1={narrowLayout.left} x2={narrowLayout.right} y1={narrow.axisY} y2={narrow.axisY} />
       {TICKS.map((v) => (

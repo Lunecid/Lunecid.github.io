@@ -179,7 +179,7 @@ export const resumeSchema = z.object({
     })
     .optional(),
   awards: z.array(z.object({ ref: z.enum(CERTIFICATE_IDS), pdf: pdfFlags })),
-  activities: z.array(z.object({ id: slug, text: localized, date: z.string().regex(/^\d{4}(-(0[1-9]|1[0-2]))?$/), end: isoMonth.optional(), pdf: pdfFlags })
+  activities: z.array(z.object({ id: slug, text: localized, date: z.string().regex(/^\d{4}(-(0[1-9]|1[0-2]))?$/), end: isoMonth.optional(), href: z.url().optional(), pdf: pdfFlags })
     .refine((a) => a.end === undefined || /^\d{4}-\d{2}$/.test(a.date), { message: 'end requires date YYYY-MM' })),
   // display: end ? formatPeriod(date, end) : date.length === 4 ? date : formatYm(date)
   certifications: z.array(z.object({ id: slug, name: localized, issuer: localized, date: isoDate, pdf: pdfFlags })),
@@ -187,7 +187,7 @@ export const resumeSchema = z.object({
     id: slug, name: localized, level: localized, date: isoDate.optional(), validUntil: isoDate.optional(),
     onExpire: z.literal('mark').optional(), records: z.boolean().default(true), pdf: pdfFlags,
   })),
-  training: z.array(z.object({ id: slug, name: localized, org: localized, start: isoMonth, end: isoMonth, hours: z.number().int().positive(), pdf: pdfFlags })),
+  training: z.array(z.object({ id: slug, name: localized, org: localized, start: isoMonth, end: isoMonth, hours: z.number().int().positive().optional(), pdf: pdfFlags })),
   skills: z.object({ pdf: pdfFlags, primary: z.array(skill).min(1), familiar: z.array(skill) }),
   researchIds: z.object({ scholar: z.url().nullable(), orcid: z.url().nullable() }),
 });
