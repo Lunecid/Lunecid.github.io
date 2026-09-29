@@ -9,6 +9,7 @@ const KO = {
   cvHref: '/cv/seongeun-baek-resume-ko.pdf',
   cvLabel: '이력서 (PDF)',
   bgmAvailable: false,
+  base: '/research/',
 } as const;
 
 function firstTag(html: string, pattern: RegExp): string {
@@ -110,5 +111,15 @@ describe('HudNav.astro', () => {
     expect(sectionHrefs(data)).toEqual(['/data/research/', '/data/projects/', '/data/records/']);
     expect(data).not.toContain('플레이 로그');
     expect(data.match(/class="hud-nav__num"[^>]*>0[1-3]</g)).toHaveLength(3);
+  });
+
+  it('§5.5: the switch appears once in the bar and once in the panel, and not without a base', async () => {
+    const html = await renderAstro(HudNav, { props: KO });
+    expect(html.match(/class="variant-switch variant-switch--bar"/g)).toHaveLength(1);
+    expect(html.match(/class="variant-switch variant-switch--panel"/g)).toHaveLength(1);
+    expect(html.indexOf('variant-switch--panel')).toBeGreaterThan(html.indexOf('id="hud-menu"'));
+    expect(html.indexOf('variant-switch--bar')).toBeGreaterThan(html.indexOf('hud-nav__tools'));
+    expect(await renderAstro(HudNav, { props: { ...KO, base: null } })).not.toContain('variant-switch');
+    expect(firstTag(html, /<a [^>]*class="hud-nav__brand"[^>]*>/)).toContain('href="/game/"');
   });
 });

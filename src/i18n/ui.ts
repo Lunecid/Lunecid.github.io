@@ -39,6 +39,10 @@ export const ui = {
     'nav.stats': '방문 통계',
     'nav.brandSr': '백성은 홈',
     'nav.chooser': '선택 화면으로',
+    'variant.switchToData': '일반 버전으로 보기',
+    'variant.switchToGame': '게임 버전으로 보기',
+    'variant.switchToData.short': '일반',
+    'variant.switchToGame.short': '게임',
 
     // 버튼·조작
     'action.downloadCv': 'CV 다운로드',
@@ -335,6 +339,10 @@ export const ui = {
     'nav.stats': 'Visitor stats',
     'nav.brandSr': 'Seongeun Baek home',
     'nav.chooser': 'Choose a portfolio',
+    'variant.switchToData': 'View general version',
+    'variant.switchToGame': 'View game version',
+    'variant.switchToData.short': 'General',
+    'variant.switchToGame.short': 'Game',
 
     // Buttons and controls
     'action.downloadCv': 'Download CV',

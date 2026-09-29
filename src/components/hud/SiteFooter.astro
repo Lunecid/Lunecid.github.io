@@ -6,7 +6,7 @@
  */
 import type { Lang } from '../../i18n/ui';
 import { formatDate, t, type UiKey } from '../../i18n/utils';
-import { pageHref } from '../../lib/links';
+import { chooserHref, pageHref } from '../../lib/links';
 import { NOTICE_KEYS, type NoticeKey } from '../../types';
 import { SHARED_NAV } from '../../variants/neutral';
 
@@ -39,6 +39,7 @@ const NOTICE_LINES: Record<NoticeKey, { key: UiKey; english: boolean }[]> = {
 const noticeLines = NOTICE_KEYS.filter((key) => notices.includes(key)).flatMap((key) => NOTICE_LINES[key]);
 
 const links = SHARED_NAV.map((item) => ({ href: pageHref(item.base, { lang, variant: null }), label: t(lang, item.label) }));
+links.push({ href: chooserHref(lang, { choose: true }), label: t(lang, 'nav.chooser') });
 ---
 <footer class="site-footer">
   <div class="container container--hud site-footer__inner">

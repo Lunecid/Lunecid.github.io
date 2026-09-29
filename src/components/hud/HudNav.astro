@@ -10,6 +10,7 @@ import { homeHref, pageHref } from '../../lib/links';
 import type { NavSection } from '../../types';
 import { MEDIA } from '../../config';
 import BgmToggle from './BgmToggle.astro';
+import VariantSwitch from '../common/VariantSwitch.astro';
 import { getVariant } from '../../variants';
 import type { VariantId } from '../../variants/ids';
 
@@ -23,8 +24,9 @@ interface Props {
   /** Which PDF the CV button opens, e.g. "이력서 (PDF)" or "Academic CV (PDF)" (D-7): tooltip and accessible name. */
   cvLabel: string;
   bgmAvailable: boolean;
+  base: string | null;
 }
-const { lang, variant, current, exact = false, altLangHref, cvHref, cvLabel, bgmAvailable } = Astro.props;
+const { lang, variant, current, exact = false, altLangHref, cvHref, cvLabel, bgmAvailable, base } = Astro.props;
 const other = otherLang(lang);
 const NAV_LABEL: Record<NavSection, UiKey> = { research: 'nav.research', projects: 'nav.projects', records: 'nav.records', 'player-log': 'nav.playerLog' };
 // Numbering ('01'…) is game markup (contract §1.6), taken from the position in the version nav.
@@ -59,10 +61,12 @@ const currentValue = exact ? 'page' : 'true';
           <a href={altLangHref} hreflang={other} lang={other}>{languages[other]}</a>
         </p>
       )}
+      {base !== null && <p class="hud-nav__switch hud-nav__switch--panel"><VariantSwitch lang={lang} variant={variant} base={base} placement="panel" /></p>}
     </nav>
 
     <div class="hud-nav__tools">
       {bgmAvailable && <BgmToggle src={MEDIA.bgm} />}
+      {base !== null && <VariantSwitch lang={lang} variant={variant} base={base} placement="bar" />}
       {altLangHref !== null && (
         <p class="hud-nav__lang hud-nav__lang--bar">
           <span class="hud-nav__lang-cur">{lang.toUpperCase()}</span>
@@ -409,20 +413,31 @@ const currentValue = exact ? 'page' : 'true';
     .hud-nav__lang--panel {
       display: none;
     }
+    .hud-nav__switch--panel { display: none; }
     .hud-nav__list {
       gap: 16px;
+    }
+  }
+  /* P1-15 (owner decision): with the version switch in the bar, the tablet bar drops the 01–04 numbers so it never
+     scrolls sideways at 768px; from 1068px the numbers return. */
+  @media (min-width: 734px) and (max-width: 1067.98px) {
+    .hud-nav__num {
+      display: none;
     }
   }
   @media (min-width: 1068px) {
     .hud-nav__bar {
       padding-inline: 28px;
     }
-    .hud-nav__id,
-    .hud-nav__role {
-      display: inline;
-    }
+    .hud-nav__id { display: inline; }
     .hud-nav__list {
       gap: 22px;
+    }
+  }
+  /* P1-15: "// GAME DATA ANALYST" only where the 1360px container leaves room beside the switch. */
+  @media (min-width: 1600px) {
+    .hud-nav__role {
+      display: inline;
     }
   }
   /* F-023: match .container gutters only where the EN bar still fits; keep 16/28px below. */

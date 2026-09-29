@@ -1,0 +1,83 @@
+---
+// The version switch (spec §5.5, contract §2.5): a static link built at build time (works without JS) to the same page
+// of the other version, or to that version's home when the page does not exist there (A-26). The script keeps the
+// #hash for a same-page switch and remembers the new version (sb:variant, A-7). Placement: the nav bar from 734px,
+// the menu panel below (like the language switch). At 734–1067px the bar shows the short label (owner decision, P1-15);
+// the full label is always the accessible name and the tooltip (WCAG 2.5.3: the short label is part of it).
+import type { Lang } from '../../i18n/ui';
+import { t } from '../../i18n/utils';
+import { switchVariantHref } from '../../lib/links';
+import type { VariantId } from '../../variants/ids';
+
+interface Props {
+  lang: Lang;
+  variant: VariantId;
+  base: string;
+  placement: 'bar' | 'panel';
+}
+const { lang, variant, base, placement } = Astro.props;
+const link = switchVariantHref(base, lang, variant);
+const label = t(lang, link.target === 'data' ? 'variant.switchToData' : 'variant.switchToGame');
+const short = t(lang, link.target === 'data' ? 'variant.switchToData.short' : 'variant.switchToGame.short');
+---
+<a
+  class:list={['variant-switch', `variant-switch--${placement}`]}
+  href={link.href}
+  data-switch-variant={link.target}
+  data-same-page={String(link.samePage)}
+  data-base-href={link.href}
+  aria-label={label}
+  title={label}
+><span class="variant-switch__short" aria-hidden="true">{short}</span><span class="variant-switch__full">{label}</span></a>
+
+<script>
+  import { rememberVariant } from '../../lib/variant-pref';
+  import { isVariantId } from '../../variants/ids';
+
+  // An image-viewer hash (#view-<id>, written with pushState, no hashchange) is dropped: the switch never carries it.
+  const pageHash = (): string => (location.hash.startsWith('#view-') ? '' : location.hash);
+  function syncHashes(): void {
+    document.querySelectorAll<HTMLAnchorElement>('a[data-switch-variant]').forEach((link) => {
+      const base = link.dataset.baseHref ?? link.getAttribute('href') ?? '';
+      link.setAttribute('href', link.dataset.samePage === 'true' ? base + pageHash() : base);
+    });
+  }
+  syncHashes();
+  window.addEventListener('hashchange', syncHashes);
+  document.addEventListener('click', (event) => {
+    const link = event.target instanceof Element ? event.target.closest<HTMLAnchorElement>('a[data-switch-variant]') : null;
+    const target = link?.dataset.switchVariant;
+    // The hash is computed at click time (pushState changes it without a hashchange event).
+    if (link && link.dataset.samePage === 'true') link.href = (link.dataset.baseHref ?? '') + pageHash();
+    if (isVariantId(target)) rememberVariant(target);
+  });
+</script>
+
+<style>
+  .variant-switch {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--tap);
+    min-width: var(--tap);
+    padding-inline: 4px;
+    color: var(--hud-text);
+    font: 600 13px/1 var(--font-sans);
+    white-space: nowrap;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+  @media (hover: hover) { .variant-switch:hover { color: var(--accent); } } .variant-switch:active { color: var(--accent); }
+  .variant-switch__short {
+    display: none;
+  }
+  @media (max-width: 733.98px) {
+    .variant-switch--bar { display: none; }
+  }
+  @media (min-width: 734px) {
+    .variant-switch--panel { display: none; }
+  }
+  @media (min-width: 734px) and (max-width: 1067.98px) {
+    .variant-switch--bar .variant-switch__short { display: inline; }
+    .variant-switch--bar .variant-switch__full { display: none; }
+  }
+</style>

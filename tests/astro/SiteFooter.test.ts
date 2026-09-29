@@ -16,14 +16,16 @@ function footerLinkHrefs(html: string): string[] {
 }
 
 describe('SiteFooter.astro', () => {
-  it('links to /stats/, /privacy/, /credits/ localized', async () => {
+  it('links to /stats/, /privacy/, /credits/ localized, then the chooser link', async () => {
     const ko = await renderAstro(SiteFooter, { props: { lang: 'ko', notices: [], builtAt } });
-    expect(footerLinkHrefs(ko)).toEqual(['/stats/', '/privacy/', '/credits/']);
+    expect(footerLinkHrefs(ko)).toEqual(['/stats/', '/privacy/', '/credits/', '/?choose']);
+    expect(ko).toContain('선택 화면으로');
     expect(ko).toMatch(/<nav[^>]*aria-label="사이트 정보"/);
     for (const label of ['방문 통계', '개인정보 처리방침', '출처·고지']) expect(ko).toContain(label);
 
     const en = await renderAstro(SiteFooter, { props: { lang: 'en', notices: [], builtAt }, url: '/en/game/' });
-    expect(footerLinkHrefs(en)).toEqual(['/en/stats/', '/en/privacy/', '/en/credits/']);
+    expect(footerLinkHrefs(en)).toEqual(['/en/stats/', '/en/privacy/', '/en/credits/', '/en/?choose']);
+    expect(en).toContain('Choose a portfolio');
     expect(en).toMatch(/<nav[^>]*aria-label="Site information"/);
   });
 

@@ -10,6 +10,7 @@ import type { Lang } from '../i18n/ui';
 import { otherLang, switchLocalePath, t } from '../i18n/utils';
 import { FONT_URL, fontFaceCss } from '../lib/fonts';
 import { HEAD_INIT_SCRIPT } from '../lib/head-init';
+import { parseRoute } from '../lib/routes';
 import { VIEWER_QUEUE_SCRIPT } from '../lib/viewer-queue';
 import { soundAvailability } from '../lib/public-assets';
 import { availableAchievements, type AchievementDef } from '../lib/achievements';
@@ -54,6 +55,7 @@ const v = getVariant(variant);
 const on = (m: ModuleId): boolean => v.modules.includes(m);
 
 const pathname = Astro.url.pathname;
+const route = parseRoute(Astro.url.pathname);
 const altHref = altLangHref === undefined ? switchLocalePath(pathname, otherLang(lang)) : altLangHref;
 const sound = soundAvailability();
 const bgm = sound.bgm && on('bgm');
@@ -90,7 +92,7 @@ const achievementLabels = {
   <body>
     <a class="skip-link" href="#main">{t(lang, 'site.skipToContent')}</a>
     {page === 'home' && on('crtIntro') && <CrtIntro />}
-    <HudNav lang={lang} variant={variant} current={section} exact={sectionIndex} altLangHref={altHref} cvHref={cv.href} cvLabel={cv.label} bgmAvailable={bgm} />
+    <HudNav lang={lang} variant={variant} current={section} exact={sectionIndex} altLangHref={altHref} cvHref={cv.href} cvLabel={cv.label} bgmAvailable={bgm} base={route?.kind === 'variant' ? route.base : null} />
     <main id="main" tabindex="-1"><slot /></main>
     <SiteFooter lang={lang} notices={notices} builtAt={new Date()} />
     {on('achievements') && <AchievementHost lang={lang} defs={defs} labels={achievementLabels} />}
