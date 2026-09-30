@@ -6,7 +6,7 @@
 // picks where the Worker sends anything. Logs are only "relay: <path> ok|error:<code>" (spec §5.7.5).
 
 // The ID rules are shared with the site and the fetch job (import-free TypeScript; wrangler's esbuild bundles it, Node
-// strips the types). They are used by /gh/api and /openid/verify (AL-15) and are never copied here.
+// strips the types). /gh/api and /openid/verify re-check every value with them; they are never copied here.
 import { ACCOUNT_VARS, looksLikeSecret, normalize, parseSteamId64, validateVar } from '../../../src/lib/account-ids.ts';
 import { b64url, ctEqual, deriveKeys, randomToken, seal, unseal } from './seal.mjs';
 import { originAllowed, preflight, secure, withCors } from './cors.mjs';
@@ -40,6 +40,22 @@ const FETCH_TIMEOUT_MS = 10_000;
 const UPSTREAM_BODY_MAX = 65_536;
 const SESSION_BODY_MAX = 4096;
 const LOGOUT_BODY_MAX = 2048;
+const API_BODY_MAX = 2048;
+const VERIFY_BODY_MAX = 4096;
+const STEAM_TIMEOUT_MS = 6_000;
+const RETRY_DEFAULT = 60;
+const RETRY_MAX = 86_400;
+const RUN_ID_RE = /^\d{1,20}$/;
+const RUN_URL_RE = /^https:\/\/github\.com\/Lunecid\/Lunecid\.github\.io\/actions\/runs\/\d+$/;
+const ENUM_RE = /^[a-z_]{1,40}$/;
+const JOB_NAME_MAX = 100;
+const BUSY_STATUSES = ['in_progress', 'queued', 'pending'];
+const OPENID_NS = 'http://specs.openid.net/auth/2.0';
+const STEAM_ID_URL_RE = /^https:\/\/steamcommunity\.com\/openid\/id\/(7656119\d{10})$/;
+const SIGNED_REQUIRED = ['op_endpoint', 'claimed_id', 'identity', 'return_to', 'response_nonce', 'assoc_handle'];
+const NONCE_RE = /^(\d{4}-\d\d-\d\dT\d\d:\d\d:\d\dZ)/;
+const NONCE_SKEW_MS = 300_000;
+const STEAM_STATE_RE = /^[A-Za-z0-9_-]{16,128}$/;
 const N_RE = /^[A-Za-z0-9_-]{22,64}$/;
 const TOKEN_RE = /^[\x21-\x7e]{1,1024}$/;
 const COOKIE_ATTRS = 'Path=/; Secure; HttpOnly; SameSite=Lax';
@@ -139,18 +155,18 @@ async function rateAllowed(limiter, key) {
 /**
  * One outgoing call. The 10 s limit covers the whole exchange, response body included: the body is read here under
  * the same timer, capped at 64 KB. Redirects are never followed (`redirect: 'manual'`, DV-12) and their bodies are not
- * read: the caller treats any 3xx as upstream. Returns { status, text } (text null for a 3xx), or null on a network
- * failure, the timeout, or a body over the cap.
+ * read: the caller treats any 3xx as upstream. Returns { status, headers, text } (text null for a 3xx), or null on a
+ * network failure, the timeout, or a body over the cap. Callers read only named headers and never pass any on.
  */
-async function upstream(url, init) {
+async function upstream(url, init, timeoutMs = FETCH_TIMEOUT_MS) {
   const ctrl = new AbortController();
-  const timer = setTimeout(() => ctrl.abort(), FETCH_TIMEOUT_MS);
+  const timer = setTimeout(() => ctrl.abort(), timeoutMs);
   let reader = null;
   try {
     const res = await fetch(url, { ...init, redirect: 'manual', signal: ctrl.signal });
     if (isRedirect(res) || res.body === null) {
       res.body?.cancel().catch(() => {});
-      return { status: res.status, text: isRedirect(res) ? null : '' };
+      return { status: res.status, headers: res.headers, text: isRedirect(res) ? null : '' };
     }
     const aborted = new Promise((_, reject) => {
       if (ctrl.signal.aborted) reject(new Error('timeout'));
@@ -174,7 +190,7 @@ async function upstream(url, init) {
       all.set(c, at);
       at += c.byteLength;
     }
-    return { status: res.status, text: new TextDecoder().decode(all) };
+    return { status: res.status, headers: res.headers, text: new TextDecoder().decode(all) };
   } catch {
     return null;
   } finally {
@@ -418,6 +434,296 @@ async function logout(request, env) {
   return done(new Response(null, { status: 204 }), usable ? null : 'handle');
 }
 
+// ---- /gh/api (spec §5.7.3 op table) ---------------------------------------------------------------------------------
+
+/** The handle from `Authorization: Bearer`, when it unseals as an owner handle that has not expired; otherwise null. */
+async function readHandle(request, cfg) {
+  const m = /^Bearer ([A-Za-z0-9_-]{1,4096})$/.exec(request.headers.get('Authorization') ?? '');
+  if (m === null) return null;
+  const h = await unseal(cfg.keys.handle, m[1]);
+  const now = nowSec();
+  const ok = isObject(h) && h.typ === 'handle' && h.uid === OWNER_ID && typeof h.tok === 'string' && h.tok !== '' &&
+    Number.isSafeInteger(h.exp) && h.exp > now && h.exp <= now + HANDLE_MAX;
+  return ok ? h : null;
+}
+
+/** A JSON object body of at most `max` bytes, or null. */
+async function readJsonObject(request, max) {
+  if (mediaType(request) !== 'application/json') return null;
+  const text = await readBody(request, max);
+  if (text === null) return null;
+  try {
+    const body = JSON.parse(text);
+    return isObject(body) ? body : null;
+  } catch {
+    return null;
+  }
+}
+
+/** One GitHub REST call on the one repository. `body` is serialised here; the path is built from constants and checked values. */
+function ghRepo(token, method, path, body) {
+  const headers = ghHeaders(token);
+  if (body !== undefined) headers['Content-Type'] = 'application/json';
+  return upstream(`${GH_API}/repos/${REPO}${path}`, { method, headers, ...(body === undefined ? {} : { body: JSON.stringify(body) }) });
+}
+
+const is2xx = (r) => r !== null && r.status >= 200 && r.status < 300;
+const enumOrNull = (v) => (typeof v === 'string' && ENUM_RE.test(v) ? v : null);
+
+/** Seconds until GitHub accepts calls again: Retry-After, else x-ratelimit-reset, else a minute. */
+function retryAfter(headers) {
+  const ra = headers?.get('retry-after') ?? '';
+  let s = RETRY_DEFAULT;
+  if (/^\d{1,9}$/.test(ra)) s = Number(ra);
+  else {
+    const reset = headers?.get('x-ratelimit-reset') ?? '';
+    if (/^\d{1,12}$/.test(reset)) s = Number(reset) - nowSec();
+  }
+  return Math.min(Math.max(s, 1), RETRY_MAX);
+}
+
+const rateLimited = (seconds) => done(json(429, { error: 'rate', retryAfter: seconds }), 'rate');
+
+/** GitHub status → the fixed codes (spec §5.7.3). Bodies and headers of GitHub never reach the page. */
+function ghFailure(r, on422 = 'gh-rejected') {
+  if (r === null || isRedirect(r) || r.status >= 500) return fail(502, 'upstream');
+  if (r.status === 401) return fail(401, 'handle');
+  if (r.status === 429 || (r.status === 403 && (r.headers.get('x-ratelimit-remaining') === '0' || r.headers.has('retry-after')))) return rateLimited(retryAfter(r.headers));
+  if (r.status === 403) return fail(403, 'gh-perm');
+  if (r.status === 422) return fail(422, on422);
+  return fail(502, 'upstream');
+}
+
+/** A 200 JSON object from GitHub, or null. */
+const ghObject = (r) => {
+  if (r === null || r.status !== 200) return null;
+  const body = parseJson(r.text);
+  return isObject(body) ? body : null;
+};
+
+const accountVar = (name) => typeof name === 'string' && ACCOUNT_VARS.includes(name);
+
+function runIdOf(v) {
+  if (typeof v === 'number') return Number.isSafeInteger(v) && v >= 0 ? String(v) : null;
+  return typeof v === 'string' && RUN_ID_RE.test(v) ? v : null;
+}
+
+async function opVarsList(token) {
+  const r = await ghRepo(token, 'GET', '/actions/variables?per_page=30');
+  if (r === null || r.status !== 200) return ghFailure(r);
+  const body = ghObject(r);
+  if (body === null || !Array.isArray(body.variables)) return fail(502, 'upstream');
+  const list = body.variables
+    .filter((v) => isObject(v) && accountVar(v.name) && typeof v.value === 'string')
+    .map((v) => ({ name: v.name, value: v.value }));
+  return done(json(200, list));
+}
+
+async function opVarsSet(token, args) {
+  if (!accountVar(args.name)) return fail(403, 'forbidden');
+  if (typeof args.value !== 'string' || looksLikeSecret(args.value)) return fail(400, 'invalid');
+  const check = validateVar(args.name, args.value);
+  if (!check.ok) return fail(400, 'invalid');
+  const variable = { name: args.name, value: check.value };
+  const patch = await ghRepo(token, 'PATCH', `/actions/variables/${args.name}`, variable);
+  if (is2xx(patch)) return done(json(200, { ok: true }));
+  if (patch === null || patch.status !== 404) return ghFailure(patch);
+  const create = await ghRepo(token, 'POST', '/actions/variables', variable);
+  return is2xx(create) ? done(json(200, { ok: true })) : ghFailure(create);
+}
+
+async function opVarsDelete(token, args) {
+  if (!accountVar(args.name)) return fail(403, 'forbidden');
+  const r = await ghRepo(token, 'DELETE', `/actions/variables/${args.name}`);
+  return is2xx(r) || r?.status === 404 ? done(json(200, { ok: true })) : ghFailure(r);
+}
+
+async function opWorkflowGet(token) {
+  const r = await ghRepo(token, 'GET', `/actions/workflows/${WORKFLOW}`);
+  if (r === null || r.status !== 200) return ghFailure(r);
+  const body = ghObject(r);
+  return body === null ? fail(502, 'upstream') : done(json(200, { state: enumOrNull(body.state) }));
+}
+
+/** No arguments: the body is exactly {"ref":"main"}, built here (spec §4.5); refused while a run is in progress. */
+async function opDispatch(token) {
+  for (const status of BUSY_STATUSES) {
+    const r = await ghRepo(token, 'GET', `/actions/workflows/${WORKFLOW}/runs?status=${status}&per_page=1`);
+    if (r === null || r.status !== 200) return ghFailure(r, 'dispatch');
+    const body = ghObject(r);
+    if (body === null || !Array.isArray(body.workflow_runs)) return fail(502, 'upstream');
+    if (body.workflow_runs.length > 0) {
+      const id = body.workflow_runs[0]?.id;
+      return done(json(409, { error: 'busy', runId: Number.isSafeInteger(id) && id > 0 ? id : null }), 'busy');
+    }
+  }
+  const r = await ghRepo(token, 'POST', `/actions/workflows/${WORKFLOW}/dispatches`, { ref: REF });
+  if (!is2xx(r)) return ghFailure(r, 'dispatch');
+  const body = r.status === 200 ? parseJson(r.text) : null;
+  const runId = isObject(body) && Number.isSafeInteger(body.workflow_run_id) && body.workflow_run_id > 0 ? body.workflow_run_id : null;
+  const htmlUrl = isObject(body) && typeof body.html_url === 'string' && RUN_URL_RE.test(body.html_url) ? body.html_url : null;
+  return done(json(200, { runId, htmlUrl }));
+}
+
+async function opRunGet(token, args) {
+  const id = runIdOf(args.runId);
+  if (id === null) return fail(400, 'invalid');
+  const r = await ghRepo(token, 'GET', `/actions/runs/${id}`);
+  if (r === null || r.status !== 200) return ghFailure(r);
+  const body = ghObject(r);
+  if (body === null) return fail(502, 'upstream');
+  const htmlUrl = typeof body.html_url === 'string' && RUN_URL_RE.test(body.html_url) ? body.html_url : null;
+  return done(json(200, { status: enumOrNull(body.status), conclusion: enumOrNull(body.conclusion), htmlUrl }));
+}
+
+async function opRunJobs(token, args) {
+  const id = runIdOf(args.runId);
+  if (id === null) return fail(400, 'invalid');
+  const r = await ghRepo(token, 'GET', `/actions/runs/${id}/jobs?per_page=30`);
+  if (r === null || r.status !== 200) return ghFailure(r);
+  const body = ghObject(r);
+  if (body === null || !Array.isArray(body.jobs)) return fail(502, 'upstream');
+  const jobs = body.jobs.filter(isObject).map((j) => {
+    const steps = Array.isArray(j.steps) ? j.steps.filter(isObject) : [];
+    return {
+      name: typeof j.name === 'string' ? j.name.slice(0, JOB_NAME_MAX) : '',
+      status: enumOrNull(j.status),
+      conclusion: enumOrNull(j.conclusion),
+      stepsDone: steps.filter((s) => s.status === 'completed').length,
+      stepsTotal: steps.length,
+    };
+  });
+  return done(json(200, jobs));
+}
+
+/** The only operations the relay performs for the page (spec §5.7.3); anything else is 403 forbidden. */
+const OPS = new Map([
+  ['vars.list', opVarsList],
+  ['vars.set', opVarsSet],
+  ['vars.delete', opVarsDelete],
+  ['workflow.get', opWorkflowGet],
+  ['dispatch', opDispatch],
+  ['run.get', opRunGet],
+  ['run.jobs', opRunJobs],
+]);
+
+/** POST /gh/api { op, ...args }, `Authorization: Bearer <handle>`, JSON ≤ 2 KB. */
+async function ghApi(request, env) {
+  const cfg = await loadConfig(env);
+  if (cfg === null) return fail(503, 'config');
+  const h = await readHandle(request, cfg);
+  if (h === null) return fail(401, 'handle');
+  const body = await readJsonObject(request, API_BODY_MAX);
+  if (body === null) return fail(400, 'invalid');
+  const op = typeof body.op === 'string' ? OPS.get(body.op) : undefined;
+  if (op === undefined) return fail(403, 'forbidden');
+  return op(h.tok, body);
+}
+
+// ---- /openid/verify (spec §5.7.3 "Steam 검증") -------------------------------------------------------------------------
+
+/** The `s` of a return_to whose origin and path are exactly LINK_RETURN and whose only query key is `s`; otherwise null. */
+function returnToState(raw) {
+  if (typeof raw !== 'string') return null;
+  let u;
+  try {
+    u = new URL(raw);
+  } catch {
+    return null;
+  }
+  if (`${u.origin}${u.pathname}` !== LINK_RETURN || u.username !== '' || u.password !== '' || u.hash !== '') return null;
+  if (raw !== `${LINK_RETURN}${u.search}`) return null; // no normalisation (port, dot segments, escapes) is accepted
+  const keys = [...u.searchParams.keys()];
+  const s = u.searchParams.get('s');
+  return keys.length === 1 && keys[0] === 's' && s !== null && STEAM_STATE_RE.test(s) ? s : null;
+}
+
+const XML_NAMED = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'" };
+
+/**
+ * <steamID> text: one CDATA layer stripped, else the five XML entities and numeric entities decoded; then normalize.
+ * A CDATA start without its end (the match stopped at a "</steamID>" inside the name) or any "<" left in the result
+ * gives null: the name is then typed by the owner instead.
+ */
+function steamName(raw) {
+  let text;
+  if (raw.startsWith('<![CDATA[')) {
+    if (!raw.endsWith(']]>') || raw.length < '<![CDATA[]]>'.length) return null;
+    text = raw.slice('<![CDATA['.length, -']]>'.length);
+  } else {
+    let bad = false;
+    text = raw.replace(/&(?:#(\d{1,7})|#x([0-9A-Fa-f]{1,6})|(amp|lt|gt|quot|apos));/g, (_, dec, hex, named) => {
+      if (named !== undefined) return XML_NAMED[named];
+      const cp = dec !== undefined ? Number(dec) : parseInt(hex, 16);
+      if (cp === 0 || cp > 0x10ffff || (cp >= 0xd800 && cp <= 0xdfff)) {
+        bad = true;
+        return '';
+      }
+      return String.fromCodePoint(cp);
+    });
+    if (bad) return null;
+  }
+  if (text.includes('<')) return null;
+  const value = normalize(text);
+  return value ? value : null;
+}
+
+/** The public profile XML (keyless): the name and the privacy state, both null when the XML cannot be used. */
+async function steamProfile(steamid) {
+  const r = await upstream(`https://steamcommunity.com/profiles/${steamid}/?xml=1`, { headers: { 'User-Agent': USER_AGENT } }, STEAM_TIMEOUT_MS);
+  const none = { personaname: null, profilePublic: null };
+  if (r === null || r.status !== 200 || typeof r.text !== 'string') return none;
+  if (/<steamID64>(\d+)<\/steamID64>/.exec(r.text)?.[1] !== steamid) return none;
+  const privacy = /<privacyState>([a-z]+)<\/privacyState>/.exec(r.text)?.[1];
+  const raw = /<steamID>([\s\S]*?)<\/steamID>/.exec(r.text)?.[1];
+  return { personaname: raw === undefined ? null : steamName(raw), profilePublic: privacy === undefined ? null : privacy === 'public' };
+}
+
+/** POST /openid/verify: the openid.* fields and `s` (JSON ≤ 4 KB), a handle required; the ten checks in order. */
+async function openidVerify(request, env) {
+  const cfg = await loadConfig(env);
+  if (cfg === null) return fail(503, 'config');
+  if ((await readHandle(request, cfg)) === null) return fail(401, 'handle');
+  if (!(await rateAllowed(env?.VERIFY_RATE_LIMITER, 'verify'))) return rateLimited(RETRY_DEFAULT);
+  const body = await readJsonObject(request, VERIFY_BODY_MAX);
+  if (body === null) return fail(400, 'invalid');
+  for (const [k, v] of Object.entries(body)) if ((k !== 's' && !k.startsWith('openid.')) || typeof v !== 'string') return fail(400, 'invalid');
+  const f = (k) => (Object.hasOwn(body, `openid.${k}`) ? body[`openid.${k}`] : undefined);
+  const invalid = () => fail(400, 'invalid');
+
+  // 2. mode and ns; 3. the fixed endpoint; 4. the claimed id.
+  if (f('mode') !== 'id_res') return fail(400, 'cancel');
+  if (f('ns') !== OPENID_NS) return invalid();
+  if (f('op_endpoint') !== STEAM_OP) return invalid();
+  const claimed = f('claimed_id');
+  if (claimed === undefined || claimed !== f('identity')) return invalid();
+  const steamid = STEAM_ID_URL_RE.exec(claimed)?.[1];
+  if (steamid === undefined || parseSteamId64(steamid) !== steamid) return invalid();
+  // 5. return_to exactly LINK_RETURN; its `s` is the state and equals the popup's `s` (constant-time).
+  const state = returnToState(f('return_to'));
+  if (state === null || typeof body.s !== 'string' || !ctEqual(body.s, state)) return invalid();
+  // 6. the signed list; 7. the nonce time.
+  const signed = (f('signed') ?? '').split(',');
+  if (!SIGNED_REQUIRED.every((name) => signed.includes(name))) return invalid();
+  if (!f('sig') || !f('assoc_handle')) return invalid();
+  const stamp = NONCE_RE.exec(f('response_nonce') ?? '')?.[1];
+  const at = stamp === undefined ? Number.NaN : Date.parse(stamp);
+  if (!Number.isFinite(at) || Math.abs(Date.now() - at) > NONCE_SKEW_MS) return invalid();
+
+  // 8. check_authentication: the received openid.* fields unchanged except the mode.
+  const params = new URLSearchParams();
+  for (const [k, v] of Object.entries(body)) if (k.startsWith('openid.')) params.append(k, k === 'openid.mode' ? 'check_authentication' : v);
+  const r = await upstream(STEAM_OP, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'User-Agent': USER_AGENT }, body: params.toString() }, STEAM_TIMEOUT_MS);
+  if (r === null || r.status === 403 || r.status === 429 || r.status >= 500) return fail(502, 'steam-busy');
+  if (r.status !== 200 || typeof r.text !== 'string') return invalid();
+  const lines = r.text.split(/\r?\n/);
+  if (!lines.includes(`ns:${OPENID_NS}`) || !lines.includes('is_valid:true')) return invalid();
+
+  // 9. the public profile; 10. exactly four fields.
+  const { personaname, profilePublic } = await steamProfile(steamid);
+  return done(json(200, { steamid, state, personaname, profilePublic }));
+}
+
 // ---- routing --------------------------------------------------------------------------------------------------------
 
 /** Path → method → handler. `cors` marks the paths the site's page calls with fetch (spec §5.7.4). */
@@ -427,6 +733,8 @@ const ROUTES = new Map([
   ['/gh/callback', { GET: callback }],
   ['/gh/session', { POST: session, cors: true }],
   ['/gh/logout', { POST: logout, cors: true }],
+  ['/gh/api', { POST: ghApi, cors: true }],
+  ['/openid/verify', { POST: openidVerify, cors: true }],
 ]);
 
 const notFound = () => json(404, { error: 'not-found' });

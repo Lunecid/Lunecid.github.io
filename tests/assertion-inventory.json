@@ -113,7 +113,7 @@
   "tests/e2e/variant-structure.spec.ts": 23,
   "tests/e2e/variant-vocabulary.spec.ts": 11,
   "tests/e2e/wide-screens.spec.ts": 41,
-  "tests/ops/account-relay.test.mjs": 264,
+  "tests/ops/account-relay.test.mjs": 441,
   "tests/ops/asset-names.test.mjs": 10,
   "tests/ops/build-pdfs.test.mjs": 6,
   "tests/ops/csp.test.mjs": 11,
