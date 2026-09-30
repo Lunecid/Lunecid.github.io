@@ -8,6 +8,9 @@ import { dataVariant } from '../../src/variants/data';
 import { gameVariant } from '../../src/variants/game';
 import { resolveFacts } from '../../src/lib/facts';
 import { t, type UiKey } from '../../src/i18n/utils';
+import type { PageKey } from '../../src/data/copy/pages';
+import type { Lang } from '../../src/i18n/ui';
+import { containsTrademark } from '../../src/lib/seo';
 import { loadFactSource } from '../helpers/fact-source';
 
 const facts = loadFactSource();
@@ -66,7 +69,7 @@ describe('versions (spec §4.2, contract §1.6–§1.7)', () => {
     );
   });
 
-  it('data identity follows B-10, B-12, A-31 and the P1 about draft', () => {
+  it('data identity follows B-10, B-12, A-31 and the owner\'s about wording (P2-9)', () => {
     const ko = resolveIdentity(dataVariant, 'ko', facts);
     const en = resolveIdentity(dataVariant, 'en', facts);
     expect([ko.headline, en.headline]).toEqual(['데이터 분석가', 'Data Analyst']);
@@ -100,10 +103,11 @@ describe('versions (spec §4.2, contract §1.6–§1.7)', () => {
     expect(pageMetaFor('home', 'en', 'data', facts)).toEqual({ title: 'Seongeun Baek · Data Analyst', description: 'Portfolio of Seongeun Baek, data analyst. Research, projects, and résumé.' });
     expect(pageMetaFor('records', 'ko', 'data', facts)).toEqual({ title: '기록·이력서 · 백성은', description: '학력, 수상, 자격, 기술, 데이터 분석가 지원 요건 대응표와 이력서 PDF.' });
     expect(pageMetaFor('records', 'en', 'data', facts)).toEqual(pageMetaFor('records', 'en', 'game', facts));
-    expect(pageMetaFor('projects', 'ko', 'data', facts).description).toBe('공공데이터 경진대회와 연구에서 한 데이터 분석 사례 연구입니다. 질문·데이터·방법·결과와 제 역할을 적었습니다.');
-    expect(pageMetaFor('projects', 'en', 'data', facts)).toEqual({ title: 'Projects · Seongeun Baek', description: 'Data analysis case studies from public-data competitions and research, with the question, data, method, results and my role in each.' });
+    expect(pageMetaFor('projects', 'ko', 'data', facts).description).toBe('공공데이터 경진대회, 부산시·부산테크노파크 데이토리 랩(Datory Lab) 과제, 멀티캠퍼스 부트캠프 프로젝트와 연구에서 한 데이터 분석 사례 연구입니다. 질문·데이터·방법·결과와 제 역할을 적었습니다.');
+    expect(pageMetaFor('projects', 'en', 'data', facts)).toEqual({ title: 'Projects · Seongeun Baek', description: 'Data analysis case studies from a public-data competition, a Busan Technopark Datory Lab task, a Multicampus bootcamp and research, with my role in each.' });
     expect(pageMetaFor('projects', 'ko', 'game', facts)).toEqual(PAGE_META.projects.ko);
-    expect(pageMetaFor('research', 'en', 'data', facts)).toEqual(PAGE_META.research.en);
+    expect(pageMetaFor('research', 'en', 'data', facts)).toEqual({ title: 'Research · Seongeun Baek', description: 'A paper that predicts engagement outcomes from public match records, work in progress, and research interests.' });
+    expect(pageMetaFor('research', 'en', 'game', facts)).toEqual(PAGE_META.research.en);
     expect(pageMetaFor('chooser', 'ko', null, facts)).toEqual({ title: '백성은 · 포트폴리오', description: NEUTRAL_IDENTITY.oneLiner.ko });
     expect(pageMetaFor('chooser', 'en', null, facts).title).toBe('Seongeun Baek · Portfolio');
     expect(() => pageMetaFor('home', 'ko', null, facts)).toThrow(/no meta for 'home'/);
@@ -141,6 +145,33 @@ describe('captions (P2-4, spec §8 editorial table)', () => {
         expect(caption, `${key}.${lang}`).not.toMatch(/^[A-Z][A-Z ]+$/);
       }
       expect(captionFor(dataVariant, key, 'ko'), key).toMatch(/[가-힣]/);
+    }
+  });
+});
+
+describe('the general version\'s final copy (P2-9, spec §10.1)', () => {
+  const facts = loadFactSource();
+
+  it('about: the owner\'s wording, facts only, 합니다체, with the venue through its token', () => {
+    expect(dataVariant.identity.about.ko).toBe('부산대학교 데이터사이언스전문대학원 석사과정에 재학하고 있습니다. 공공데이터 경진대회에서 주제 제안부터 데이터 처리, 예측 모델, 공간 매핑, 시각화까지 전 과정을 함께했고, 팀 프로젝트에서는 주제 선정과 데이터 수집·전처리, 시각화, 웹페이지 구현을 맡았습니다. 공개 경기 기록으로 교전 결과를 예측한 연구를 {pub.cog-2026-engagement.venueShort}에서 구두 발표했습니다.');
+    expect(dataVariant.identity.about.en).toBe('I am an M.S. student at the Graduate School of Data Science, Pusan National University. In a public-data competition I took part in the whole process, from proposing the topic to data processing, the predictive model, spatial mapping and visualization; in team projects I handled topic selection, data collection and preprocessing, visualization and building a website. I presented a study that predicts engagement outcomes from public match records as an oral paper at {pub.cog-2026-engagement.venueShort}.');
+    expect(resolveIdentity(getVariant('data'), 'ko', facts).about).toContain('IEEE CoG 2026에서 구두 발표했습니다.');
+  });
+
+  it('page meta: home, records, projects and research are general; titles and descriptions name no trademark and stay ≤ 160 characters', () => {
+    const expected = {
+      home: { ko: ['백성은 · 데이터 분석가', '데이터 분석가 백성은의 포트폴리오. 연구, 프로젝트, 이력서.'], en: ['Seongeun Baek · Data Analyst', 'Portfolio of Seongeun Baek, data analyst. Research, projects, and résumé.'] },
+      records: { ko: ['기록·이력서 · 백성은', '학력, 수상, 자격, 기술, 데이터 분석가 지원 요건 대응표와 이력서 PDF.'] },
+      projects: { ko: ['프로젝트 · 백성은', '공공데이터 경진대회, 부산시·부산테크노파크 데이토리 랩(Datory Lab) 과제, 멀티캠퍼스 부트캠프 프로젝트와 연구에서 한 데이터 분석 사례 연구입니다. 질문·데이터·방법·결과와 제 역할을 적었습니다.'], en: ['Projects · Seongeun Baek', 'Data analysis case studies from a public-data competition, a Busan Technopark Datory Lab task, a Multicampus bootcamp and research, with my role in each.'] },
+      research: { ko: ['연구 · 백성은', '공개 경기 기록으로 교전 결과를 예측한 논문과 진행 중인 연구, 연구 관심사입니다.'], en: ['Research · Seongeun Baek', 'A paper that predicts engagement outcomes from public match records, work in progress, and research interests.'] },
+    } as const;
+    for (const [key, langs] of Object.entries(expected)) {
+      for (const [lang, [title, description]] of Object.entries(langs)) {
+        const meta = pageMetaFor(key as PageKey, lang as Lang, 'data', facts);
+        expect(meta, `${key}.${lang}`).toEqual({ title, description });
+        expect(containsTrademark(`${meta.title} ${meta.description}`), `${key}.${lang}`).toBe(false);
+        expect(meta.description.length).toBeLessThanOrEqual(160);
+      }
     }
   });
 });

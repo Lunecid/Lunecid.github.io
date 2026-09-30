@@ -64,3 +64,15 @@ test('data pages inline editorial.css (P2-2)', () => {
     assert.deepEqual(ED_OWN.filter((c) => !has(p.css, c)), [], `${p.path}: editorial.css is not inlined`);
   }
 });
+
+const READ_OWN = ownClasses('src/styles/read.css');
+
+test('data pages inline neither hud.css nor read.css (P2-9: the D-7 transition is over)', () => {
+  assert.ok(READ_OWN.length >= 5, `read.css own classes: ${READ_OWN.join(' ')}`);
+  const data = ofVariant('data');
+  assert.ok(data.length > 0, 'no data page in dist');
+  for (const p of data) {
+    assert.deepEqual(HUD_OWN.filter((c) => has(p.css, c)), [], `${p.path}: hud.css leaked into a general page`);
+    assert.deepEqual(READ_OWN.filter((c) => has(p.css, c)), [], `${p.path}: read.css leaked into a general page`);
+  }
+});

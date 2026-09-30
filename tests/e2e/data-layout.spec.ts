@@ -1,4 +1,4 @@
-import { test, expect, dataPath, settle } from './helpers';
+import { test, expect, basePathOf, builtRoutes, dataPath, horizontalOverflow, settle } from './helpers';
 
 const NAVY = 'rgb(30, 58, 138)';
 
@@ -61,3 +61,25 @@ test.describe('DataNav', () => {
 
 // P-05 / N01 for DataNav (the 320×256 scroll check and the stable toggle width) lives in responsive.spec.ts, next to the
 // game describes it mirrors: this spec runs on the desktop project only (playwright.config.ts testMatch).
+
+test.describe('general case studies without read.css (P2-9, D-7)', () => {
+  test('320px: wide tables and code scroll inside their own box, never the page', async ({ page }) => {
+    await page.setViewportSize({ width: 320, height: 640 });
+    const studies = builtRoutes({ variant: 'data' }).filter((route) => /^\/projects\/[a-z0-9-]+\/$/.test(basePathOf(route).base));
+    expect(studies.length, 'general case studies').toBeGreaterThan(0);
+    let tables = 0;
+    for (const route of studies) {
+      await page.goto(route, { waitUntil: 'networkidle' });
+      const body = page.locator('main article.ed-prose');
+      const boxes = await body.evaluate((article) => Array.from(article.querySelectorAll('.prose-table, pre')).map((el) => getComputedStyle(el).overflowX));
+      expect(boxes.filter((overflow) => overflow !== 'auto'), `${route}: a table or code box that does not scroll`).toEqual([]);
+      tables += await body.locator('.prose-table').count();
+      const o = await horizontalOverflow(page);
+      expect(o.scrollWidth, `${route}: ${o.offenders.join(', ')}`).toBeLessThanOrEqual(o.width);
+    }
+    expect(tables, 'at least one general case study has a Markdown table').toBeGreaterThan(0);
+    // 5c54b03 / final-fix2 item 19: no automatic hyphenation in prose table cells (Linux Chromium splits syllables).
+    await page.goto('/en/data/projects/youth-startup-location/', { waitUntil: 'networkidle' });
+    expect(await page.locator('main article.ed-prose td').first().evaluate((el) => getComputedStyle(el).hyphens)).toBe('manual');
+  });
+});

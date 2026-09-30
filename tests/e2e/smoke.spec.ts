@@ -5,11 +5,6 @@ import { allRoutes } from '../../src/lib/routes';
 import { containsTrademark } from '../../src/lib/seo';
 
 const AXE_TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'];
-/** Named interim (P2-2 → P2-9, Appendix A D-7). Until Task 9 removes the transitional hud.css/read.css from DataLayout,
- *  HUD bands that Tasks 4–8 have not yet replaced sit on the general version's white body and inherit its dark ink, so
- *  axe's two colour rules are not run on general routes (every other axe rule is). Task 9 deletes this constant and its
- *  use; from then on axe runs in full on every route. */
-const INTERIM_DATA_AXE_OFF = ['color-contrast', 'link-in-text-block'];
 
 for (const route of builtRoutes()) {
   test(`smoke ${route}: 200, one h1, html lang, no errors, axe clean, og:image resolves, title has no trademark, links end with / or an extension`, async ({ page }) => {
@@ -25,9 +20,7 @@ for (const route of builtRoutes()) {
     const title = await page.title();
     expect(containsTrademark(title), `<title> "${title}" names a game trademark`).toBe(false);
 
-    const builder = new AxeBuilder({ page }).withTags(AXE_TAGS);
-    if (/^\/(en\/)?data\//.test(route)) builder.disableRules(INTERIM_DATA_AXE_OFF);
-    const axe = await builder.analyze();
+    const axe = await new AxeBuilder({ page }).withTags(AXE_TAGS).analyze();
     expect(
       axe.violations.map((v) => `${v.id}: ${v.nodes.slice(0, 3).map((n) => n.target.join(' ')).join(' | ')}`),
       'axe violations',
