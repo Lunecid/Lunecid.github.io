@@ -2,6 +2,8 @@
 // Home (spec §3): hero → MAIN MENU → cartridges → research highlight → patch notes → hello profile.
 // All copy hrefs are base form and built here with pageHref for the version; resume.yaml is the single source of name and
 // education, the version identity (src/variants/*.ts) of tagline, status and about (site = PDFs).
+// P2-7: the general version (spec §10.2) has DataHero (the heatmap as 그림 1) instead of the HUD hero, no MAIN MENU, the
+// featured projects, the research highlight (its chart as 그림 2), NewsList instead of PATCH NOTES, and the profile.
 import type { PageLayout } from '../layouts/page-layout';
 import Hero from '../components/hud/Hero.astro';
 import MainMenu from '../components/hud/MainMenu.astro';
@@ -9,6 +11,8 @@ import CartridgeSection from '../components/home/CartridgeSection.astro';
 import ResearchHighlight from '../components/home/ResearchHighlight.astro';
 import PatchNotes from '../components/home/PatchNotes.astro';
 import HelloProfile from '../components/home/HelloProfile.astro';
+import DataHero from '../components/data/DataHero.astro';
+import NewsList from '../components/data/NewsList.astro';
 import type { Lang } from '../i18n/ui';
 import { t } from '../i18n/utils';
 import { homeHref, pageHref } from '../lib/links';
@@ -16,15 +20,16 @@ import { educationLine } from '../lib/records';
 import { DOCUMENTS, SITE } from '../config';
 import { heroCopy, mainMenuCopy, splitTagline } from '../data/copy/hero';
 import { homeCopy } from '../data/copy/home';
+import { dataHomeCopy } from '../data/copy/data/home';
 import { HERO_SIZES, characterCredit, characters, getStageCharacters } from '../lib/characters';
-import { getFactSource, getNews, getPublications, getResume, resolveOrder } from '../lib/portfolio';
+import { getFactSource, getNews, getPerson, getProject, getPublications, getResume, resolveOrder } from '../lib/portfolio';
 import { toCartridge, type CartridgeProps } from '../lib/projects';
 import { toPaperCard, toPaperCartridge } from '../lib/publications';
 import { toPatchNotes } from '../lib/news';
 import { canonicalUrl, personJsonLd } from '../lib/seo';
 import { resolveDeep } from '../lib/facts';
 import { BASE_PATH, type ModuleId, type VariantId } from '../variants/ids';
-import { getVariant, pageMetaFor, resolveIdentity } from '../variants';
+import { captionFor, getVariant, pageMetaFor, resolveIdentity } from '../variants';
 
 interface Props {
   lang: Lang;
@@ -46,6 +51,13 @@ const meta = pageMetaFor('home', lang, variant, facts);
 const hero = resolveDeep(heroCopy[lang], lang, facts);
 const menu = resolveDeep(mainMenuCopy[lang], lang, facts);
 const home = resolveDeep(homeCopy[lang], lang, facts);
+const person = await getPerson();
+const editorial = v.theme === 'editorial';
+const dataHome = resolveDeep(dataHomeCopy[lang], lang, facts);
+// B-12: the general hero shows the school-zone risk heatmap, which is that project's cover (the common frame).
+const heroCover = editorial ? (await getProject('school-zone-blindspots', lang)).data.cover : undefined;
+const heroTitle = editorial ? (await getProject('school-zone-blindspots', lang)).data.title : '';
+if (editorial && !heroCover) throw new Error('HomeView: school-zone-blindspots has no cover (the B-12 hero figure)');
 
 // Character art is optional (Task 2): every call below returns [] / null / [] when it is missing.
 const heroChars = on('characterArt') ? await getStageCharacters(['remielle', 'eula'], 'hero', lang) : [];
@@ -89,30 +101,45 @@ const location = lang === 'ko' ? `${profile.location.ko} · ${profile.location.e
   {leadChar && !leadChar.image.avifSrcSet && (
     <link slot="head" rel="preload" as="image" imagesrcset={leadChar.image.srcSet} imagesizes={HERO_SIZES} fetchpriority="high" />
   )}
-  <Hero
-    lang={lang}
-    chars={heroChars}
-    name={profile.name[lang]}
-    roman={hero.roman}
-    label={hero.label}
-    slogan={splitTagline(identity.tagline)}
-    meta={hero.meta}
-    status={identity.status}
-    ctas={{ primary: { label: hero.ctas.primary.label, href: pageHref(hero.ctas.primary.href, ctx) } }}
-    contact={{
-      email: SITE.email,
-      github: SITE.githubUrl,
-      cvHref: DOCUMENTS[v.documents.resume[lang]],
-      cvLabel: hero.contact.cvLabel,
-      cvDocLabel: t(lang, 'nav.cvResume'),
-      jobFitHref: pageHref(hero.contact.jobFitHref, ctx),
-      jobFitLabel: hero.contact.jobFitLabel,
-    }}
-    artifact={{ ...hero.artifact, href: pageHref(hero.artifact.href, ctx) }}
-    credit={credit}
-    swap={hero.swap}
-    playerCard={{ ...hero.playerCard, classLine: lang === 'ko' ? identity.headline : resolveIdentity(v, 'en', facts).headline.toUpperCase() }}
-  />
+  {editorial && heroCover ? (
+    <DataHero
+      lang={lang}
+      caption={captionFor(v, 'heroLabel', lang)}
+      name={person.name[lang]}
+      headline={identity.headline}
+      tagline={identity.tagline}
+      status={identity.status}
+      evidence={dataHome.evidence}
+      projects={{ label: dataHome.cta.projects.label, href: pageHref(dataHome.cta.projects.href, ctx) }}
+      cv={{ label: dataHome.cta.cv.label, href: DOCUMENTS[v.documents.resume[lang]], docLabel: t(lang, 'nav.cvResume') }}
+      figure={{ src: heroCover.src, alt: heroCover.alt, caption: dataHome.heroFigure.caption, href: pageHref(dataHome.heroFigure.href, ctx), linkLabel: t(lang, 'action.viewProject'), projectTitle: heroTitle }}
+    />
+  ) : (
+    <Hero
+      lang={lang}
+      chars={heroChars}
+      name={profile.name[lang]}
+      roman={hero.roman}
+      label={hero.label}
+      slogan={splitTagline(identity.tagline)}
+      meta={hero.meta}
+      status={identity.status}
+      ctas={{ primary: { label: hero.ctas.primary.label, href: pageHref(hero.ctas.primary.href, ctx) } }}
+      contact={{
+        email: SITE.email,
+        github: SITE.githubUrl,
+        cvHref: DOCUMENTS[v.documents.resume[lang]],
+        cvLabel: hero.contact.cvLabel,
+        cvDocLabel: t(lang, 'nav.cvResume'),
+        jobFitHref: pageHref(hero.contact.jobFitHref, ctx),
+        jobFitLabel: hero.contact.jobFitLabel,
+      }}
+      artifact={{ ...hero.artifact, href: pageHref(hero.artifact.href, ctx) }}
+      credit={credit}
+      swap={hero.swap}
+      playerCard={{ ...hero.playerCard, classLine: lang === 'ko' ? identity.headline : resolveIdentity(v, 'en', facts).headline.toUpperCase() }}
+    />
+  )}
   {on('mainMenu') && (
     <MainMenu
       lang={lang}
@@ -121,9 +148,9 @@ const location = lang === 'ko' ? `${profile.location.ko} · ${profile.location.e
       side={sideChars}
     />
   )}
-  <CartridgeSection lang={lang} variant={variant} cartridges={featured} moreHref={pageHref(BASE_PATH.projects, ctx)} moreLabel={home.moreProjects} />
-  <ResearchHighlight lang={lang} variant={variant} paper={paper} nowPlaying={home.researchNowPlaying} figureLabel={hero.artifact.label} />
-  <PatchNotes lang={lang} variant={variant} notes={notes} />
+  <CartridgeSection lang={lang} variant={variant} cartridges={featured} moreHref={pageHref(BASE_PATH.projects, ctx)} moreLabel={editorial ? dataHome.moreProjects : home.moreProjects} />
+  <ResearchHighlight lang={lang} variant={variant} paper={paper} nowPlaying={home.researchNowPlaying} figureLabel={hero.artifact.label} intro={editorial ? dataHome.researchSentence : undefined} figureNumber={editorial ? 2 : undefined} />
+  {editorial ? <NewsList lang={lang} notes={notes} /> : <PatchNotes lang={lang} variant={variant} notes={notes} />}
   <HelloProfile
     lang={lang}
     variant={variant}

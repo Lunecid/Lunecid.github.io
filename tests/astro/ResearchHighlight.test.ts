@@ -97,4 +97,17 @@ describe('ResearchHighlight.astro', () => {
     expect(html).toContain('FIG</span> · CoG 2026 · AUC BY MODEL');
     expect(html).not.toMatch(/border-radius/);
   });
+
+  it('general version (P2-7): the §10.2 sentence, the paper as plain text, the chart as 그림 2 in black and accent, 진행 중 without brackets', async () => {
+    const html = await renderAstro(ResearchHighlight, {
+      props: { variant: 'data', lang: 'ko', paper, nowPlaying: '준비 중: 석사 학위논문', intro: '공개 경기 기록으로 교전 결과를 예측한 연구입니다.', figureNumber: 2 },
+    });
+    expect(html).toMatch(/<section id="research-highlight" class="rh-ed ed-sec"/);
+    expect(html).toMatch(/<div class="ed-head__intro"[^>]*>공개 경기 기록으로 교전 결과를 예측한 연구입니다\.<\/div>/);
+    expect(html).toContain('구두 발표');
+    expect(html).toMatch(/<figure class="chart chart--overall chart--editorial ed-figure"/);
+    expect(html).toMatch(/<span class="ed-figcap__num"[^>]*>그림 2 —<\/span>/);
+    expect(html).toMatch(/<p class="ed-label"[^>]*>진행 중<\/p>/);
+    expect(html).not.toMatch(/NOW PLAYING|bracket|lh-frame|FIG ·|ORAL/);
+  });
 });

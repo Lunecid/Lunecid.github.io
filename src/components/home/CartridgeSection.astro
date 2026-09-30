@@ -41,7 +41,8 @@ const firstImage = cartridges.findIndex((cartridge) => cartridge.cover !== undef
     <div class="container">
       <SectionHead variant={variant} id="featured-projects-title" caption={captionFor(getVariant(variant), 'selectProject', lang)} title={t(lang, 'projects.featured')} />
       <ol class="ed-list" role="list">
-        {cartridges.map((cartridge, i) => <ProjectListItem {...cartridge} eager={i === firstImage} />)}
+        {/* P2-7: the general home's hero (DataHero) already loads the school-zone heatmap with priority, so the list loads lazily. */}
+        {cartridges.map((cartridge) => <ProjectListItem {...cartridge} />)}
       </ol>
       <p class="featured__more"><a class="ed-link" href={moreHref}>{moreLabel} <span aria-hidden="true">→</span></a></p>
     </div>

@@ -1,0 +1,73 @@
+---
+// The general version's hero (spec §8 히어로, §10.2, B-10, B-12): the name in the serif heading face, the headline, the
+// one-line intro, the status, the evidence line, the projects button (the page's one filled button) and the CV link;
+// the school-zone risk heatmap as "그림 1 —" beside the text from 1068px (below it on phones).
+import type { ImageMetadata } from 'astro';
+import { Picture } from 'astro:assets';
+import type { Lang } from '../../i18n/ui';
+import { editorialFigureLabel } from '../../lib/figures';
+import { fitWidths, sourceSize } from '../../lib/images';
+
+interface Props {
+  lang: Lang;
+  caption: string;
+  name: string;
+  headline: string;
+  tagline: string;
+  status: string;
+  evidence: string;
+  projects: { label: string; href: string };
+  /** docLabel names the PDF (D-7): the link's title and, visually hidden, part of its name. */
+  cv: { label: string; href: string; docLabel: string };
+  /** projectTitle: the linked project's title, visually hidden in the link's name (the button beside it may carry the same label). */
+  figure: { src: ImageMetadata; alt: string; caption: string; href: string; linkLabel: string; projectTitle: string };
+}
+const { lang, caption, name, headline, tagline, status, evidence, projects, cv, figure } = Astro.props;
+---
+<section class="dhero ed-sec" aria-labelledby="hero-name">
+  <div class="container dhero__grid">
+    <div class="dhero__copy">
+      <p class="dhero__caption">{caption}</p>
+      <h1 id="hero-name" class="dhero__name" data-serif>{name}</h1>
+      <p class="dhero__headline">{headline}</p>
+      <p class="dhero__tagline">{tagline}</p>
+      <p class="dhero__status">{status}</p>
+      <p class="dhero__evidence">{evidence}</p>
+      <ul class="dhero__actions" role="list">
+        <li><a class="ed-btn ed-btn--fill" href={projects.href}>{projects.label} <span aria-hidden="true">→</span></a></li>
+        <li><a class="ed-link" href={cv.href} title={cv.docLabel} download>{cv.label} <span aria-hidden="true">↓</span><span class="sr-only"> — {cv.docLabel}</span></a></li>
+      </ul>
+    </div>
+    <figure class="ed-figure dhero__fig">
+      <Picture
+        src={figure.src}
+        alt={figure.alt}
+        formats={['avif', 'webp']}
+        fallbackFormat="webp"
+        widths={fitWidths([480, 720, 1040], sourceSize(figure.src).width)}
+        sizes="(min-width: 1068px) 520px, (min-width: 734px) calc(100vw - 64px), calc(100vw - 32px)"
+        priority
+      />
+      <figcaption class="ed-figcap"><span class="ed-figcap__num">{editorialFigureLabel(lang, 1)}</span> {figure.caption} <a class="hit dhero__figlink" href={figure.href}>{figure.linkLabel}<span class="sr-only"> — {figure.projectTitle}</span> <span aria-hidden="true">→</span></a></figcaption>
+    </figure>
+  </div>
+</section>
+
+<style>
+  .dhero { padding-block: 40px 32px; }
+  .dhero__grid { display: grid; gap: 32px; }
+  .dhero__caption { font-size: var(--fs-caption); line-height: var(--lh-caption); color: var(--ed-muted); }
+  .dhero__caption:lang(en) { font-family: var(--font-ed-serif); font-style: italic; }
+  .dhero__name { margin-top: 8px; font-size: var(--fs-name); line-height: var(--lh-display); color: var(--ed-ink); }
+  .dhero__headline { margin-top: 10px; font-size: var(--fs-sub); font-weight: 700; line-height: var(--lh-sub); }
+  .dhero__tagline { margin-top: 16px; max-width: var(--measure); font-size: var(--fs-sub); line-height: var(--lh-sub); }
+  .dhero__status { margin-top: 10px; color: var(--ed-muted); }
+  .dhero__evidence { margin-top: 4px; font-weight: 600; }
+  /* A link inside the grey caption text is told apart by its underline, not its colour alone (axe link-in-text-block). */
+  .dhero__figlink { text-decoration: underline; text-underline-offset: .2em; }
+  .dhero__actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 24px; margin-top: 24px; }
+  @media (min-width: 1068px) {
+    .dhero { padding-block: 64px 48px; }
+    .dhero__grid { grid-template-columns: minmax(0, 1fr) 520px; align-items: start; column-gap: 56px; }
+  }
+</style>

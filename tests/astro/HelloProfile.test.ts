@@ -122,4 +122,13 @@ describe('HelloProfile.astro', () => {
     expect(game.match(/data-ghost-art="right"/g) ?? []).toHaveLength(HAS_GHOST ? 1 : 0);
     expect(data).not.toContain('ghost-art');
   });
+
+  it('general version (P2-7): serif greeting, underlined contact links, plain lists without decorative English or ◆', async () => {
+    const html = await renderAstro(HelloProfile, { props: { ...base, variant: 'data', lang: 'ko' } });
+    expect(html).toMatch(/<section id="hello" class="hello-ed ed-sec"/);
+    expect(html).toMatch(/<h2 id="hello-title" class="hello-ed__title" data-serif[^>]*>안녕하세요!<\/h2>/);
+    expect(html.match(/<h[34] class="hello-ed__h" data-serif/g)).toHaveLength(3);
+    expect(html).toMatch(/<a class="ed-link" href="mailto:/);
+    expect(html).not.toMatch(/EDUCATION|SKILLS|HIGHLIGHTS|◆|hud-label|hello__chips|ghost-art/);
+  });
 });

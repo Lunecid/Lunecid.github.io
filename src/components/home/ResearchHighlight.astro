@@ -2,6 +2,8 @@
 // Home "[ ■ ] RESEARCH / 연구 하이라이트": the paper (al-folio fields, spec §5 연구 목록) and the paper's own result, the
 // AUC dot plot, in one bracketed light-HUD panel (P1-9) instead of the unreadable 160px diagram thumbnail; then the
 // NOW PLAYING aside. Emphasis (ORAL) is used for the CoG paper only.
+// P2-7: the general version tells the paper as plain text beside the same chart as "그림 2 —" (editorial tone), with the
+// §10.2 sentence under the title and 진행 중 as a plain label; the game markup is unchanged.
 import SectionHead from '../hud/SectionHead.astro';
 import AucOverallChart from '../research/AucOverallChart.astro';
 import PaperLinks from '../research/PaperLinks.astro';
@@ -16,14 +18,19 @@ interface Props {
   variant: VariantId;
   paper: PaperCardData;
   nowPlaying: string;
-  /** The resolved hero artifact label, e.g. 'FIG · CoG 2026 · AUC BY MODEL' (contract §3.3). */
-  figureLabel: string;
+  /** Game version: the resolved hero artifact label, e.g. 'FIG · CoG 2026 · AUC BY MODEL' (contract §3.3). */
+  figureLabel?: string;
+  /** General version only: the §10.2 sentence under the title. */
+  intro?: string;
+  /** General version only: the chart's figure number on the page. */
+  figureNumber?: number;
 }
 
-const { lang, variant, paper, nowPlaying, figureLabel } = Astro.props;
+const { lang, variant, paper, nowPlaying, figureLabel = '', intro, figureNumber } = Astro.props;
 const [figTag, ...figRest] = figureLabel.split(' · ');
 ---
 
+{variant === 'game' ? (
 <section id="research-highlight" class="rh read read-sec" aria-labelledby="rh-title">
   <div class="container">
     <SectionHead variant={variant} id="rh-title" caption={captionFor(getVariant(variant), 'research', lang)} title={t(lang, 'hero.researchHighlight')} />
@@ -64,6 +71,32 @@ const [figTag, ...figRest] = figureLabel.split(' · ');
     </div>
   </div>
 </section>
+) : (
+<section id="research-highlight" class="rh-ed ed-sec" aria-labelledby="rh-title">
+  <div class="container">
+    <SectionHead variant={variant} id="rh-title" caption={captionFor(getVariant(variant), 'research', lang)} title={t(lang, 'hero.researchHighlight')}>{intro}</SectionHead>
+    <div class="rh-ed__grid">
+      <article class="rh-ed__paper">
+        <p class="ed-meta"><span lang="en">{paper.venue}</span>{paper.oral && <Fragment> · {t(lang, 'research.oralPresentation')}</Fragment>}</p>
+        <h3 class="rh-ed__title" lang="en">{paper.href ? <a class="hit" href={paper.href}>{paper.title}</a> : paper.title}</h3>
+        {paper.titleGloss && <p class="ed-meta">{paper.titleGloss} ({t(lang, 'research.gloss')})</p>}
+        <p class="ed-meta" lang="en">
+          {paper.authors.map((author, i) => (
+            <>{i > 0 && ', '}{author.me ? <strong>{author.name}</strong> : author.name}</>
+          ))}
+        </p>
+        <p class="ed-body">{paper.tldr}</p>
+        <PaperLinks lang={lang} paper={paper} idBase="rh" />
+      </article>
+      <AucOverallChart lang={lang} rows={overallAuc} caption={figureCopy.aucOverall.caption[lang]} alt={figureCopy.aucOverall.alt[lang]} idPrefix="rh-auc" tone="editorial" figureNumber={figureNumber} />
+    </div>
+    <div class="rh-ed__now">
+      <p class="ed-label">{captionFor(getVariant(variant), 'nowPlaying', lang)}</p>
+      <p class="ed-body">{nowPlaying}</p>
+    </div>
+  </div>
+</section>
+)}
 
 <style>
   /* minmax(0, 1fr) + .paper__body { min-width: 0 }: an opened BibTeX box wraps inside the panel instead of widening the page (Review Focus 1) */
@@ -99,5 +132,12 @@ const [figTag, ...figRest] = figureLabel.split(' · ');
   }
   @media (min-width: 1280px) {
     .paper { grid-template-columns: minmax(0, 1fr) 589px; }
+  }
+  /* General version (P2-7) */
+  .rh-ed__grid { display: grid; gap: 28px; margin-top: 20px; }
+  .rh-ed__title { margin-top: 6px; font-size: var(--fs-sub); font-weight: 700; line-height: var(--lh-sub); }
+  .rh-ed__now { margin-top: 24px; padding-top: 10px; border-top: var(--ed-rule-w) solid var(--ed-rule); }
+  @media (min-width: 1068px) {
+    .rh-ed__grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); column-gap: 48px; align-items: start; }
   }
 </style>

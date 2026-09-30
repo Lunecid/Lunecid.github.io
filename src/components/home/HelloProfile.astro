@@ -1,6 +1,8 @@
 ---
 // "안녕하세요!" profile block (Behance pattern 6), on the home page (#hello) and on /records/ (#profile).
 // Real ID photo only (spec §2, §12); skills are the primary list from resume.yaml (no SQL, spec §2 item 7).
+// P2-7: the general version sets the greeting and the three subheads in the serif heading face, underlines the contact
+// links and shows the lists plainly (no decorative English, no chips, no ◆, no ghost art); the game markup is unchanged.
 import { Picture } from 'astro:assets';
 import GhostArt from '../hud/GhostArt.astro';
 import SectionLabel from '../hud/SectionLabel.astro';
@@ -48,6 +50,7 @@ const heads = {
 };
 ---
 
+{variant === 'game' ? (
 <section id={id} class="hello read" aria-labelledby={titleId}>
   {getVariant(variant).modules.includes('characterArt') && <GhostArt side="right" />}
   <div class="container hello__grid">
@@ -104,6 +107,44 @@ const heads = {
     </div>
   </div>
 </section>
+) : (
+<section id={id} class="hello-ed ed-sec" aria-labelledby={titleId}>
+  <div class="container hello-ed__grid">
+    <Picture
+      class="hello-ed__photo"
+      src={photo}
+      formats={['avif', 'webp']}
+      fallbackFormat="webp"
+      widths={fitWidths([230, 360], sourceSize(photo).width)}
+      sizes="(min-width: 1068px) 200px, 160px"
+      priority={priority}
+      alt={t(lang, 'card.photoAlt')}
+    />
+    <div class="hello-ed__intro">
+      <SectionLabel variant={variant} en={captionFor(getVariant(variant), 'profile', lang)} />
+      <Title id={titleId} class="hello-ed__title" data-serif>{`${t(lang, 'section.hello')}!`}</Title>
+      {tagline && <p class="ed-body">{tagline}</p>}
+      {status && <p class="ed-meta">{status}</p>}
+      <p class="ed-body">{about}</p>
+      <p class="ed-meta">{location}</p>
+      <ul class="ed-links" role="list">
+        <li><a class="ed-link" href={`mailto:${contact.email}`}>{contact.email}</a></li>
+        <li><a class="ed-link" href={contact.github}>GitHub <span aria-hidden="true">↗</span></a></li>
+        <li><a class="ed-link" href={contact.cvHref} title={contact.cvDocLabel} download><span lang="en">CV (PDF)</span> <span aria-hidden="true">↓</span><span class="sr-only"> — {contact.cvDocLabel}</span></a></li>
+        {researcherLinks.map((link) => <li><a class="ed-link" href={link.href}>{link.label} <span aria-hidden="true">↗</span></a></li>)}
+      </ul>
+    </div>
+    <div class="hello-ed__facts">
+      <Sub class="hello-ed__h" data-serif>{heads.education.text}</Sub>
+      <ul class="hello-ed__list" role="list">{education.map((line) => <li>{line}</li>)}</ul>
+      <Sub class="hello-ed__h" data-serif>{heads.skills.text}</Sub>
+      <p class="ed-body" lang="en">{skills.join(' · ')}</p>
+      <Sub class="hello-ed__h" data-serif>{heads.records.text}</Sub>
+      <ul class="hello-ed__list" role="list">{records.map((record) => <li>{record}</li>)}</ul>
+    </div>
+  </div>
+</section>
+)}
 
 <style>
   .hello { position: relative; overflow: hidden; padding-block: 48px; }
@@ -131,5 +172,17 @@ const heads = {
     .hello__grid > .hello__facts { grid-column: auto; }
     .hello__grid :global(.hello__photo) { width: 230px; }
     .hello__title { font-size: 40px; }
+  }
+  /* General version (P2-7) */
+  .hello-ed__grid { display: grid; gap: 24px; }
+  .hello-ed__grid :global(.hello-ed__photo) { width: 160px; height: auto; }
+  .hello-ed__title { margin-top: 6px; font-size: var(--fs-h2); line-height: var(--lh-h2); }
+  .hello-ed__intro { display: grid; gap: 8px; align-content: start; }
+  .hello-ed__h { margin-top: 16px; font-size: var(--fs-small); font-weight: 700; }
+  .hello-ed__h:first-child { margin-top: 0; }
+  .hello-ed__list { display: grid; gap: 4px; margin-top: 6px; }
+  @media (min-width: 1068px) {
+    .hello-ed__grid { grid-template-columns: 200px minmax(0, 1.2fr) minmax(0, 1fr); column-gap: 40px; }
+    .hello-ed__grid :global(.hello-ed__photo) { width: 200px; }
   }
 </style>

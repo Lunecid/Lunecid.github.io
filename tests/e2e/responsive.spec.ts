@@ -29,20 +29,22 @@ test.describe('identity, CV link and evidence within two screens', () => {
       test.skip(testInfo.project.name === 'mobile-320', 'the two-screen rule is asserted at 375 px and wider');
       const { lang, variant } = basePathOf(route);
       const cv = DOCUMENTS[getVariant(variant!).documents.resume[lang]];
+      // P2-7: the general home's evidence is the hero figure (그림 1, the school-zone heatmap) and the featured project list.
+      const evidence = variant === 'data' ? '.dhero__fig, #featured-projects li.pli' : '.player-card, .cart';
       await page.goto(route, { waitUntil: 'networkidle' });
       await settle(page);
       await page.evaluate(() => window.scrollTo(0, 0));
       const limit = 2 * (page.viewportSize()?.height ?? 0);
 
       const heroName = page.locator('#hero-name');
-      const cvLink = page.locator(`a[href="${cv}"]`).first(); // first in DOM order = the HUD nav CV link
+      const cvLink = page.locator(`a[href="${cv}"]`).first(); // first in DOM order = the nav CV link (HudNav or DataNav)
       await expect(heroName).toBeVisible();
       await expect(cvLink).toBeVisible();
       const docTop = (el: Element): number => el.getBoundingClientRect().top + window.scrollY;
       expect(await heroName.evaluate(docTop), '#hero-name top').toBeLessThan(limit);
       expect(await cvLink.evaluate(docTop), 'nav CV link top').toBeLessThan(limit);
 
-      const evidenceTops = await page.locator('.player-card, .cart').evaluateAll((els) =>
+      const evidenceTops = await page.locator(evidence).evaluateAll((els) =>
         els
           .filter((el) => {
             const r = el.getBoundingClientRect();
@@ -50,8 +52,8 @@ test.describe('identity, CV link and evidence within two screens', () => {
           })
           .map((el) => el.getBoundingClientRect().top + window.scrollY),
       );
-      expect(evidenceTops.length, 'a visible .player-card or .cart exists').toBeGreaterThan(0);
-      expect(Math.min(...evidenceTops), 'first evidence (.player-card or .cart) top').toBeLessThan(limit);
+      expect(evidenceTops.length, `a visible ${evidence} exists`).toBeGreaterThan(0);
+      expect(Math.min(...evidenceTops), `first evidence (${evidence}) top`).toBeLessThan(limit);
     });
   }
 });
