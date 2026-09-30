@@ -98,6 +98,13 @@ const progressTemplate = ui[lang]['achievement.progress'];
     border-color: var(--gold-line);
     background: var(--gold);
     color: var(--gold-ink);
+    /* fix-brief A-02 item 7 (F-025, account-link AL-13): the slot pops once the fill bar (--dur-enter) has arrived */
+    animation: ach-slot-pop 250ms var(--ease-out) var(--dur-enter) backwards;
+  }
+  @keyframes ach-slot-pop {
+    from {
+      transform: scale(.6);
+    }
   }
   .ach-meter__note {
     font-size: 14px;
@@ -106,5 +113,13 @@ const progressTemplate = ui[lang]['achievement.progress'];
   }
   :global(:root[data-motion="reduce"]) .ach-meter__fill {
     transition: none;
+  }
+  :global(:root[data-motion="reduce"]) .ach-meter__slot[data-unlocked="true"] {
+    animation: none;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .ach-meter__slot[data-unlocked="true"] {
+      animation: none;
+    }
   }
 </style>

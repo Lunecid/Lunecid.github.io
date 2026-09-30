@@ -472,6 +472,22 @@ test.describe('item 1, round 3: masked art never exceeds its mask at device boun
       });
     });
   }
+  // A-03 G-020 (account-link AL-13): landscape phones take the tablet's four-edge fade on the art beside the copy
+  for (const [width, height] of [[667, 375], [720, 400]] as const) {
+    test.describe(`landscape phone ${width}x${height} @ DPR 2`, () => {
+      test.use({ deviceScaleFactor: 2 });
+      test('showcase stays within the mask', async ({ page }) => {
+        test.setTimeout(120_000);
+        test.skip(!HERO_ART, 'needs both hero characters');
+        await assertShowcase(page, width, height);
+        const kind = await page.locator('.fg__chr').evaluate((el) => {
+          const style = getComputedStyle(el);
+          return [style.getPropertyValue('--inset-l').trim(), style.getPropertyValue('--inset-r').trim()];
+        });
+        expect(kind, 'the tablet mask (inset on both sides) serves landscape phones').toEqual(['2px', '2px']);
+      });
+    });
+  }
   test.describe('375x812 @ DPR 3', () => {
     test.use({ deviceScaleFactor: 3 });
     test('hero stays within the mask', async ({ page }) => {
@@ -620,6 +636,30 @@ test.describe('item 1, straight-cut guard: art is faded at the visible right bou
         });
       });
     }
+  }
+
+  // A-03 G-020 (account-link AL-13): the art-edge guard at 667x375 (the art now sits beside the copy, mid-card)
+  for (const dpr of [1, 2] as const) {
+    test.describe(`landscape phone 667x375 @ DPR ${dpr}`, () => {
+      test.use({ deviceScaleFactor: dpr });
+      test('showcase L/R/top stay faded on both art tabs', async ({ page }) => {
+        test.setTimeout(90_000);
+        test.skip(!HERO_ART, 'needs both hero characters');
+        await open(page, '/game/player-log/', 667, 375);
+        for (const tab of [0, 1] as const) {
+          if (tab === 1) await page.locator('.fg__tab').nth(1).click();
+          await page.locator('.fg__chr').evaluate((el) => {
+            const r = el.getBoundingClientRect();
+            window.scrollTo({ top: window.scrollY + r.top + r.height / 2 - window.innerHeight / 2, left: 0, behavior: 'instant' as ScrollBehavior });
+          });
+          await expect(page.locator('.fg__chr img')).toBeVisible({ timeout: 15_000 });
+          await page.waitForTimeout(600);
+          for (const edge of ['left', 'right', 'top'] as const) {
+            expect(await edgeStripArtDelta(page, '.fg__chr-clip', '.fg__chr img', edge), `showcase tab${tab} ${edge}`).toBeLessThanOrEqual(14);
+          }
+        }
+      });
+    });
   }
 
   // Final fix 4 art tip: tablet hero right fade needs a 4px fully-transparent tip (like the top edge) so the
@@ -1192,6 +1232,109 @@ test.describe('item 8: Player Log', () => {
       expect(overlaps, `${await dd.textContent()}`).toBe(false);
     }
   });
+});
+
+// fix-brief A-03 (account-link AL-13) on the six-game showcase: the first scene is in the server HTML, landscape phones
+// put the copy beside the art, and the phone reserve holds the tallest scene of each language.
+test.describe('A-03: showcase first paint, landscape phones and the phone reserve', () => {
+  test('F-051: throttled (150ms RTT, 1.6 Mbps, 4x CPU) the first scene title shows before hydration and stays in place', async ({ page }) => {
+    test.setTimeout(180_000);
+    const cdp = await page.context().newCDPSession(page);
+    await cdp.send('Network.enable');
+    await cdp.send('Network.emulateNetworkConditions', { offline: false, latency: 150, downloadThroughput: (1.6 * 1000 * 1000) / 8, uploadThroughput: (750 * 1000) / 8 });
+    await cdp.send('Emulation.setCPUThrottlingRate', { rate: 4 });
+    // hold the island's own chunk, so "before hydration" lasts as long as the checks take
+    let release: () => void = () => undefined;
+    const held = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    await page.route(/\/_astro\/FavoriteGames\.[\w-]+\.js$/, async (route) => {
+      await held;
+      await route.continue();
+    });
+    await page.setViewportSize({ width: 375, height: 812 });
+    await page.goto('/game/player-log/', { waitUntil: 'domcontentloaded' });
+    const title = page.locator('#favorite-games .fg__scene .fg__title');
+    await title.scrollIntoViewIfNeeded();
+    await expect(page.locator('#favorite-games astro-island[ssr]'), 'not hydrated yet').toHaveCount(1);
+    await expect(title).toHaveText(/Zenless\s*Zone Zero/i);
+    await expect(title).toBeInViewport({ ratio: 1 });
+    expect(await title.evaluate((el) => getComputedStyle(el).opacity), 'painted, not waiting for an entrance').toBe('1');
+    await title.evaluate((el) => {
+      (window as unknown as { __fgTitle: Element }).__fgTitle = el;
+    });
+    release();
+    await expect(page.locator('#favorite-games astro-island:not([ssr])')).toHaveCount(1, { timeout: 60_000 });
+    await expect(page.locator('#favorite-games [role="tabpanel"]')).toHaveCount(1, { timeout: 30_000 });
+    expect(
+      await page.evaluate(() => document.querySelector('#favorite-games .fg__scene .fg__title') === (window as unknown as { __fgTitle: Element }).__fgTitle),
+      'hydration keeps the server scene (same node)',
+    ).toBe(true);
+    await cdp.send('Emulation.setCPUThrottlingRate', { rate: 1 });
+  });
+
+  for (const route of ['/game/player-log/', '/en/game/player-log/']) {
+    test(`G-020: at 667x375 the copy sits beside the art and the title is in the viewport after a tab tap (${route})`, async ({ page }) => {
+      test.skip(!HERO_ART, 'needs character art');
+      await open(page, route, 667, 375);
+      await page.locator('section.fg').evaluate((el) => el.scrollIntoView({ block: 'start', behavior: 'instant' as ScrollBehavior }));
+      await expect(page.locator('#favorite-games astro-island:not([ssr])')).toHaveCount(1); // client:visible has run
+      const tabs = page.locator('.fg__tab');
+      // a game with art, one without, and back to the first
+      for (const i of [1, 2, 0]) {
+        await tabs.nth(i).click();
+        await expect(tabs.nth(i)).toHaveAttribute('aria-selected', 'true');
+        await page.waitForTimeout(500);
+        await expect(page.locator('.fg__scene .fg__title'), `tab ${i}`).toBeInViewport({ ratio: 1 });
+      }
+      const copy = await box(page.locator('.fg__scene .fg__copy'));
+      const chr = await box(page.locator('.fg__scene .fg__chr'));
+      expect(chr.x, 'art beside the copy').toBeGreaterThanOrEqual(copy.x + copy.width - 1);
+      expect(Math.abs(chr.y - copy.y), 'side by side, top-aligned').toBeLessThan(2);
+      expect(chr.height, 'art band capped by the short viewport').toBeGreaterThanOrEqual(Math.min(420, 0.8 * 375) - 1);
+      const overflow = await horizontalOverflow(page);
+      expect(overflow.scrollWidth, overflow.offenders.join(', ')).toBeLessThanOrEqual(overflow.width);
+    });
+  }
+
+  for (const route of ['/game/player-log/', '/en/game/player-log/']) {
+    // 320 and 375 as the brief; 512 is where the tallest English scene (the 420px art band over the copy) peaks
+    for (const width of [320, 375, 512]) {
+      test(`F-090: ${width}px: switching every tab shifts no layout (${route})`, async ({ page }) => {
+        test.setTimeout(90_000);
+        test.skip(!HERO_ART, 'needs character art');
+        // tall enough that the stage and what follows it are on screen, where a layout shift would be reported
+        await page.setViewportSize({ width, height: 1400 });
+        await page.goto(route, { waitUntil: 'networkidle' });
+        await settle(page);
+        await page.locator('.fg__list').scrollIntoViewIfNeeded();
+        await expect(page.locator('#favorite-games astro-island:not([ssr])')).toHaveCount(1);
+        await page.waitForTimeout(300);
+        await page.evaluate(() => {
+          const w = window as unknown as { __shift: number; __heights: number[] };
+          w.__shift = 0;
+          w.__heights = [];
+          new PerformanceObserver((list) => {
+            for (const entry of list.getEntries()) w.__shift += (entry as PerformanceEntry & { value: number }).value;
+          }).observe({ type: 'layout-shift' });
+          new ResizeObserver(([e]) => w.__heights.push(Math.round(e.contentRect.height))).observe(document.querySelector('section.fg')!);
+        });
+        const tabs = page.locator('.fg__tab');
+        const n = await tabs.count();
+        for (const i of [...Array.from({ length: n - 1 }, (_, k) => k + 1), 0]) {
+          await tabs.nth(i).click();
+          await expect(tabs.nth(i)).toHaveAttribute('aria-selected', 'true');
+          await page.waitForTimeout(1100); // exit 250ms, then the entrance
+        }
+        const { shift, heights } = await page.evaluate(() => {
+          const w = window as unknown as { __shift: number; __heights: number[] };
+          return { shift: w.__shift, heights: w.__heights };
+        });
+        expect(new Set(heights).size, `section heights seen: ${[...new Set(heights)].join(', ')}`).toBeLessThanOrEqual(1);
+        expect(shift, 'layout-shift entries after the first paint').toBe(0);
+      });
+    }
+  }
 });
 
 test.describe('item 9: the hero credit', () => {

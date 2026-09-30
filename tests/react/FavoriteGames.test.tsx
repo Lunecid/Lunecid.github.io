@@ -1,7 +1,9 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { act, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { LazyMotion, domAnimation, motion } from 'motion/react';
+import { hydrateRoot, type Root } from 'react-dom/client';
 import { renderToString } from 'react-dom/server';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { AccountFeed } from '../../src/lib/generated';
@@ -164,7 +166,8 @@ describe('FavoriteGames', () => {
     const html = renderToString(<FavoriteGames {...props()} />);
     expect(html).toMatch(/<noscript>[\s\S]*Zenless Zone Zero[\s\S]*<\/noscript>/);
     expect(html).toContain('role="tablist"');
-    expect(html).not.toContain('fg__scene'); // the animated scene mounts only after hydration
+    // A-03 F-051 (account-link AL-13): the first scene is server-rendered in place (it used to mount after hydration)
+    expect(html).toMatch(/<div class="fg__scene" data-art="on"[^>]*>[\s\S]*<h3 class="fg__title" lang="en"[^>]*>Zenless<br\/>Zone Zero<\/h3>/);
     // final fix 2 item 17: every unlocked game's text; round 2 item 5: a plain stage (no tab panel, tab stop or name
     // pointing at a tab that is hidden without JS) until React runs the tabs
     expect(html).toMatch(/<noscript>[\s\S]*Zenless Zone Zero[\s\S]*Genshin Impact[\s\S]*<\/noscript>/);
@@ -259,7 +262,9 @@ describe('FavoriteGames', () => {
   it('D-1 CSS: fixed stage heights only with art; tabs in a top row below 1068px; the 190px list column from 1068px', () => {
     const css = readFileSync(resolve(process.cwd(), 'src/islands/FavoriteGames.css'), 'utf8').replace(/\r\n/g, '\n');
     const block = (min: number): string => new RegExp(String.raw`@media \(min-width: ${min}px\) \{([\s\S]*?)\n\}`).exec(css)?.[1] ?? '';
-    expect(css).toMatch(/\.fg--art \.fg__stage \{ min-height: 760px; \}/);
+    // A-03 F-090 (account-link AL-13): the phone reserve per language = the tallest six-game scene measured from 320 to
+    // 733px (ko 700px, en 769px, both at the full 420px art band) plus the brief's 3px margin; it was 760px for both
+    expect(css).toMatch(/@media \(max-width: 733\.98px\) \{\n  \.fg--art \.fg__stage \{ min-height: 703px; \}\n  \.fg--art \.fg__stage:lang\(en\) \{ min-height: 772px; \}\n\}/);
     expect(css).not.toMatch(/(^|\n)\.fg__stage \{[^}]*min-height/);
     expect(block(734)).toMatch(/\.fg--art \.fg__stage \{ min-height: 520px; \}/); // final fix 2 item 8: the art's own height
     expect(block(734)).not.toMatch(/190px/);
@@ -281,6 +286,96 @@ describe('FavoriteGames', () => {
     expect(TL.panel).toBe(0.45);
     expect(TL.lineStagger).toBe(0.08);
     expect(TL.count).toBe(0.8);
+  });
+
+  describe('A-03 (account-link AL-13)', () => {
+    const scene = (root: ParentNode) => root.querySelector<HTMLElement>('.fg__scene');
+    const title = (root: ParentNode) => root.querySelector<HTMLElement>('.fg__scene .fg__title');
+
+    it('F-051: the first client render equals the SSR markup and keeps the server scene in place', async () => {
+      const container = document.createElement('div');
+      container.innerHTML = renderToString(<FavoriteGames {...props()} />);
+      document.body.append(container);
+      const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+      let root: Root | undefined;
+      try {
+        const serverScene = scene(container);
+        expect(serverScene).not.toBeNull();
+        const errors: unknown[] = [];
+        await act(async () => {
+          root = hydrateRoot(container, <FavoriteGames {...props()} />, { onRecoverableError: (e) => errors.push(e) });
+        });
+        expect(errors).toEqual([]);
+        expect(consoleError).not.toHaveBeenCalled();
+        // the same DOM node after hydration and effects: mounted, not replaced
+        expect(scene(container)).toBe(serverScene);
+        expect(within(container).getByRole('tabpanel')).toContainElement(serverScene);
+      } finally {
+        consoleError.mockRestore();
+        act(() => root?.unmount());
+        container.remove();
+      }
+    });
+
+    it('F-051: the first scene mounts with initial={false}; entrance variants run only on tab changes', async () => {
+      const user = userEvent.setup();
+      const { container } = render(<FavoriteGames {...props()} />);
+      const first = title(container);
+      expect(first).toHaveTextContent('ZenlessZone Zero');
+      // no entrance: the final state from the start (riseV "hidden" would be opacity 0, translateY(20px))
+      expect(first?.style.opacity).not.toBe('0');
+      expect(first?.style.transform).not.toMatch(/translateY\(20px\)/);
+      expect(container.querySelector<HTMLElement>('.fg__scene .fg__chr')?.style.opacity).not.toBe('0');
+      await user.click(screen.getAllByRole('tab')[1]);
+      await waitFor(() => expect(title(container)).toHaveTextContent('GenshinImpact'));
+      // a tab change runs the entrance: the new title starts below full opacity
+      expect(Number(title(container)?.style.opacity)).toBeLessThan(1);
+    });
+
+    it('F-051: setCurrent at once on select; only .fg__chr waits for img.decode()', async () => {
+      const user = userEvent.setup();
+      let release: () => void = () => undefined;
+      vi.mocked(preloadImage).mockImplementation((image) =>
+        image.src === '/eula.webp' ? new Promise<void>((resolve) => { release = resolve; }) : Promise.resolve(),
+      );
+      try {
+        const { container } = render(<FavoriteGames {...props()} />);
+        await user.click(screen.getAllByRole('tab')[1]);
+        // the Genshin copy is in while Eula's art is still decoding (it used to wait for the whole scene)
+        await waitFor(() => expect(title(container)).toHaveTextContent('GenshinImpact'));
+        expect(screen.getByRole('tabpanel')).toHaveAttribute('aria-labelledby', screen.getAllByRole('tab')[1].id);
+        const chr = container.querySelector<HTMLElement>('.fg__scene .fg__chr');
+        expect(chr).not.toBeNull();
+        await new Promise((resolve) => setTimeout(resolve, 150));
+        expect(chr?.style.opacity).toBe('0'); // held at its hidden state
+        release();
+        await waitFor(() => expect(Number(chr?.style.opacity)).toBeGreaterThan(0));
+      } finally {
+        vi.mocked(preloadImage).mockImplementation(() => Promise.resolve());
+      }
+    });
+
+    it('F-052: m.* components under LazyMotion with domAnimation, strict (no full motion.* bundle)', () => {
+      const src = readFileSync(resolve(process.cwd(), 'src/islands/FavoriteGames.tsx'), 'utf8');
+      expect(src).toMatch(/<LazyMotion features=\{domAnimation\} strict>/);
+      expect(src).toMatch(/import \{[^}]*\bLazyMotion\b[^}]*\bdomAnimation\b[^}]*\} from 'motion\/react'/);
+      expect(src).toMatch(/import \* as m from 'motion\/react-m'/);
+      expect(src).not.toMatch(/\bmotion\.[a-z]/);
+      expect(src).toMatch(/<AnimatePresence[\s\S]*?initial=\{false\}/);
+      // strict: a full motion component inside throws, so the island can never pull the whole feature set back in
+      const Full = motion.div;
+      expect(() => render(<LazyMotion features={domAnimation} strict><Full /></LazyMotion>)).toThrow();
+    });
+
+    it('G-020: landscape phones get copy | art columns, a svh-capped art band and stage, and the tablet edge fade', () => {
+      const css = readFileSync(resolve(process.cwd(), 'src/islands/FavoriteGames.css'), 'utf8').replace(/\r\n/g, '\n');
+      const land = /@media \(max-width: 733\.98px\) and \(orientation: landscape\) \{([\s\S]*?)\n\}/.exec(css)?.[1] ?? '';
+      expect(land).toMatch(/\.fg--art \.fg__scene \{ grid-template-columns: minmax\(0, 1fr\) minmax\(0, 1fr\); grid-template-areas: "copy chr" "acct chr"; \}/);
+      expect(land).toMatch(/\.fg__chr \{ height: auto; min-height: min\(420px, 80svh\); margin: 0; \}/);
+      expect(land).toMatch(/\.fg--art \.fg__stage(, \.fg--art \.fg__stage:lang\(en\))? \{ min-height: min\(520px, 80svh\); \}/);
+      // the tablet rule's four-edge mask (left fade included) serves landscape phones too
+      expect(css).toMatch(/@media \(min-width: 734px\) and \(max-width: 1067\.98px\), \(max-width: 733\.98px\) and \(orientation: landscape\) \{\n  \.fg__chr \{/);
+    });
   });
 
   it('F-088: aria-orientation is horizontal with ≤3 games (tabs-row)', () => {

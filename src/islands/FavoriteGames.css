@@ -34,9 +34,15 @@
 .fg__tab[aria-disabled="true"] b { color: var(--hud-muted); }
 
 .fg__stage { grid-area: stage; position: relative; }
-/* Reserved height: no layout shift when the scene arms or swaps. With art it is the art's height; without art (D-1)
-   only about the copy's height, so no empty black block is left under it. */
-.fg--art .fg__stage { min-height: 760px; }
+/* Reserved height: no layout shift when the scene swaps. With art it is the tallest scene (art band + copy); without
+   art (D-1) only about the copy's height, so no empty black block is left under it.
+   A-03 F-090 (account-link AL-13): phones reserve per language the tallest of the six games' scenes measured from 320
+   to 733px (ko 700px, en 769px, both where the art band has reached 420px) plus 3px; the "with accounts" state of the
+   brief (.fg--acct) no longer exists (the showcase gets no feeds, R-6). */
+@media (max-width: 733.98px) {
+  .fg--art .fg__stage { min-height: 703px; }
+  .fg--art .fg__stage:lang(en) { min-height: 772px; }
+}
 .fg--no-art .fg__stage { min-height: 380px; }
 .fg__scene { display: grid; grid-template-areas: "chr" "copy" "acct"; gap: 16px; }
 .fg__streaks { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 2; }
@@ -119,8 +125,18 @@
   .fg--no-art .fg__why { grid-area: why; }
   .fg--no-art .fg__meta { grid-area: facts; margin-top: 4px; }
 }
-/* Tablet only: the chr cell sits mid-card, so fade left/right/top (and keep the bottom fade) instead of hard cuts. */
-@media (min-width: 734px) and (max-width: 1067.98px) {
+/* A-03 G-020: landscape phones put the copy beside the art (it used to sit under a 420px art band, below the fold),
+   the art band and the stage capped by the short viewport. Six games (the brief had two): the tabs take three to a row
+   (two rows, not three), so the title under them still starts on a 375px-tall screen. */
+@media (max-width: 733.98px) and (orientation: landscape) {
+  .fg__list { grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); }
+  .fg--art .fg__stage, .fg--art .fg__stage:lang(en) { min-height: min(520px, 80svh); }
+  .fg--art .fg__scene { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-areas: "copy chr" "acct chr"; }
+  .fg__chr { height: auto; min-height: min(420px, 80svh); margin: 0; }
+}
+/* Tablet and landscape phones: the chr cell sits mid-card, so fade left/right/top (and keep the bottom fade) instead of
+   hard cuts. */
+@media (min-width: 734px) and (max-width: 1067.98px), (max-width: 733.98px) and (orientation: landscape) {
   .fg__chr {
     --inset-t: 2px; --inset-r: 2px; --inset-b: 2px; --inset-l: 2px;
     /* Keep the designed box = frame width (100% alone would resolve against the inset clip). */
@@ -190,6 +206,7 @@ html:not(.js) .fg .fg__top,
 html:not(.js) .fg .fg__stage,
 html:not(.js) .fg .fg__credit { position: static; inset: auto; }
 html:not(.js) .fg .fg__stage { min-height: 0; }
+html:not(.js) .fg .fg__scene { display: none; } /* A-03 F-051: the server-rendered first scene; the <noscript> copy stands in */
 .fg .fg__stage .fg__copy--static { position: static; width: auto; max-width: 42em; }
 .fg__copy--static + .fg__copy--static { margin-top: 32px; padding-top: 24px; border-top: 1px solid var(--hud-divider); }
 @media (min-width: 1068px) {
