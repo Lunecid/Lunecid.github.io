@@ -5,7 +5,7 @@ period:
   start: '2025-05' # earliest file: the plan of 2025-05-22 (drive survey 2.7); owner-confirmed 2026-09-28
   end: '2025-11'
 org: '부산대학교 데이터사이언스전문대학원 · DatoryLab'
-type: '부산시 요청 과제'
+type: '데이토리 랩 과제' # owner 2026-09-30: a task requested in the Datory Lab programme (Busan City · Busan Technopark, 2025)
 team: '4인 팀'
 role: '생활인구·소비매출·음식점 데이터의 탐색과 데이터 엔지니어링을 맡았습니다.'
 tools: ['Python']

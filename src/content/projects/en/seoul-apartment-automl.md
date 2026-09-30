@@ -1,13 +1,13 @@
 ---
 title: 'Seoul Apartment Price Prediction'
-summary: 'Compared prediction models with AutoML to choose one for Seoul apartment sale prices, and visualized the results in Tableau.'
+summary: 'A four-person team chose a Seoul apartment sale-price model with AutoML; I handled topic selection, data processing and the Tableau visualization.'
 period:
   start: '2023-09'
   end: '2024-01'
 org: 'Multicampus · K-Digital Training bootcamp'
 type: 'Bootcamp project'
 team: '4-person team'
-role: 'Handled data preprocessing, modeling, insight writing and Tableau visualization.'
+role: 'Handled topic selection, data processing, insight writing and Tableau visualization (not the modeling).' # owner 2026-09-30: modelling was not mine
 tools: ['Python', 'AutoML', 'Tableau', 'Google Colab']
 tags: ['Machine learning', 'Visualization']
 figures: []

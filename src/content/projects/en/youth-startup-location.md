@@ -5,7 +5,7 @@ period:
   start: '2025-05' # earliest file: the plan of 2025-05-22 (drive survey 2.7); owner-confirmed 2026-09-28
   end: '2025-11'
 org: 'Pusan National University Graduate School of Data Science · DatoryLab'
-type: 'Project requested by the City of Busan'
+type: 'Datory Lab task' # owner 2026-09-30
 team: '4-person team'
 role: 'Explored the floating-population, consumer-spending and restaurant data and did the data engineering.'
 tools: ['Python']

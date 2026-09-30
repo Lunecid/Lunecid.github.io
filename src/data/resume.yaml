@@ -175,7 +175,7 @@ projects:
 # "예측". The seoul-apartment-automl half was checked the same way: its card genuinely is a sale-price prediction
 # (summary: "매매가 예측 모델을 고르고"), so "예측" stays correct there.
 projectsNote:
-  ko: 이 밖에 KBO 구단 성적과 관중 수의 관계를 검정한 수업 프로젝트(크롤링·전처리 담당)와 AutoML 기반 서울 아파트 매매가 예측 부트캠프 프로젝트(모델링·Tableau 시각화 담당)를 수행함.
+  ko: 이 밖에 KBO 구단 성적과 관중 수의 관계를 검정한 수업 프로젝트(크롤링·전처리 담당)와 AutoML 기반 서울 아파트 매매가 예측 부트캠프 프로젝트(주제 선정·데이터 처리·Tableau 시각화 담당)를 수행함.
   pdf: { ko: true, en: false, academic: false }
 
 # 수상 세부는 awards.yaml에 있다.

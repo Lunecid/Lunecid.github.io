@@ -1,13 +1,13 @@
 ---
 title: '킥킥파크'
-summary: '5인 팀이 반납 사진 주차 판정 모델을 학습한 부트캠프 프로젝트로, 저는 자치구별 Tableau 시각화와 웹사이트 구축을 맡았습니다.'
+summary: '5인 팀이 반납 사진 주차 판정 모델을 학습했고, 저는 주제 선정·전처리, 자치구별 Tableau 시각화, 웹사이트 구축을 맡았습니다.'
 period:
   start: '2024-01'
   end: '2024-03'
 org: '멀티캠퍼스 · K-Digital Training 멀티잇 데이터 분석&엔지니어(Python) 31회차'
 type: '부트캠프 최종 프로젝트'
 team: '5인 팀'
-role: '자치구별 Tableau 시각화와 웹사이트 구축을 맡았습니다.'
+role: '주제 선정과 전처리, 자치구별 Tableau 시각화, 웹사이트 구축을 맡았습니다.' # owner 2026-09-30: topic selection and preprocessing too
 tools: ['Python', 'Tableau', 'Django', 'MySQL']
 teamTools: ['YOLOv8', 'PyTorch'] # D-9: the team's tools (the judgment model is not part of my role)
 tags: ['컴퓨터 비전', '웹 서비스', '게이미피케이션', '시각화']
@@ -107,6 +107,7 @@ status: 'published'
 
 5인 팀에서 다음을 맡았습니다.
 
+- **주제 선정과 전처리**: 프로젝트 주제 선정과 데이터 전처리를 맡았습니다.
 - **탐색적 시각화**: 입지 분석에 쓴 자치구별 데이터를 Tableau로 시각화했습니다.
 - **웹사이트 구축**: Django 기반 서비스 화면과 기능을 구현했습니다.
 

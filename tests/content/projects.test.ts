@@ -231,7 +231,8 @@ describe('project case-study files', () => {
   it('final review fix 1 item 1: the KickKick summary credits the team with the photo-judgment model and me only with my role parts', () => {
     // The page body: the public repo's web service adds fixed points per upload, the judgment model was trained
     // separately by the team (teamTools, D-9); my role is the district (gu) Tableau visualisation and building the
-    // website (owner, 2026-09-28: no data cleaning).
+    // website (owner, 2026-09-28: no data cleaning), and, superseding that, topic selection and preprocessing too
+    // (owner, 2026-09-30).
     // The summary feeds the page lede, meta/OG descriptions, the OG image and /records/.
     const ko = data('ko', 'kickick-park');
     const en = data('en', 'kickick-park');
@@ -246,12 +247,13 @@ describe('project case-study files', () => {
     expect(enMine).not.toMatch(/judg/i);
     for (const part of ['Tableau', '자치구별', '웹사이트 구축']) expect(koMine, `ko: ${part}`).toContain(part);
     for (const part of ['Tableau', '(gu)', 'website']) expect(enMine, `en: ${part}`).toContain(part);
-    expect(koMine).not.toMatch(/정제|전처리/);
-    expect(enMine).not.toMatch(/clean/i);
-    expect(ko.role).toBe('자치구별 Tableau 시각화와 웹사이트 구축을 맡았습니다.');
-    expect(en.role).toBe('Made Tableau visualizations of Seoul district (gu) data and built the website.');
-    expect(readBody(fileOf('ko', 'kickick-park'))).not.toMatch(/데이터 전처리|정제했습니다/);
-    expect(readBody(fileOf('en', 'kickick-park'))).not.toMatch(/Data preparation|cleaned Seoul/);
+    for (const part of ['주제 선정', '전처리']) expect(koMine, `ko: ${part}`).toContain(part);
+    for (const part of ['topic', 'preprocessing']) expect(enMine, `en: ${part}`).toContain(part);
+    expect(ko.role).toBe('주제 선정과 전처리, 자치구별 Tableau 시각화, 웹사이트 구축을 맡았습니다.');
+    expect(en.role).toBe('Handled topic selection and preprocessing, made Tableau visualizations of Seoul district (gu) data and built the website.');
+    // owner 2026-09-30: the role section names the topic selection and preprocessing (it no longer denies them).
+    expect(readBody(fileOf('ko', 'kickick-park'))).toContain('- **주제 선정과 전처리**: 프로젝트 주제 선정과 데이터 전처리를 맡았습니다.');
+    expect(readBody(fileOf('en', 'kickick-park'))).toContain("- **Topic and preprocessing**: handled the project's topic selection and the data preprocessing.");
     expect(en.summary).not.toMatch(/Built a web service that judges/);
     expect(ko.summary).not.toMatch(/판정하고, 바르게 세운 사용자에게 점수를 주는 웹 서비스를 만들었습니다/);
   });
@@ -358,8 +360,8 @@ describe('project case-study files', () => {
     const en = data('en', 'youth-startup-location');
     expect(ko.org).toBe('부산대학교 데이터사이언스전문대학원 · DatoryLab');
     expect(en.org).toBe('Pusan National University Graduate School of Data Science · DatoryLab');
-    expect(ko.type).toBe('부산시 요청 과제');
-    expect(en.type).toBe('Project requested by the City of Busan');
+    expect(ko.type).toBe('데이토리 랩 과제');
+    expect(en.type).toBe('Datory Lab task');
     expect(ko.summary).toMatch(/^4인 팀이.*저는 데이터 탐색과 엔지니어링을 맡았습니다\.$/);
     expect(en.summary).toMatch(/^A four-person team .*; I did the data exploration and data engineering\.$/);
     expect(ko.role).not.toMatch(/군집|모델|대시보드|포스터|보고서/);

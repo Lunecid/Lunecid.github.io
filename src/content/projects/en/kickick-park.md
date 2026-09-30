@@ -1,13 +1,13 @@
 ---
 title: 'KickKick Park'
-summary: 'Five-person capstone: the team trained a parking-judgment model for e-scooter return photos; I made Seoul district (gu) Tableau visuals and built the website.'
+summary: 'Five-person capstone: the team trained a parking-judgment model for return photos; I did the topic, preprocessing, district (gu) Tableau visuals and website.'
 period:
   start: '2024-01'
   end: '2024-03'
 org: 'Multicampus · K-Digital Training bootcamp, Data Analysis & Engineering (Python), cohort 31'
 type: 'Bootcamp capstone'
 team: '5-person team'
-role: 'Made Tableau visualizations of Seoul district (gu) data and built the website.'
+role: 'Handled topic selection and preprocessing, made Tableau visualizations of Seoul district (gu) data and built the website.' # owner 2026-09-30
 tools: ['Python', 'Tableau', 'Django', 'MySQL']
 teamTools: ['YOLOv8', 'PyTorch'] # D-9: the team's tools (the judgment model is not part of my role)
 tags: ['Computer vision', 'Web app', 'Gamification', 'Visualization']
@@ -107,6 +107,7 @@ The reward principle was kept simple: better behavior earns more, and parking ou
 
 In a team of five, I:
 
+- **Topic and preprocessing**: handled the project's topic selection and the data preprocessing.
 - **Exploratory visualization**: visualized in Tableau the data used to rank Seoul's districts (gu) in the location analysis.
 - **Web development**: built the screens and features of the Django service.
 
