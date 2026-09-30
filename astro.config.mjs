@@ -9,6 +9,19 @@ import { cspDirectives, relayOrigin, scriptResources, STYLE_RESOURCES } from './
 import { goatcounterSelfHosted } from './src/lib/public-assets.ts';
 import { satteri } from '@astrojs/markdown-satteri';
 import { baseLinksHastPlugin } from './scripts/markdown/rehype-base-links.mjs';
+import { fileURLToPath } from 'node:url';
+
+/**
+ * AL-8 (plan DV-32): where src/lib/generated.ts reads build-time data (its globs all start with `@generated/`).
+ * Normally the git-ignored src/data/generated/ that the fetch jobs fill. Only a test build with SB_E2E_ACCOUNTS=1
+ * (Playwright's third web server, dist-e2e-accounts/, never deployed; the workflow never sets it) reads the synthetic
+ * fixture feeds of tests/fixtures/generated/ instead; their fetchedAt is a fixed old date that generated.ts replaces
+ * with the build time under the same switch, so the fixtures are always fresh. A normal build therefore has no module
+ * path to a fixture file (tests/ops/asset-names.test.mjs checks dist/ for the fixture names).
+ */
+const GENERATED_DIR = fileURLToPath(
+  new URL(process.env.SB_E2E_ACCOUNTS === '1' ? './tests/fixtures/generated' : './src/data/generated', import.meta.url),
+);
 
 /** Print routes are PDF sources only: keep them out of the sitemap. @param {string} page absolute URL */
 export function sitemapFilter(page) {
@@ -64,6 +77,7 @@ export default defineConfig({
     },
   },
   i18n: { defaultLocale: 'ko', locales: ['ko', 'en'], routing: { prefixDefaultLocale: false } },
+  vite: { resolve: { alias: { '@generated': GENERATED_DIR } } },
   fonts: [
     {
       provider: fontProviders.local(),

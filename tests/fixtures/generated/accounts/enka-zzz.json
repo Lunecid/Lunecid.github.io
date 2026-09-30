@@ -1,0 +1,71 @@
+{
+  "schemaVersion": 1,
+  "platform": "enka-zzz",
+  "status": "ok",
+  "fetchedAt": "2026-01-01T00:00:00.000Z",
+  "maxAgeDays": 7,
+  "attribution": "Enka.Network",
+  "ttl": 60,
+  "cards": [
+    {
+      "lang": "ko",
+      "title": "E2E Fixture ZZZ",
+      "subtitle": "합성 칭호",
+      "image": "e2efixture04.png",
+      "banner": "e2efixture05.png",
+      "stats": [],
+      "metrics": [
+        {
+          "key": "ikLevel",
+          "value": 55
+        }
+      ],
+      "items": [
+        {
+          "name": "합성 에이전트 가",
+          "image": "e2efixture03.png",
+          "meta": "Lv 60"
+        },
+        {
+          "name": "합성 에이전트 나",
+          "image": "e2efixture06.png",
+          "meta": "Lv 50"
+        },
+        {
+          "name": "합성 에이전트 다",
+          "meta": "Lv 40"
+        }
+      ]
+    },
+    {
+      "lang": "en",
+      "title": "E2E Fixture ZZZ",
+      "subtitle": "Synthetic Title",
+      "image": "e2efixture04.png",
+      "banner": "e2efixture05.png",
+      "stats": [],
+      "metrics": [
+        {
+          "key": "ikLevel",
+          "value": 55
+        }
+      ],
+      "items": [
+        {
+          "name": "Synthetic Agent A",
+          "image": "e2efixture03.png",
+          "meta": "Lv 60"
+        },
+        {
+          "name": "Synthetic Agent B",
+          "image": "e2efixture06.png",
+          "meta": "Lv 50"
+        },
+        {
+          "name": "Synthetic Agent C",
+          "meta": "Lv 40"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 1,
+  "platform": "steam",
+  "status": "ok",
+  "fetchedAt": "2026-01-01T00:00:00.000Z",
+  "maxAgeDays": 7,
+  "attribution": "Steam Web API",
+  "cards": [
+    {
+      "lang": "ko",
+      "title": "E2E Fixture STM",
+      "image": "e2efixture06.png",
+      "stats": [],
+      "metrics": [
+        {
+          "key": "steamLevel",
+          "value": 42
+        }
+      ],
+      "items": [],
+      "link": {
+        "kind": "steam",
+        "href": "https://steamcommunity.com/profiles/76561197960435530"
+      }
+    },
+    {
+      "lang": "en",
+      "title": "E2E Fixture STM",
+      "image": "e2efixture06.png",
+      "stats": [],
+      "metrics": [
+        {
+          "key": "steamLevel",
+          "value": 42
+        }
+      ],
+      "items": [],
+      "link": {
+        "kind": "steam",
+        "href": "https://steamcommunity.com/profiles/76561197960435530"
+      }
+    }
+  ]
+}

@@ -1,0 +1,101 @@
+{
+  "schemaVersion": 1,
+  "platform": "enka-genshin",
+  "status": "ok",
+  "fetchedAt": "2026-01-01T00:00:00.000Z",
+  "maxAgeDays": 7,
+  "attribution": "Enka.Network",
+  "ttl": 60,
+  "cards": [
+    {
+      "lang": "ko",
+      "title": "E2E Fixture GI",
+      "image": "e2efixture01.png",
+      "banner": "e2efixture02.png",
+      "stats": [],
+      "metrics": [
+        {
+          "key": "ar",
+          "value": 57
+        },
+        {
+          "key": "achievements",
+          "value": 812
+        },
+        {
+          "key": "abyss",
+          "value": "12-3"
+        },
+        {
+          "key": "theater",
+          "value": 8
+        }
+      ],
+      "items": [
+        {
+          "name": "합성 캐릭터 가",
+          "image": "e2efixture03.png",
+          "meta": "Lv 90"
+        },
+        {
+          "name": "합성 캐릭터 나",
+          "image": "e2efixture04.png",
+          "meta": "Lv 80"
+        },
+        {
+          "name": "합성 캐릭터 다",
+          "meta": "Lv 70"
+        },
+        {
+          "name": "합성 캐릭터 라",
+          "meta": "Lv 60"
+        }
+      ]
+    },
+    {
+      "lang": "en",
+      "title": "E2E Fixture GI",
+      "image": "e2efixture01.png",
+      "banner": "e2efixture02.png",
+      "stats": [],
+      "metrics": [
+        {
+          "key": "ar",
+          "value": 57
+        },
+        {
+          "key": "achievements",
+          "value": 812
+        },
+        {
+          "key": "abyss",
+          "value": "12-3"
+        },
+        {
+          "key": "theater",
+          "value": 8
+        }
+      ],
+      "items": [
+        {
+          "name": "Synthetic A",
+          "image": "e2efixture03.png",
+          "meta": "Lv 90"
+        },
+        {
+          "name": "Synthetic B",
+          "image": "e2efixture04.png",
+          "meta": "Lv 80"
+        },
+        {
+          "name": "Synthetic C",
+          "meta": "Lv 70"
+        },
+        {
+          "name": "Synthetic D",
+          "meta": "Lv 60"
+        }
+      ]
+    }
+  ]
+}

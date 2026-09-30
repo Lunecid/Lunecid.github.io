@@ -112,6 +112,7 @@
   "tests/e2e/variant-structure.spec.ts": 23,
   "tests/e2e/variant-vocabulary.spec.ts": 11,
   "tests/e2e/wide-screens.spec.ts": 41,
+  "tests/ops/asset-names.test.mjs": 10,
   "tests/ops/build-pdfs.test.mjs": 6,
   "tests/ops/csp.test.mjs": 11,
   "tests/ops/dist-assets.test.mjs": 11,
@@ -175,7 +176,7 @@
   "tests/unit/figures.test.ts": 49,
   "tests/unit/font-tables.test.ts": 61,
   "tests/unit/freshness.test.ts": 14,
-  "tests/unit/generated.test.ts": 21,
+  "tests/unit/generated.test.ts": 72,
   "tests/unit/ghost-art-gating.test.ts": 9,
   "tests/unit/github.test.ts": 20,
   "tests/unit/i18n.test.ts": 70,
@@ -209,7 +210,7 @@
   "tests/unit/stats-hygiene.test.ts": 27,
   "tests/unit/style-rules.test.ts": 47,
   "tests/unit/tokens.test.ts": 104,
-  "tests/unit/toolchain.test.ts": 86,
+  "tests/unit/toolchain.test.ts": 96,
   "tests/unit/variants.test.ts": 74,
   "tests/unit/yaml-loader.test.ts": 33
 }

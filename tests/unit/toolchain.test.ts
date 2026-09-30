@@ -1,6 +1,7 @@
-import { execFileSync } from 'node:child_process';
+import { execFileSync, spawnSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
-import { describe, expect, it } from 'vitest';
+import { fileURLToPath } from 'node:url';
+import { describe, expect, it, vi } from 'vitest';
 import Hello from '../astro/fixtures/Hello.astro';
 import { renderAstro } from '../astro/helpers';
 
@@ -56,6 +57,41 @@ describe('toolchain', () => {
     expect(sitemapFilter('https://lunecid.github.io/en/')).toBe(true);
     expect(sitemapFilter('https://lunecid.github.io/en/game/projects/kickick-park/')).toBe(true);
     expect(sitemapFilter('https://lunecid.github.io/')).toBe(true);
+  });
+
+  it('AL-8 (DV-32): the @generated alias is src/data/generated, and tests/fixtures/generated only when SB_E2E_ACCOUNTS=1', { timeout: 60_000 }, async () => {
+    const dir = (rel: string) => fileURLToPath(new URL(`../../${rel}`, import.meta.url)).replace(/[\\/]+$/, '');
+    const aliasOf = (config: { vite?: { resolve?: { alias?: unknown } } }) =>
+      String((config.vite?.resolve?.alias as Record<string, string> | undefined)?.['@generated']).replace(/[\\/]+$/, '');
+    // Each import uses its own query string, so the config module is evaluated again under that environment (a
+    // computed specifier: TypeScript has no declaration for a query-string path).
+    const load = async (query: string) => ((await import(/* @vite-ignore */ `../../astro.config.mjs?${query}`)) as { default: { vite?: { resolve?: { alias?: unknown } } } }).default;
+    try {
+      vi.stubEnv('SB_E2E_ACCOUNTS', undefined);
+      expect(aliasOf(await load('al8-unset'))).toBe(dir('src/data/generated'));
+      vi.stubEnv('SB_E2E_ACCOUNTS', 'yes');
+      expect(aliasOf(await load('al8-yes'))).toBe(dir('src/data/generated'));
+      vi.stubEnv('SB_E2E_ACCOUNTS', '1');
+      expect(aliasOf(await load('al8-one'))).toBe(dir('tests/fixtures/generated'));
+    } finally {
+      vi.unstubAllEnvs();
+    }
+    // tsconfig mirrors the real path (the alias's only other home); the workflow never sets the switch (AL-1's csp case).
+    const tsconfig = JSON.parse(read('tsconfig.json')) as { compilerOptions: { paths?: Record<string, string[]> } };
+    expect(tsconfig.compilerOptions.paths).toEqual({ '@generated/*': ['src/data/generated/*'] });
+    expect(read('.github/workflows/deploy.yml')).not.toContain('SB_E2E_ACCOUNTS');
+  });
+
+  it('AL-8 (DV-32): site code reaches generated data only through @generated and never names a fixture path', () => {
+    const generated = read('src/lib/generated.ts');
+    expect(generated).not.toContain('../data/generated');
+    const globs = [...generated.matchAll(/import\.meta\.glob[^(\n]*\(\s*(\[[^\]]*\]|'[^']*')/g)].map((m) => m[1] ?? '');
+    expect(globs.length).toBe(2);
+    for (const glob of globs) for (const pattern of glob.match(/'[^']*'/g) ?? []) expect(pattern).toMatch(/^'@generated\//);
+    // git grep exits 1 when nothing matches (the expected case) and 0 with the file list otherwise.
+    const grep = spawnSync('git', ['grep', '--untracked', '-l', '-I', '-E', 'tests/fixtures|e2efixture|E2E Fixture', '--', 'src'], { encoding: 'utf8' });
+    expect(grep.stdout.trim()).toBe('');
+    expect(grep.status).toBe(1);
   });
 
   it('package.json pins typescript ~6.0.3, js-yaml ^4.3.2 and node >=22.18.0', () => {
