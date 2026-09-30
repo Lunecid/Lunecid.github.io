@@ -33,7 +33,7 @@ vi.mock('../../src/lib/island-image.server', () => ({
 import { favoriteGameSchema, type FavoriteGameData } from '../../src/content/schemas';
 import { parseYamlList } from '../../src/content/yaml-loader';
 import type { Lang } from '../../src/i18n/ui';
-import AccountLinks, { CLOSE_MS, CLOSE_MS_REDUCED, TOGGLE_WINDOW_MS } from '../../src/islands/AccountLinks';
+import AccountLinks, { CLOSE_MS, CLOSE_MS_REDUCED, SWITCH_MS, TL, TOGGLE_WINDOW_MS } from '../../src/islands/AccountLinks';
 import { accountLinksLabels, buildAccountView, type AccountTile } from '../../src/lib/account-view';
 import { createGeneratedLoader, freshenFixtureFeeds } from '../../src/lib/generated';
 
@@ -364,7 +364,7 @@ describe('AccountLinks dialog shell (after mount)', () => {
     expect(dialog.querySelector('h2#acct-game')?.textContent).toBe('젠레스 존 제로');
     expect(dialog.querySelector('.acct-dlg__profile')?.textContent).toBe('INTER-KNOT PROFILE');
     expect(dialog.querySelector('.acct-dlg__profile')?.getAttribute('lang')).toBe('en');
-    expect(dialog.querySelector('div#acct-title')?.textContent).toBe('E2E Fixture ZZZ');
+    expect(dialog.querySelector('#acct-title')?.textContent).toBe('E2E Fixture ZZZ');
     expect(dialog.querySelector('.acct-dlg__pos')?.textContent).toBe('1 / 5');
     const close = dialog.querySelector<HTMLButtonElement>('.acct-dlg__close');
     expect(document.activeElement).toBe(close);
@@ -483,5 +483,300 @@ describe('AccountLinks dialog shell (after mount)', () => {
     await openTile(host, 0);
     await frames();
     expect(manage.loaded).toBe(false);
+  });
+});
+
+// ---------------------------------------------------------------------------------------------------------------
+// AL-12: the card in the dialog, the open timeline, reduced motion, stale removal (spec §3.2–3.7; fix-brief A-01, A-02).
+
+describe('AccountLinks card, timeline, reduced motion and stale removal', () => {
+  beforeAll(() => {
+    Object.defineProperty(HTMLDialogElement.prototype, 'showModal', {
+      configurable: true,
+      writable: true,
+      value(this: HTMLDialogElement) {
+        this.setAttribute('open', '');
+      },
+    });
+    Object.defineProperty(HTMLDialogElement.prototype, 'close', {
+      configurable: true,
+      writable: true,
+      value(this: HTMLDialogElement) {
+        if (!this.hasAttribute('open')) return;
+        this.removeAttribute('open');
+        this.dispatchEvent(new Event('close'));
+      },
+    });
+  });
+
+  beforeEach(() => {
+    document.documentElement.setAttribute('data-motion', 'full');
+    document.documentElement.classList.remove('is-scroll-locked');
+  });
+
+  const hosts: HTMLElement[] = [];
+  afterEach(() => {
+    for (const h of hosts.splice(0)) h.remove();
+    document.documentElement.setAttribute('data-motion', 'full');
+  });
+
+  const DAY = 86_400_000;
+  const wait = (ms: number) => act(async () => { await new Promise((r) => setTimeout(r, ms)); });
+
+  async function hydrate(lang: Lang = 'ko', edit?: (tiles: AccountTile[]) => AccountTile[]): Promise<HTMLElement> {
+    const built = await tilesFor(lang);
+    const tiles = edit ? edit(built) : built;
+    const host = document.createElement('div');
+    host.innerHTML = await ssr(lang, tiles);
+    document.body.append(host);
+    hosts.push(host);
+    await act(async () => {
+      hydrateRoot(host, <AccountLinks lang={lang} tiles={tiles} labels={accountLinksLabels(lang)} relay={null} steamButton={false} />);
+    });
+    return host;
+  }
+  const buttons = (host: HTMLElement) => [...host.querySelectorAll<HTMLButtonElement>('ul.acct-row > li > button.acct-tile')];
+  const names = (host: HTMLElement) => buttons(host).map((b) => b.querySelector('.acct-tile__name')?.textContent);
+  const dialogOf = (host: HTMLElement) => host.querySelector('dialog#acct-dlg') as HTMLDialogElement;
+  const card = (host: HTMLElement) => dialogOf(host).querySelector('.acct-dlg__card:not(.acct-dlg__card--out)') as HTMLElement;
+  async function openTile(host: HTMLElement, i: number): Promise<HTMLDialogElement> {
+    await act(async () => {
+      buttons(host)[i]?.click();
+    });
+    await wait(80);
+    return dialogOf(host);
+  }
+  async function arrow(host: HTMLElement, k: 'ArrowLeft' | 'ArrowRight'): Promise<void> {
+    await act(async () => {
+      dialogOf(host).dispatchEvent(new KeyboardEvent('keydown', { key: k, bubbles: true, cancelable: true }));
+    });
+  }
+  async function closeByButton(host: HTMLElement): Promise<void> {
+    await act(async () => {
+      dialogOf(host).querySelector<HTMLButtonElement>('.acct-dlg__close')?.click();
+    });
+  }
+  /** The counting (aria-hidden) number of a stat, or null when the value is plain final text. */
+  const counter = (dd: Element | null | undefined) => dd?.querySelector('[aria-hidden="true"]')?.textContent ?? null;
+  const dds = (host: HTMLElement) => [...card(host).querySelectorAll('dl dd')];
+
+  it('TL is the spec §3.6 timeline, within 2 seconds, and the close time is its fade + ghost return', () => {
+    expect(TL).toEqual({
+      backdrop: [0, 200], ghost: [0, 320], dialog: [260, 380], rule: [180, 420], head: [300, 650],
+      stats: [450, 1250], statGap: 80, items: [800, 1200], itemGap: 60, foot: [1100, 1400], closeFade: 80, closeGhost: 220,
+    });
+    expect(Math.max(...Object.values(TL).flat())).toBeLessThanOrEqual(2000);
+    expect(CLOSE_MS).toBe(TL.closeFade + TL.closeGhost);
+  });
+
+  it('the CSS timings that cannot come from TL through the CSSOM match it (panel fade, close fade, switch, reduced fade)', () => {
+    const css = readFileSync(join(process.cwd(), 'src/islands/AccountLinks.css'), 'utf8');
+    expect(css).toContain(`.acct-dlg[data-state="open"] .acct-dlg__panel { opacity: 1; transition: opacity ${TL.dialog[1] - TL.dialog[0]}ms var(--ease-out) ${TL.dialog[0]}ms; }`);
+    expect(css).toContain(`.acct-dlg[data-state="closing"] .acct-dlg__panel { opacity: 0; transition: opacity ${TL.closeFade}ms var(--ease-in); }`);
+    expect(css).toContain(`.acct-dlg__card[data-anim="switch"] { animation: acct-fade ${SWITCH_MS}ms var(--ease-out) both; }`);
+    expect(css).toContain(`.acct-dlg__card--out { animation: acct-fade-out ${SWITCH_MS}ms var(--ease-in) both;`);
+    expect(css.match(new RegExp(`transition: opacity ${CLOSE_MS_REDUCED}ms linear`, 'g'))?.length).toBe(4); // two per reduce path
+    expect(SWITCH_MS).toBe(180);
+  });
+
+  it('the dialog card: banner, avatar (alt), #acct-title, <dl> stats, item row, fetched-at line (aria-describedby), data and notice lines; no landmark', async () => {
+    const host = await hydrate('ko');
+    const dialog = await openTile(host, 1);
+    await wait(TL.foot[1] + 100);
+    const c = card(host);
+    expect(c.querySelector('.acct-card__banner img')?.getAttribute('alt')).toBe('');
+    expect(c.querySelector('.acct-card__avatar img')?.getAttribute('alt')).toBe('E2E Fixture GI 프로필 이미지');
+    const title = dialog.querySelector('#acct-title');
+    expect(title?.tagName).toBe('P');
+    expect(title?.textContent).toBe('E2E Fixture GI');
+    expect(c.contains(title)).toBe(true);
+    const final = (dd: Element | null) => (dd?.querySelector('.sr-only') ?? dd)?.textContent;
+    expect([...c.querySelectorAll('dl > div')].map((r) => `${r.querySelector('dt')?.textContent}=${final(r.querySelector('dd'))}`)).toEqual([
+      '모험 등급=57', '업적=812', '나선 비경=12층 3방', '환상극=8막',
+    ]);
+    const items = [...c.querySelectorAll('.acct-card__items li')];
+    expect(items).toHaveLength(4);
+    for (const img of c.querySelectorAll('.acct-card__items img')) expect(img.getAttribute('alt')).toBe('');
+    const asof = c.querySelector('.acct-card__asof');
+    expect(asof?.textContent).toMatch(/^기준 시각 \d{4}\.\d{2}\.\d{2} \d{2}:\d{2} KST$/);
+    expect(asof?.id).toBe(dialog.getAttribute('aria-describedby'));
+    expect(c.querySelector('.acct-card__data')?.textContent).toBe('데이터: Enka.Network');
+    expect(c.querySelector('.acct-card__notices')?.textContent?.length).toBeGreaterThan(0);
+    // the order of the card (spec §3.2): banner → avatar/title → stats → items → fetched-at → data → notices
+    const order = ['.acct-card__banner', '.acct-card__id', 'dl', '.acct-card__items', '.acct-card__asof', '.acct-card__data', '.acct-card__notices'].map((sel) => c.querySelector(sel));
+    for (let i = 1; i < order.length; i++) expect(order[i - 1]!.compareDocumentPosition(order[i]!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    // G-009: no landmark or labelled region inside the dialog; one #acct-title in the document
+    expect(dialog.querySelectorAll('section, article, aside, nav, main, header, footer, [role="region"], [aria-label]:not(button)')).toHaveLength(0);
+    expect(document.querySelectorAll('#acct-title')).toHaveLength(1);
+  });
+
+  it('lol dialog: only the op.gg link and the Riot ID as text; tft: only lolchess.gg; neither has a fetched-at line; Steam link without nofollow', async () => {
+    const host = await hydrate('ko');
+    const dialog = await openTile(host, 2);
+    const links = () => [...card(host).querySelectorAll('a')];
+    expect(links().map((a) => a.getAttribute('href'))).toEqual(['https://op.gg/lol/summoners/kr/Hide%20on%20bush-KR1']);
+    expect(dialog.querySelector('#acct-title')?.textContent).toBe('Hide on bush#KR1');
+    expect(card(host).querySelector('.acct-card__asof')).toBeNull();
+    const note = card(host).querySelector('.acct-card__note');
+    expect(note?.id).toBe(dialog.getAttribute('aria-describedby'));
+    expect(links()[0]?.textContent).toContain('LoL 전적 보기 (op.gg)');
+    await arrow(host, 'ArrowRight');
+    expect(links().map((a) => a.getAttribute('href'))).toEqual(['https://lolchess.gg/profile/kr/Hide%20on%20bush-KR1']);
+    expect(card(host).querySelector('.acct-card__asof')).toBeNull();
+    expect(links()[0]?.textContent).toContain('TFT 전적 보기 (lolchess.gg)');
+    await arrow(host, 'ArrowRight');
+    expect(links().map((a) => a.getAttribute('href'))).toEqual(['https://steamcommunity.com/profiles/76561197960435530']);
+    for (const a of dialog.querySelectorAll('a')) {
+      expect(a.getAttribute('target')).toBe('_blank');
+      expect(a.getAttribute('rel')).toBe('noopener noreferrer');
+      expect(a.getAttribute('rel')).not.toContain('nofollow');
+      expect(a.getAttribute('referrerpolicy')).toBe('no-referrer');
+      expect(a.querySelector('[aria-hidden="true"]')?.textContent).toBe('↗');
+      expect(a.querySelector('.sr-only')?.textContent).toBe('새 탭에서 열림');
+    }
+  });
+
+  it('count-up runs only on the first open of an account and only for countTo values; the accessible text holds the final value', async () => {
+    const host = await hydrate('ko');
+    await openTile(host, 1);
+    const [ar, ach, abyss, theater] = dds(host);
+    expect(counter(ar)).toBe('0'); // before TL.stats[0]
+    expect(ar?.querySelector('.sr-only')?.textContent).toBe('57');
+    expect(ach?.querySelector('.sr-only')?.textContent).toBe('812');
+    expect(counter(abyss)).toBeNull(); // templated values never count
+    expect(abyss?.textContent).toBe('12층 3방');
+    expect(counter(theater)).toBeNull();
+    await wait(TL.stats[1] + 150);
+    expect(counter(dds(host)[0])).toBe('57');
+    expect(counter(dds(host)[1])).toBe('812');
+    await closeByButton(host);
+    await wait(CLOSE_MS + 40);
+    expect(dialogOf(host).hasAttribute('open')).toBe(false);
+    // the second open of the same account: final values at once
+    await openTile(host, 1);
+    expect(counter(dds(host)[0])).toBeNull();
+    expect(dds(host)[0]?.textContent).toBe('57');
+  });
+
+  it('switching shows final values at once and cross-fades only the card region (outgoing copy without ids, inert, then removed)', async () => {
+    const host = await hydrate('ko');
+    await openTile(host, 0);
+    expect(counter(dds(host)[0])).toBe('0'); // zzz counts on its first open
+    await arrow(host, 'ArrowRight');
+    expect(dds(host)[0]?.textContent).toBe('57');
+    expect(counter(dds(host)[0])).toBeNull();
+    const out = dialogOf(host).querySelector('.acct-dlg__card--out');
+    expect(out?.getAttribute('aria-hidden')).toBe('true');
+    expect(out?.hasAttribute('inert')).toBe(true);
+    expect(out?.querySelector('[id]')).toBeNull();
+    expect(document.querySelectorAll('#acct-title')).toHaveLength(1);
+    expect(dialogOf(host).querySelector('.acct-dlg__head')?.contains(out as Node)).toBe(false);
+    await wait(180 + 80);
+    expect(dialogOf(host).querySelector('.acct-dlg__card--out')).toBeNull();
+    // back to zzz: seen already, so final at once
+    await arrow(host, 'ArrowLeft');
+    expect(dds(host)[0]?.textContent).toBe('55');
+  });
+
+  it('full motion: an aria-hidden ghost frame (four corner brackets + the frame line) runs on open and on close', async () => {
+    const host = await hydrate('ko');
+    await act(async () => {
+      buttons(host)[4]?.click();
+    });
+    await wait(40);
+    const ghost = dialogOf(host).querySelector('.acct-dlg__ghost');
+    expect(ghost?.getAttribute('aria-hidden')).toBe('true');
+    expect(ghost?.querySelectorAll('.acct-dlg__ghost-corner')).toHaveLength(4);
+    expect(ghost?.querySelectorAll('.acct-dlg__ghost-line')).toHaveLength(1);
+    expect(ghost?.textContent).toBe('');
+    await wait(TL.dialog[1] + 80);
+    expect(dialogOf(host).querySelector('.acct-dlg__ghost')).toBeNull();
+    await closeByButton(host);
+    await wait(40);
+    expect(dialogOf(host).querySelector('.acct-dlg__ghost')).not.toBeNull();
+    await wait(CLOSE_MS);
+    expect(dialogOf(host).hasAttribute('open')).toBe(false);
+    expect(dialogOf(host).querySelector('.acct-dlg__ghost')).toBeNull();
+  });
+
+  it('reduced motion (data-motion="reduce"): no ghost, no count-up, no cross-fade copy, and a 150 ms close', async () => {
+    document.documentElement.setAttribute('data-motion', 'reduce');
+    const host = await hydrate('ko');
+    await act(async () => {
+      buttons(host)[1]?.click();
+    });
+    await wait(40);
+    expect(dialogOf(host).querySelector('.acct-dlg__ghost')).toBeNull();
+    expect(counter(dds(host)[0])).toBeNull();
+    expect(dds(host)[0]?.textContent).toBe('57');
+    await arrow(host, 'ArrowLeft');
+    expect(dds(host)[0]?.textContent).toBe('55');
+    expect(dialogOf(host).querySelector('.acct-dlg__card--out')).toBeNull();
+    await closeByButton(host);
+    await wait(CLOSE_MS_REDUCED + 40);
+    expect(dialogOf(host).hasAttribute('open')).toBe(false);
+    expect(dialogOf(host).querySelector('.acct-dlg__ghost')).toBeNull();
+  });
+
+  it('full motion keeps the dialog open past the reduced close time (the 300 ms timeline)', async () => {
+    const host = await hydrate('ko');
+    await openTile(host, 1);
+    await closeByButton(host);
+    await wait(CLOSE_MS_REDUCED + 40);
+    expect(dialogOf(host).hasAttribute('open')).toBe(true);
+    await wait(CLOSE_MS);
+    expect(dialogOf(host).hasAttribute('open')).toBe(false);
+  });
+
+  it('stale removal on hydration: a tile whose fetchedAt is past its maxAgeDays is removed after mount (the SSR copy stays for no-JS readers)', async () => {
+    const old = new Date(Date.now() - 8 * DAY).toISOString();
+    const host = await hydrate('ko', (tiles) => tiles.map((t) => (t.key === 'genshin' ? { ...t, fetchedAt: old, maxAgeDays: 7 } : t)));
+    expect(names(host)).toEqual(['젠레스 존 제로', '리그 오브 레전드', '전략적 팀 전투', 'Steam']);
+    // without a maxAgeDays the site rule ACCOUNT_MAX_AGE_DAYS (7) applies
+    const host2 = await hydrate('ko', (tiles) => tiles.map((t) => (t.key === 'steam' ? { ...t, fetchedAt: old, maxAgeDays: undefined } : t)));
+    expect(names(host2)).not.toContain('Steam');
+  });
+
+  it('stale removal on visibilitychange → visible: focus moves to the next tile, or to the row caption (tabindex -1) when none follows; Riot tiles never go stale', async () => {
+    const host = await hydrate('ko');
+    const later = Date.now() + 8 * DAY;
+    buttons(host)[0]?.focus();
+    vi.spyOn(Date, 'now').mockReturnValue(later);
+    await act(async () => {
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+    expect(names(host)).toEqual(['리그 오브 레전드', '전략적 팀 전투']);
+    expect(document.activeElement).toBe(buttons(host)[0]);
+
+    vi.restoreAllMocks(); // hydrate the second row while everything is fresh
+    const host2 = await hydrate('ko');
+    expect(buttons(host2)).toHaveLength(5);
+    vi.spyOn(Date, 'now').mockReturnValue(later);
+    buttons(host2)[4]?.focus();
+    await act(async () => {
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+    const cap = host2.querySelector('.acct-links__cap');
+    expect(cap?.getAttribute('tabindex')).toBe('-1');
+    expect(document.activeElement).toBe(cap);
+  });
+
+  it('no stale check on the opening click; with the dialog open the removal waits for the close, then focus moves on', async () => {
+    const host = await hydrate('ko');
+    vi.spyOn(Date, 'now').mockReturnValue(Date.now() + 8 * DAY);
+    const dialog = await openTile(host, 1);
+    expect(dialog.hasAttribute('open')).toBe(true);
+    expect(dialog.querySelector('#acct-title')?.textContent).toBe('E2E Fixture GI');
+    expect(buttons(host)).toHaveLength(5);
+    await act(async () => {
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+    expect(buttons(host)).toHaveLength(5);
+    expect(dialog.hasAttribute('open')).toBe(true);
+    await closeByButton(host);
+    await wait(CLOSE_MS + 60);
+    expect(dialog.hasAttribute('open')).toBe(false);
+    expect(names(host)).toEqual(['리그 오브 레전드', '전략적 팀 전투']);
+    expect(document.activeElement).toBe(buttons(host)[0]);
   });
 });

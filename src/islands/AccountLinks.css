@@ -86,6 +86,8 @@
 }
 .acct-card__banner { margin: -16px -16px 0; background: var(--acct-tint); }
 .acct-card__banner img, .acct-card__avatar img { display: block; width: 100%; height: auto; }
+/* a namecard is wide; any other shape is cropped to a strip so the banner never pushes the card below the fold */
+.acct-card__banner img { max-height: 160px; object-fit: cover; }
 .acct-card__id { display: flex; align-items: center; gap: 14px; min-width: 0; }
 .acct-card__avatar { flex: none; width: 64px; background: var(--acct-tint); }
 .acct-card__names { display: grid; gap: 2px; min-width: 0; }
@@ -97,8 +99,10 @@
 .acct-card__stat dt { min-width: 0; font-size: var(--fs-small); color: var(--hud-muted); }
 .acct-card__stat dd { flex: none; margin: 0; white-space: nowrap; font: 700 var(--fs-body)/1.3 var(--font-sans); color: var(--hud-text); }
 .acct-card__items { display: flex; flex-wrap: wrap; gap: 10px 16px; margin: 0; padding: 0; list-style: none; }
-.acct-card__items li { display: grid; grid-template-columns: auto 1fr; column-gap: 8px; align-items: center; font-size: var(--fs-label); }
-.acct-card__item-img { grid-row: span 2; width: 48px; height: 48px; object-fit: cover; }
+.acct-card__items li { display: grid; grid-template-columns: 48px auto; column-gap: 8px; align-items: center; font-size: var(--fs-label); }
+.acct-card__items picture { display: contents; } /* the <img> is the grid child: icon left, name over level right */
+.acct-card__item-img { grid-row: 1 / span 2; grid-column: 1; width: 48px; height: 48px; object-fit: cover; }
+.acct-card__item-name, .acct-card__item-meta { grid-column: 2; }
 .acct-card__item-name { color: var(--hud-text); }
 .acct-card__item-meta { color: var(--hud-muted); }
 .acct-card__link {
@@ -110,6 +114,7 @@
   .acct-card__link:hover { color: var(--accent-hover); text-decoration: underline; text-underline-offset: .2em; }
 }
 .acct-card__link:active { color: var(--accent-hover); }
+.acct-card__foot { display: grid; gap: 8px; min-width: 0; }
 .acct-card__note, .acct-card__asof, .acct-card__data, .acct-card__notices p { margin: 0; font-size: var(--fs-label); line-height: 1.5; color: var(--hud-muted); }
 .acct-card__notices { display: grid; gap: 4px; }
 
@@ -121,17 +126,28 @@ button.acct-tile {
 /* the tile of the account on screen while the dialog is open */
 .acct-tile[data-current] .acct-tile__corners::before, .acct-tile[data-current] .acct-tile__corners::after { border-color: var(--accent); }
 
-/* ---- the account dialog (AL-11 shell; spec §3.2). AL-12 adds the card and the open timeline. ---- */
+/* ---- the account dialog (spec §3.2, §3.6; AL-11 shell, AL-12 card and timeline) ----
+   The <dialog> is a transparent shell of the panel's size; the panel is the visible box. The split lets the ghost frame
+   (a fixed-position child of the dialog, so it sits in the top layer above the backdrop) show while the panel is still
+   transparent. Open timeline (TL in src/islands/account/AccountCard.tsx; the literals below must match it):
+   backdrop 0–200 ms, ghost 0–320 ms (JS), panel 260–380 ms, head rule 180–420 ms, avatar/title 300–650 ms,
+   stats 450–1250 ms (count-up, JS), items 800–1200 ms, foot 1100–1400 ms; delays/durations of the card parts come
+   from TL through the CSSOM. Close: the panel fades in 80 ms, the ghost flies back 80–300 ms (CLOSE_MS). */
 .acct-dlg {
   box-sizing: border-box; width: min(560px, 100vw - 32px); max-inline-size: min(560px, 100vw - 32px);
   max-block-size: calc(100dvh - 32px); margin: auto; padding: 0;
-  border: 1px solid var(--hud-line-strong); background: var(--hud-panel); color: var(--hud-text);
-  overflow: hidden; opacity: 0; transition: opacity var(--dur-fade) var(--ease-out);
+  border: 0; background: transparent; color: var(--hud-text); overflow: visible;
 }
 .acct-dlg[open] { display: flex; flex-direction: column; }
-.acct-dlg[data-state="open"] { opacity: 1; }
-/* closing: the dialog fades out in 80 ms (spec §3.6 "창 opacity 1→0(80ms)"); CLOSE_MS (300) = 80 + the 220 ms return */
-.acct-dlg[data-state="closing"] { opacity: 0; transition: opacity 80ms var(--ease-in); }
+.acct-dlg__panel {
+  box-sizing: border-box; display: flex; flex-direction: column; flex: 0 1 auto; min-height: 0;
+  max-block-size: calc(100dvh - 32px);
+  border: 1px solid var(--hud-line-strong); background: var(--hud-panel); color: var(--hud-text);
+  overflow: hidden; opacity: 0;
+}
+.acct-dlg[data-state="open"] .acct-dlg__panel { opacity: 1; transition: opacity 120ms var(--ease-out) 260ms; }
+/* closing: the panel fades out in 80 ms (spec §3.6 "창 opacity 1→0(80ms)"); CLOSE_MS (300) = 80 + the 220 ms return */
+.acct-dlg[data-state="closing"] .acct-dlg__panel { opacity: 0; transition: opacity 80ms var(--ease-in); }
 .acct-dlg::backdrop { background: var(--scrim); opacity: 0; transition: opacity var(--dur-fade) linear; }
 .acct-dlg[data-state="open"]::backdrop { opacity: 1; }
 .acct-dlg[data-state="closing"]::backdrop { opacity: 0; transition: opacity var(--dur-panel-in) linear; }
@@ -142,6 +158,12 @@ button.acct-tile {
   display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 8px 12px;
   padding: 12px 12px 12px 20px; border-bottom: 1px solid var(--hud-line); background: var(--hud-panel);
 }
+/* the head's bracket line: an accent segment on the head's lower edge, drawn from the left on open */
+.acct-dlg__rule {
+  position: absolute; left: 0; bottom: -1px; width: calc(var(--bracket) * 2); height: 2px;
+  background: var(--accent); transform-origin: left center; pointer-events: none;
+}
+.acct-dlg[data-state="open"] .acct-dlg__rule { animation-name: acct-rule; animation-timing-function: var(--ease-out); animation-fill-mode: both; }
 .acct-dlg__heading { flex: 1 1 160px; min-width: 0; padding-top: 6px; }
 .acct-dlg__game { margin: 0; font: 800 var(--fs-sub)/1.25 var(--font-sans); color: var(--hud-strong); overflow-wrap: anywhere; }
 .acct-dlg__profile { margin: 2px 0 0; font: 600 var(--fs-label)/1.5 var(--font-mono); letter-spacing: var(--ls-label); color: var(--hud-muted); }
@@ -163,20 +185,60 @@ button.acct-tile {
 }
 .acct-dlg__nav:active, .acct-dlg__close:active { border-color: var(--accent-hover); color: var(--accent-hover); }
 .acct-dlg__body { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 20px; }
-.acct-dlg__card { display: grid; gap: 12px; }
-.acct-dlg__title { font: 800 var(--fs-sub)/1.2 var(--font-sans); color: var(--hud-strong); overflow-wrap: anywhere; }
+.acct-dlg__body:focus { outline: none; }
+.acct-dlg__body:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
 
-/* reduced motion (both paths): one 150 ms opacity fade each way (CLOSE_MS_REDUCED) */
+/* the card region: the incoming card and, during a switch, the outgoing copy share one grid cell (cross-fade) */
+.acct-dlg__cards { display: grid; min-width: 0; }
+.acct-dlg__card { grid-area: 1 / 1; min-width: 0; }
+.acct-dlg__card[data-anim="switch"] { animation: acct-fade 180ms var(--ease-out) both; }
+.acct-dlg__card--out { animation: acct-fade-out 180ms var(--ease-in) both; pointer-events: none; }
+.acct-card--dlg { display: grid; gap: 16px; min-width: 0; }
+.acct-card--dlg .acct-card__banner { margin: -20px -20px 0; }
+.acct-dlg[data-state="open"] [data-tl="rise"] { animation-name: acct-rise; animation-timing-function: var(--ease-out); animation-fill-mode: both; }
+.acct-dlg[data-state="open"] [data-tl="fade"] { animation-name: acct-fade; animation-timing-function: linear; animation-fill-mode: both; }
+
+/* the ghost frame (aria-hidden, no text): four corner brackets that only translate, and a frame line that
+   translates and scales (it has no text, so a non-uniform scale is fine); the transforms and their transitions are
+   set from TL in AccountLinks.tsx */
+.acct-dlg__ghost { position: fixed; left: 0; top: 0; width: 0; height: 0; z-index: 2; pointer-events: none; }
+.acct-dlg__ghost-line, .acct-dlg__ghost-corner { position: absolute; left: 0; top: 0; box-sizing: border-box; transform-origin: 0 0; will-change: transform; }
+.acct-dlg__ghost-line { border: 1px solid var(--hud-line-strong); }
+.acct-dlg__ghost-corner { width: var(--bracket-sm); height: var(--bracket-sm); border: 2px solid var(--accent); }
+.acct-dlg__ghost-corner--tl { border-right: 0; border-bottom: 0; }
+.acct-dlg__ghost-corner--tr { border-left: 0; border-bottom: 0; }
+.acct-dlg__ghost-corner--bl { border-right: 0; border-top: 0; }
+.acct-dlg__ghost-corner--br { border-left: 0; border-top: 0; }
+
+@keyframes acct-rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@keyframes acct-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes acct-fade-out { from { opacity: 1; } to { opacity: 0; } }
+@keyframes acct-rule { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+
+/* reduced motion (both paths): one 150 ms opacity fade of the whole dialog each way (CLOSE_MS_REDUCED); no ghost,
+   no timeline, no cross-fade (a switch shows the next card at once) */
 @media (prefers-reduced-motion: reduce) {
-  .acct-dlg, .acct-dlg[data-state="closing"], .acct-dlg::backdrop, .acct-dlg[data-state="closing"]::backdrop { transition: opacity 150ms linear; }
+  .acct-dlg { opacity: 0; transition: opacity 150ms linear; }
+  .acct-dlg[data-state="open"] { opacity: 1; }
+  .acct-dlg[data-state="closing"] { opacity: 0; }
+  .acct-dlg .acct-dlg__panel, .acct-dlg[data-state="closing"] .acct-dlg__panel { opacity: 1; transition: none; }
+  .acct-dlg::backdrop, .acct-dlg[data-state="closing"]::backdrop { transition: opacity 150ms linear; }
+  .acct-dlg .acct-dlg__rule, .acct-dlg .acct-dlg__card, .acct-dlg [data-tl] { animation: none !important; }
+  .acct-dlg__ghost, .acct-dlg__card--out { display: none; }
 }
-:root[data-motion="reduce"] .acct-dlg, :root[data-motion="reduce"] .acct-dlg[data-state="closing"],
+:root[data-motion="reduce"] .acct-dlg { opacity: 0; transition: opacity 150ms linear; }
+:root[data-motion="reduce"] .acct-dlg[data-state="open"] { opacity: 1; }
+:root[data-motion="reduce"] .acct-dlg[data-state="closing"] { opacity: 0; }
+:root[data-motion="reduce"] .acct-dlg .acct-dlg__panel, :root[data-motion="reduce"] .acct-dlg[data-state="closing"] .acct-dlg__panel { opacity: 1; transition: none; }
 :root[data-motion="reduce"] .acct-dlg::backdrop, :root[data-motion="reduce"] .acct-dlg[data-state="closing"]::backdrop { transition: opacity 150ms linear; }
+:root[data-motion="reduce"] .acct-dlg .acct-dlg__rule, :root[data-motion="reduce"] .acct-dlg .acct-dlg__card, :root[data-motion="reduce"] .acct-dlg [data-tl] { animation: none !important; }
+:root[data-motion="reduce"] .acct-dlg__ghost, :root[data-motion="reduce"] .acct-dlg__card--out { display: none; }
 
 @media (forced-colors: active) {
   .acct-tile__frame { outline: 1px solid CanvasText; }
   .acct-card--static { border-color: CanvasText; }
-  .acct-dlg { border: 1px solid CanvasText; } /* G-012 */
+  .acct-dlg { border: 1px solid CanvasText; } /* G-012: the edge sits on the dialog itself here */
+  .acct-dlg__panel { border: 0; }
   .acct-dlg__nav, .acct-dlg__close { border-color: ButtonText; }
 }
 /* controls do not print (P-12); the dialog is hidden in base.css next to the image viewer */

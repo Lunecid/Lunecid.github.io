@@ -6,6 +6,7 @@
 //   accountStatus the page uses, spec §11.1 "same pure function"), with the feeds stamped fresh as that build does.
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import AxeBuilder from '@axe-core/playwright';
 import type { Page } from '@playwright/test';
 import { load } from 'js-yaml';
 import type { FavoriteGameData } from '../../src/content/schemas';
@@ -16,6 +17,9 @@ import { collectViolations, expect, test, watchViolations } from './helpers';
 const ACCOUNTS_ORIGIN = `http://127.0.0.1:${Number(process.env.E2E_ACCOUNTS_PORT ?? 4332)}`;
 const ROUTES = ['/game/player-log/', '/en/game/player-log/'];
 const FIXTURES = join(process.cwd(), 'tests/fixtures/generated');
+const AXE_TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'];
+/** The open timeline's last step ends at 1400 ms (TL.foot, spec §3.6); wait a little past it before measuring. */
+const SETTLED_MS = 1600;
 
 function fixtureStatus(): AccountStatus {
   const games = (load(readFileSync(join(process.cwd(), 'src/data/favorites.yaml'), 'utf8')) as { games: FavoriteGameData[] }).games;
@@ -244,4 +248,126 @@ test.describe('account dialog shell — fixture build', () => {
     await expect(page.locator('.acct-dlg__prev')).toHaveAttribute('aria-label', 'Previous account: Steam');
     await expect(page.locator('.acct-dlg__close')).toContainText('Close');
   });
+});
+
+// AL-12: the card in the dialog, the open timeline, reduced motion (spec §3.2–3.7; fix-brief A-01, A-02).
+test.describe('account card — fixture build (AL-12)', () => {
+  const tiles = (page: Page) => page.locator('#membership ul.acct-row > li > button.acct-tile');
+  const dialog = (page: Page) => page.locator('dialog#acct-dlg');
+
+  async function ready(page: Page, width: number, height: number, route = '/game/player-log/'): Promise<void> {
+    await page.setViewportSize({ width, height });
+    await page.goto(`${ACCOUNTS_ORIGIN}${route}`, { waitUntil: 'load' });
+    await expect(tiles(page)).toHaveCount(5);
+  }
+
+  /** Lines a text box occupies: the distinct tops of its text's client rects (a wrapped value has two or more). */
+  const lineCounts = (page: Page, selector: string) =>
+    page.locator(selector).evaluateAll((els) =>
+      els.map((el) => {
+        // a counting value keeps its final text in a 1px sr-only twin: measure the visible part only
+        const range = document.createRange();
+        range.selectNodeContents(el.querySelector('[aria-hidden="true"]') ?? el);
+        const tops = new Set([...range.getClientRects()].filter((r) => r.width > 0).map((r) => Math.round(r.top)));
+        return { text: el.textContent ?? '', lines: tops.size };
+      }),
+    );
+
+  for (const [width, height] of [[375, 667], [1280, 800]] as const) {
+    test(`all five cards at ${width}: axe 0, Korean stat labels, no landmark, CSP 0, every request stays on 127.0.0.1`, async ({ page }) => {
+      const hosts = new Set<string>();
+      page.on('request', (request) => hosts.add(new URL(request.url()).hostname));
+      await watchViolations(page);
+      await ready(page, width, height);
+      await tiles(page).first().click();
+      await expect(dialog(page)).toHaveAttribute('data-state', 'open');
+      await page.waitForTimeout(SETTLED_MS);
+      for (let i = 0; i < 5; i++) {
+        if (i > 0) {
+          await page.keyboard.press('ArrowRight');
+          await expect(page.locator('.acct-dlg__pos')).toHaveText(`${i + 1} / 5`);
+          await page.waitForTimeout(400); // past the 180 ms cross-fade
+        }
+        const axe = await new AxeBuilder({ page }).withTags(AXE_TAGS).analyze();
+        expect(axe.violations.map((v) => `${v.id}: ${v.nodes.slice(0, 3).map((n) => n.target.join(' ')).join(' | ')}`), `axe, card ${i + 1}`).toEqual([]);
+        // G-009: no landmark or labelled region in the dialog
+        await expect(dialog(page).locator('section, [role="region"], article, aside, nav, main')).toHaveCount(0);
+        // G-006: the ko page's stat labels are Korean
+        for (const dt of await dialog(page).locator('.acct-dlg__card:not(.acct-dlg__card--out) dl dt').allTextContents()) expect(dt).toMatch(/[가-힣]/);
+      }
+      await expect(page.locator('.fg-acct')).toHaveCount(0); // F-050, G-001: no overlay card on the showcase
+      expect(await collectViolations(page)).toEqual([]);
+      // no relay or GitHub request without ?manage, and nothing leaves the preview host
+      expect([...hosts].filter((h) => h.endsWith('workers.dev') || h === 'api.github.com')).toEqual([]);
+      expect([...hosts]).toEqual(['127.0.0.1']);
+    });
+  }
+
+  for (const width of [375, 768, 1440]) {
+    test(`no value wraps mid-number and the fetched-at line is one line at ${width} (G-004, G-005)`, async ({ page }) => {
+      await ready(page, width, 900);
+      await tiles(page).first().click();
+      await expect(dialog(page)).toHaveAttribute('data-state', 'open');
+      await page.waitForTimeout(SETTLED_MS);
+      let checked = 0;
+      for (let i = 0; i < 5; i++) {
+        if (i > 0) {
+          await page.keyboard.press('ArrowRight');
+          await page.waitForTimeout(400);
+        }
+        const card = '#acct-dlg .acct-dlg__card:not(.acct-dlg__card--out)';
+        for (const dd of await lineCounts(page, `${card} dl dd`)) {
+          expect(dd.lines, `dd "${dd.text}"`).toBe(1);
+          checked++;
+        }
+        for (const line of await lineCounts(page, `${card} .acct-card__asof`)) expect(line.lines, line.text).toBe(1);
+      }
+      expect(checked).toBe(6); // zzz 1 + genshin 4 + steam 1
+    });
+  }
+
+  test('JavaScript off: the stat values and Korean labels are in the served HTML (G-010, G-006)', async ({ request }) => {
+    const html = await (await request.get(`${ACCOUNTS_ORIGIN}/game/player-log/`)).text();
+    for (const pair of ['<dt>모험 등급</dt><dd>57</dd>', '<dt>업적</dt><dd>812</dd>', '<dt>나선 비경</dt><dd>12층 3방</dd>', '<dt>인터노트 레벨</dt><dd>55</dd>', '<dt>Steam 레벨</dt><dd>42</dd>']) {
+      expect(html).toContain(pair);
+    }
+  });
+
+  test('full motion: the ghost frame flies in and is gone once the panel shows; the first open counts up, a switch shows final values', async ({ page }) => {
+    await ready(page, 1280, 800);
+    await tiles(page).nth(1).click();
+    await expect(dialog(page).locator('.acct-dlg__ghost')).toHaveCount(1);
+    await expect(dialog(page).locator('.acct-dlg__ghost-corner')).toHaveCount(4);
+    const first = dialog(page).locator('.acct-dlg__card:not(.acct-dlg__card--out) dl dd').first();
+    await expect(first.locator('[aria-hidden="true"]')).toHaveCount(1); // counting
+    await expect(first.locator('.sr-only')).toHaveText('57');
+    await expect(dialog(page).locator('.acct-dlg__ghost')).toHaveCount(0);
+    await expect(first.locator('[aria-hidden="true"]')).toHaveText('57');
+    await page.keyboard.press('ArrowLeft');
+    await expect(dialog(page).locator('.acct-dlg__card:not(.acct-dlg__card--out) dl dd').first()).toHaveText('55');
+  });
+
+  for (const path of ['os', 'site'] as const) {
+    test(`reduced motion (${path === 'os' ? 'OS setting' : 'site toggle'}): no ghost, no count-up, final values at once`, async ({ page }) => {
+      if (path === 'os') await page.emulateMedia({ reducedMotion: 'reduce' });
+      else await page.addInitScript(() => localStorage.setItem('sb:motion', 'off'));
+      let ghostSeen = false;
+      await ready(page, 1280, 800);
+      expect(await page.evaluate(() => document.documentElement.getAttribute('data-motion'))).toBe('reduce');
+      await page.evaluate(() => {
+        new MutationObserver(() => {
+          if (document.querySelector('.acct-dlg__ghost')) (window as unknown as { __ghost: boolean }).__ghost = true;
+        }).observe(document.body, { subtree: true, childList: true });
+      });
+      await tiles(page).nth(1).click();
+      await expect(dialog(page)).toHaveAttribute('data-state', 'open');
+      await expect(dialog(page).locator('dl dd').first()).toHaveText('57');
+      await expect(dialog(page).locator('dl dd [aria-hidden="true"]')).toHaveCount(0);
+      expect(await dialog(page).evaluate((el) => getComputedStyle(el).transitionDuration)).toBe('0.15s');
+      await page.keyboard.press('ArrowRight');
+      await expect(dialog(page).locator('.acct-dlg__card--out')).toHaveCount(0);
+      ghostSeen = await page.evaluate(() => (window as unknown as { __ghost?: boolean }).__ghost === true);
+      expect(ghostSeen).toBe(false);
+    });
+  }
 });
