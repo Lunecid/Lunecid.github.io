@@ -218,3 +218,23 @@ export async function textBelow12px(page: Page): Promise<string[]> {
     return found;
   });
 }
+
+/**
+ * CSP check (account-link C0): call before the first navigation; every document the page loads from then on records its
+ * `securitypolicyviolation` events as "<violated directive> <blocked URI>" (the listener is added before any page script).
+ */
+export async function watchViolations(page: Page): Promise<void> {
+  await page.addInitScript(() => {
+    const w = window as unknown as { __cspv: string[] };
+    w.__cspv = [];
+    document.addEventListener('securitypolicyviolation', (e) => w.__cspv.push(`${e.violatedDirective} ${e.blockedURI}`));
+  });
+}
+/** The CSP violations the current document recorded since it loaded (needs `watchViolations` first). */
+export async function collectViolations(page: Page): Promise<string[]> {
+  return page.evaluate(() => {
+    const list = (window as unknown as { __cspv?: string[] }).__cspv;
+    if (!Array.isArray(list)) throw new Error('collectViolations: watchViolations(page) was not called before navigation');
+    return [...list];
+  });
+}

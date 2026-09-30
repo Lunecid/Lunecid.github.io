@@ -62,6 +62,41 @@ async function hitArea(target: Locator, dy = 21, dx = 21): Promise<boolean> {
   );
 }
 
+/**
+ * Test-only style override: sets `decls` as `!important` inline declarations on every element matching `selector`
+ * (only while `media` matches, like an injected `@media` rule) and returns a function that restores the previous inline
+ * values. The site's CSP (style-src hashes, `style-src-attr 'unsafe-inline'`) blocks an injected `<style>` element
+ * (page.addStyleTag) but allows style attributes; an inline `!important` declaration outranks the same stylesheet one.
+ */
+async function overrideStyle(page: Page, selector: string, decls: Record<string, string>, media?: string): Promise<() => Promise<void>> {
+  const restore = await page.evaluateHandle(
+    ([sel, d, mq]) => {
+      const on = mq === null || window.matchMedia(mq).matches;
+      const saved = on
+        ? [...document.querySelectorAll<HTMLElement>(sel)].map((el) => {
+            const prev = Object.keys(d).map((p) => [p, el.style.getPropertyValue(p), el.style.getPropertyPriority(p)] as const);
+            for (const [p, v] of Object.entries(d)) el.style.setProperty(p, v, 'important');
+            return { el, prev };
+          })
+        : [];
+      return () => {
+        for (const { el, prev } of saved) {
+          for (const [p, v, priority] of prev) {
+            if (v) el.style.setProperty(p, v, priority);
+            else el.style.removeProperty(p);
+          }
+        }
+      };
+    },
+    [selector, decls, media ?? null] as const,
+  );
+  return async () => {
+    await restore.evaluate((fn) => fn());
+    await restore.dispose();
+  };
+}
+const HIDDEN = { visibility: 'hidden' } as const;
+
 test.describe('item 1: the character art fades out where it meets open background', () => {
   for (const width of [1440, 2560]) {
     test(`${width}px: the hero and MAIN MENU art end in a fade, not a straight cut, in both hero states`, async ({ page }) => {
@@ -271,9 +306,9 @@ test.describe('item 1, round 3: masked art never exceeds its mask at device boun
     };
 
     const shipped = await raw();
-    const hide = await page.addStyleTag({ content: `${hideSel} { visibility: hidden !important; }` });
+    const unhide = await overrideStyle(page, hideSel, HIDDEN);
     const hidden = await raw();
-    await hide.evaluate((el) => (el as Element).remove());
+    await unhide();
     await frame.evaluate((el) => {
       (el as HTMLElement).style.setProperty('mask-image', 'none', 'important');
       (el as HTMLElement).style.setProperty('-webkit-mask-image', 'none', 'important');
@@ -509,9 +544,9 @@ test.describe('item 1, straight-cut guard: art is faded at the visible right bou
       return data as Buffer;
     };
     const withArt = await raw();
-    const hide = await page.addStyleTag({ content: `${hideSel} { visibility: hidden !important; }` });
+    const unhide = await overrideStyle(page, hideSel, HIDDEN);
     const without = await raw();
-    await hide.evaluate((el) => (el as Element).remove());
+    await unhide();
     let max = 0;
     for (let i = 0; i < withArt.length; i += 3) {
       max = Math.max(
@@ -594,12 +629,13 @@ test.describe('item 1, straight-cut guard: art is faded at the visible right bou
     'linear-gradient(90deg, transparent 0, transparent calc(0.16 * var(--W)), #000 calc(0.34 * var(--W)), #000 calc(100% - 0.12 * var(--W)), transparent 100%)';
   const TABLET_HERO_V_MASK =
     'linear-gradient(0deg, transparent 0, transparent var(--credit-gap), #000 calc(var(--credit-gap) + 110px), #000 calc(100% - 56px), transparent calc(100% - 4px), transparent 100%)';
-  const headTabletHeroMaskCss = `@media (min-width: 734px) and (max-width: 1067.98px) {
-    .char-stage--hero .char-stage__frame {
-      -webkit-mask-image: ${HEAD_TABLET_HERO_H_MASK}, ${TABLET_HERO_V_MASK} !important;
-      mask-image: ${HEAD_TABLET_HERO_H_MASK}, ${TABLET_HERO_V_MASK} !important;
-    }
-  }`;
+  // Applied as inline !important declarations under the same media condition (the page CSP blocks an injected <style>).
+  const HEAD_TABLET_HERO_MEDIA = '(min-width: 734px) and (max-width: 1067.98px)';
+  const HEAD_TABLET_HERO_SEL = '.char-stage--hero .char-stage__frame';
+  const headTabletHeroMask = {
+    '-webkit-mask-image': `${HEAD_TABLET_HERO_H_MASK}, ${TABLET_HERO_V_MASK}`,
+    'mask-image': `${HEAD_TABLET_HERO_H_MASK}, ${TABLET_HERO_V_MASK}`,
+  };
 
   for (const dpr of [1, 1.5] as const) {
     for (const [width, height] of [[734, 1000], [768, 1024], [820, 1180]] as const) {
@@ -616,9 +652,9 @@ test.describe('item 1, straight-cut guard: art is faded at the visible right bou
           await page.waitForTimeout(300);
           const clipSel = '.char-stage--hero .char-stage__clip';
 
-          const headRemielle = await page.addStyleTag({ content: headTabletHeroMaskCss });
+          const headRemielle = await overrideStyle(page, HEAD_TABLET_HERO_SEL, headTabletHeroMask, HEAD_TABLET_HERO_MEDIA);
           expect(await edgeStripLuma(page, clipSel, 'right'), 'Remielle with HEAD mask').toBeGreaterThan(14);
-          await headRemielle.evaluate((el) => (el as Element).remove());
+          await headRemielle();
           expect(await edgeStripLuma(page, clipSel, 'right'), 'Remielle').toBeLessThanOrEqual(14);
 
           await page.locator('.char-stage__swap button').nth(1).click();
@@ -628,9 +664,9 @@ test.describe('item 1, straight-cut guard: art is faded at the visible right bou
             .toContain('/eula.');
           await page.waitForTimeout(300);
 
-          const headEula = await page.addStyleTag({ content: headTabletHeroMaskCss });
+          const headEula = await overrideStyle(page, HEAD_TABLET_HERO_SEL, headTabletHeroMask, HEAD_TABLET_HERO_MEDIA);
           expect(await edgeStripLuma(page, clipSel, 'right'), 'Eula with HEAD mask').toBeGreaterThan(14);
-          await headEula.evaluate((el) => (el as Element).remove());
+          await headEula();
           expect(await edgeStripLuma(page, clipSel, 'right'), 'Eula').toBeLessThanOrEqual(14);
         });
       });
@@ -745,9 +781,9 @@ test.describe('item 1, composition: tablet showcase art fills the frame', () => 
     expect(box, 'showcase frame box').toBeTruthy();
     const clip = { x: box!.x, y: box!.y, width: box!.width, height: box!.height };
     const shipped = await sharp(await page.screenshot({ clip, scale: 'css' })).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
-    const hide = await page.addStyleTag({ content: '.fg__chr img { visibility: hidden !important; }' });
+    const unhide = await overrideStyle(page, '.fg__chr img', HIDDEN);
     const hidden = await sharp(await page.screenshot({ clip, scale: 'css' })).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
-    await hide.evaluate((el) => (el as Element).remove());
+    await unhide();
     const ch = 4;
     let painted = 0;
     const total = shipped.info.width * shipped.info.height;
@@ -933,9 +969,9 @@ test.describe('item 1, no art under copy', () => {
         return data as Buffer;
       };
       const withArt = await raw();
-      const hide = await page.addStyleTag({ content: '.char-stage__img { visibility: hidden !important; }' });
+      const unhide = await overrideStyle(page, '.char-stage__img', HIDDEN);
       const without = await raw();
-      await hide.evaluate((el) => (el as Element).remove());
+      await unhide();
       for (let i = 0; i < withArt.length; i += 3) {
         const d = Math.max(
           Math.abs(withArt[i]! - without[i]!),

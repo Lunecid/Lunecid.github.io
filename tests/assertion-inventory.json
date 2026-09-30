@@ -76,6 +76,7 @@
   "tests/e2e/chooser-design.spec.ts": 28,
   "tests/e2e/chooser.spec.ts": 16,
   "tests/e2e/content-honesty.spec.ts": 40,
+  "tests/e2e/csp.spec.ts": 9,
   "tests/e2e/data-home.spec.ts": 10,
   "tests/e2e/data-layout.spec.ts": 21,
   "tests/e2e/data-paper.spec.ts": 3,
