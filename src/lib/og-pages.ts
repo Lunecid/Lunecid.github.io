@@ -2,10 +2,11 @@ import type { ImageMetadata } from 'astro';
 import photo from '../assets/photo/photo-id.webp';
 import riskHeatmap from '../assets/projects/school-zone-blindspots/risk-heatmap.webp';
 import type { Lang } from '../i18n/ui';
-import { formatPeriod, LOCALES, splitEntryId } from '../i18n/utils';
+import { formatPeriod, LOCALES, splitEntryId, t, type UiKey } from '../i18n/utils';
+import { chooserCopy } from '../data/copy/chooser';
 import type { PageKey } from '../data/copy/pages';
-import { pageMetaFor } from '../variants';
-import type { OgArtifact, OgInput } from './og';
+import { captionFor, getVariant, NEUTRAL_IDENTITY, pageMetaFor, type CaptionKey } from '../variants';
+import type { OgArtifact, OgInput, OgTemplate } from './og';
 import type { FactSource } from './facts';
 import { bibtexField } from './publications';
 import { getFactSource, getPaperPages, getProjects } from './portfolio';
@@ -48,6 +49,56 @@ function withoutName(title: string, lang: Lang): string {
   return title.endsWith(suffix) ? title.slice(0, -suffix.length) : title;
 }
 
+/** The card's template (P2-12): general pages editorial, game pages HUD, the chooser and the shared pages neutral. */
+export function ogTemplateFor(route: string): OgTemplate {
+  const info = parseRoute(route);
+  if (!info) throw new Error(`og: ${route} is not a route`);
+  return info.kind === 'variant' ? (info.variant === 'data' ? 'editorial' : 'hud') : 'neutral';
+}
+
+/** Editorial eyebrows: the general version's captions (spec §8), never a HUD caption. */
+function editorialCaption(base: string): CaptionKey {
+  if (base === '/') return 'heroLabel';
+  if (base === '/research/') return 'pageResearch';
+  if (base === '/projects/') return 'pageProjects';
+  if (base === '/records/') return 'pageRecords';
+  return base.startsWith('/research/') ? 'publications' : 'projectDetails';
+}
+const SHARED_EYEBROW: Readonly<Record<string, UiKey>> = { '/stats/': 'nav.stats', '/privacy/': 'nav.privacy', '/credits/': 'nav.credits' };
+
+/**
+ * A card with its template: HUD cards unchanged; editorial cards take the general captions as eyebrows and the general
+ * home shows the B-12 heatmap (the projects artifact); the chooser card shows both versions; shared cards are named by
+ * their page.
+ */
+export function withTemplate(og: Omit<OgInput, 'template'>, route: string, src: OgSources): OgInput {
+  const template = ogTemplateFor(route);
+  const info = parseRoute(route)!;
+  if (template === 'hud') return { ...og, template };
+  if (template === 'editorial') {
+    const artifact = info.base === '/' ? src.artifacts?.projects : og.artifact;
+    return {
+      template,
+      eyebrow: captionFor(getVariant('data'), editorialCaption(info.base), info.lang),
+      title: og.title,
+      ...(og.subtitle ? { subtitle: og.subtitle } : {}),
+      ...(artifact ? { artifact } : {}),
+    };
+  }
+  if (info.kind === 'chooser') {
+    const copy = chooserCopy[info.lang];
+    return {
+      ...og,
+      template,
+      eyebrow: NEUTRAL_IDENTITY.siteTitle[info.lang],
+      artifact: { kind: 'versions', game: { mode: `[ MODE ${copy.game.num} ]`, title: copy.game.title }, data: { kicker: copy.data.kicker, title: copy.data.title } },
+    };
+  }
+  const key = SHARED_EYEBROW[info.base];
+  if (!key) throw new Error(`og: no eyebrow for the shared page ${route}`);
+  return { ...og, template, eyebrow: t(info.lang, key) };
+}
+
 /**
  * One OG card per route in allRoutes() (read through parseRoute), keyed by ogSlugFor(route). The chooser: its
  * page meta. Fixed pages: the page meta of the route's version (null for shared pages) + description. Projects:
@@ -61,7 +112,7 @@ export function buildOgMap(src: OgSources): Record<string, OgInput> {
     const info = parseRoute(route);
     if (!info) throw new Error(`og: ${route} is not in the route table`);
     const { lang, variant, base, kind } = info;
-    let og: OgInput;
+    let og: Omit<OgInput, 'template'>;
     if (kind === 'chooser') {
       const meta = pageMetaFor('chooser', lang, null, src.facts);
       og = { eyebrow: 'PORTFOLIO', title: meta.title, subtitle: meta.description, ...withArtifact(src.artifacts?.photo) };
@@ -84,7 +135,7 @@ export function buildOgMap(src: OgSources): Record<string, OgInput> {
       }
     }
     if (containsTrademark(og.title)) throw new Error(`og: title names a game trademark (${route}): ${og.title}`);
-    map[ogSlugFor(route)] = og;
+    map[ogSlugFor(route)] = withTemplate(og, route, src);
   }
   return map;
 }

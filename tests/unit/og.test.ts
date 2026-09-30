@@ -2,7 +2,8 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import sharp from 'sharp';
 import { describe, expect, it } from 'vitest';
-import { OG_COLORS, ogWords, renderOgPng, type OgArtifact } from '../../src/lib/og';
+import { OG_COLORS, ogSerifFont, ogWords, renderOgPng, type OgArtifact } from '../../src/lib/og';
+import { cmapCodePoints, sfntTables } from '../../scripts/fonts/sfnt.mjs';
 
 const PNG_SIGNATURE = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
 const file = (rel: string): string => fileURLToPath(new URL(`../../${rel}`, import.meta.url));
@@ -20,6 +21,11 @@ const TOKEN_OF = {
   paper: '--paper-bg',
   paperInk: '--paper-ink',
   paperMuted: '--paper-muted',
+  edBg: '--ed-bg',
+  edInk: '--ed-ink',
+  edMuted: '--ed-muted',
+  edRule: '--ed-rule',
+  edAccent: '--ed-accent',
 } as const satisfies Record<keyof typeof OG_COLORS, string>;
 
 const squash = (v: string): string => v.replace(/\s+/g, '').toUpperCase();
@@ -27,6 +33,7 @@ const squash = (v: string): string => v.replace(/\s+/g, '').toUpperCase();
 describe('renderOgPng', () => {
   it('renderOgPng returns a 1200×630 PNG', async () => {
     const png = await renderOgPng({
+      template: 'hud',
       eyebrow: 'RESEARCH',
       title: '교전 결과 예측 사례 연구',
       subtitle: 'IEEE CoG 2026 구두 발표 논문의 사례 연구',
@@ -38,8 +45,8 @@ describe('renderOgPng', () => {
   }, 30_000);
 
   it('renders without a subtitle and different text gives a different image', async () => {
-    const a = await renderOgPng({ eyebrow: 'PORTFOLIO', title: 'Seongeun Baek' });
-    const b = await renderOgPng({ eyebrow: 'PORTFOLIO', title: '백성은' });
+    const a = await renderOgPng({ template: 'hud', eyebrow: 'PORTFOLIO', title: 'Seongeun Baek' });
+    const b = await renderOgPng({ template: 'hud', eyebrow: 'PORTFOLIO', title: '백성은' });
     expect(a.readUInt32BE(16)).toBe(1200);
     expect(a.readUInt32BE(20)).toBe(630);
     expect(Buffer.compare(a, b)).not.toBe(0);
@@ -53,8 +60,8 @@ describe('renderOgPng', () => {
     plate: { kind: 'plate', id: 'KBO-ATTENDANCE', period: '2025.03 – 2025.06', tag: '통계' },
   };
   it.each(Object.entries(ARTIFACTS))('%s artifact: 1200×630, drawn in the right half, under 300 KB', async (_kind, artifact) => {
-    const plain = await renderOgPng({ eyebrow: 'RECORDS', title: '기록 · 백성은', subtitle: '학력, 수상, 기술' });
-    const png = await renderOgPng({ eyebrow: 'RECORDS', title: '기록 · 백성은', subtitle: '학력, 수상, 기술', artifact });
+    const plain = await renderOgPng({ template: 'hud', eyebrow: 'RECORDS', title: '기록 · 백성은', subtitle: '학력, 수상, 기술' });
+    const png = await renderOgPng({ template: 'hud', eyebrow: 'RECORDS', title: '기록 · 백성은', subtitle: '학력, 수상, 기술', artifact });
     expect(png.readUInt32BE(16)).toBe(1200);
     expect(png.readUInt32BE(20)).toBe(630);
     expect(png.length, `${png.length} bytes`).toBeLessThan(300 * 1024);
@@ -85,4 +92,40 @@ describe('ogWords (final fix 2 item 22)', () => {
     expect(ogWords('사진 업로드·점수 랭킹 Django 웹 서비스 구현을 맡았습니다.').at(-1)).toBe('맡았습니다.');
     expect(ogWords('  two   spaces\n and a line break ')).toEqual(['two', 'spaces', 'and', 'a', 'line', 'break']);
   });
+});
+
+describe('light OG templates (P2-12, spec §8)', () => {
+  const heatmap: OgArtifact = { kind: 'figure', path: file('src/assets/projects/school-zone-blindspots/risk-heatmap.webp'), label: 'RISK HEATMAP' };
+  const mean = (b: Buffer): number => b.reduce((s, v) => s + v, 0) / b.length;
+
+  it('editorial: a white card with the serif title, 1200×630 under 300 KB, not the HUD card', async () => {
+    const base = { eyebrow: '포트폴리오', title: '백성은 · 데이터 분석가', subtitle: '데이터 분석가 백성은의 포트폴리오.', artifact: heatmap };
+    const editorial = await renderOgPng({ template: 'editorial', ...base });
+    const hud = await renderOgPng({ template: 'hud', ...base });
+    expect(editorial.readUInt32BE(16)).toBe(1200);
+    expect(editorial.readUInt32BE(20)).toBe(630);
+    expect(editorial.length).toBeLessThan(300 * 1024);
+    expect(mean(await sharp(editorial).extract({ left: 10, top: 10, width: 20, height: 20 }).removeAlpha().raw().toBuffer())).toBeGreaterThan(245);
+    expect(Buffer.compare(editorial, hud)).not.toBe(0);
+  }, 60_000);
+
+  it('neutral chooser card: the game half dark, the general half white', async () => {
+    const png = await renderOgPng({
+      template: 'neutral', eyebrow: '백성은', title: '백성은', subtitle: '보고 싶은 포트폴리오를 고르세요.',
+      artifact: { kind: 'versions', game: { mode: '[ MODE 01 ]', title: '게임 데이터 분석가' }, data: { kicker: '일반 버전', title: '데이터 분석가' } },
+    });
+    const patch = async (left: number): Promise<number> => mean(await sharp(png).extract({ left, top: 440, width: 20, height: 20 }).removeAlpha().raw().toBuffer());
+    expect(await patch(650)).toBeLessThan(60);
+    expect(await patch(1080)).toBeGreaterThan(200);
+    expect(png.length).toBeLessThan(300 * 1024);
+  }, 60_000);
+
+  it('ogSerifFont: a static SFNT instance with exactly the text\'s characters', async () => {
+    const font = await ogSerifFont('데이터 분석가 Data');
+    expect(font!.readUInt32BE(0)).toBe(0x00010000);
+    const tables = sfntTables(font!);
+    expect(tables.has('fvar')).toBe(false);
+    const cps = cmapCodePoints(tables.get('cmap')!);
+    for (const ch of '데이터분석가Data') expect(cps.has(ch.codePointAt(0)!), ch).toBe(true);
+  }, 60_000);
 });

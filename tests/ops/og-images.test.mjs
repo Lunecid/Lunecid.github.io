@@ -1,11 +1,25 @@
-// P2-36 (batch 5): the built OG cards carry a real artifact in a bracket frame on the HUD grid, and each stays a
-// reasonable size. Run after `npm run build`: npm run test:ops.
+// P2-36 (batch 5) and P2-12: the built OG cards carry a real artifact (in a bracket frame on the HUD grid on game
+// cards, under a heavy ink rule on the white editorial and neutral cards), and each stays a reasonable size. Run after
+// `npm run build`: npm run test:ops.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync, readdirSync, statSync } from 'node:fs';
 import { join, relative, sep } from 'node:path';
 import sharp from 'sharp';
-import { allRoutes } from '../../src/lib/routes.ts';
+import { allRoutes, parseRoute } from '../../src/lib/routes.ts';
+
+/** ogSlugFor (src/lib/seo.ts): '/' → home, '/en/' → en/home, else the path without slashes. */
+const slugOf = (route) => {
+  const path = route.replace(/^\/+|\/+$/g, '');
+  return path === '' ? 'home' : path === 'en' ? 'en/home' : path;
+};
+/** ogTemplateFor (src/lib/og-pages.ts): general pages editorial, game pages HUD, chooser and shared pages neutral. */
+const templateOf = (route) => {
+  const info = parseRoute(route);
+  if (!info) throw new Error(`${route} is not a route`);
+  return info.kind === 'variant' ? (info.variant === 'data' ? 'editorial' : 'hud') : 'neutral';
+};
+const TEMPLATE = new Map(allRoutes().map((route) => [slugOf(route), templateOf(route)]));
 
 const DIST = process.env.DIST_DIR ?? 'dist';
 const OG = join(DIST, 'og');
@@ -52,52 +66,83 @@ test('each card shows an artifact on its right, not a text-only card (P2-36)', a
   assert.deepEqual(flat, [], flat.join('\n'));
 });
 
-test('home and records show the photo, project pages their figure, the paper page its white title sheet', async () => {
-  const at = (k) => artifactArea(join(OG, `${k}.png`));
-  const [home, records, paper, project] = await Promise.all([at('home'), at('game/records'), at('game/research/cog-2026-engagement'), at('game/projects/school-zone-blindspots')]);
-  assert.ok(Math.abs(home.mean - records.mean) < 1, 'home and records share the ID photo');
-  assert.ok(paper.mean > 150, `the paper title block is a white sheet (mean ${paper.mean.toFixed(0)})`);
-  assert.ok(Math.abs(project.mean - home.mean) > 5, 'a project card shows its own figure, not the photo');
+test('P2-12 fixed cards: the game home and records share the photo, the paper card is white, the general home shows the heatmap, the chooser shows both versions', async () => {
+  const luminance = async (k, left, top, width, height) => {
+    const px = await sharp(join(OG, `${k}.png`)).extract({ left, top, width, height }).removeAlpha().raw().toBuffer();
+    let sum = 0;
+    for (let i = 0; i < px.length; i += 3) sum += 0.2126 * px[i] + 0.7152 * px[i + 1] + 0.0722 * px[i + 2];
+    return sum / (px.length / 3);
+  };
+  const area = (k) => luminance(k, 840, 120, 270, 380);
+  assert.ok(Math.abs((await area('game')) - (await area('game/records'))) < 1, 'game home and records show the same photo');
+  assert.ok((await area('game/research/cog-2026-engagement')) > 150, 'the paper card is a white sheet');
+  assert.ok(Math.abs((await area('data')) - (await area('game'))) > 5, 'the general home shows the heatmap, not the photo');
+  assert.ok((await luminance('home', 650, 440, 20, 20)) < 60, 'chooser card: the game half is dark');
+  assert.ok((await luminance('home', 1080, 440, 20, 20)) > 200, 'chooser card: the general half is white');
+  for (const [slug, template] of TEMPLATE) {
+    if (template === 'hud') continue;
+    assert.ok((await luminance(slug, 10, 10, 20, 20)) > 245, `${slug}: a ${template} card is white`);
+  }
 });
 
 /**
- * The text lines of a card's left column (x 60–580): runs of pixel rows that hold light text on the dark grid, each
- * with its horizontal extent. A lone "." or "," on a line of its own is a band a few pixels wide.
+ * The text lines of a card's left column (x 60–580): runs of pixel rows that hold text (light on the HUD grid, dark on
+ * the white editorial and neutral cards; `light` = a white card), each with its horizontal extent. A lone "." or ","
+ * on a line of its own is a band a few pixels wide. Up to 2 blank rows do not end a line (P2-12): a descender cut by
+ * the window's right edge (the tail of a "g" at x 576–579 under "Seongeun" on en/stats) sits one blank row below its
+ * line and is part of it, while the gap between two text lines is far wider.
  * @param {string} file
+ * @param {boolean} light
  */
-async function textLines(file) {
+async function textLines(file, light) {
   const left = 60;
   const { data, info } = await sharp(file).extract({ left, top: 0, width: 520, height: 630 }).removeAlpha().raw().toBuffer({ resolveWithObject: true });
   const lines = [];
   let line = null;
+  let blank = 0;
   for (let y = 0; y < info.height; y++) {
     let min = Infinity;
     let max = -Infinity;
     for (let x = 0; x < info.width; x++) {
       const i = (y * info.width + x) * 3;
-      if (0.2126 * data[i] + 0.7152 * data[i + 1] + 0.0722 * data[i + 2] > 70) {
+      const lum = 0.2126 * data[i] + 0.7152 * data[i + 1] + 0.0722 * data[i + 2];
+      if (light ? lum < 150 : lum > 70) {
         min = Math.min(min, x);
         max = Math.max(max, x);
       }
     }
     if (min !== Infinity) {
-      line ??= { top: y, min, max };
+      line ??= { top: y, min, max, bottom: y };
+      line.bottom = y;
       line.min = Math.min(line.min, min);
       line.max = Math.max(line.max, max);
-    } else if (line) {
-      lines.push({ top: line.top, x: line.min + left, width: line.max - line.min + 1 });
+      blank = 0;
+    } else if (line && ++blank > 2) {
+      lines.push({ top: line.top, bottom: line.bottom, x: line.min + left, width: line.max - line.min + 1 });
       line = null;
+      blank = 0;
     }
   }
+  if (line) lines.push({ top: line.top, bottom: line.bottom, x: line.min + left, width: line.max - line.min + 1 });
   return lines;
 }
 
 test('final fix 2 item 22: no card leaves a punctuation mark alone on a text line', async () => {
   const orphans = [];
   for (const file of cards()) {
-    for (const line of await textLines(file)) {
+    for (const line of await textLines(file, TEMPLATE.get(key(file)) !== 'hud')) {
       if (line.width < 24) orphans.push(`${key(file)}: a ${line.width}px-wide line at y ${line.top}`);
     }
   }
   assert.deepEqual(orphans, [], orphans.join('\n'));
+});
+
+test('P2-12 review: on the white cards the eyebrow stands alone (a long title never runs into it)', async () => {
+  const merged = [];
+  for (const file of cards()) {
+    if (TEMPLATE.get(key(file)) === 'hud') continue;
+    const [eyebrow] = await textLines(file, true);
+    if (!eyebrow || eyebrow.bottom - eyebrow.top > 40) merged.push(`${key(file)}: first text band ${eyebrow ? eyebrow.bottom - eyebrow.top + 1 : 0}px tall`);
+  }
+  assert.deepEqual(merged, [], merged.join('\n'));
 });
