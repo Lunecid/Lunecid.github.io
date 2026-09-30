@@ -1,4 +1,6 @@
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import ImageViewer from '../../src/islands/ImageViewer';
@@ -270,6 +272,34 @@ describe('ImageViewer', () => {
     await waitFor(() => expect(dialog).toHaveAttribute('data-state', 'closing'));
     await waitFor(() => expect(dialog).not.toHaveAttribute('open'));
     expect(trigger).toHaveFocus();
+  });
+
+  it('F-068 (P-11): the viewer closes faster than it opens: 180ms (= --dur-panel-out), 150ms under reduced motion', async () => {
+    const closeDelays = async (motion: 'full' | 'reduce'): Promise<number[]> => {
+      document.documentElement.setAttribute('data-motion', motion);
+      const { user, trigger, dialog } = setup();
+      await user.click(trigger);
+      expect(dialog).toHaveAttribute('open');
+      const timeouts = vi.spyOn(window, 'setTimeout');
+      try {
+        await user.keyboard('{Escape}');
+        await waitFor(() => expect(dialog).not.toHaveAttribute('open'));
+        return timeouts.mock.calls.map((c) => Number(c[1] ?? 0));
+      } finally {
+        timeouts.mockRestore();
+        cleanup();
+        document.documentElement.setAttribute('data-motion', 'full');
+      }
+    };
+    const full = await closeDelays('full');
+    expect(full).toContain(180);
+    expect(full).not.toContain(250);
+    expect(await closeDelays('reduce')).toContain(150);
+    const css = readFileSync(resolve(process.cwd(), 'src/islands/ImageViewer.css'), 'utf8');
+    expect(css).toMatch(/\.image-viewer\[data-state="closing"\] \{ opacity: 0; transition: opacity var\(--dur-panel-out\) var\(--ease-in\); \}/);
+    expect(css).toMatch(/\[data-state="closing"\] \.image-viewer__stage\[data-flip="on"\] \{\s*transition: transform var\(--dur-panel-out\) var\(--ease-in\), opacity var\(--dur-panel-out\) var\(--ease-in\);/);
+    expect(css).toMatch(/\.image-viewer__stage\[data-flip="on"\] \{\s*transition: transform var\(--dur-panel-in\) var\(--ease-out\), opacity var\(--dur-panel-in\) var\(--ease-out\);/);
+    expect(css).not.toMatch(/250ms/);
   });
 
   it('closing (not opening) emits open-certificate, so its toast never races the open dialog (P2-2)', async () => {

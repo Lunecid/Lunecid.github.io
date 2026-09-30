@@ -43,7 +43,8 @@ interface ViewerItem {
 type Shift = 'none' | 'next' | 'prev' | 'from-next' | 'from-prev';
 
 const FOCUSABLE = 'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])';
-const CLOSE_MS = 250;
+/** F-068 (P-11): = --dur-panel-out (.18s), shorter than the .3s open (--dur-panel-in). */
+const CLOSE_MS = 180;
 const CLOSE_MS_REDUCED = 150;
 const NAV_MS = 180;
 const HASH_PREFIX = '#view-';

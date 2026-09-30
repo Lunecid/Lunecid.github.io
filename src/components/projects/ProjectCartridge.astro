@@ -117,12 +117,12 @@ const sizes = wide ? CARTRIDGE_SIZES.wide : CARTRIDGE_SIZES.normal;
   .cart__body { position: relative; padding: 22px 14px 34px; transition: transform .25s var(--ease-out); }
   .cart__shell {
     position: absolute; inset: 0; z-index: -1;
-    background: #C9CED6; border-radius: 10px 10px 6px 6px; box-shadow: inset 0 -26px 0 #AEB4BE;
+    background: var(--cart-shell); border-radius: 10px 10px 6px 6px; box-shadow: inset 0 -26px 0 var(--cart-shell-shade);
     clip-path: polygon(0 0, calc(100% - 76px) 0, calc(100% - 68px) 10px, 100% 10px, 100% 100%, 0 100%);
   }
   .cart__shell::after {
     content: ""; position: absolute; left: 26px; right: 26px; bottom: 8px; height: 12px;
-    background: repeating-linear-gradient(90deg, #8E949E 0 5px, transparent 5px 10px);
+    background: repeating-linear-gradient(90deg, var(--cart-shell-grip) 0 5px, transparent 5px 10px);
   }
   /* Final fix 2 round 2 item 2: the label is a subgrid of the card's four rows (figure, title, meta, summary + tags),
      which are rows of the whole .cart-grid (below): in a row of cards every title, meta line and tag line starts at the
@@ -211,12 +211,12 @@ const sizes = wide ? CARTRIDGE_SIZES.wide : CARTRIDGE_SIZES.normal;
   /* reduced motion: no lift; shell wash still signals hover */
   :global(:root[data-motion="reduce"]) .cart:hover .cart__body,
   :global(:root[data-motion="reduce"]) .cart:focus-within .cart__body { transform: none; }
-  :global(:root[data-motion="reduce"]) .cart:not(.cart--static):hover .cart__shell { background: #D5D9E0; }
-  /* F-069: no-JS twin — OS reduce without data-motion (colour literal stays in this component, not base.css). */
+  :global(:root[data-motion="reduce"]) .cart:not(.cart--static):hover .cart__shell { background: var(--cart-shell-hover); }
+  /* F-069: no-JS twin — OS reduce without data-motion (the wash stays in this component, not base.css). */
   @media (prefers-reduced-motion: reduce) {
     :global(html:not(.js)) .cart:hover .cart__body,
     :global(html:not(.js)) .cart:focus-within .cart__body { transform: none; }
-    :global(html:not(.js)) .cart:not(.cart--static):hover .cart__shell { background: #D5D9E0; }
+    :global(html:not(.js)) .cart:not(.cart--static):hover .cart__shell { background: var(--cart-shell-hover); }
   }
   /* G-014 / N14: cartridge edge survives forced colours (shell fill is otherwise flattened). */
   @media (forced-colors: active) {

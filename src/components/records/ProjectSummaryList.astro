@@ -49,7 +49,7 @@ const { lang, variant, items } = Astro.props;
 <style>
   .psum { margin-top: 24px; }
   .psum__body { min-width: 0; }
-  .psum__title { font-size: 18px; font-weight: 700; line-height: 1.4; }
+  .psum__title { font-size: var(--fs-sub); font-weight: 700; line-height: 1.4; }
   .psum__title a { text-underline-offset: 3px; }
   .psum__meta { margin-top: 4px; display: flex; flex-wrap: wrap; gap: 0 6px; font-size: 14px; line-height: 1.6; color: var(--read-muted); }
   .psum__meta > span + span::before { content: "·"; margin-right: 6px; }

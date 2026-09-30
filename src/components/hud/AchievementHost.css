@@ -3,7 +3,7 @@
    shared with buttons), a mono "ACHIEVEMENT UNLOCKED" kicker in gold, and a gold ◆ mark.
    Position: right:24px/bottom:24px on desktop/tablet (clear of page titles, which sit at the top); below 734px it
    moves to the bottom, full-width less the gutters, with env(safe-area-inset-bottom) added for the home-bar inset.
-   Max two lines (the description clamps), close button 44×44, 0.3s in / 0.2s out — none under reduced motion.
+   Max two lines (the description clamps), close button 44×44, 0.3s in / 0.2s out (--dur-toast-in / --dur-toast-out) — none under reduced motion.
    Text contrast: --hud-text (#E8EAED) on --hud-panel (#15181F) is 16.1:1; --gold (#F5B301) on the same panel is
    readable-large-text contrast, used only for the short mono kicker and the ◆ mark (spec §4: gold = achievements). */
 .ach-toast-region {
@@ -32,10 +32,10 @@
   color-scheme: dark;
 }
 .ach-toast[data-state='in'] {
-  animation: ach-in .3s var(--ease-out) both;
+  animation: ach-in var(--dur-toast-in) var(--ease-out) both;
 }
 .ach-toast[data-state='out'] {
-  animation: ach-out .2s var(--ease-in) both;
+  animation: ach-out var(--dur-toast-out) var(--ease-in) both;
 }
 /* Controller ruling 1: none under reduced motion (no fade replacement — the toast simply appears/disappears). */
 :root[data-motion='reduce'] .ach-toast[data-state='in'],

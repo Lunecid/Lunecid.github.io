@@ -94,16 +94,17 @@ describe('design tokens (src/styles/tokens.css)', () => {
 
   it('type scale per breakpoint', () => {
     const scale: Record<string, [string, string, string]> = {
-      '--fs-name': ['40px', '60px', '76px'],
-      '--fs-display': ['32px', '48px', '56px'],
-      '--fs-h2': ['26px', '28px', '32px'],
-      '--fs-sub': ['19px', '21px', '24px'],
+      // G-015 (P-11): rem at the same default sizes (40/60/76, 32/48/56, 26/28/32, 19/21/24px at a 16px root).
+      '--fs-name': ['2.5rem', '3.75rem', '4.75rem'],
+      '--fs-display': ['2rem', '3rem', '3.5rem'],
+      '--fs-h2': ['1.625rem', '1.75rem', '2rem'],
+      '--fs-sub': ['1.1875rem', '1.3125rem', '1.5rem'],
     };
     const [base, tablet, desktop] = [rootDecls(BASE), rootDecls(TABLET), rootDecls(DESKTOP)];
     for (const [name, [b, t, dk]] of Object.entries(scale)) {
       expect([base.get(name), tablet.get(name), desktop.get(name)], name).toEqual([b, t, dk]);
     }
-    expect(base.get('--fs-body')).toBe('17px');
+    expect(base.get('--fs-body')).toBe('1.0625rem');
     expect(tablet.has('--fs-body') || desktop.has('--fs-body')).toBe(false);
     expect(base.get('--lh-body')).toBe('1.7');
     const en = parseRules(read('src/styles/tokens.css')).find((r) => r.selector === ':lang(en)');
@@ -116,7 +117,11 @@ describe('design tokens (src/styles/tokens.css)', () => {
 
   it('D-2 XL steps: the HUD container is 1360px from 1600px and 1440px from 1800px; type and gutters step up; --container stays', () => {
     expect(rootDecls(BASE).get('--container-hud')).toBe('var(--container)');
-    const px = (v: string | undefined): number => Number(/^(\d+)px$/.exec(v ?? '')?.[1]);
+    // px lengths as they are; rem type tokens at the 16px default (G-015)
+    const px = (v: string | undefined): number => {
+      const m = /^(\d*\.?\d+)(px|rem)$/.exec(v ?? '');
+      return m ? Number(m[1]) * (m[2] === 'rem' ? 16 : 1) : NaN;
+    };
     const desktop = rootDecls(DESKTOP);
     const large = rootDecls('@media (min-width: 1600px)');
     const xl = rootDecls('@media (min-width: 1800px)');
@@ -138,10 +143,39 @@ describe('design tokens (src/styles/tokens.css)', () => {
   it('--fs-label and --fs-caption are 13–14px and --fs-min is 12px', () => {
     const d = rootDecls(BASE);
     for (const name of ['--fs-label', '--fs-caption']) {
-      const px = Number(/^(\d+(?:\.\d+)?)px$/.exec(d.get(name) ?? '')?.[1]);
+      const px = Number(/^(\d*\.?\d+)rem$/.exec(d.get(name) ?? '')?.[1]) * 16;
       expect(px >= 13 && px <= 14, `${name} = ${d.get(name)}`).toBe(true);
     }
-    expect(d.get('--fs-min')).toBe('12px');
+    expect(d.get('--fs-min')).toBe('.75rem');
+  });
+
+  it('G-015 / F-030 (P-11): every type token is rem at its 16px-default size in every breakpoint step; layout stays px', () => {
+    const all = parseRules(read('src/styles/tokens.css')).flatMap((r) => [...r.decls].map(([k, v]) => ({ media: r.media, k, v })));
+    const fs = all.filter((d) => d.k.startsWith('--fs-'));
+    expect(fs.length).toBeGreaterThanOrEqual(10 + 4 * 4);
+    for (const d of fs) expect(d.v, `${d.k} ${d.media ?? 'base'}`).toMatch(/^\d*\.?\d+rem$/);
+    const base = rootDecls(BASE);
+    const at16 = (name: string) => Number(/^(\d*\.?\d+)rem$/.exec(base.get(name) ?? '')?.[1]) * 16;
+    expect(['--fs-name', '--fs-display', '--fs-h2', '--fs-sub', '--fs-body', '--fs-small', '--fs-meta', '--fs-caption', '--fs-label', '--fs-min'].map(at16))
+      .toEqual([40, 32, 26, 19, 17, 15, 14, 13, 13, 12]);
+    expect(base.get('--fs-meta')).toBe('.875rem');
+    for (const name of ['--gutter', '--container', '--nav-h', '--section-pad-y', '--tap', '--bracket']) expect(base.get(name), name).toMatch(/^\d+px$/);
+    // F-082 (owner decision 15 (a)): 38em stays; the comment states what it measures.
+    expect(read('src/styles/tokens.css')).toContain('38em ≈ 46–55 Korean characters at 17px');
+  });
+
+  it('F-068 (P-11): panel and toast motion tokens; the panel closes faster than it opens', () => {
+    const d = rootDecls(BASE);
+    expect(d.get('--dur-panel-in')).toBe('.3s');
+    expect(d.get('--dur-panel-out')).toBe('.18s');
+    expect(parseFloat(d.get('--dur-panel-out')!)).toBeLessThan(parseFloat(d.get('--dur-panel-in')!));
+    expect(d.get('--dur-toast-in')).toBe('.3s');
+    expect(d.get('--dur-toast-out')).toBe('.2s');
+  });
+
+  it('F-067 (P-11): the cartridge shell colours are tokens', () => {
+    const d = rootDecls(BASE);
+    expect(['--cart-shell', '--cart-shell-hover', '--cart-shell-shade', '--cart-shell-grip'].map((n) => d.get(n))).toEqual(['#C9CED6', '#D5D9E0', '#AEB4BE', '#8E949E']);
   });
 
   it('motion tokens match spec §4', () => {

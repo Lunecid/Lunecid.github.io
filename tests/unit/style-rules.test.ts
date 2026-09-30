@@ -233,6 +233,81 @@ function violationsOf(rule: string): Violation[] {
   return violations.filter((x) => x.rule === rule);
 }
 
+
+// F-030 (P-11): px font-size literals. Type sizes come from the rem tokens of tokens.css (--fs-*); a px literal in a
+// font-size or font declaration is allowed only where PX_FONT_BASELINE lists it. The baseline is the count P2 left
+// (P-11 applied): it only shrinks, never grows. Exempt: tokens.css (it defines the scale) and the membership card's
+// Anton title (a printed-card lettering sized to its card box, not body type).
+const PX_FONT_EXEMPT_FILES = new Set(['src/styles/tokens.css']);
+const PX_FONT_EXEMPT_RULES: { file: string; selector: string }[] = [{ file: 'src/components/player-log/MembershipCard.astro', selector: '.mcard__title' }];
+/** "<selector> | <size>" for every font-size / font declaration of a file whose size carries a px literal. */
+function pxFontSizes(file: string, text: string): string[] {
+  if (PX_FONT_EXEMPT_FILES.has(file)) return [];
+  const css = scannedCss(file, text);
+  const out: string[] = [];
+  for (const m of css.matchAll(/([^{}]*)\{([^{}]*)\}/g)) {
+    const selector = m[1].trim().replace(/\s+/g, ' ');
+    if (PX_FONT_EXEMPT_RULES.some((x) => x.file === file && x.selector === selector)) continue;
+    for (const { prop, value } of declarations(`{${m[2]}}`)) {
+      if (prop !== 'font-size' && prop !== 'font') continue;
+      const size = prop === 'font' ? shorthandSize(value) : value;
+      if (size && /(^|[^\w.-])\d*\.?\d+px\b/.test(size)) out.push(`${selector} | ${size}`);
+    }
+  }
+  return out.sort();
+}
+
+const PX_FONT_BASELINE_MAX = 174;
+const PX_FONT_BASELINE: Record<string, string[]> = {
+  'src/components/common/Figure.astro': ['.figure__cap | 15px'],
+  'src/components/common/VariantSwitch.astro': ['.variant-switch | 13px'],
+  'src/components/data/DataNav.astro': ['.data-nav__name | 20px'],
+  'src/components/github/GitHubSection.astro': ['.gh__asof | 13px', '.gh__desc | 15px', '.gh__meta | 13px', '.gh__name | 15px', '.gh__total | 15px'],
+  'src/components/home/HelloProfile.astro': ['.hello__chips li | 13px', '.hello__contact | 15px', '.hello__h | 13px', '.hello__list | 15px', '.hello__loc | 14px', '.hello__status | 15px', '.hello__title | 32px', '.hello__title | 40px'],
+  'src/components/home/PatchNotes.astro': ['.pn__ptr | 12px', '.pn__title | 17px'],
+  'src/components/home/ResearchHighlight.astro': ['.now__text | 15px', '.paper__authors | 14px', '.paper__gloss | 15px', '.paper__oral | 13px', '.paper__venue | 14px'],
+  'src/components/hud/AchievementHost.css': ['.ach-toast__close | 18px', '.ach-toast__mark | 15px', '.ach-toast__text | 14px'],
+  'src/components/hud/CrtIntro.astro': ['.crt__caption | clamp(28px, 5.2vw, 56px)', '.crt__start | clamp(14px, 2.3vw, 22px)'],
+  'src/components/hud/Hero.astro': ['.hero__chip-face | 13px', '.hero__jobfit | 15px'],
+  'src/components/hud/HudNav.astro': ['.hud-nav__bar | 13px', '.hud-nav__list a | 16px', '.hud-nav__toggle | 13px'],
+  'src/components/hud/MainMenu.astro': ['.mm__cap | 14px', '.mm__link | 18px', '.mm__link | 20px'],
+  'src/components/hud/SiteFooter.astro': ['.site-footer__motion-chip | 12px'],
+  'src/components/player-log/AchievementMeter.astro': ['.ach-meter__count | clamp(28px, 3vw, 40px)', '.ach-meter__note | 14px', '.ach-meter__slot | 15px'],
+  'src/components/player-log/FavoriteTiles.astro': ['.fav-tile__cap strong | 16px', '.fav-tile__cap strong | 20px', '.fav-tile__kicker | 12px'],
+  'src/components/player-log/GameAchievements.astro': ['.game-ach__note | 15px'],
+  'src/components/player-log/MembershipCard.astro': ['.mcard__band | 12px', '.mcard__field dd | 15px', '.mcard__field dt | 13px', '.mcard__sticker | 12px', '.mcard__sticker | 13px', '.mcard__title small | 13px'],
+  'src/components/player-log/SiteAchievementList.astro': ['.site-ach__desc | 15px', '.site-ach__hint | 14px', '.site-ach__icon | 16px', '.site-ach__note, .site-ach__nojs | 14px', '.site-ach__progress | 15px'],
+  'src/components/projects/ProjectAudience.astro': ['.audience__text | 16px'],
+  'src/components/projects/ProjectCartridge.astro': ['.cart__label--text .cart__title | 16px', '.cart__label--text .cart__title | 18px', '.cart__plate-id | 13px', '.cart__plate-id | 16px', '.cart__plate-period | 13px', '.cart__plate-tag | 13px', '.cart__sticker | 12px', '.cart__summary | 13px', '.cart__title | 14px', '.cart__title | 16px'],
+  'src/components/projects/ProjectDetails.astro': ['.pd__figcap | 13px', '.pd__figcap-text | 14px', '.pd__table th | 14px', '.pd__table | 15px'],
+  'src/components/projects/ProjectLinks.astro': ['.plinks__private | 14px'],
+  'src/components/projects/TagFilter.astro': ['.tag-filter__btn | 13px'],
+  'src/components/records/AwardList.astro': ['.award__contest | 15px', '.award__medal | 13px', '.award__org, .award__note | 14px'],
+  'src/components/records/CredentialList.astro': ['.creds__ev | 13px', '.creds__meta | 13px', '.creds__primary | 16px', '.creds__secondary | 14px'],
+  'src/components/records/EducationTimeline.astro': ['.timeline__degree | 16px', '.timeline__gpa, .timeline__lab, .timeline__thesis | 14px'],
+  'src/components/records/JobFitTable.astro': ['.jobfit__asof | 14px', '.jobfit__ev | 13px', '.jobfit__freq-value | 13px', '.jobfit__head th | 13px', '.jobfit__intro | 16px', '.jobfit__label | 13px', '.jobfit__note | 14px', '.jobfit__pending | 16px', '.jobfit__req | 17px', '.jobfit__status | 13px', '.jobfit__table | 14px'],
+  'src/components/records/ProjectSummaryList.astro': ['.psum__meta | 14px', '.psum__period | 13px', '.psum__summary | 16px'],
+  'src/components/records/RecordsHead.astro': ['.rhead__contact | 15px', '.rhead__hello | 28px', '.rhead__hello | 34px', '.rhead__hello | 40px', '.rhead__hello | min(34px, 9svh)', '.rhead__hello | min(40px, 9svh)', '.rhead__role | 15px', '.rhead__status | 14px', '.rnav__link | 14px'],
+  'src/components/records/SkillList.astro': ['.skills__name | 14px', '.skills__name | 15px'],
+  'src/components/research/AucOverallChart.astro': ['.chart__caption-text | 14px', '.chart__label | 13px', '.chart__source | 13px', '.chart__summary | 13px', '.chart__table table | 14px', '.chart__table thead th | 13px', '.chart__value, .chart__tick, .chart__chance-label | 13px'],
+  'src/components/research/BibtexBlock.astro': ['.bib__code | 13px', '.bib__copy | 13px', '.bib__title | 15px'],
+  'src/components/research/InProgressList.astro': ['.progress-list__body | 16px'],
+  'src/components/research/PaperLinks.astro': ['.pub__abstract | 15px', '.pub__btn, .pub__pending | 13px', '.pub__panel-label | 13px'],
+  'src/components/research/PaperSheet.astro': ['.paper | 17px', '.paper__affil | 14px', '.paper__author-name | 15px', '.paper__link | 13px', '.paper__note, .paper__links | 15px', '.paper__running | 14px', '.paper__title | 24px', '.paper__title-ko | 17px', '.paper__title-ko-mark | 14px'],
+  'src/components/research/PublicationItem.astro': ['.pub__authors | 14px', '.pub__gloss | 14px', '.pub__oral | 13px', '.pub__tldr | 16px', '.pub__venue | 14px'],
+  'src/components/stats/DailyChart.astro': ['.stats__axis | 13px', '.stats__chart-max | 12px', '.stats__table | 15px'],
+  'src/components/stats/RankTable.astro': ['.stats__table | 15px'],
+  'src/components/stats/StatsSummary.astro': ['.stats :global(.stats__live-label) | 14px', '.stats__asof | 14px', '.stats__offline-tag | 13px', '.stats__source | 13px', '.stats__total-label | 14px'],
+  'src/islands/CharacterStage.css': ['.char-stage__btn | 13px'],
+  'src/islands/FavoriteGames.css': ['.fg-acct__badges li | 12px', '.fg-acct__hd | 12px', '.fg-acct__nm | 22px', '.fg-acct__row dd | 18px', '.fg-acct__row | 14px', '.fg-acct__src | 12px', '.fg-acct__sub | 12px', '.fg__tab b | 15px', '.fg__tab small | 12px', '.fg__title | 34px', '.fg__title | 40px', '.fg__title | 46px', '.fg__why | 16px'],
+  'src/islands/ImageViewer.css': ['.image-viewer__cap | 14px', '.image-viewer__close | var(--fs-label, 12px)', '.image-viewer__close-x | 18px', '.image-viewer__counter | 13px', '.image-viewer__nav | 18px', '.image-viewer__strip | var(--fs-label, 12px)'],
+  'src/styles/editorial.css': [':root[data-variant="data"] article.ed-prose pre | 14px'],
+  'src/styles/hud.css': ['.btn | 14px', '.btn--sm | 13px', '.sec-more | 15px'],
+  'src/styles/read.css': ['.lh-chip | 14px', '.lh-chip--mono | 13px', '.prose pre | 14px'],
+  'src/views/LegalView.astro': ['.legal :global(table) | 14px', '.legal :global(td:first-child) | 16px', '.legal :global(td:last-child) | 13px'],
+  'src/views/ResearchView.astro': ['.for-labs__body | 17px'],
+};
+
 describe('style rules over src/**', () => {
   it('no transition: all', () => {
     expect(violationsOf('transition-all')).toEqual([]);
@@ -252,6 +327,59 @@ describe('style rules over src/**', () => {
 
   it('no font-size below 12px (px, rem/em, pt converted)', () => {
     expect(violationsOf('font-size')).toEqual([]);
+  });
+
+  it('F-030: px font-size literals only where the shrinking baseline lists them (tokens.css and the Anton card title exempt)', () => {
+    const files = walk(join(ROOT, 'src')).filter((f) => /\.(css|astro)$/.test(f));
+    expect(files).toEqual(expect.arrayContaining(GLOBAL_STYLES));
+    const actual = Object.fromEntries(files.map((f) => [f, pxFontSizes(f, read(f))] as const).filter(([, list]) => list.length > 0));
+    if (process.env.PRINT_PX_FONT_BASELINE) console.log(JSON.stringify(actual, null, 2));
+    for (const file of new Set([...Object.keys(actual), ...Object.keys(PX_FONT_BASELINE)])) {
+      const got = actual[file] ?? [];
+      const allowed = [...(PX_FONT_BASELINE[file] ?? [])].sort();
+      const extra = got.filter((x, i) => got.indexOf(x) === i && got.filter((y) => y === x).length > allowed.filter((y) => y === x).length);
+      const gone = allowed.filter((x, i) => allowed.indexOf(x) === i && allowed.filter((y) => y === x).length > got.filter((y) => y === x).length);
+      expect(extra, `${file}: new px font sizes; use a --fs-* token`).toEqual([]);
+      expect(gone, `${file}: literals gone; delete them from PX_FONT_BASELINE (it only shrinks)`).toEqual([]);
+    }
+    const total = Object.values(PX_FONT_BASELINE).reduce((n, list) => n + list.length, 0);
+    expect(total, 'PX_FONT_BASELINE_MAX only goes down').toBeLessThanOrEqual(PX_FONT_BASELINE_MAX);
+    // The px literals P2 left are listed by name (plan Appendix C Task 14): the editorial <pre> (Task 1) and DataNav's name (Task 2).
+    expect(PX_FONT_BASELINE['src/styles/editorial.css']).toContain(':root[data-variant="data"] article.ed-prose pre | 14px');
+    expect(PX_FONT_BASELINE['src/components/data/DataNav.astro']).toContain('.data-nav__name | 20px');
+    // Exemptions: tokens.css is never listed; the Anton card title keeps its px sizes without an entry.
+    expect(Object.keys(PX_FONT_BASELINE)).not.toContain('src/styles/tokens.css');
+    expect(stripComments(read('src/components/player-log/MembershipCard.astro'))).toMatch(/\.mcard__title\s*\{[^}]*font-size:\s*\d+px/);
+    expect((PX_FONT_BASELINE['src/components/player-log/MembershipCard.astro'] ?? []).some((x) => x.startsWith('.mcard__title |'))).toBe(false);
+  });
+
+  it('F-030: item titles are set in --fs-sub', () => {
+    const TITLES: [string, string][] = [
+      ['src/components/records/EducationTimeline.astro', '.timeline__school'],
+      ['src/components/records/ProjectSummaryList.astro', '.psum__title'],
+      ['src/components/records/AwardList.astro', '.award__title'],
+      ['src/components/research/InProgressList.astro', '.progress-list__name'],
+      ['src/components/research/PublicationItem.astro', '.pub__title'],
+      ['src/components/research/InterestCards.astro', '.interests__title'],
+      ['src/components/home/ResearchHighlight.astro', '.paper__title'],
+      ['src/components/home/ResearchHighlight.astro', '.rh-ed__title'],
+      ['src/components/player-log/SiteAchievementList.astro', '.site-ach__title'],
+      ['src/styles/editorial.css', ':root[data-variant="data"] .ed-item__title'],
+    ];
+    for (const [file, selector] of TITLES) {
+      const escaped = selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const body = new RegExp(`(?:^|[}\\s])${escaped}\\s*\\{([^}]*)\\}`).exec(stripComments(read(file)))?.[1];
+      expect(body, `${selector} in ${file}`).toMatch(/font-size:\s*var\(--fs-sub\)/);
+    }
+  });
+
+  it('F-067: the cartridge has no colour literal; the membership card keeps its scoped --mc-* palette with an exemption note', () => {
+    const cart = scannedCss('src/components/projects/ProjectCartridge.astro', read('src/components/projects/ProjectCartridge.astro'));
+    expect(cart.match(/#[0-9a-fA-F]{3,8}\b|\brgba?\(|\bhsla?\(/g) ?? []).toEqual([]);
+    const card = read('src/components/player-log/MembershipCard.astro');
+    expect(card).toMatch(/--mc-\* is a scoped palette, exempt from the tokens-only colour rule/);
+    const literals = scannedCss('src/components/player-log/MembershipCard.astro', card).split(';').filter((d) => /#[0-9a-fA-F]{3,8}\b|\brgba?\(/.test(d));
+    for (const d of literals) expect(d.trim(), 'colour literals only in --mc-* declarations').toMatch(/^(?:[^{]*\{\s*)?--mc-[\w-]+:/);
   });
 
   it('no negative letter-spacing', () => {
@@ -324,6 +452,23 @@ describe('style scanner fixtures', () => {
     const tsx = "const t = { transition: 'all 1s' };\nexport const X = () => <motion.div transition={{ duration: 0.6, repeat: Infinity }} style={{ fontSize: 8, letterSpacing: -1 }} />;";
     expect(scanSource('src/islands/Fixture.tsx', tsx)).toEqual([]);
     expect(scanSource('src/lib/fixture.ts', "export const css = 'transition: all 1s; font-size: 8px';")).toEqual([]);
+  });
+
+  it('F-030 px font-size scan: px literals in font-size and the font shorthand; tokens, rem and the exemptions pass', () => {
+    const css = [
+      '.a { font-size: 14px; }',
+      '.b { font: 700 15px/1.3 var(--font-mono); }',
+      '.c { font-size: clamp(28px, 5vw, 56px); }',
+      '.d { font: 600 var(--fs-label, 12px)/1.5 var(--font-mono); }',
+      '.e { font-size: var(--fs-sub); padding: 14px; }',
+      '.f { font: 600 var(--fs-label)/1.5 var(--font-mono); }',
+      '.g { font-size: .875rem; line-height: 20px; }',
+      '@media (min-width: 734px) { .a { font-size: 16px; } }',
+    ].join('\n');
+    expect(pxFontSizes('fixture.css', css)).toEqual(['.a | 14px', '.a | 16px', '.b | 15px', '.c | clamp(28px, 5vw, 56px)', '.d | var(--fs-label, 12px)']);
+    expect(pxFontSizes('src/styles/tokens.css', ':root { --x: 1px; } .a { font-size: 14px; }')).toEqual([]);
+    const card = '<style>.mcard__title { font-size: 31px; } .mcard__title small { font-size: 13px; }</style>';
+    expect(pxFontSizes('src/components/player-log/MembershipCard.astro', card)).toEqual(['.mcard__title small | 13px']);
   });
 
   it('10.5pt passes, 8pt fails', () => {

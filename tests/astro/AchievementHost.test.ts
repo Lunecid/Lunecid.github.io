@@ -42,6 +42,6 @@ describe('AchievementHost.astro', () => {
     expect(readSource('src/components/hud/AchievementHost.astro')).toContain("import './AchievementHost.css';");
     const css = readSource('src/components/hud/AchievementHost.css');
     expect(css).toContain(":root[data-motion='reduce'] .ach-toast[data-state='in']");
-    expect(css).toMatch(/\.ach-toast\[data-state='out'\] \{\s*animation: ach-out \.2s/);
+    expect(css).toMatch(/\.ach-toast\[data-state='out'\] \{\s*animation: ach-out var\(--dur-toast-out\) var\(--ease-in\)/); // F-068: .2s, named (tokens.test.ts)
   });
 });

@@ -40,6 +40,8 @@ const Heading = headingLevel === 2 ? 'h2' : 'h3';
 
 <style>
   .mcard {
+    /* F-067 (P-11): --mc-* is a scoped palette, exempt from the tokens-only colour rule: the printed membership card
+       keeps its own paper, ink and sticker colours, used nowhere else on the site. */
     --mc-paper: #F2F0EA; --mc-ink: #111111; --mc-label: #66625A; --mc-pink: #FF3D6E;
     --mc-band-ink: #111111; /* white on pink is 3.42:1 (fails AA); #111 is 5.53:1 */
     --mc-bar: #FFFFFF; --mc-sticker: #FFD60A; --mc-photo-bg: #DDDDDD; --mc-edge: rgba(0, 0, 0, .08);

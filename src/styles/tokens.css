@@ -42,6 +42,11 @@
   --read-line-strong: #C7C7CC;
   --chip-bg: #23262D;                         /* hello-profile skill chips */
   --scrim: rgba(0, 0, 0, .42);                /* certificate modal backdrop */
+  /* F-067 (P-11): the project cartridge's grey plastic shell (ProjectCartridge.astro .cart__shell) */
+  --cart-shell: #C9CED6;
+  --cart-shell-hover: #D5D9E0;                /* the reduced-motion hover wash that replaces the lift */
+  --cart-shell-shade: #AEB4BE;                /* the shell's bottom lip */
+  --cart-shell-grip: #8E949E;                 /* the grip ridges */
 
   /* ── paper sheet (D-15): the CoG paper page is a white "first page" on the dark HUD background ── */
   --paper-bg: #FFFFFF;
@@ -111,21 +116,25 @@
                ui-monospace, SFMono-Regular, Consolas, monospace;   /* Hangul in mono labels falls back to SB Sans */
   --font-card: var(--font-anton, Impact, "Arial Narrow Bold", sans-serif);  /* membership card only; --font-anton comes from <Font> on Player Log pages */
 
-  --fs-name: 40px;      /* hero name (spec: up to 76) */
-  --fs-display: 32px;
-  --fs-h2: 26px;
-  --fs-sub: 19px;
-  --fs-body: 17px;
-  --fs-small: 15px;
-  --fs-caption: 13px;
-  --fs-label: 13px;
-  --fs-min: 12px;       /* absolute minimum, only for exceptional micro-text */
+  /* G-015 (P-11): type sizes in rem, so the browser's default font size scales them (16px default = the px values in
+     the comments); layout sizes stay px. */
+  --fs-name: 2.5rem;         /* 40px; hero name (spec: up to 76) */
+  --fs-display: 2rem;        /* 32px */
+  --fs-h2: 1.625rem;         /* 26px */
+  --fs-sub: 1.1875rem;       /* 19px; also every item title (F-030) */
+  --fs-body: 1.0625rem;      /* 17px */
+  --fs-small: .9375rem;      /* 15px */
+  --fs-meta: .875rem;        /* 14px; meta lines (F-030) */
+  --fs-caption: .8125rem;    /* 13px */
+  --fs-label: .8125rem;      /* 13px */
+  --fs-min: .75rem;          /* 12px; absolute minimum, only for exceptional micro-text */
   --lh-display: 1.2;
   --lh-h2: 1.3;
   --lh-sub: 1.4;
   --lh-body: 1.7;
   --lh-caption: 1.5;
-  /* Reading measure (spec §4): ≈38 Korean characters; English pages switch to 36em ≈ 66 characters (P2-37). */
+  /* Reading measure (spec §4): 38em ≈ 46–55 Korean characters at 17px (F-082, owner decision 15 (a)); English pages
+     switch to 36em ≈ 66 characters (P2-37). */
   --measure: 38em;
   --ls-label: .16em;    /* Latin HUD labels only; Hangul stays 0 */
 
@@ -139,6 +148,13 @@
   --dur-press: .15s;
   --dur-fade: .2s;       /* reduced-motion replacement */
   --dur-streak: .8s;
+  /* F-068 (P-11): a panel (the image viewer) opens with --dur-panel-in and --ease-out and closes faster with
+     --dur-panel-out and --ease-in; ImageViewer.tsx CLOSE_MS matches --dur-panel-out. */
+  --dur-panel-in: .3s;
+  --dur-panel-out: .18s;
+  /* the achievement toast (values unchanged; src/scripts/achievement-host.ts OUT_MS matches --dur-toast-out) */
+  --dur-toast-in: .3s;
+  --dur-toast-out: .2s;
 
   /* ── layout ── */
   --container: 1180px;   /* includes gutters; the base width of every band's container */
@@ -169,18 +185,18 @@
   --page-fill: var(--ed-fill); --page-fill-ink: var(--ed-fill-ink);
 }
 @media (min-width: 734px) {
-  :root { --fs-name: 60px; --fs-display: 48px; --fs-h2: 28px; --fs-sub: 21px; --gutter: 32px; --section-pad-y: 44px; }
+  :root { --fs-name: 3.75rem; --fs-display: 3rem; --fs-h2: 1.75rem; --fs-sub: 1.3125rem; --gutter: 32px; --section-pad-y: 44px; } /* type: 60 / 48 / 28 / 21px */
 }
 @media (min-width: 1068px) {
-  :root { --fs-name: 76px; --fs-display: 56px; --fs-h2: 32px; --fs-sub: 24px; --gutter: 56px; }
+  :root { --fs-name: 4.75rem; --fs-display: 3.5rem; --fs-h2: 2rem; --fs-sub: 1.5rem; --gutter: 56px; } /* type: 76 / 56 / 32 / 24px */
 }
 /* D-2 XL steps (the owner reviews at 2560 CSS px): wider HUD container, wider gutters, slightly larger display type.
    src/lib/images.ts and src/lib/characters.ts compute their `sizes` from these values: keep them in sync. */
 @media (min-width: 1600px) {
-  :root { --container-hud: 1360px; --gutter: 64px; --fs-name: 84px; --fs-display: 60px; --fs-h2: 34px; --fs-sub: 25px; }
+  :root { --container-hud: 1360px; --gutter: 64px; --fs-name: 5.25rem; --fs-display: 3.75rem; --fs-h2: 2.125rem; --fs-sub: 1.5625rem; } /* type: 84 / 60 / 34 / 25px */
 }
 @media (min-width: 1800px) {
-  :root { --container-hud: 1440px; --gutter: 72px; --fs-name: 90px; --fs-display: 64px; --fs-h2: 36px; --fs-sub: 26px; }
+  :root { --container-hud: 1440px; --gutter: 72px; --fs-name: 5.625rem; --fs-display: 4rem; --fs-h2: 2.25rem; --fs-sub: 1.625rem; } /* type: 90 / 64 / 36 / 26px */
 }
 :lang(en) { --lh-display: 1.07; --lh-h2: 1.125; --lh-sub: 1.2; --lh-body: 1.47; --measure: 36em; }
 /* Printed paper page (D-15): black on white. */
