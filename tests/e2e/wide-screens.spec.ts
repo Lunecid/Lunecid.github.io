@@ -86,6 +86,21 @@ test.describe('D-2 XL steps: the section container widens; every band keeps one 
       expect(right, 'each row reaches the grid\'s right edge').toBeCloseTo(grid.x + grid.width, 0);
     }
   });
+
+  // P-07 acceptance (F-062, owner decision 13): the double-width project slot holds a linked case study, not a card without a page.
+  for (const width of [1440, 1920]) {
+    test(`/game/projects/ at ${width}px: the double-width project card is a linked case study`, async ({ page }) => {
+      await open(page, '/game/projects/', width);
+      const projects = page.locator('#project-grid .cart:not(.cart--wide)');
+      const widths = await projects.evaluateAll((els) => els.map((el) => el.getBoundingClientRect().width));
+      const single = Math.min(...widths);
+      const doubles = widths.map((w, i) => (w > 1.5 * single ? i : -1)).filter((i) => i >= 0);
+      expect(doubles.length, 'one project card spans two columns').toBe(1);
+      const card = projects.nth(doubles[0]!);
+      await expect(card.locator('.cart__link')).toHaveCount(1);
+      await expect(card).not.toHaveClass(/cart--static/);
+    });
+  }
 });
 
 test.describe('D-3 / P1-5: home cartridges', () => {

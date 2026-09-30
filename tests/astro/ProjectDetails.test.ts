@@ -178,4 +178,22 @@ describe('ProjectDetails.astro', () => {
     expect(html).toMatch(/<img[^>]*fetchpriority="high"/);
     expect(html).not.toMatch(/badge|◆|FIG|RISK HEATMAP|hud-grid|bracket|\bcut\b/);
   });
+
+  it('P-07 F-005: the back link to the project list; the game numbers it as its nav does, the general version is a plain underlined link', async () => {
+    const game = await renderAstro(ProjectDetails, { props: { variant: 'game', lang: 'ko', title: 't', rows } });
+    expect(game).toMatch(/<a class="pd__back" href="\/game\/projects\/"[^>]*><span aria-hidden="true"[^>]*>←<\/span> <span class="pd__back-num" aria-hidden="true"[^>]*>02<\/span> 프로젝트<\/a>/);
+    const gameEn = await renderAstro(ProjectDetails, { props: { variant: 'game', lang: 'en', title: 't', rows } });
+    expect(gameEn).toMatch(/<a class="pd__back" href="\/en\/game\/projects\/"[^>]*>[\s\S]*?PROJECTS<\/a>/);
+    const data = await renderAstro(ProjectDetails, { props: { variant: 'data', lang: 'ko', title: 't', rows } });
+    expect(data).toMatch(/<a class="ed-link" href="\/data\/projects\/"[^>]*><span aria-hidden="true"[^>]*>←<\/span> 프로젝트<\/a>/);
+    expect(data).not.toMatch(/pd__back/);
+  });
+
+  it('P-07 F-042 (P2-6 review): the general version shows an uncited cover\'s own caption, without a figure number', async () => {
+    const html = await renderAstro(ProjectDetails, {
+      props: { variant: 'data', lang: 'ko', title: 't', rows, figure: { src: cover, alt: '히트맵', label: 'RISK HEATMAP', caption: '사고 위험도 지도.' } },
+    });
+    expect(html).toMatch(/<figure class="ed-figure pd-ed__fig"[\s\S]*<figcaption class="ed-figcap"[^>]*>사고 위험도 지도\.<\/figcaption>/);
+    expect(html).not.toMatch(/ed-figcap__num|id="figure-/);
+  });
 });

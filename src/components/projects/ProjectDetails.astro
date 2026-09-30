@@ -6,8 +6,8 @@
 // slot (summary) sits under the <h1>.
 // P2-6: the general version (variant 'data') renders the same content as editorial markup: serif h1, an .ed-table, the
 // award as text with an underlined certificate link, the cover under a heavy rule, captioned "그림 N —" when the body
-// cites it. P-06 F-065: the cover's id="figure-N" sits on its <figure> in both versions. P-07: a back link to the
-// project list above the caption (F-005: '← 02 프로젝트' in the game, '← 프로젝트' in the general version); the game
+// cites it, else its own caption sentence (F-042). P-06 F-065: the cover's id="figure-N" sits on its <figure> in both
+// versions. P-07: a back link to the project list above the section caption (SectionLabel) (F-005: '← 02 프로젝트' in the game, '← 프로젝트' in the general version); the game
 // strip reads "FIG · <label>" without a number (owner decision 10 (b)), and an uncited cover shows its own caption
 // sentence (F-042, cover.caption) under the strip.
 import type { ImageMetadata } from 'astro';
@@ -179,10 +179,12 @@ const backNum = String(getVariant(variant).nav.findIndex((item) => item.key === 
         </div>
       )}
       {figure && (
-        <figure id={figure.number !== undefined ? `figure-${figure.number}` : undefined} class="ed-figure pd-ed__fig">
+        <figure id={figureId} class="ed-figure pd-ed__fig">
           <Picture class="pd-ed__img" src={figure.src} alt={figure.alt} formats={['avif', 'webp']} fallbackFormat="webp" widths={figWidths} sizes={DETAIL_FIGURE_SIZES} priority />
-          {figure.number !== undefined && figure.caption && (
+          {figure.number !== undefined && figure.caption ? (
             <figcaption class="ed-figcap"><span class="ed-figcap__num">{editorialFigureLabel(lang, figure.number)}</span> {figure.caption}</figcaption>
+          ) : figure.caption && (
+            <figcaption class="ed-figcap">{figure.caption}</figcaption>
           )}
           {/* P-06 F-007 step 2 (P2-5 review): the same data table as the game cover, in the editorial tone. */}
           {figure.table && figure.number !== undefined && (

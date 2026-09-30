@@ -140,4 +140,13 @@ describe('PaperSheet.astro', () => {
     expect(src).toMatch(/\.paper \[lang="ko"\], \.paper__foot:lang\(ko\) \{ font-family: var\(--font-paper-ko\); \}/);
     expect(src).not.toMatch(/@import|@font-face|fonts\.googleapis/);
   });
+
+  it('P-07 F-048 (owner decision 18): with requestEmail, a line under Code asks for the full text by email', async () => {
+    const html = await renderAstro(PaperSheet, { props: { lang: 'ko', paper: ko, requestEmail: 'me@example.com' } });
+    expect(text(html)).toContain('전문은 이메일로 요청해 주세요: me@example.com');
+    expect(html).toMatch(/<a class="paper__link" href="mailto:me@example\.com"/);
+    expect(text(html).indexOf('Code:')).toBeGreaterThan(-1);
+    expect(text(html).indexOf('Code:')).toBeLessThan(text(html).indexOf('전문은 이메일로'));
+    expect(await render('en', en)).not.toContain('mailto:');
+  });
 });

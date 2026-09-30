@@ -18,7 +18,8 @@ test.describe('general projects page (P2-6)', () => {
     const shown = await items.evaluateAll((els) => els.filter((el) => getComputedStyle(el).display !== 'none').length);
     expect(shown).toBeLessThan(ITEMS);
     expect(shown).toBe(ITEMS - hidden);
-    expect(await page.locator('[data-tag="ml"]').evaluate((el) => getComputedStyle(el).backgroundColor)).toBe('rgb(20, 20, 20)');
+    // The button's background animates over --dur-hover: a retrying assertion reads it after the transition.
+    await expect(page.locator('[data-tag="ml"]')).toHaveCSS('background-color', 'rgb(20, 20, 20)');
   });
 
   test('without JavaScript every item is listed and the filter is hidden', async ({ browser }) => {
