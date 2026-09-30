@@ -11,6 +11,7 @@ import NeutralLayout from '../layouts/NeutralLayout.astro';
 import { generated, usableStats } from '../lib/generated';
 import { allRoutes } from '../lib/routes';
 import { cleanPages, cleanReferrers } from '../lib/stats-hygiene';
+import { NEUTRAL_IDENTITY } from '../variants';
 
 interface Props {
   lang: Lang;
@@ -26,7 +27,7 @@ const referrers = usable ? cleanReferrers(usable.referrers) : [];
 // shared page: NeutralLayout (P1-10)
 ---
 <NeutralLayout lang={lang} title={meta.title} description={meta.description} page="stats">
-  <PageHeader lang={lang} variant="neutral" label="STATS" title={t(lang, 'stats.title')} />
+  <PageHeader lang={lang} variant="neutral" label={NEUTRAL_IDENTITY.siteTitle[lang]} title={t(lang, 'stats.title')} />
   <StatsSummary lang={lang} variant="neutral" stats={stats} code={GOATCOUNTER.code} />
   {usable && (
     <Fragment>

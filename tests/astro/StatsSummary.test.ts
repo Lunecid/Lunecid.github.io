@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import StatsSummary from '../../src/components/stats/StatsSummary.astro';
 import type { StatsData } from '../../src/lib/generated';
+import { t } from '../../src/i18n/utils';
 import { renderAstro } from './helpers';
 
 function stats(over: Partial<StatsData> = {}): StatsData {
@@ -15,18 +16,19 @@ function stats(over: Partial<StatsData> = {}): StatsData {
 }
 
 describe('StatsSummary', () => {
-  it('P2-33: an OFFLINE panel (stats open after GoatCounter is connected, link to privacy) when code is null', async () => {
+  it('P2-33 (P2-11 neutral design): an offline panel (stats open after GoatCounter is connected, link to privacy) when code is null', async () => {
     const html = await renderAstro(StatsSummary, { props: { variant: 'neutral', lang: 'ko', stats: stats(), code: null } });
     expect(html).toMatch(/<section[^>]*id="summary"/);
-    expect(html).toMatch(/<div[^>]*class="stats__offline bracket bracket--sm"[^>]*data-stats-offline/);
-    expect(html).toMatch(/<p[^>]*class="stats__offline-tag"[^>]*lang="en"[^>]*>\[ OFFLINE \]<\/p>/);
+    expect(html).toMatch(/<div[^>]*class="stats__offline nt-panel"[^>]*data-stats-offline/);
+    expect(html).not.toMatch(/bracket|\[ OFFLINE \]/);
+    expect(html).toContain(t('ko', 'stats.offline'));
     expect(html).toContain('방문 통계는 GoatCounter를 연결한 뒤 이 페이지에 공개합니다. 아직 방문 통계를 모으지 않습니다.');
     expect(html).toMatch(/<a href="\/privacy\/"[^>]*>통계를 켜면 모을 항목 보기 \(개인정보 처리방침\)<\/a>/);
     expect(html).not.toContain('<astro-island');
     expect(html).not.toContain('goatcounter.com');
     expect(html).not.toContain('data-fetched-at');
     const en = await renderAstro(StatsSummary, { props: { variant: 'neutral', lang: 'en', stats: stats(), code: null } });
-    expect(en).toContain('[ OFFLINE ]');
+    expect(en).toContain(t('en', 'stats.offline'));
     expect(en).toContain('Visitor statistics will be published on this page once GoatCounter is connected.');
     expect(en).toMatch(/<a href="\/en\/privacy\/"[^>]*>What would be collected \(privacy policy\)<\/a>/);
     // with a code there is no OFFLINE panel

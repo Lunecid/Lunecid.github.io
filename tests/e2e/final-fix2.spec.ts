@@ -1025,8 +1025,9 @@ test('item 4: on /stats/ the light band runs down to the footer (no dark strip b
       scale: 'css',
     });
     const { data } = await sharp(png).removeAlpha().raw().toBuffer({ resolveWithObject: true });
-    expect([...data.subarray(0, 3)], `${width}×${height}: just above the footer: --read-bg #F4F5F7`).toEqual([
-      0xf4, 0xf5, 0xf7,
+    // P2-11: /stats/ is a white neutral page (no light band any more); the intent stays: no dark strip above the footer.
+    expect([...data.subarray(0, 3)], `${width}×${height}: just above the footer: --nt-bg #FFFFFF`).toEqual([
+      0xff, 0xff, 0xff,
     ]);
   }
 });

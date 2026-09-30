@@ -1,24 +1,43 @@
 ---
-// Neutral header (chooser, shared pages, 404): the name linking to the chooser (A-23) and the language switch (spec §6).
-import { languages, type Lang } from '../../i18n/ui';
+// Header of the neutral pages (chooser, shared pages, 404; spec §6–7): the name → the chooser ('/' follows a remembered
+// choice, contract A-23) and the language switch; on the chooser the switch alone (brand false). Sans, white.
+// data-nt-brand / data-nt-lang are the CA-24 hooks EN_404_SCRIPT rewrites; keep them and this attribute order.
+import type { Lang } from '../../i18n/ui';
+import { languages } from '../../i18n/ui';
 import { otherLang } from '../../i18n/utils';
 import { chooserHref } from '../../lib/links';
 import { NEUTRAL_IDENTITY } from '../../variants/neutral';
 
 interface Props {
   lang: Lang;
+  /** The same page in the other language (on the chooser: the other chooser with ?choose); null when it has none. */
   altLangHref: string | null;
-  /** false on the chooser: no brand link. */
+  /** false on the chooser (§6: only the language switch on top). */
   brand?: boolean;
 }
 const { lang, altLangHref, brand = true } = Astro.props;
 const other = otherLang(lang);
 ---
 <header class="nt-header">
-  <div class:list={['nt-header__bar', { 'nt-header__bar--lang-only': !brand }]}>
+  <div class:list={['container', 'nt-header__bar', { 'nt-header__bar--lang-only': !brand }]}>
     {brand && <a class="nt-header__brand" href={chooserHref(lang)} data-nt-brand>{NEUTRAL_IDENTITY.siteTitle[lang]}</a>}
     {altLangHref !== null && (
       <p class="nt-header__lang"><a href={altLangHref} hreflang={other} lang={other} data-nt-lang>{languages[other]}</a></p>
     )}
   </div>
 </header>
+
+<script>
+  import { initLangHashSync } from '../../scripts/nav-menu';
+  initLangHashSync('.nt-header__lang a[hreflang]');
+</script>
+
+<style>
+  .nt-header { background: var(--nt-bg); border-bottom: var(--ed-rule-w) solid var(--nt-rule); }
+  .nt-header__bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: var(--nav-h); }
+  /* P2-10: the chooser's header has no brand (the modifier ChooserView.test pins); the switch keeps the right edge. */
+  .nt-header__bar--lang-only { justify-content: flex-end; }
+  .nt-header__brand { display: inline-flex; align-items: center; min-height: var(--tap); font-weight: 700; color: var(--nt-ink); text-decoration: none; }
+  .nt-header__lang { margin-left: auto; }
+  .nt-header__lang a { display: inline-flex; align-items: center; justify-content: center; min-height: var(--tap); min-width: var(--tap); padding-inline: 4px; color: var(--nt-accent); }
+</style>

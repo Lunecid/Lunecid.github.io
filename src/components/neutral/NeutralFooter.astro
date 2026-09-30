@@ -1,31 +1,35 @@
 ---
-// Neutral footer: copyright, the shared pages and the chooser link (/?choose, A-23). No motion toggle (A-29).
-// P-04: a contact row (mailto + GitHub profile, the values getPerson() returns) unless `contact` is false (the 404, R-1, owner
-// decision 19), and aria-current on the current footer link.
+// Footer of the neutral pages (spec §7, R-2): the shared pages in CA-21 order (stats → privacy → credits) and the chooser
+// link (?choose). No motion toggle: it stays on version pages (contract A-29); the head-init still applies a stored
+// preference everywhere. .nt-footer__nav, data-nt-footer-link and data-year are the CA-24 hooks EN_404_SCRIPT rewrites.
+// P-04 (Task 1, kept here): the contact row (mailto + GitHub) on every neutral page except the 404 (contact false; R-1,
+// owner decision 19) and aria-current on the current footer link (after data-nt-footer-link).
 import type { Lang } from '../../i18n/ui';
 import { t } from '../../i18n/utils';
+import { SITE } from '../../config';
 import { isCurrentPath } from '../../lib/footer-nav';
 import { chooserHref, pageHref } from '../../lib/links';
-import { SITE } from '../../config';
+import { todayIso } from '../../lib/records';
 import { SHARED_NAV } from '../../variants/neutral';
 
 interface Props {
   lang: Lang;
+  /** P-04: the contact row; NeutralLayout passes false on the 404. */
   contact?: boolean;
 }
 const { lang, contact = true } = Astro.props;
 // P-04: getPerson() reads the resume collection, which the vitest container does not load; its email and github
-// are SITE.email and SITE.githubUrl, read here directly (as HomeView and RecordsView do).
+// are SITE.email and SITE.githubUrl, read here directly (as HomeView and RecordsView do; P2-1 ruling).
 const person = { email: SITE.email, github: SITE.githubUrl };
 const pathname = Astro.url.pathname;
-const year = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Seoul', year: 'numeric' }).format(new Date());
+const year = todayIso(new Date()).slice(0, 4);
 const links = [
   ...SHARED_NAV.map((item) => ({ key: item.key, href: pageHref(item.base, { lang, variant: null }), label: t(lang, item.label) })),
   { key: 'chooser', href: chooserHref(lang, { choose: true }), label: t(lang, 'nav.chooser') },
 ];
 ---
 <footer class="nt-footer">
-  <div class="nt-footer__inner">
+  <div class="container nt-footer__inner">
     <p class="nt-footer__copy" data-year={year}>{t(lang, 'footer.copyright', { year })}</p>
     {contact && (
       <ul class="nt-footer__contact" role="list">
@@ -40,3 +44,23 @@ const links = [
     </nav>
   </div>
 </footer>
+
+<style>
+  .nt-footer { margin-top: var(--section-pad-y); padding-block: 20px 28px; border-top: var(--ed-rule-w-strong) solid var(--nt-ink); background: var(--nt-bg); font-size: var(--fs-caption); line-height: 1.6; color: var(--nt-muted); }
+  .nt-footer__inner { display: grid; gap: 8px; }
+  .nt-footer__contact { display: flex; flex-wrap: wrap; gap: 0 16px; }
+  .nt-footer__contact a { display: inline-flex; align-items: center; min-height: var(--tap); color: var(--nt-ink); text-decoration: underline; text-underline-offset: .18em; }
+  .nt-footer__links { display: flex; flex-wrap: wrap; gap: 0 16px; }
+  .nt-footer__links a { display: inline-flex; align-items: center; min-height: var(--tap); color: var(--nt-accent); }
+  .nt-footer__links a[aria-current] { color: var(--nt-ink); text-decoration-thickness: 2px; }
+  @media (hover: hover) {
+    .nt-footer__links a:hover { text-decoration-thickness: 2px; }
+  }
+  .nt-footer__links a:active { text-decoration-thickness: 2px; }
+  @media (min-width: 1068px) {
+    .nt-footer__inner { grid-template-columns: auto 1fr; align-items: center; column-gap: 24px; }
+    /* copyright | contact on the first row, the site links across the whole second row (the auto column would
+       otherwise take the nav's width and push the contact row to the right) */
+    .nt-footer__nav { grid-column: 1 / -1; }
+  }
+</style>

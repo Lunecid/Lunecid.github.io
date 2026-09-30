@@ -1,22 +1,23 @@
 /* src/styles/neutral.css — the neutral pages (chooser, shared pages, 404; spec §7). Imported only by NeutralLayout.
-   P1-10 skeleton: readable, light, no game chrome; P2-11 designs these pages. Colours only through --nt-* tokens. */
-.nt-header { border-bottom: 1px solid var(--nt-rule); background: var(--nt-bg); }
-.nt-header__bar { max-width: var(--container); margin-inline: auto; padding-inline: var(--gutter); min-height: var(--nav-h); display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-/* P2-10: the chooser's header has no brand; its language switch keeps the right edge. */
-.nt-header__bar--lang-only { justify-content: flex-end; }
-.nt-header__brand, .nt-header__lang a { display: inline-flex; align-items: center; min-height: var(--tap); min-width: var(--tap); color: var(--nt-ink); font-weight: 700; text-decoration: none; }
-.nt-header__lang a { font-weight: 500; text-decoration: underline; text-underline-offset: 3px; color: var(--nt-accent); }
-.nt-footer { margin-top: auto; border-top: 1px solid var(--nt-rule); background: var(--nt-bg); color: var(--nt-muted); font-size: var(--fs-small); }
-.nt-footer__inner { max-width: var(--container); margin-inline: auto; padding: 24px var(--gutter) 32px; display: grid; gap: 8px; }
-.nt-footer__links { display: flex; flex-wrap: wrap; gap: 4px 16px; margin: 0; padding: 0; list-style: none; }
-.nt-footer__links a { display: inline-flex; align-items: center; min-height: var(--tap); color: var(--nt-accent); text-underline-offset: 3px; }
-/* P-04 (F-001): the contact row (not on the 404), plain underlined links in --nt-ink. */
-.nt-footer__contact { display: flex; flex-wrap: wrap; gap: 4px 16px; margin: 0; padding: 0; list-style: none; }
-.nt-footer__contact a { display: inline-flex; align-items: center; min-height: var(--tap); color: var(--nt-ink); text-decoration: underline; text-underline-offset: 3px; }
-/* Shared components that still carry HUD classes (P2-11 replaces their markup): dark-on-light, no bracket marks. */
-:root[data-variant="neutral"] .page-head { background: var(--nt-bg); border-bottom-color: var(--nt-rule); }
-:root[data-variant="neutral"] .page-head__title { color: var(--nt-ink); }
-:root[data-variant="neutral"] .page-head__intro { color: var(--nt-muted); }
-:root[data-variant="neutral"] .hud-label { font: 600 var(--fs-label)/1.5 var(--font-sans); letter-spacing: .08em; color: var(--nt-muted); }
-:root[data-variant="neutral"] .hud-label__mark { display: none; }
-:root[data-variant="neutral"] main a:not([class]) { color: var(--nt-accent); }
+   P2-11: the header and footer carry their own scoped styles (NeutralHeader/NeutralFooter.astro); this sheet holds the
+   neutral blocks the shared pages use. Colours only through --nt-* tokens (and the paper code tokens for <pre>). */
+
+/* ── neutral blocks (P2-11, spec §7): white bands, sans body, accent links; scoped so the sheet never styles a
+   version page even if a layout ever imports it there ── */
+:root[data-variant="neutral"] .skip-link { background: var(--nt-ink); color: var(--nt-bg); }
+:root[data-variant="neutral"] .nt-sec { padding-block: var(--section-pad-y); background: var(--nt-bg); color: var(--nt-ink); }
+:root[data-variant="neutral"] .nt-sec a { color: var(--nt-accent); }
+:root[data-variant="neutral"] .nt-panel { margin-top: 16px; max-width: var(--measure); padding-top: 12px; border-top: var(--ed-rule-w-strong) solid var(--nt-ink); }
+:root[data-variant="neutral"] .nt-prose { max-width: none; padding-block: var(--section-pad-y); padding-inline: max(var(--gutter), calc(50% - var(--measure) / 2)); background: var(--nt-bg); color: var(--nt-ink); font-size: var(--fs-body); line-height: var(--lh-body); }
+:root[data-variant="neutral"] .nt-prose > * + * { margin-top: 1em; }
+:root[data-variant="neutral"] .nt-prose h2 { margin-top: 2em; font-size: var(--fs-h2); font-weight: 700; line-height: var(--lh-h2); }
+:root[data-variant="neutral"] .nt-prose h3 { margin-top: 1.6em; font-size: var(--fs-sub); font-weight: 700; line-height: var(--lh-sub); }
+:root[data-variant="neutral"] .nt-prose ul { padding-left: 1.4em; list-style: disc; }
+:root[data-variant="neutral"] .nt-prose ol { padding-left: 1.4em; list-style: decimal; }
+:root[data-variant="neutral"] .nt-prose a { color: var(--nt-accent); text-decoration: underline; text-underline-offset: .18em; }
+:root[data-variant="neutral"] .nt-prose table { width: 100%; border-collapse: collapse; font-size: var(--fs-small); }
+:root[data-variant="neutral"] .nt-prose th,
+:root[data-variant="neutral"] .nt-prose td { padding: 8px 12px 8px 0; border-bottom: var(--ed-rule-w) solid var(--nt-rule); text-align: start; vertical-align: top; overflow-wrap: break-word; hyphens: manual; }
+:root[data-variant="neutral"] .nt-prose thead th { border-bottom: var(--ed-rule-w-strong) solid var(--nt-ink); }
+:root[data-variant="neutral"] .nt-prose pre { overflow-x: auto; padding: 14px 16px; background: var(--paper-code-bg); color: var(--paper-ink); }
+:root[data-variant="neutral"] .nt-prose blockquote { padding: 4px 0 4px 16px; border-left: var(--ed-rule-w-strong) solid var(--nt-ink); color: var(--nt-muted); }

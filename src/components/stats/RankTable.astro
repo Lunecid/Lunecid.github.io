@@ -16,9 +16,9 @@ interface Props {
 const { lang, variant, id, title, rows, fetchedAt, maxAgeDays } = Astro.props;
 ---
 {rows.length > 0 && (
-  <section id={id} class="stats read" aria-labelledby={`${id}-title`} data-fetched-at={fetchedAt} data-max-age-days={maxAgeDays}>
+  <section id={id} class:list={['stats', variant === 'neutral' ? 'nt-sec' : 'read']} aria-labelledby={`${id}-title`} data-fetched-at={fetchedAt} data-max-age-days={maxAgeDays}>
     <div class="container">
-      <SectionHead variant={variant} id={`${id}-title`} caption={t(lang, id === 'top-pages' ? 'section.topPages' : 'section.referrers')} title={title} />
+      <SectionHead variant={variant} id={`${id}-title`} caption={variant === 'neutral' ? t(lang, 'nav.stats') : t(lang, id === 'top-pages' ? 'section.topPages' : 'section.referrers')} title={title} />
       <div class="stats__table-scroll" tabindex="0" role="region" aria-labelledby={`${id}-title`}>
         <table class="stats__table">
           <thead><tr><th scope="col">{title}</th><th scope="col">{t(lang, 'stats.visits')}</th></tr></thead>

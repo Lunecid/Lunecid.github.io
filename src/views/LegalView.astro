@@ -4,6 +4,7 @@ import PageHeader from '../components/hud/PageHeader.astro';
 import { PAGE_META } from '../data/copy/pages';
 import type { Lang } from '../i18n/ui';
 import NeutralLayout from '../layouts/NeutralLayout.astro';
+import { NEUTRAL_IDENTITY } from '../variants';
 
 interface Props {
   lang: Lang;
@@ -17,9 +18,9 @@ const meta = PAGE_META[doc][lang];
 // shared page: NeutralLayout (P1-10)
 ---
 <NeutralLayout lang={lang} title={meta.title} description={meta.description} page={doc}>
-  <PageHeader lang={lang} variant="neutral" label={doc === 'privacy' ? 'PRIVACY' : 'CREDITS'} title={entry.data.title} />
-  {/* article.prose.read (contract §5.14): read.css spans the light band across the page and centres the text column */}
-  <article class="legal prose read">
+  <PageHeader lang={lang} variant="neutral" label={NEUTRAL_IDENTITY.siteTitle[lang]} title={entry.data.title} />
+  {/* P2-11: article.prose.nt-prose (neutral.css) spans the white band across the page and centres the text column */}
+  <article class="legal prose nt-prose">
     <Content />
   </article>
 </NeutralLayout>
@@ -70,9 +71,12 @@ const meta = PAGE_META[doc][lang];
       position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap;
     }
     .legal :global(tbody) { display: block; }
-    .legal :global(tr) { display: block; padding-block: 14px; border-bottom: 1px solid var(--read-line); }
-    .legal :global(tr:first-child) { border-top: 1px solid var(--read-line-strong); }
-    .legal :global(td) { display: block; padding: 3px 0; overflow-wrap: anywhere; }
+    .legal :global(tr) { display: block; padding-block: 14px; border-bottom: 1px solid var(--nt-rule); }
+    .legal :global(tr:first-child) { border-top: 1px solid var(--nt-ink); }
+    /* P2-11: neutral.css's .nt-prose td (padding, a rule under each cell) outranks this block; a stacked row keeps one
+       rule under the whole row and tight lines inside it. */
+    .legal :global(td),
+    :global(:root[data-variant="neutral"]) .legal :global(td) { display: block; padding: 3px 0; border-bottom: 0; overflow-wrap: anywhere; }
     .legal :global(td:first-child) { font-weight: 700; font-size: 16px; color: var(--read-text); }
     .legal :global(td:last-child) { margin-top: 4px; font: 600 13px/1.5 var(--font-mono); letter-spacing: .04em; color: var(--read-muted); }
     /* P1-10: Hangul set in a mono element reads badly with tracking added for a fixed-width alphabet that Hangul

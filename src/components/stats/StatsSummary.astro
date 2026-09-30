@@ -17,6 +17,8 @@ interface Props {
 }
 const { lang, variant, stats, code } = Astro.props;
 const usable = code === null ? undefined : usableStats(stats);
+// P1-11 built the privacy link without a path literal; P2-11 shares it between the two offline panels.
+const privacyHref = pageHref(BASE_PATH.privacy, { lang, variant: null });
 const days = usable?.range ? Math.round((Date.parse(usable.range.end) - Date.parse(usable.range.start)) / 86_400_000) : null;
 
 /** 'YYYY.MM.DD HH:MM KST' (ko) / 'Mon D, YYYY HH:MM KST' (en), in Asia/Seoul. */
@@ -27,16 +29,24 @@ function asOf(iso: string): string {
   return `${formatDate(day, lang)} ${time} KST`;
 }
 ---
-<section id="summary" class="stats read" aria-labelledby="stats-summary-title">
+<section id="summary" class:list={['stats', variant === 'neutral' ? 'nt-sec' : 'read']} aria-labelledby="stats-summary-title">
   <div class="container">
-    <SectionHead variant={variant} id="stats-summary-title" caption={t(lang, 'section.visits')} title={t(lang, 'stats.visits')} />
+    <SectionHead variant={variant} id="stats-summary-title" caption={variant === 'neutral' ? t(lang, 'nav.stats') : t(lang, 'section.visits')} title={t(lang, 'stats.visits')} />
     {code === null ? (
-      /* P2-33: while GOATCOUNTER.code is null the page says plainly that nothing is collected yet. */
-      <div class="stats__offline bracket bracket--sm" data-stats-offline>
-        <p class="stats__offline-tag" lang="en">[ OFFLINE ]</p>
-        <p class="stats__note">{t(lang, 'stats.offline')} {t(lang, 'stats.notCollecting')}</p>
-        <p class="stats__links"><a href={pageHref(BASE_PATH.privacy, { lang, variant: null })}>{t(lang, 'stats.privacyLink')}</a></p>
-      </div>
+      /* P2-33: while GOATCOUNTER.code is null the page says plainly that nothing is collected yet.
+         P2-11: on neutral pages a plain panel under a heavy rule (no bracket, no [ OFFLINE ] tag). */
+      variant === 'neutral' ? (
+        <div class="stats__offline nt-panel" data-stats-offline>
+          <p class="stats__note">{t(lang, 'stats.offline')} {t(lang, 'stats.notCollecting')}</p>
+          <p class="stats__links"><a href={privacyHref}>{t(lang, 'stats.privacyLink')}</a></p>
+        </div>
+      ) : (
+        <div class="stats__offline bracket bracket--sm" data-stats-offline>
+          <p class="stats__offline-tag" lang="en">[ OFFLINE ]</p>
+          <p class="stats__note">{t(lang, 'stats.offline')} {t(lang, 'stats.notCollecting')}</p>
+          <p class="stats__links"><a href={privacyHref}>{t(lang, 'stats.privacyLink')}</a></p>
+        </div>
+      )
     ) : (
       <Fragment>
         {usable ? (
@@ -77,6 +87,7 @@ function asOf(iso: string): string {
   .stats__numbers { margin-top: 16px; display: grid; gap: 6px; }
   .stats__total { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 14px; }
   .stats__total-label { font: 600 14px/1.4 var(--font-mono); color: var(--read-muted); }
+  .stats__total-label:lang(ko) { font-family: var(--font-sans); letter-spacing: 0; }
   .stats__total-num { font: 800 var(--fs-display)/1.1 var(--font-mono); color: var(--read-text); }
   .stats__asof { font-size: 14px; color: var(--read-muted); }
   .stats :global(.stats__live-slot) { margin-top: 14px; min-height: 44px; }
@@ -89,4 +100,8 @@ function asOf(iso: string): string {
   .stats__links { margin-top: 14px; }
   .stats__links a { display: inline-flex; align-items: center; min-height: var(--tap); }
   .stats__source { margin-top: 4px; font-size: 13px; color: var(--read-muted); }
+  /* P2-11: neutral pages (section.stats.nt-sec): the offline panel is a plain block under the panel's heavy rule, and
+     the numbers are set in ink (the live branch's markup is unchanged). */
+  .stats.nt-sec .stats__offline { background: transparent; padding-inline: 0; }
+  .stats.nt-sec :global(.stats__live-num), .stats.nt-sec .stats__total-num { color: var(--nt-ink); }
 </style>

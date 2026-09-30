@@ -25,14 +25,6 @@ body {
 #main {
   flex: 1 0 auto;
 }
-/* Final fix 2 item 4: /stats/ is the one page shorter than a desktop screen (its light band holds a single notice
-   until GoatCounter is on), and the space #main gains there (above) showed as an empty dark strip between the band
-   and the footer: ~200px at 1440x900, over half the screen at 2560x1440. When that band ends the content, #main is
-   painted as it, so the band runs down to the footer. Paint only, no layout change; scoped to that band because on
-   every other page the content is taller than the screen and the dark bands rely on #main staying transparent. */
-#main:has(> .stats.read:nth-last-child(1 of :not(script, style, template))) {
-  background: var(--read-bg);
-}
 h1, h2, h3, h4, p, ol, ul, dl, dd, figure, blockquote { margin: 0; }
 /* F-029: balance multi-line headings/titles so the last line is not a single orphan word. */
 h1, h2, h3, .cart__title, .pd__title, .pub__title, .psum__title, .award__title, .mcard__title, .mm__cap {

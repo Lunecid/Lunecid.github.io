@@ -26,9 +26,9 @@ const first = bars[0]?.day ?? '';
 const last = bars[bars.length - 1]?.day ?? '';
 ---
 {bars.length > 0 && (
-  <section id="daily" class="stats read" aria-labelledby="stats-daily-title" data-fetched-at={fetchedAt} data-max-age-days={maxAgeDays}>
+  <section id="daily" class:list={['stats', variant === 'neutral' ? 'nt-sec' : 'read']} aria-labelledby="stats-daily-title" data-fetched-at={fetchedAt} data-max-age-days={maxAgeDays}>
     <div class="container">
-      <SectionHead variant={variant} id="stats-daily-title" caption={t(lang, 'section.dailyVisits')} title={t(lang, 'stats.daily')} />
+      <SectionHead variant={variant} id="stats-daily-title" caption={variant === 'neutral' ? t(lang, 'nav.stats') : t(lang, 'section.dailyVisits')} title={t(lang, 'stats.daily')} />
       <div class="stats__chart-wrap">
         <p class="stats__chart-max tnum" aria-hidden="true">{formatNumber(max, lang)}</p>
         <div class="stats__chart-scroll" tabindex="0" role="region" aria-labelledby="stats-daily-title">
@@ -79,4 +79,6 @@ const last = bars[bars.length - 1]?.day ?? '';
   .stats__table { width: 100%; border-collapse: collapse; font-size: 15px; }
   .stats__table th, .stats__table td { padding: 6px 10px; text-align: left; border-bottom: 1px solid var(--read-line); }
   .stats__table td:last-child, .stats__table th:last-child { text-align: right; }
+  /* P2-11: on neutral pages the table toggle is a link in the neutral accent (accent-deep is the game green). */
+  .stats.nt-sec .stats__details summary { color: var(--nt-accent); }
 </style>

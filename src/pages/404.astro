@@ -30,5 +30,8 @@ const meta = PAGE_META['not-found'].ko;
   .nf__title { font-size: var(--fs-display); line-height: var(--lh-display); font-weight: 800; color: var(--nt-ink); }
   .nf__message { margin-top: 16px; max-width: var(--measure); color: var(--nt-muted); }
   .nf__links { margin: 24px 0 0; padding: 0; list-style: none; display: flex; flex-wrap: wrap; gap: 8px 24px; }
-  .nf__links a { display: inline-flex; align-items: center; min-height: var(--tap); color: var(--nt-accent); font-weight: 700; text-underline-offset: 3px; }
+  /* Neutral 404 (P2-11, spec §7): the two version homes as outlined links on white. */
+  .nf__links a { display: inline-flex; align-items: center; min-height: var(--tap); padding: 0 16px; border: var(--ed-rule-w) solid var(--nt-ink); color: var(--nt-ink); font-weight: 700; text-decoration: none; transition: background-color var(--dur-hover) linear; }
+  @media (hover: hover) { .nf__links a:hover { background: var(--nt-rule); } }
+  .nf__links a:active { background: var(--nt-rule); }
 </style>
