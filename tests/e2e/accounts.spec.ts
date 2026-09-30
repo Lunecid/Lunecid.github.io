@@ -11,7 +11,7 @@ import { load } from 'js-yaml';
 import type { FavoriteGameData } from '../../src/content/schemas';
 import { TILE_SLOTS, accountStatus, type AccountStatus } from '../../src/lib/account-state';
 import type { AccountFeed, RiotLinks } from '../../src/lib/generated';
-import { expect, test } from './helpers';
+import { collectViolations, expect, test, watchViolations } from './helpers';
 
 const ACCOUNTS_ORIGIN = `http://127.0.0.1:${Number(process.env.E2E_ACCOUNTS_PORT ?? 4332)}`;
 const ROUTES = ['/game/player-log/', '/en/game/player-log/'];
@@ -66,7 +66,8 @@ test.describe('LINKED ACCOUNTS row — fixture build (SB_E2E_ACCOUNTS=1)', () =>
   for (const route of ROUTES) {
     test(`${route}: details.acct-tile count = the view model's shown tiles; #acct-status matches it`, async ({ page }) => {
       await page.goto(`${ACCOUNTS_ORIGIN}${route}`, { waitUntil: 'load' });
-      await expect(page.locator('#membership ul.acct-row[role="list"] > li > details.acct-tile')).toHaveCount(shown);
+      // <details> before hydration, <button> after (AL-11): the same count either way
+      await expect(page.locator('#membership ul.acct-row[role="list"] > li > .acct-tile')).toHaveCount(shown);
       await expect(page.locator('#membership .acct-links__cap')).toBeVisible();
       await expect(page.locator('#favorite-games [role="tab"]')).toHaveCount(6);
       await expect(page.locator('.fg-acct')).toHaveCount(0);
@@ -111,5 +112,136 @@ test.describe('LINKED ACCOUNTS row — fixture build (SB_E2E_ACCOUNTS=1)', () =>
     expect(Math.abs((li?.width ?? 0) - (row?.width ?? -1))).toBeLessThanOrEqual(0.5);
     expect(Math.abs((li?.x ?? 0) - (row?.x ?? -1))).toBeLessThanOrEqual(0.5);
     await context.close();
+  });
+});
+
+// AL-11: the dialog shell on the fixture build (spec §3.1 mount swap, §3.2, §3.7).
+test.describe('account dialog shell — fixture build', () => {
+  const tiles = (page: Page) => page.locator('#membership ul.acct-row > li > button.acct-tile');
+  const dialog = (page: Page) => page.locator('dialog#acct-dlg');
+  const KO_GAMES = ['젠레스 존 제로', '원신', '리그 오브 레전드', '전략적 팀 전투', 'Steam'];
+
+  async function ready(page: Page, width: number, height: number): Promise<void> {
+    await page.setViewportSize({ width, height });
+    await page.goto(`${ACCOUNTS_ORIGIN}/game/player-log/`, { waitUntil: 'load' });
+    await expect(tiles(page)).toHaveCount(5); // hydrated (client:idle): the <details> became buttons
+  }
+
+  for (const [width, height] of [[1280, 800], [375, 667]] as const) {
+    test(`keyboard at ${width}×${height}: Enter opens with focus on close, ←/→ switch, Esc closes and focus returns to the current tile`, async ({ page }) => {
+      await watchViolations(page);
+      await ready(page, width, height);
+      await tiles(page).nth(1).focus();
+      await page.keyboard.press('Enter');
+      await expect(dialog(page)).toBeVisible();
+      await expect(dialog(page)).toHaveAttribute('data-state', 'open');
+      await expect(page.locator('#acct-game')).toHaveText(KO_GAMES[1]!);
+      await expect(page.locator('.acct-dlg__close')).toBeFocused();
+      expect(await page.evaluate(() => document.documentElement.classList.contains('is-scroll-locked'))).toBe(true);
+      // the dialog fits the viewport: max(560, vw - 32) wide, 100dvh - 32 tall at most, no page scroll sideways
+      const box = await dialog(page).boundingBox();
+      expect(box?.width ?? 999).toBeLessThanOrEqual(Math.min(560, width - 32) + 0.5);
+      expect(box?.height ?? 999).toBeLessThanOrEqual(height - 32 + 0.5);
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
+
+      await page.keyboard.press('ArrowRight');
+      await page.keyboard.press('ArrowRight');
+      await expect(page.locator('#acct-game')).toHaveText(KO_GAMES[3]!);
+      await expect(page.locator('.acct-dlg__pos')).toHaveText('4 / 5');
+      await expect(dialog(page).locator('[role="status"]')).toHaveText(/^4 \/ 5 · 전략적 팀 전투 · /);
+      await expect(page.locator('.acct-dlg__close')).toBeFocused();
+
+      // Tab stays inside the dialog
+      for (let i = 0; i < 5; i++) {
+        await page.keyboard.press('Tab');
+        expect(await page.evaluate(() => document.activeElement?.closest('dialog#acct-dlg') !== null)).toBe(true);
+      }
+
+      await page.keyboard.press('Escape');
+      await expect(dialog(page)).toBeHidden();
+      await expect(tiles(page).nth(3)).toBeFocused();
+      expect(await page.evaluate(() => document.documentElement.classList.contains('is-scroll-locked'))).toBe(false);
+      // the island sets its styles through the CSSOM only: no CSP violation with the dialog opened and switched
+      expect(await collectViolations(page)).toEqual([]);
+    });
+
+    test(`pointer at ${width}×${height}: tile click opens, ‹ › switch with focus kept on the arrow, backdrop and close button close`, async ({ page }) => {
+      await ready(page, width, height);
+      await tiles(page).nth(4).click();
+      await expect(dialog(page)).toBeVisible();
+      await expect(page.locator('#acct-game')).toHaveText('Steam');
+      const next = page.locator('.acct-dlg__next');
+      await expect(next).toHaveAttribute('aria-label', `다음 계정: ${KO_GAMES[0]}`);
+      await next.click();
+      await expect(page.locator('#acct-game')).toHaveText(KO_GAMES[0]!);
+      await expect(next).toBeFocused();
+      // a click on the backdrop (outside the dialog box): pointerdown and click both hit the <dialog>
+      await page.mouse.click(4, height - 4);
+      await expect(dialog(page)).toBeHidden();
+      await expect(tiles(page).nth(0)).toBeFocused();
+
+      await tiles(page).nth(2).click();
+      await expect(dialog(page)).toBeVisible();
+      // a drag that starts inside the dialog and ends on the backdrop does not close
+      const title = await page.locator('#acct-title').boundingBox();
+      await page.mouse.move((title?.x ?? 0) + 4, (title?.y ?? 0) + 4);
+      await page.mouse.down();
+      await page.mouse.move(4, height - 4);
+      await page.mouse.up();
+      await expect(dialog(page)).toHaveAttribute('data-state', 'open');
+      await page.locator('.acct-dlg__close').click();
+      await expect(dialog(page)).toBeHidden();
+      await expect(tiles(page).nth(2)).toBeFocused();
+    });
+
+    test(`every control in the row and the dialog is at least 44×44 at ${width}×${height}`, async ({ page }) => {
+      await ready(page, width, height);
+      await tiles(page).first().click();
+      await expect(dialog(page)).toHaveAttribute('data-state', 'open');
+      const sizes = await page.evaluate(() =>
+        [...document.querySelectorAll<HTMLElement>('#membership ul.acct-row button, dialog#acct-dlg button, dialog#acct-dlg a[href]')].map((el) => {
+          const r = el.getBoundingClientRect();
+          return { what: el.className || el.tagName, w: r.width, h: r.height };
+        }),
+      );
+      expect(sizes.length).toBeGreaterThanOrEqual(5 + 3);
+      for (const s of sizes) {
+        expect(s.w, s.what).toBeGreaterThanOrEqual(44);
+        expect(s.h, s.what).toBeGreaterThanOrEqual(44);
+      }
+    });
+  }
+
+  test('reduced motion: the dialog opens and closes with the short fade', async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await ready(page, 1280, 800);
+    expect(await page.evaluate(() => document.documentElement.getAttribute('data-motion'))).toBe('reduce');
+    await tiles(page).first().click();
+    await expect(dialog(page)).toHaveAttribute('data-state', 'open');
+    expect(await dialog(page).evaluate((el) => getComputedStyle(el).transitionDuration)).toBe('0.15s');
+    await page.keyboard.press('Escape');
+    await expect(dialog(page)).toBeHidden({ timeout: 1000 });
+  });
+
+  test('forced colours: the open dialog keeps a visible 1px edge (G-012)', async ({ page }) => {
+    await page.emulateMedia({ forcedColors: 'active' });
+    await ready(page, 1280, 800);
+    await tiles(page).first().click();
+    await expect(dialog(page)).toBeVisible();
+    const edge = await dialog(page).evaluate((el) => {
+      const cs = getComputedStyle(el);
+      return [cs.borderTopWidth, cs.borderRightWidth, cs.borderBottomWidth, cs.borderLeftWidth].map(parseFloat);
+    });
+    for (const w of edge) expect(w).toBeGreaterThanOrEqual(1);
+  });
+
+  test('English page: English head and arrow labels', async ({ page }) => {
+    await page.goto(`${ACCOUNTS_ORIGIN}/en/game/player-log/`, { waitUntil: 'load' });
+    await expect(tiles(page)).toHaveCount(5);
+    await tiles(page).nth(0).click();
+    await expect(page.locator('#acct-game')).toHaveText('Zenless Zone Zero');
+    await expect(page.locator('.acct-dlg__profile')).toHaveText('INTER-KNOT PROFILE');
+    await expect(page.locator('.acct-dlg__prev')).toHaveAttribute('aria-label', 'Previous account: Steam');
+    await expect(page.locator('.acct-dlg__close')).toContainText('Close');
   });
 });

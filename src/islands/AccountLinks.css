@@ -113,9 +113,71 @@
 .acct-card__note, .acct-card__asof, .acct-card__data, .acct-card__notices p { margin: 0; font-size: var(--fs-label); line-height: 1.5; color: var(--hud-muted); }
 .acct-card__notices { display: grid; gap: 4px; }
 
+/* the mounted tile (AL-11): a real button with the summary's face */
+button.acct-tile {
+  appearance: none; width: 100%; margin: 0; padding: 0; border: 0; background: none;
+  font: inherit; text-align: start;
+}
+/* the tile of the account on screen while the dialog is open */
+.acct-tile[data-current] .acct-tile__corners::before, .acct-tile[data-current] .acct-tile__corners::after { border-color: var(--accent); }
+
+/* ---- the account dialog (AL-11 shell; spec §3.2). AL-12 adds the card and the open timeline. ---- */
+.acct-dlg {
+  box-sizing: border-box; width: min(560px, 100vw - 32px); max-inline-size: min(560px, 100vw - 32px);
+  max-block-size: calc(100dvh - 32px); margin: auto; padding: 0;
+  border: 1px solid var(--hud-line-strong); background: var(--hud-panel); color: var(--hud-text);
+  overflow: hidden; opacity: 0; transition: opacity var(--dur-fade) var(--ease-out);
+}
+.acct-dlg[open] { display: flex; flex-direction: column; }
+.acct-dlg[data-state="open"] { opacity: 1; }
+/* closing: the dialog fades out in 80 ms (spec §3.6 "창 opacity 1→0(80ms)"); CLOSE_MS (300) = 80 + the 220 ms return */
+.acct-dlg[data-state="closing"] { opacity: 0; transition: opacity 80ms var(--ease-in); }
+.acct-dlg::backdrop { background: var(--scrim); opacity: 0; transition: opacity var(--dur-fade) linear; }
+.acct-dlg[data-state="open"]::backdrop { opacity: 1; }
+.acct-dlg[data-state="closing"]::backdrop { opacity: 0; transition: opacity var(--dur-panel-in) linear; }
+
+/* the head stays in view (sticky); the body scrolls on its own and never scrolls the page */
+.acct-dlg__head {
+  position: sticky; top: 0; z-index: 1; flex: none;
+  display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 8px 12px;
+  padding: 12px 12px 12px 20px; border-bottom: 1px solid var(--hud-line); background: var(--hud-panel);
+}
+.acct-dlg__heading { flex: 1 1 160px; min-width: 0; padding-top: 6px; }
+.acct-dlg__game { margin: 0; font: 800 var(--fs-sub)/1.25 var(--font-sans); color: var(--hud-strong); overflow-wrap: anywhere; }
+.acct-dlg__profile { margin: 2px 0 0; font: 600 var(--fs-label)/1.5 var(--font-mono); letter-spacing: var(--ls-label); color: var(--hud-muted); }
+.acct-dlg__profile:lang(ko) { font-family: var(--font-sans); letter-spacing: 0; }
+.acct-dlg__controls { flex: none; display: flex; align-items: center; gap: 4px; margin-left: auto; }
+.acct-dlg__pos { margin: 0 6px 0 0; font: 600 var(--fs-label)/1 var(--font-mono); color: var(--hud-muted); white-space: nowrap; }
+.acct-dlg__nav, .acct-dlg__close {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  min-width: var(--tap); min-height: var(--tap); padding: 0 12px;
+  border: 1px solid var(--hud-line); background: var(--hud-bg); color: var(--hud-text);
+  font: 700 var(--fs-small)/1 var(--font-sans); cursor: pointer;
+  transition: color var(--dur-hover) linear, border-color var(--dur-hover) linear;
+}
+.acct-dlg__nav { padding: 0; font-size: var(--fs-sub); }
+.acct-dlg__close-x { font-size: var(--fs-sub); line-height: 1; }
+.acct-dlg__nav:focus-visible, .acct-dlg__close:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+@media (hover: hover) {
+  .acct-dlg__nav:hover, .acct-dlg__close:hover { border-color: var(--accent); color: var(--accent); }
+}
+.acct-dlg__nav:active, .acct-dlg__close:active { border-color: var(--accent-hover); color: var(--accent-hover); }
+.acct-dlg__body { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 20px; }
+.acct-dlg__card { display: grid; gap: 12px; }
+.acct-dlg__title { font: 800 var(--fs-sub)/1.2 var(--font-sans); color: var(--hud-strong); overflow-wrap: anywhere; }
+
+/* reduced motion (both paths): one 150 ms opacity fade each way (CLOSE_MS_REDUCED) */
+@media (prefers-reduced-motion: reduce) {
+  .acct-dlg, .acct-dlg[data-state="closing"], .acct-dlg::backdrop, .acct-dlg[data-state="closing"]::backdrop { transition: opacity 150ms linear; }
+}
+:root[data-motion="reduce"] .acct-dlg, :root[data-motion="reduce"] .acct-dlg[data-state="closing"],
+:root[data-motion="reduce"] .acct-dlg::backdrop, :root[data-motion="reduce"] .acct-dlg[data-state="closing"]::backdrop { transition: opacity 150ms linear; }
+
 @media (forced-colors: active) {
   .acct-tile__frame { outline: 1px solid CanvasText; }
   .acct-card--static { border-color: CanvasText; }
+  .acct-dlg { border: 1px solid CanvasText; } /* G-012 */
+  .acct-dlg__nav, .acct-dlg__close { border-color: ButtonText; }
 }
-/* controls do not print (P-12) */
+/* controls do not print (P-12); the dialog is hidden in base.css next to the image viewer */
 @media print { .acct-links, .acct-row { display: none; } }

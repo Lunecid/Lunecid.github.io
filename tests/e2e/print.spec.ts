@@ -132,6 +132,15 @@ test.describe('print (P-12)', () => {
     if ((await viewer.count()) > 0) await expect(viewer.first()).toHaveCSS('display', 'none');
   });
 
+  test('AL-11: the account dialog, opened on screen, does not print (fixture build)', async ({ page }) => {
+    await page.goto(`http://127.0.0.1:${Number(process.env.E2E_ACCOUNTS_PORT ?? 4332)}/game/player-log/`, { waitUntil: 'load' });
+    await page.locator('#membership button.acct-tile').first().click();
+    const dialog = page.locator('dialog#acct-dlg');
+    await expect(dialog).toBeVisible();
+    await page.emulateMedia({ media: 'print' });
+    await expect(dialog).toHaveCSS('display', 'none');
+  });
+
   test.describe('PDF text (pdftotext)', () => {
     test.skip(popplerMissing, 'poppler (pdftotext, pdfinfo, pdfimages) not installed locally; runs in CI');
 

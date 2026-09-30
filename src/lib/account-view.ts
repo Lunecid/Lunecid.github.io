@@ -285,6 +285,13 @@ export interface AccountLinksLabels {
   /** '{title} 프로필 이미지' — the island fills {title}. */
   avatarAlt: string;
   riot: { lol: string; tft: string; external: string };
+  /** The dialog's close button ('닫기' / 'Close'). */
+  close: string;
+  /** '이전 계정: {game}' / '다음 계정: {game}' — the island fills {game} with the target account's game. */
+  prev: string;
+  next: string;
+  /** '{n} / {total}' — the island fills both. */
+  position: string;
   /** The per-card notice lines (spec §9.3) by notice key, already in the page language where localised. */
   notices: Partial<Record<NoticeKey, { text: string; english: boolean }[]>>;
 }
@@ -298,6 +305,10 @@ export function accountLinksLabels(lang: Lang): AccountLinksLabels {
     newTab: t(lang, 'accounts.newTab'),
     avatarAlt: ui[lang]['accounts.avatarAlt'], // the raw template: t() rejects an unfilled {title}
     riot: { lol: t(lang, 'accounts.riot.lol'), tft: t(lang, 'accounts.riot.tft'), external: t(lang, 'accounts.riot.external') },
+    close: t(lang, 'accounts.close'),
+    prev: ui[lang]['accounts.prev'], // raw templates, filled on the client
+    next: ui[lang]['accounts.next'],
+    position: ui[lang]['accounts.position'],
     notices: Object.fromEntries(keys.map((key) => [key, noticeLines([key]).map((line) => ({ text: t(lang, line.key), english: line.english }))])),
   };
 }

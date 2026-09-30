@@ -126,6 +126,7 @@ html.js .site-ach__nojs { display: none; }
   :root[data-variant="game"] .pub__panel[id$="-bibtex"] { display: block !important; }
   :root[data-variant="game"] .pub__panel-label { display: block !important; }
   dialog.image-viewer { display: none !important; }
+  dialog.acct-dlg { display: none !important; }
 
   /* G-025: page breaks. */
   h2, h3, .sec-head, .audience__label { break-after: avoid; }
