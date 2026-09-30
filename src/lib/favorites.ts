@@ -16,6 +16,8 @@ export const ACCOUNT_HEADS: Record<string, string> = {
   riot: 'SUMMONER PROFILE',
   neople: 'CHARACTER PROFILE',
   steam: 'STEAM PROFILE',
+  'nimble-neuron': 'PLAYER PROFILE',
+  'battle-net': 'BATTLE.NET PROFILE',
 };
 
 export interface FavoriteTile {

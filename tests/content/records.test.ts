@@ -436,7 +436,7 @@ describe('records data files', () => {
 
   it('favorites order is zzz, genshin, lol, dnf, steam, locked games have reasons, accounts are null', () => {
     const games = favorites();
-    expect(games.map((g) => g.id)).toEqual(['zzz', 'genshin', 'lol', 'dnf', 'steam']);
+    expect(games.map((g) => g.id)).toEqual(['zzz', 'genshin', 'lol', 'tft', 'dnf', 'eternal-return', 'hearthstone', 'steam']);
     for (const game of games) {
       if (game.locked) expect(game.reason, game.id).toBeDefined();
       expect(game.account, game.id).toBeNull();

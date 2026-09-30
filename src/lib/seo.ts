@@ -62,7 +62,8 @@ export const TRADEMARK_TERMS: readonly string[] = [
   '넥슨', 'NEXON', '메이플', 'MapleStory', '던전앤파이터', 'Dungeon & Fighter', '네오플', 'Neople',
   '원신', 'Genshin', '젠레스', 'Zenless', 'ZZZ',
   '리그 오브 레전드', 'League of Legends', 'LoL', 'Riot', '배틀그라운드', 'PUBG', 'Steam',
-  'HoYoverse', '이터널 리턴', 'Eternal Return',
+  'HoYoverse', '이터널 리턴', 'Eternal Return', 'Nimble Neuron', '님블뉴런',
+  'TFT', 'Teamfight Tactics', '전략적 팀 전투', '하스스톤', 'Hearthstone', 'Blizzard',
   'Hatsune Miku', '하츠네 미쿠', '初音ミク',
 ];
 

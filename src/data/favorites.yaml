@@ -8,6 +8,8 @@
 # - account는 v1에서 모두 null이다. 값이 없으면 계정 카드는 잠금 상태로 보인다.
 #   연동을 켜면 빌드 때 생성되는 src/data/generated/accounts/<integration.platform>.json을 읽는다(커밋하지 않음, spec §6·§7.1).
 # - locked: true 인 게임은 목록에 비활성 버튼으로만 보이고 선택할 수 없다.
+#   TFT는 LoL과 같은 Riot ID로 연동한다(account-link 설계 A-1·A-13). 이터널 리턴·하스스톤은 연동 계획이 없어 '소개 준비 중'이며,
+#   주인이 소개(why·meta)를 주면 locked를 푼다(2026-09-30 주인 요청으로 추가).
 # - notices 값 → ui.ts 키: cognosphere → notice.cognosphere · zzz-fan-guide → notice.zzzCopyright + notice.zzzLegalStatement · fan-content → footer.fanContent
 
 games:
@@ -93,6 +95,24 @@ games:
       enabled: false
     account: null
 
+  - id: tft
+    locked: true
+    reason:
+      ko: 계정 연동 준비 중
+      en: Account link coming soon
+    title:
+      ko: 전략적 팀 전투
+      en: Teamfight Tactics
+    studio: Riot Games
+    characters: []
+    why: null
+    meta: []
+    notices: []
+    integration:
+      platform: riot
+      enabled: false
+    account: null
+
   - id: dnf
     locked: true
     reason:
@@ -108,6 +128,42 @@ games:
     notices: []
     integration:
       platform: neople
+      enabled: false
+    account: null
+
+  - id: eternal-return
+    locked: true
+    reason:
+      ko: 소개 준비 중
+      en: Details coming soon
+    title:
+      ko: 이터널 리턴
+      en: Eternal Return
+    studio: Nimble Neuron
+    characters: []
+    why: null
+    meta: []
+    notices: []
+    integration:
+      platform: nimble-neuron
+      enabled: false
+    account: null
+
+  - id: hearthstone
+    locked: true
+    reason:
+      ko: 소개 준비 중
+      en: Details coming soon
+    title:
+      ko: 하스스톤
+      en: Hearthstone
+    studio: Blizzard Entertainment
+    characters: []
+    why: null
+    meta: []
+    notices: []
+    integration:
+      platform: battle-net
       enabled: false
     account: null
 

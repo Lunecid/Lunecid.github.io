@@ -178,7 +178,7 @@ describe('toolchain', () => {
     expect(types.ACHIEVEMENT_TRIGGERS).not.toContain('visit-404');
     expect(types.NOTICE_KEYS).toContain('riot');
     expect(types.CERTIFICATE_IDS).toEqual(['busan-mayor-award', 'cds-encouragement-award', 'multicampus-grand-award']);
-    expect(types.GAME_IDS).toEqual(['zzz', 'genshin', 'lol', 'dnf', 'steam']);
+    expect(types.GAME_IDS).toEqual(['zzz', 'genshin', 'lol', 'tft', 'dnf', 'eternal-return', 'hearthstone', 'steam']);
     expect(types.SFX_NAMES).toEqual(['move', 'select', 'open', 'close']);
     expect(types.PAGE_IDS).toContain('not-found');
     expect(types.PAGE_IDS).toContain('chooser');

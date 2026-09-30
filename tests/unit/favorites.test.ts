@@ -36,10 +36,10 @@ beforeEach(() => {
 });
 
 describe('buildFavoriteGames', () => {
-  it('buildFavoriteGames keeps yaml order, locks lol/dnf/steam, uses reason as caption', async () => {
+  it('buildFavoriteGames keeps yaml order, locks every game without an intro, uses reason as caption', async () => {
     const ko = await buildFavoriteGames(games, 'ko', none);
-    expect(ko.map((g) => g.id)).toEqual(['zzz', 'genshin', 'lol', 'dnf', 'steam']);
-    expect(ko.filter((g) => g.locked).map((g) => g.id)).toEqual(['lol', 'dnf', 'steam']);
+    expect(ko.map((g) => g.id)).toEqual(['zzz', 'genshin', 'lol', 'tft', 'dnf', 'eternal-return', 'hearthstone', 'steam']);
+    expect(ko.filter((g) => g.locked).map((g) => g.id)).toEqual(['lol', 'tft', 'dnf', 'eternal-return', 'hearthstone', 'steam']);
     expect(ko[2].tabCaption).toBe('계정 연동 준비 중');
     expect(ko[0]).toMatchObject({
       tabTitle: '젠레스 존 제로',
@@ -49,7 +49,10 @@ describe('buildFavoriteGames', () => {
     });
     expect(ko[0].why).toContain('레미엘');
     expect(ko[0].meta?.[0]).toMatch(/^플레이 \d{4}/);
-    expect(ko[3].title).toEqual(['Dungeon', '& Fighter']);
+    expect(ko.find((g) => g.id === 'dnf')!.title).toEqual(['Dungeon', '& Fighter']);
+    // 2026-09-30 (owner): TFT links with LoL's Riot ID; Eternal Return and Hearthstone have no link plan.
+    expect(ko.find((g) => g.id === 'tft')!.tabCaption).toBe('계정 연동 준비 중');
+    expect(ko.find((g) => g.id === 'hearthstone')!.tabCaption).toBe('소개 준비 중');
     expect(ko[2].why).toBeUndefined();
     expect(ko[2].meta).toBeUndefined();
 
@@ -95,6 +98,8 @@ describe('buildFavoriteGames', () => {
       'enka-genshin': 'ADVENTURER PROFILE',
       riot: 'SUMMONER PROFILE',
       neople: 'CHARACTER PROFILE',
+      'nimble-neuron': 'PLAYER PROFILE',
+      'battle-net': 'BATTLE.NET PROFILE',
       steam: 'STEAM PROFILE',
     });
   });

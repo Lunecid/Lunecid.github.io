@@ -160,7 +160,7 @@
   "tests/unit/fact-lint.test.ts": 7,
   "tests/unit/facts.test.ts": 48,
   "tests/unit/favicon.test.ts": 13,
-  "tests/unit/favorites.test.ts": 39,
+  "tests/unit/favorites.test.ts": 41,
   "tests/unit/fetch-github.test.ts": 49,
   "tests/unit/fetch-goatcounter.test.ts": 48,
   "tests/unit/figures.test.ts": 49,
