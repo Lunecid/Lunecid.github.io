@@ -19,7 +19,9 @@ describe('toolchain', () => {
     expect(config.i18n).toEqual({ defaultLocale: 'ko', locales: ['ko', 'en'], routing: { prefixDefaultLocale: false } });
     // Batch 2: font-subsets subsets the page fonts after the build (scripts/fonts/build.mjs).
     // P1-13 (A-6): legacy-redirects runs last, after the sitemap and the font subsetting.
-    expect((config.integrations ?? []).map((i) => (i && 'name' in i ? i.name : ''))).toEqual(['@astrojs/react', '@astrojs/sitemap', 'font-subsets', 'legacy-redirects']);
+    // AL-1 (C0): csp-finalize re-hashes every inline block after the font rewrite, before the stubs (own CSP meta).
+    expect((config.integrations ?? []).map((i) => (i && 'name' in i ? i.name : ''))).toEqual(['@astrojs/react', '@astrojs/sitemap', 'font-subsets', 'csp-finalize', 'legacy-redirects']);
+    expect(config.security?.csp).toMatchObject({ algorithm: 'SHA-256' });
   });
 
   it('final fix 2 item 12: every Fonts API family is read from installed files, so a cold-cache build needs no network', { timeout: 30_000 }, async () => {

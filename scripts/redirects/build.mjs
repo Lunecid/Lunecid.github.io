@@ -2,6 +2,7 @@
 // version before the move) gets a static page that forwards to the same base under /game/, keeping the #hash. Written
 // at astro:build:done by the LAST integration, after the sitemap and the font subsetting, so stubs are in neither.
 // Title, description and og:image come from the BUILT target page (no page meta import into plain Node).
+import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -21,16 +22,29 @@ const BODY = {
 };
 
 /**
+ * AL-1 (C0): the stub's own policy — nothing but its one forwarding script (by hash) and the icons. Stubs are written
+ * after csp-finalize, so they carry this meta themselves.
+ * @param {string} script the exact text of the stub's inline script
+ * @returns {string}
+ */
+export function stubCsp(script) {
+  const hash = createHash('sha256').update(script, 'utf8').digest('base64');
+  return `default-src 'none'; script-src 'sha256-${hash}'; img-src 'self'; base-uri 'none'; form-action 'none'`;
+}
+
+/**
  * @typedef {{ from: string, to: string, lang: 'ko' | 'en', title: string, description: string, ogImage: string, siteUrl: string }} StubInput
  * @param {StubInput} input
  * @returns {string}
  */
 export function stubHtml({ to, lang, title, description, ogImage, siteUrl }) {
   const canonical = `${siteUrl}${to}`;
+  const script = `location.replace(${JSON.stringify(to)} + location.hash)`;
   return [
     `<!doctype html><html lang="${lang}" ${STUB_MARKER}><head>`,
     '<meta charset="utf-8">',
-    `<script>location.replace(${JSON.stringify(to)} + location.hash)</script>`,
+    `<meta http-equiv="content-security-policy" content="${esc(stubCsp(script))}">`,
+    `<script>${script}</script>`,
     `<meta http-equiv="refresh" content="0; url=${esc(to)}">`,
     `<link rel="canonical" href="${esc(canonical)}">`,
     '<meta name="viewport" content="width=device-width, initial-scale=1">',

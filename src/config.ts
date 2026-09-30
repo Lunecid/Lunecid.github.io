@@ -39,6 +39,20 @@ export const GOATCOUNTER: { readonly code: string | null; readonly sri: string; 
   cdnSrc: 'https://gc.zgo.at/count.v5.js',
 };
 
+// Account link (spec 2026-09-29 §10): the owner-only management section talks to the relay Worker only.
+// relay: the owner's first `wrangler deploy` output; one commit fills it (AL-23) and changes the CSP and the privacy
+// sentence with it.
+export const ACCOUNT_ADMIN = {
+  owner: 'Lunecid',
+  repo: 'Lunecid.github.io',
+  workflow: 'deploy.yml',
+  ref: 'main',
+  relay: null as string | null,
+  etaMinutes: 20,
+  idleWarnMinutes: 2,
+  capWarnMinutes: 5,
+} as const;
+
 export const STORAGE_KEYS = {
   motion: 'sb:motion', // localStorage 'on' | 'off'
   sound: 'sb:sound', // localStorage 'on' | 'off'

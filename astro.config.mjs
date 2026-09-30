@@ -4,6 +4,9 @@ import react from '@astrojs/react';
 import sitemap from '@astrojs/sitemap';
 import { fontSubsets } from './scripts/fonts/build.mjs';
 import { legacyRedirectStubs } from './scripts/redirects/build.mjs';
+import { cspFinalize } from './scripts/csp/finalize.mjs';
+import { cspDirectives, relayOrigin, scriptResources, STYLE_RESOURCES } from './src/lib/csp.ts';
+import { goatcounterSelfHosted } from './src/lib/public-assets.ts';
 import { satteri } from '@astrojs/markdown-satteri';
 import { baseLinksHastPlugin } from './scripts/markdown/rehype-base-links.mjs';
 
@@ -46,8 +49,20 @@ export default defineConfig({
     react(),
     sitemap({ filter: sitemapFilter, serialize: sitemapSerialize, i18n: { defaultLocale: 'ko', locales: { ko: 'ko', en: 'en' } } }),
     fontSubsets(), // after the build: subset the page fonts to the characters of the built pages (batch 2)
+    cspFinalize(), // AL-1 (C0): re-hash every inline block after the font rewrite; the CSP meta right after <meta charset>
     legacyRedirectStubs(), // P1-13 (A-6): LAST — after the sitemap and the font subsetting, so stubs are in neither
   ],
+  // AL-1 (C0, account-link spec §8.2): a hash-based <meta http-equiv="content-security-policy"> on every page. Every
+  // directive comes from src/lib/csp.ts; csp-finalize (above) fixes the hash lists and the meta's position.
+  security: {
+    csp: {
+      algorithm: 'SHA-256',
+      // csp.ts returns plain strings (it is also read by plain-Node tests); Astro's directive type is a template literal.
+      directives: /** @type {Extract<NonNullable<NonNullable<import('astro').AstroUserConfig['security']>['csp']>, object>['directives']} */ (cspDirectives({ relay: relayOrigin(process.env) })),
+      scriptDirective: { resources: scriptResources({ goatcounterCdn: !goatcounterSelfHosted() }) },
+      styleDirective: { resources: STYLE_RESOURCES },
+    },
+  },
   i18n: { defaultLocale: 'ko', locales: ['ko', 'en'], routing: { prefixDefaultLocale: false } },
   fonts: [
     {

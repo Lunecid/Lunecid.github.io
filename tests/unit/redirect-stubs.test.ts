@@ -2,7 +2,8 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { STUB_MARKER, stubHtml, writeStubs } from '../../scripts/redirects/build.mjs';
+import { createHash } from 'node:crypto';
+import { STUB_MARKER, stubCsp, stubHtml, writeStubs } from '../../scripts/redirects/build.mjs';
 
 const input = {
   from: '/records/', to: '/game/records/', lang: 'ko' as const, title: '기록·이력서 · 백성은', description: '학력 & "수상"',
@@ -10,14 +11,21 @@ const input = {
 };
 
 describe('stubHtml (R-6, contract §2.4)', () => {
-  it('head order: charset → location.replace(to + hash) → meta refresh → canonical, then meta, OG and icons; body in the page language', () => {
+  it('AL-1 (C0): the stub carries its own CSP meta right after charset, allowing only its one script by hash', () => {
+    const script = 'location.replace("/game/records/" + location.hash)';
+    const hash = createHash('sha256').update(script).digest('base64');
+    expect(stubCsp(script)).toBe(`default-src 'none'; script-src 'sha256-${hash}'; img-src 'self'; base-uri 'none'; form-action 'none'`);
+    expect(stubHtml(input)).toContain(`<meta charset="utf-8">\n<meta http-equiv="content-security-policy" content="${stubCsp(script)}">\n<script>${script}</script>`);
+  });
+
+  it('head order: charset → CSP meta → location.replace(to + hash) → meta refresh → canonical, then meta, OG and icons; body in the page language', () => {
     const html = stubHtml(input);
     expect(html.startsWith(`<!doctype html><html lang="ko" ${STUB_MARKER}><head>`)).toBe(true);
     const at = (needle: string) => html.indexOf(needle);
     expect(at('<meta charset="utf-8">')).toBeGreaterThan(0);
     expect(at('<script>location.replace("/game/records/" + location.hash)</script>')).toBeGreaterThan(at('<meta charset="utf-8">'));
     expect(at('<meta http-equiv="refresh" content="0; url=/game/records/">')).toBeGreaterThan(at('location.replace'));
-    expect(at('<link rel="canonical" href="https://lunecid.github.io/game/records/">')).toBeGreaterThan(at('http-equiv'));
+    expect(at('<link rel="canonical" href="https://lunecid.github.io/game/records/">')).toBeGreaterThan(at('http-equiv="refresh"'));
     expect(html).not.toContain('noindex');
     expect(html).toContain('<title>기록·이력서 · 백성은</title>');
     expect(html).toContain('<meta name="description" content="학력 &amp; &quot;수상&quot;">');
