@@ -14,6 +14,7 @@ const EXPECTED_ACTIONS = [
   'actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9',
   'actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1',
   'actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346',
+  'actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131',
   'actions/setup-node@820762786026740c76f36085b0efc47a31fe5020',
   'actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a',
   'actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9',
@@ -29,12 +30,34 @@ function allSteps(wf) {
   return Object.entries(wf.jobs).flatMap(([job, def]) => (def.steps ?? []).map((step, index) => ({ job, index, step })));
 }
 
-/** Dotted paths of every string value that references secrets.* */
-function secretPaths(node, path = []) {
-  if (typeof node === 'string') return node.includes('secrets.') ? [path.join('.')] : [];
-  if (Array.isArray(node)) return node.flatMap((value, i) => secretPaths(value, [...path, String(i)]));
-  if (node && typeof node === 'object') return Object.entries(node).flatMap(([key, value]) => secretPaths(value, [...path, key]));
+/** Dotted paths of every string value that references `needle` (default secrets.*) */
+function secretPaths(node, path = [], needle = 'secrets.') {
+  if (typeof node === 'string') return node.includes(needle) ? [path.join('.')] : [];
+  if (Array.isArray(node)) return node.flatMap((value, i) => secretPaths(value, [...path, String(i)], needle));
+  if (node && typeof node === 'object') return Object.entries(node).flatMap(([key, value]) => secretPaths(value, [...path, key], needle));
   return [];
+}
+
+const ACCOUNT_VARS = [
+  'ACCOUNT_GENSHIN_UID',
+  'ACCOUNT_GENSHIN_NAME',
+  'ACCOUNT_ZZZ_UID',
+  'ACCOUNT_ZZZ_NAME',
+  'ACCOUNT_STEAM_ID64',
+  'ACCOUNT_STEAM_NAME',
+  'ACCOUNT_RIOT_ID',
+];
+
+/** Index of the fetch-accounts job's fetch step. */
+function accountStepIndex(wf) {
+  return wf.jobs['fetch-accounts'].steps.findIndex((s) => s.name === 'Fetch linked game accounts');
+}
+
+/** Every job whose needs chain (direct or transitive) reaches `target`. */
+function dependents(wf, target) {
+  const needsOf = (job) => [wf.jobs[job].needs ?? []].flat();
+  const reaches = (job, seen = new Set()) => needsOf(job).some((n) => n === target || (!seen.has(n) && (seen.add(n), reaches(n, seen))));
+  return Object.keys(wf.jobs).filter((job) => reaches(job));
 }
 
 function fixtureDir(files) {
@@ -57,25 +80,31 @@ test('every uses: is pinned to a 40-hex SHA', () => {
   const { wf } = readWorkflow();
   const uses = allSteps(wf).map(({ step }) => step.uses).filter(Boolean);
   for (const ref of uses) assert.match(ref, /^[\w.-]+\/[\w.-]+@[0-9a-f]{40}$/, ref);
-  assert.deepEqual([...new Set(uses)].sort(), EXPECTED_ACTIONS, 'exactly the stack-ops §1 actions (no download-artifact)');
+  assert.deepEqual([...new Set(uses)].sort(), EXPECTED_ACTIONS, 'exactly the stack-ops §1 actions (download-artifact v7.0.0 for the account feeds)');
 });
 
-test('secrets.* appear only in the fetch step, the ops-test PII_DENYLIST env and the gitleaks step', () => {
+test('secrets.* appear only in the fetch step, the ops-test PII_DENYLIST env, the gitleaks step and the fetch-accounts step', () => {
   const { text, wf } = readWorkflow();
   const build = wf.jobs.build.steps;
   const fetchIndex = build.findIndex((s) => s.name === 'Fetch build-time data');
   const opsIndex = build.findIndex((s) => s.run === 'npm run test:ops');
   const leakIndex = wf.jobs['secrets-scan'].steps.findIndex((s) => String(s.uses ?? '').startsWith('gitleaks/gitleaks-action@'));
-  assert.ok(fetchIndex >= 0 && opsIndex >= 0 && leakIndex >= 0, 'fetch, ops and gitleaks steps exist');
+  const accountIndex = accountStepIndex(wf);
+  assert.ok(fetchIndex >= 0 && opsIndex >= 0 && leakIndex >= 0 && accountIndex >= 0, 'fetch, ops, gitleaks and fetch-accounts steps exist');
   const expected = [
     `jobs.build.steps.${fetchIndex}.env.GH_PROFILE_TOKEN`,
     `jobs.build.steps.${fetchIndex}.env.GITHUB_TOKEN`,
     `jobs.build.steps.${fetchIndex}.env.GOATCOUNTER_TOKEN`,
     `jobs.build.steps.${opsIndex}.env.PII_DENYLIST`,
     `jobs.secrets-scan.steps.${leakIndex}.env.GITHUB_TOKEN`,
+    `jobs.fetch-accounts.steps.${accountIndex}.env.STEAM_API_KEY`,
   ].sort();
   assert.deepEqual(secretPaths(wf).sort(), expected);
-  assert.equal((text.match(/\$\{\{\s*secrets\./g) ?? []).length, expected.length, 'no secrets.* anywhere else in the file');
+  assert.equal((text.match(/\$\{\{\s*secrets\./g) ?? []).length, 6, 'no secrets.* anywhere else in the file');
+  assert.deepEqual(wf.jobs['fetch-accounts'].steps[accountIndex].env, {
+    ...Object.fromEntries(ACCOUNT_VARS.map((name) => [name, `\${{ vars.${name} }}`])),
+    STEAM_API_KEY: '${{ secrets.STEAM_API_KEY }}',
+  });
   assert.deepEqual(build[fetchIndex].env, {
     GH_PROFILE_TOKEN: '${{ secrets.GH_PROFILE_TOKEN }}',
     GITHUB_TOKEN: '${{ secrets.GITHUB_TOKEN }}',
@@ -95,6 +124,93 @@ test('cron is 30 18 * * *', () => {
   assert.deepEqual(wf.on.schedule, [{ cron: '30 18 * * *' }]);
   assert.deepEqual(wf.on.push, { branches: ['main'] });
   assert.ok('workflow_dispatch' in wf.on);
+});
+
+test('account-link AL-7: triggers stay push main, input-free workflow_dispatch and the cron; no PR or workflow_run trigger', () => {
+  const { wf } = readWorkflow();
+  assert.deepEqual(Object.keys(wf.on).sort(), ['push', 'schedule', 'workflow_dispatch']);
+  const dispatch = wf.on.workflow_dispatch;
+  assert.ok(dispatch === null || (typeof dispatch === 'object' && !('inputs' in dispatch)), 'workflow_dispatch has no inputs');
+  for (const name of ['pull_request', 'pull_request_target', 'workflow_run']) assert.equal(name in wf.on, false, name);
+});
+
+test('account-link AL-7: vars.* appear only in the fetch-accounts step env; no run: contains ${{', () => {
+  const { text, wf } = readWorkflow();
+  const accountIndex = accountStepIndex(wf);
+  assert.deepEqual(
+    secretPaths(wf, [], 'vars.').sort(),
+    ACCOUNT_VARS.map((name) => `jobs.fetch-accounts.steps.${accountIndex}.env.${name}`).sort(),
+  );
+  assert.equal((text.match(/\$\{\{\s*vars\./g) ?? []).length, ACCOUNT_VARS.length, 'no vars.* expression anywhere else in the file');
+  for (const { job, index, step } of allSteps(wf)) {
+    if (step.run !== undefined) assert.doesNotMatch(String(step.run), /\$\{\{/, `${job}.steps.${index}.run has no expression`);
+  }
+});
+
+test('account-link AL-7: fetch-accounts runs in the account-fetch environment with contents: read, no npm and only the fetcher', () => {
+  const { wf } = readWorkflow();
+  const job = wf.jobs['fetch-accounts'];
+  assert.ok(job, 'job fetch-accounts exists');
+  assert.equal(job['runs-on'], 'ubuntu-latest');
+  assert.equal(job['timeout-minutes'], 5);
+  assert.equal(job.environment, 'account-fetch');
+  assert.deepEqual(job.permissions, { contents: 'read' });
+  assert.equal(job.needs, undefined, 'fetch-accounts waits for no job');
+  assert.equal('continue-on-error' in job, false, 'no job-level continue-on-error (result-based if: downstream instead)');
+  assert.equal('if' in job, false, 'the job always runs; with no variables it writes nothing');
+  assert.deepEqual(
+    job.steps.map((s) => String(s.uses ?? '').split('@')[0]).filter(Boolean),
+    ['actions/checkout', 'actions/setup-node', 'actions/upload-artifact'],
+  );
+  const runs = job.steps.map((s) => s.run).filter((r) => r !== undefined);
+  assert.deepEqual(runs, ['node scripts/fetch-accounts.mjs --out account-feeds'], 'the zero-dependency fetcher is the only command');
+  for (const run of runs) assert.doesNotMatch(run, /npm/);
+  const checkout = job.steps.find((s) => String(s.uses ?? '').startsWith('actions/checkout@'));
+  assert.equal(checkout.with['persist-credentials'], false);
+  const setup = job.steps.find((s) => String(s.uses ?? '').startsWith('actions/setup-node@'));
+  assert.equal(setup.with['node-version'], 24);
+  assert.equal('cache' in setup.with, false, 'no npm cache in the key job');
+  const upload = job.steps.find((s) => String(s.uses ?? '').startsWith('actions/upload-artifact@'));
+  assert.equal(upload.uses, 'actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a');
+  assert.deepEqual(upload.with, { name: 'account-feeds', path: 'account-feeds/', 'retention-days': 1, 'if-no-files-found': 'ignore' });
+  assert.ok(job.steps.indexOf(upload) > accountStepIndex(wf), 'the artifact is uploaded after the fetch');
+});
+
+test('account-link AL-7: build waits for fetch-accounts but runs unless cancelled, and brings in the feeds between npm ci and the fetch', () => {
+  const { wf } = readWorkflow();
+  const build = wf.jobs.build;
+  assert.deepEqual(build.needs, ['fetch-accounts']);
+  assert.equal(build.if, '${{ !cancelled() }}');
+  const steps = build.steps;
+  const ciIndex = steps.findIndex((s) => s.run === 'npm ci');
+  const fetchIndex = steps.findIndex((s) => s.name === 'Fetch build-time data');
+  const downloads = steps.filter((s) => String(s.uses ?? '').startsWith('actions/download-artifact@'));
+  assert.equal(downloads.length, 1, 'one download step');
+  const dlIndex = steps.indexOf(downloads[0]);
+  assert.ok(ciIndex >= 0 && ciIndex < dlIndex && dlIndex < fetchIndex, 'after npm ci, before "Fetch build-time data"');
+  const dl = steps[dlIndex];
+  assert.equal(dl.name, 'Bring in account feeds');
+  assert.equal(dl.uses, 'actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131');
+  assert.equal(dl['continue-on-error'], true);
+  assert.deepEqual(dl.with, { name: 'account-feeds', path: 'src/data/generated' });
+  assert.equal(dl.env, undefined);
+});
+
+test('account-link AL-7: deploy and fetch-health use result-based conditions; every job after fetch-accounts survives its failure', () => {
+  const { wf } = readWorkflow();
+  assert.equal(wf.jobs.deploy.if, "${{ !cancelled() && needs.build.result == 'success' && needs.secrets-scan.result == 'success' }}");
+  assert.deepEqual(wf.jobs.deploy.needs, ['build', 'secrets-scan']);
+  assert.equal(
+    wf.jobs['fetch-health'].if,
+    "${{ !cancelled() && needs.deploy.result == 'success' && needs.build.outputs.auth_failed == 'true' }}",
+  );
+  const after = dependents(wf, 'fetch-accounts').sort();
+  assert.deepEqual(after, ['build', 'deploy', 'fetch-health']);
+  for (const job of after) {
+    const cond = String(wf.jobs[job].if ?? '');
+    assert.match(cond, /!cancelled\(\)/, `${job}: !cancelled()`);
+    if (job !== 'build') assert.match(cond, /needs\.[\w-]+\.result == 'success'/, `${job}: result-based needs check`);
+  }
 });
 
 test('top-level permissions are empty and deploy has pages/id-token write', () => {
@@ -152,7 +268,7 @@ test('fetch-health has no uses:, depends on build and deploy, and runs only when
   assert.equal(statusIndex, fetchIndex + 1, 'status is recorded right after the fetch');
   const health = wf.jobs['fetch-health'];
   assert.deepEqual(health.needs, ['build', 'deploy']);
-  assert.equal(health.if, "needs.build.outputs.auth_failed == 'true'");
+  assert.equal(health.if, "${{ !cancelled() && needs.deploy.result == 'success' && needs.build.outputs.auth_failed == 'true' }}");
   assert.deepEqual(health.permissions, {});
   assert.ok(health.steps.length > 0 && health.steps.every((s) => !('uses' in s)));
   assert.match(health.steps.map((s) => s.run).join('\n'), /exit 1/);
@@ -161,7 +277,7 @@ test('fetch-health has no uses:, depends on build and deploy, and runs only when
 test('final review fix 1 item 10: every checkout drops its credentials (no job pushes)', () => {
   const { wf } = readWorkflow();
   const checkouts = allSteps(wf).filter(({ step }) => String(step.uses ?? '').startsWith('actions/checkout@'));
-  assert.deepEqual(checkouts.map(({ job }) => job).sort(), ['build', 'secrets-scan']);
+  assert.deepEqual(checkouts.map(({ job }) => job).sort(), ['build', 'fetch-accounts', 'secrets-scan']);
   for (const { job, step } of checkouts) assert.equal(step.with?.['persist-credentials'], false, `${job}: persist-credentials false`);
   assert.equal(wf.jobs['secrets-scan'].steps.find((s) => String(s.uses ?? '').startsWith('actions/checkout@')).with['fetch-depth'], 0);
 });

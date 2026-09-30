@@ -50,12 +50,51 @@ jobs:
             echo "The push starts at the root commit: gitleaks scans from the root commit."
           fi
 
+      # Secrets place 3 of 4.
       - name: Scan history for secrets
         uses: gitleaks/gitleaks-action@e0c47f4f8be36e29cdc102c57e68cb5cbf0e8d1e # v3.0.0 (node24; no license needed for a personal account)
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+  # Linked game accounts (account-link spec §7). Its own job so the Steam key never meets npm packages: no npm cache,
+  # no npm ci, Node built-ins only. With no ACCOUNT_* variable set it makes no request and uploads no artifact.
+  fetch-accounts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    environment: account-fetch # STEAM_API_KEY is this environment's secret; deployment branches: main only (owner step 8-1)
+    permissions:
+      contents: read # checkout only
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24 # no npm cache, no npm ci: the Steam key never meets third-party code
+      # Secrets place 4 of 4. Values reach the script only through env (never ${{ }} inside run:).
+      # The runner prints a step's env block, so vars.* values appear in plain text in the run log (spec R-14).
+      # The script always exits 0: a failed platform writes an error feed (or nothing) and only hides its card.
+      - name: Fetch linked game accounts
+        run: node scripts/fetch-accounts.mjs --out account-feeds
+        env:
+          ACCOUNT_GENSHIN_UID: ${{ vars.ACCOUNT_GENSHIN_UID }}
+          ACCOUNT_GENSHIN_NAME: ${{ vars.ACCOUNT_GENSHIN_NAME }}
+          ACCOUNT_ZZZ_UID: ${{ vars.ACCOUNT_ZZZ_UID }}
+          ACCOUNT_ZZZ_NAME: ${{ vars.ACCOUNT_ZZZ_NAME }}
+          ACCOUNT_STEAM_ID64: ${{ vars.ACCOUNT_STEAM_ID64 }}
+          ACCOUNT_STEAM_NAME: ${{ vars.ACCOUNT_STEAM_NAME }}
+          ACCOUNT_RIOT_ID: ${{ vars.ACCOUNT_RIOT_ID }}
+          STEAM_API_KEY: ${{ secrets.STEAM_API_KEY }}
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: account-feeds
+          path: account-feeds/
+          retention-days: 1
+          if-no-files-found: ignore
+
   build:
+    needs: [fetch-accounts]
+    if: ${{ !cancelled() }} # the build runs even when the account job failed or was refused by the environment rule
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
@@ -76,7 +115,14 @@ jobs:
 
       - run: npm ci
 
-      # Secrets place 1 of 3. Writes src/data/generated/*.json (gitignored). Fetchers never exit non-zero:
+      - name: Bring in account feeds
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        continue-on-error: true # no artifact when the account job failed or had nothing to write: build without accounts
+        with:
+          name: account-feeds
+          path: src/data/generated
+
+      # Secrets place 1 of 4. Writes src/data/generated/*.json (gitignored). Fetchers never exit non-zero:
       # failures become status "error"/"partial"/"skipped" and hide their sections; 401/403 set authFailed.
       # The GoatCounter site code is not an env var: src/config.ts GOATCOUNTER.code is the single source.
       - name: Fetch build-time data
@@ -108,7 +154,7 @@ jobs:
 
       - run: npm run build:pdf
 
-      # Secrets place 2 of 3: detection-only values (phone, birth date, student id), matched literally in dist.
+      # Secrets place 2 of 4: detection-only values (phone, birth date, student id), matched literally in dist.
       - name: Ops tests
         run: npm run test:ops
         env:
@@ -150,6 +196,9 @@ jobs:
 
   deploy:
     needs: [build, secrets-scan]
+    # Result-based condition: a job-level if without a status function gets success(), which checks every ancestor job
+    # (fetch-accounts included), so a failed account job would skip the deploy. This checks only the direct needs.
+    if: ${{ !cancelled() && needs.build.result == 'success' && needs.secrets-scan.result == 'success' }}
     runs-on: ubuntu-latest
     permissions:
       pages: write # deploy to Pages
@@ -165,7 +214,7 @@ jobs:
   # already hid the affected section).
   fetch-health:
     needs: [build, deploy]
-    if: needs.build.outputs.auth_failed == 'true'
+    if: ${{ !cancelled() && needs.deploy.result == 'success' && needs.build.outputs.auth_failed == 'true' }}
     runs-on: ubuntu-latest
     permissions: {}
     steps:

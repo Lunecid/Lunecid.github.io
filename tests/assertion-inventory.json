@@ -133,7 +133,7 @@
   "tests/ops/safe-fetch.test.mjs": 112,
   "tests/ops/token-residue.test.mjs": 5,
   "tests/ops/viewer-islands.test.mjs": 3,
-  "tests/ops/workflow.test.mjs": 84,
+  "tests/ops/workflow.test.mjs": 123,
   "tests/react/AchievementHost.test.tsx": 57,
   "tests/react/BgmToggle.test.tsx": 75,
   "tests/react/CharacterStage.test.tsx": 90,
