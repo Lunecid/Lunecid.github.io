@@ -168,12 +168,18 @@ test.describe('D-1 no-art build', () => {
       await expect(page.locator('.fg__tint--remielle')).toHaveAttribute('data-on', 'true');
       const stage = await box(page.locator('.fg__stage'));
       const copy = await box(page.locator('.fg__copy'));
-      expect(stage.height, `${width}px: stage is about the copy's height, no empty block`).toBeLessThan(copy.height + 120);
+      // from 1068px the stage shares its grid row with the tab column, so the taller of the two sets its height
+      const list = await box(page.locator('.fg__list'));
+      const content = width >= 1068 ? Math.max(copy.height, list.height) : copy.height;
+      expect(stage.height, `${width}px: stage is about its content's height, no empty block`).toBeLessThan(content + 120);
       const tabs = await page.locator('.fg__tab').all();
       const tabBoxes = await Promise.all(tabs.map(box));
       if (width < 1068) {
-        expect(new Set(tabBoxes.map((b) => Math.round(b.y))).size, `${width}px: tabs in one top row`).toBe(1);
-        expect(copy.y, `${width}px: copy under the tabs`).toBeGreaterThan(tabBoxes[0].y + tabBoxes[0].height);
+        // two or three games: one row; four or more fill full rows of the first row's width, all above the copy
+        const rowYs = [...new Set(tabBoxes.map((b) => Math.round(b.y)))];
+        const perRow = tabBoxes.filter((b) => Math.round(b.y) === rowYs[0]).length;
+        expect(rowYs.length, `${width}px: tabs on top in full rows`).toBe(tabs.length <= 3 ? 1 : Math.ceil(tabs.length / perRow));
+        expect(copy.y, `${width}px: copy under the tabs`).toBeGreaterThan(Math.max(...tabBoxes.map((b) => b.y + b.height)));
       } else {
         expect(tabBoxes[0].width).toBeCloseTo(190, 0);
         expect(new Set(tabBoxes.map((b) => Math.round(b.x))).size, 'tabs stacked in the list column').toBe(1);
@@ -242,15 +248,17 @@ test.describe('with art (dist): the art shows and replaces the no-art layouts', 
     }
   });
 
-  test('Player Log: tiles and the showcase art show; the showcase keeps its fixed art stage (520px with two games)', async ({ page }) => {
+  test('Player Log: tiles and the showcase art show; the showcase keeps its fixed art stage (520px with two or three games, 600px with four or more)', async ({ page }) => {
     await open(page, '/game/player-log/', 1440);
     await hydrateAll(page);
     await expect(page.locator('.fav-tile')).toHaveCount(3);
     await expect(page.locator('[data-ach-meter]')).toHaveCount(0);
     await page.locator('section.fg').scrollIntoViewIfNeeded();
     await expect(page.locator('.fg__chr img')).toBeVisible();
-    // final fix 2 item 8: D-13 leaves two games, so the tabs sit in a row and the art stage is 520px (600px with 4+)
-    expect((await box(page.locator('section.fg'))).height).toBeCloseTo(520, 0);
+    // final fix 2 item 8: two or three games sit in a tab row over a 520px stage; four or more (five since 2026-09-30)
+    // take the tab column beside a 600px stage
+    const tabCount = await page.locator('.fg__tab').count();
+    expect((await box(page.locator('section.fg'))).height).toBeCloseTo(tabCount <= 3 ? 520 : 600, 0);
     await open(page, '/game/player-log/', 1920);
     for (const tile of await page.locator('.fav-tile').all()) {
       const b = await box(tile);

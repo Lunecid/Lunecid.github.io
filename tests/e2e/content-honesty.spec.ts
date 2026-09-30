@@ -72,7 +72,8 @@ test.describe('D-13: the Player Log shows only what exists', () => {
   for (const route of ['/game/player-log/', '/en/game/player-log/']) {
     test(route, async ({ page }) => {
       await page.goto(route, { waitUntil: 'load' });
-      await expect(page.locator('#favorite-games [role="tab"]')).toHaveCount(2);
+      // the unlocked favourites (zzz, genshin, lol, tft, eternal-return, hearthstone since 2026-09-30); locked ones stay out (D-13)
+      await expect(page.locator('#favorite-games [role="tab"]')).toHaveCount(6);
       await expect(page.locator('#favorite-games [role="tab"][aria-disabled="true"]')).toHaveCount(0);
       await expect(page.locator('#game-achievements')).toHaveCount(0);
       await page.locator('#favorite-games').scrollIntoViewIfNeeded();

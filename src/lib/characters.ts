@@ -34,6 +34,8 @@ export const SIDE_WIDTHS = [480, 800, 1000, 1200];
 export const SIDE_SIZES = '(min-width: 1068px) 760px, 980px';
 export const SHOWCASE_WIDTHS = [480, 800, 1000, 1200, 1520];
 export const SHOWCASE_SIZES = '(min-width: 734px) 980px, 100vw';
+/** Four or more games (the tab column beside a 600px stage from 1068px): the portrait art is painted ~1125px wide there. */
+export const SHOWCASE_SIZES_LIST = '(min-width: 1068px) 1130px, (min-width: 734px) 980px, 100vw';
 export const TILE_WIDTHS = [240, 360, 560, 800, 1080];
 export const TILE_SIZES = '(min-width: 734px) 525px, 40vw';
 

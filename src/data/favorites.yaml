@@ -9,7 +9,10 @@
 #   연동을 켜면 빌드 때 생성되는 src/data/generated/accounts/<integration.platform>.json을 읽는다(커밋하지 않음, spec §6·§7.1).
 # - locked: true 인 게임은 목록에 비활성 버튼으로만 보이고 선택할 수 없다.
 #   TFT는 LoL과 같은 Riot ID로 연동한다(account-link 설계 A-1·A-13). 이터널 리턴·하스스톤은 연동 계획이 없어 '소개 준비 중'이며,
-#   주인이 소개(why·meta)를 주면 locked를 푼다(2026-09-30 주인 요청으로 추가).
+#   주인이 소개(why·meta)를 주면 locked를 푼다(2026-09-30 주인 요청으로 추가). TFT·하스스톤은 같은 날 주인이 준 장르와
+#   이유로 풀었다(최애 캐릭터 없음, 플레이 시작 연도는 받지 않아 넣지 않음). LoL은 주인이 준 시작 연도(2012)와 공개 장르(MOBA)로 풀었다(소개 문장은 받지 않음). 이터널 리턴도 같은 날 주인의 이유와, dak.gg 첫 랭크 기록(정규 시즌 6, 2024-12-12 시작 '2024 Season 6: Legion')에
+#   맞춘 시작 연도 2024로 풀었다.
+#   주인의 Riot ID: 루네시드#Lune (KR) — 계정 연동(op.gg·lolchess.gg 링크)에서 쓴다.
 # - notices 값 → ui.ts 키: cognosphere → notice.cognosphere · zzz-fan-guide → notice.zzzCopyright + notice.zzzLegalStatement · fan-content → footer.fanContent
 
 games:
@@ -78,17 +81,18 @@ games:
     account: null
 
   - id: lol
-    locked: true
-    reason:
-      ko: 계정 연동 준비 중
-      en: Account link coming soon
+    locked: false
     title:
       ko: 리그 오브 레전드
       en: League of Legends
     studio: Riot Games
     characters: []
     why: null
-    meta: []
+    meta:
+      - label: { ko: 플레이, en: Playing since }
+        value: { ko: 2012 –, en: '2012' }
+      - label: { ko: 장르, en: Genre }
+        value: { ko: MOBA, en: MOBA }
     notices: []
     integration:
       platform: riot
@@ -96,17 +100,18 @@ games:
     account: null
 
   - id: tft
-    locked: true
-    reason:
-      ko: 계정 연동 준비 중
-      en: Account link coming soon
+    locked: false
     title:
       ko: 전략적 팀 전투
       en: Teamfight Tactics
     studio: Riot Games
     characters: []
-    why: null
-    meta: []
+    why:
+      ko: 한정된 상황 속에서 머리를 써 최적의 판단을 내리는 전략 요소를 좋아합니다.
+      en: 'I like the strategy in it: using my head to make the best call within the limits of each situation.'
+    meta:
+      - label: { ko: 장르, en: Genre }
+        value: { ko: 전략 · 오토배틀러, en: Strategy · Auto battler }
     notices: []
     integration:
       platform: riot
@@ -132,17 +137,20 @@ games:
     account: null
 
   - id: eternal-return
-    locked: true
-    reason:
-      ko: 소개 준비 중
-      en: Details coming soon
+    locked: false
     title:
       ko: 이터널 리턴
       en: Eternal Return
     studio: Nimble Neuron
     characters: []
-    why: null
-    meta: []
+    why:
+      ko: MOBA에 배틀로얄의 서바이벌 요소가 결합된 점에 큰 매력을 느끼고, 실험체마다 다른 개성도 좋아합니다.
+      en: I love how it combines a MOBA with battle-royale survival, and how distinct each character's personality is.
+    meta:
+      - label: { ko: 플레이, en: Playing since }
+        value: { ko: 2024 –, en: '2024' }
+      - label: { ko: 장르, en: Genre }
+        value: { ko: 배틀로얄 · MOBA, en: Battle royale · MOBA }
     notices: []
     integration:
       platform: nimble-neuron
@@ -150,17 +158,18 @@ games:
     account: null
 
   - id: hearthstone
-    locked: true
-    reason:
-      ko: 소개 준비 중
-      en: Details coming soon
+    locked: false
     title:
       ko: 하스스톤
       en: Hearthstone
     studio: Blizzard Entertainment
     characters: []
-    why: null
-    meta: []
+    why:
+      ko: 한정된 상황 속에서 머리를 써 최적의 판단을 내리는 전략 요소를 좋아합니다.
+      en: 'I like the strategy in it: using my head to make the best call within the limits of each situation.'
+    meta:
+      - label: { ko: 장르, en: Genre }
+        value: { ko: 전략 · 카드 게임, en: Strategy · Card game }
     notices: []
     integration:
       platform: battle-net

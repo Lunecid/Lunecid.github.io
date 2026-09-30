@@ -1112,21 +1112,27 @@ test('item 7: job-fit table at 1440px: compact rows, evidence on the requirement
 });
 
 test.describe('item 8: Player Log', () => {
-  test('1440px: a 520px showcase with the tabs in a row and no half-empty panel; tile captions on one line', async ({ page }) => {
+  test('1440px: a 520px showcase with the tabs in a row (600px with a tab column for four or more games) and no half-empty panel; tile captions on one line', async ({ page }) => {
     test.skip(!HERO_ART, 'needs character art');
     for (const route of ['/game/player-log/', '/en/game/player-log/']) {
       await open(page, route, 1440);
       await page.locator('section.fg').scrollIntoViewIfNeeded();
       await expect(page.locator('.fg__scene .fg__copy')).toBeVisible();
       const fg = await box(page.locator('section.fg'));
-      expect(fg.height, route).toBeCloseTo(520, 0);
       const tabs = await Promise.all((await page.locator('.fg__tab').all()).map(box));
-      expect(new Set(tabs.map((t) => Math.round(t.y))).size, 'tabs in one row').toBe(1);
+      const row = tabs.length <= 3; // FavoriteGames tabsRow
+      expect(fg.height, route).toBeCloseTo(row ? 520 : 600, 0);
+      expect(new Set(tabs.map((t) => Math.round(row ? t.y : t.x))).size, row ? 'tabs in one row' : 'tabs in one column').toBe(1);
       const copy = await box(page.locator('.fg__scene .fg__copy'));
       const credit = await box(page.locator('.fg__credit'));
       const gap = credit.y - (copy.y + copy.height);
       expect(gap, `${route}: copy clear of the credit`).toBeGreaterThan(16);
-      expect(gap, `${route}: no empty half under the copy`).toBeLessThan(130);
+      // tab row: the copy fills the panel; tab column: the column itself fills the height beside the copy
+      const filled = row ? copy.y + copy.height : Math.max(copy.y + copy.height, ...tabs.map((t) => t.y + t.height));
+      // 130px was set for the tab row over the 520px stage (fix 2 item 8); the tab column sits beside the fixed 600px art
+      // stage, where six English tabs (one line each) leave ~154px under the copy on the left, the art filling the right
+      // (2026-09-30, six favourite games)
+      expect(credit.y - filled, `${route}: no empty half under the copy`).toBeLessThan(row ? 130 : 160);
       for (const kicker of await page.locator('.fav-tile__kicker').all()) {
         const lineHeight = await kicker.evaluate((el) => parseFloat(getComputedStyle(el).lineHeight));
         expect((await box(kicker)).height, `${await kicker.textContent()}`).toBeLessThan(lineHeight * 1.5);

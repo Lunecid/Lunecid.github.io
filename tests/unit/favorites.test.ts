@@ -15,7 +15,7 @@ vi.mock('../../src/lib/island-image.server', () => ({
 
 import { favoriteGameSchema } from '../../src/content/schemas';
 import { parseYamlList } from '../../src/content/yaml-loader';
-import { CHARACTER_GAME_LABEL, POSITIONS, SHOWCASE_SIZES, SHOWCASE_WIDTHS, createCharacterLookup } from '../../src/lib/characters';
+import { CHARACTER_GAME_LABEL, POSITIONS, SHOWCASE_SIZES, SHOWCASE_SIZES_LIST, SHOWCASE_WIDTHS, createCharacterLookup } from '../../src/lib/characters';
 import { ACCOUNT_HEADS, buildFavoriteGames, buildFavoriteTiles } from '../../src/lib/favorites';
 import { islandImage } from '../../src/lib/island-image.server';
 
@@ -39,8 +39,8 @@ describe('buildFavoriteGames', () => {
   it('buildFavoriteGames keeps yaml order, locks every game without an intro, uses reason as caption', async () => {
     const ko = await buildFavoriteGames(games, 'ko', none);
     expect(ko.map((g) => g.id)).toEqual(['zzz', 'genshin', 'lol', 'tft', 'dnf', 'eternal-return', 'hearthstone', 'steam']);
-    expect(ko.filter((g) => g.locked).map((g) => g.id)).toEqual(['lol', 'tft', 'dnf', 'eternal-return', 'hearthstone', 'steam']);
-    expect(ko[2].tabCaption).toBe('계정 연동 준비 중');
+    expect(ko.filter((g) => g.locked).map((g) => g.id)).toEqual(['dnf', 'steam']);
+    expect(ko.find((g) => g.id === 'dnf')!.tabCaption).toBe('계정 연동 준비 중');
     expect(ko[0]).toMatchObject({
       tabTitle: '젠레스 존 제로',
       tabCaption: 'ZENLESS ZONE ZERO',
@@ -51,13 +51,17 @@ describe('buildFavoriteGames', () => {
     expect(ko[0].meta?.[0]).toMatch(/^플레이 \d{4}/);
     expect(ko.find((g) => g.id === 'dnf')!.title).toEqual(['Dungeon', '& Fighter']);
     // 2026-09-30 (owner): TFT links with LoL's Riot ID; Eternal Return and Hearthstone have no link plan.
-    expect(ko.find((g) => g.id === 'tft')!.tabCaption).toBe('계정 연동 준비 중');
-    expect(ko.find((g) => g.id === 'hearthstone')!.tabCaption).toBe('소개 준비 중');
+    // TFT and Hearthstone carry the owner's genre and reason (no favourite character); Eternal Return waits for its intro.
+    expect(ko.find((g) => g.id === 'tft')!.meta).toEqual(['장르 전략 · 오토배틀러']);
+    expect(ko.find((g) => g.id === 'hearthstone')!.why).toContain('최적의 판단');
+    expect(ko.find((g) => g.id === 'eternal-return')!.meta).toEqual(['플레이 2024 –', '장르 배틀로얄 · MOBA']);
+    // LoL (owner 2026-09-30): playing since 2012, no intro sentence; a game without meta has none.
     expect(ko[2].why).toBeUndefined();
-    expect(ko[2].meta).toBeUndefined();
+    expect(ko[2].meta).toEqual(['플레이 2012 –', '장르 MOBA']);
+    expect(ko.find((g) => g.id === 'dnf')!.meta).toBeUndefined();
 
     const en = await buildFavoriteGames(games, 'en', none);
-    expect(en[2].tabCaption).toBe('Account link coming soon');
+    expect(en.find((g) => g.id === 'dnf')!.tabCaption).toBe('Account link coming soon');
     expect(en[0].subtitle).toBe('HoYoverse');
     expect(en[1].tabTitle).toBe('Genshin Impact');
   });
@@ -76,7 +80,10 @@ describe('buildFavoriteGames', () => {
     expect(eulaOnly[0].tint).toBe('remielle');
     expect(eulaOnly[1].tint).toBe('eula');
     expect(eulaOnly[1].art?.objectPosition).toBe('52% 8%');
-    expect(islandImage).toHaveBeenCalledWith(meta('eula'), SHOWCASE_WIDTHS, SHOWCASE_SIZES);
+    // four or more games: the tab column beside the 600px stage; two or three: the 520px tab-row stage
+    expect(islandImage).toHaveBeenCalledWith(meta('eula'), SHOWCASE_WIDTHS, SHOWCASE_SIZES_LIST);
+    await buildFavoriteGames(games.slice(0, 2), 'ko', createCharacterLookup({ '../assets/characters/eula.png': meta('eula') }));
+    expect(islandImage).toHaveBeenLastCalledWith(meta('eula'), SHOWCASE_WIDTHS, SHOWCASE_SIZES);
 
     const monaOnly = await buildFavoriteGames(games, 'en', createCharacterLookup({ '../assets/characters/mona.png': meta('mona') }));
     expect(monaOnly[1].tint).toBe('mona');

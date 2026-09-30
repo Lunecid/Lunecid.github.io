@@ -434,14 +434,14 @@ describe('records data files', () => {
     expect(byId['konami']?.hint.ko).toBe('고전 게임의 비밀 커맨드를 키보드로 입력해 보세요.'); // P-02 (F-077): names the keyboard
   });
 
-  it('favorites order is zzz, genshin, lol, dnf, steam, locked games have reasons, accounts are null', () => {
+  it('favorites order follows GAME_IDS, locked games have reasons, accounts are null', () => {
     const games = favorites();
     expect(games.map((g) => g.id)).toEqual(['zzz', 'genshin', 'lol', 'tft', 'dnf', 'eternal-return', 'hearthstone', 'steam']);
     for (const game of games) {
       if (game.locked) expect(game.reason, game.id).toBeDefined();
       expect(game.account, game.id).toBeNull();
     }
-    expect(games.filter((g) => !g.locked).map((g) => g.id)).toEqual(['zzz', 'genshin']);
+    expect(games.filter((g) => !g.locked).map((g) => g.id)).toEqual(['zzz', 'genshin', 'lol', 'tft', 'eternal-return', 'hearthstone']);
   });
 
   it('favorite characters carry no image paths and use CHARACTER_IDS', () => {

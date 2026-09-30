@@ -3,7 +3,7 @@ import type { FavoriteGameData } from '../content/schemas';
 import type { Lang } from '../i18n/ui';
 import type { FavoriteGame } from '../islands/FavoriteGames';
 import type { CharacterId } from '../types';
-import { CHARACTER_GAME_LABEL, POSITIONS, SHOWCASE_SIZES, SHOWCASE_WIDTHS, characters } from './characters';
+import { CHARACTER_GAME_LABEL, POSITIONS, SHOWCASE_SIZES, SHOWCASE_SIZES_LIST, SHOWCASE_WIDTHS, characters } from './characters';
 import type { createCharacterLookup } from './characters';
 import { islandImage } from './island-image.server';
 
@@ -60,7 +60,10 @@ export async function buildFavoriteGames(
       const withArt = g.characters.find((c) => lookup.art(c.id) !== undefined);
       const src = withArt ? lookup.art(withArt.id) : undefined;
       if (withArt && src) {
-        game.art = { image: await islandImage(src, SHOWCASE_WIDTHS, SHOWCASE_SIZES), objectPosition: withArt.position };
+        // The island shows two or three games as a tab row over a 520px stage, four or more as a tab column beside a
+        // 600px one (FavoriteGames tabsRow); the taller stage paints the portrait art wider.
+        const sizes = games.length <= 3 ? SHOWCASE_SIZES : SHOWCASE_SIZES_LIST;
+        game.art = { image: await islandImage(src, SHOWCASE_WIDTHS, sizes), objectPosition: withArt.position };
       }
       // The tint is the showcase's colour for the game (D-1): the art's character, or without art the game's first
       // favourite character, so the stage is never flat black.

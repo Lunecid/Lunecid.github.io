@@ -107,8 +107,8 @@ test('showcase tabs move with arrows (only the unlocked games are listed, D-13)'
   await section.scrollIntoViewIfNeeded();
   await expect(page.locator('astro-island:not([ssr]) [role="tablist"]')).toHaveCount(1);
   const tabs = section.getByRole('tab');
-  // favorites.yaml has 5 games; the 3 locked ones stay out of the tabs until an account feed exists.
-  await expect(tabs).toHaveCount(2);
+  // favorites.yaml has 8 games; the 2 locked ones stay out of the tabs until an account feed exists.
+  await expect(tabs).toHaveCount(6);
   await expect(section.locator('[role="tab"][aria-disabled="true"]')).toHaveCount(0);
 
   await expect(tabs.nth(0)).toHaveAttribute('aria-selected', 'true');
@@ -123,7 +123,7 @@ test('showcase tabs move with arrows (only the unlocked games are listed, D-13)'
   await page.keyboard.press('Home');
   await expect(tabs.nth(0)).toBeFocused();
   await page.keyboard.press('End');
-  await expect(tabs.nth(1)).toBeFocused();
+  await expect(tabs.nth((await tabs.count()) - 1)).toBeFocused(); // the last unlocked game
 });
 
 test('mobile menu opens and closes with Esc (375px)', async ({ page }, testInfo) => {

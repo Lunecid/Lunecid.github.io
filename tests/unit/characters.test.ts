@@ -20,6 +20,7 @@ import {
   HERO_WIDTHS,
   POSITIONS,
   SHOWCASE_SIZES,
+  SHOWCASE_SIZES_LIST,
   SHOWCASE_WIDTHS,
   SIDE_SIZES,
   SIDE_WIDTHS,
@@ -136,10 +137,13 @@ describe('character art lookup', () => {
     for (const w of [1068, 1440, 1600, 1799]) expect(pick(heroSizesAt(w) * 1)).toBeLessThanOrEqual(1200);
     expect(pick(heroSizesAt(2560) * 1.5)).toBe(Math.max(...HERO_WIDTHS));
     expect(px(SHOWCASE_SIZES, '(min-width: 734px)')).toBeGreaterThanOrEqual(painted(520));
+    // four or more favourite games: the 600px stage from 1068px (FavoriteGames.css)
+    expect(px(SHOWCASE_SIZES_LIST, '(min-width: 1068px)')).toBeGreaterThanOrEqual(painted(600));
+    expect(px(SHOWCASE_SIZES_LIST, '(min-width: 734px)')).toBe(px(SHOWCASE_SIZES, '(min-width: 734px)'));
     expect(px(TILE_SIZES, '(min-width: 734px)')).toBeGreaterThanOrEqual(painted(280));
     expect(px(SIDE_SIZES, '(min-width: 1068px)')).toBeGreaterThanOrEqual(painted(400));
     // no sizes value sits just above a ladder step (a DPR-1 screen would fetch the next, much larger file)
-    for (const [sizes, ladder] of [[HERO_SIZES, HERO_WIDTHS], [SIDE_SIZES, SIDE_WIDTHS], [SHOWCASE_SIZES, SHOWCASE_WIDTHS], [TILE_SIZES, TILE_WIDTHS]] as const) {
+    for (const [sizes, ladder] of [[HERO_SIZES, HERO_WIDTHS], [SIDE_SIZES, SIDE_WIDTHS], [SHOWCASE_SIZES, SHOWCASE_WIDTHS], [SHOWCASE_SIZES_LIST, SHOWCASE_WIDTHS], [TILE_SIZES, TILE_WIDTHS]] as const) {
       for (const value of [...sizes.matchAll(/(\d+)px/g)].map((m) => Number(m[1])).filter((v) => v > 300)) {
         const next = Math.min(...ladder.filter((w) => w >= value), Infinity);
         expect(next === Infinity || next / value < 1.2 || ladder.at(-1) === next, `${value}px -> ${next}w`).toBe(true);
