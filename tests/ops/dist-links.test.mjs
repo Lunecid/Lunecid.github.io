@@ -22,7 +22,7 @@ const pages = () => {
   return walk(DIST)
     .filter((f) => f.endsWith('.html'))
     .map((file) => ({ file, route: `/${relative(DIST, file).split(sep).join('/').replace(/index\.html$/, '')}`, html: readFileSync(file, 'utf8') }))
-    .filter((p) => !p.route.startsWith('/print/') && !p.html.includes('data-legacy-redirect'));
+    .filter((p) => !p.route.startsWith('/print/') && !p.html.includes('data-legacy-redirect') && !p.html.includes('data-utility-page'));
 };
 
 test('no built page carries an old-form internal link', () => {

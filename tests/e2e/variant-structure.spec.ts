@@ -12,6 +12,8 @@ import { SHARED_PATHS } from '../../src/variants/ids';
 
 /** = STUB_MARKER of scripts/redirects/build.mjs (tests/unit/redirect-stubs.test.ts pins it there). */
 const STUB_MARKER = 'data-legacy-redirect';
+/** AL-16: pages outside the route table on purpose (src/pages/link-return.astro). */
+const UTILITY_MARKER = 'data-utility-page';
 
 const DIST = join(process.cwd(), 'dist');
 const MODULE_OWNED = new Set(Object.keys(ANCHOR_MODULES));
@@ -153,7 +155,7 @@ test('§12: the route table and dist agree (every route built; every page file a
   const extra = walk(DIST)
     .filter((f) => f.endsWith('.html'))
     .map((f) => ({ file: f, route: `/${relative(DIST, f).split(sep).join('/').replace(/index\.html$/, '')}` }))
-    .filter((p) => p.route !== '/404.html' && !p.route.startsWith('/print/') && !readFileSync(p.file, 'utf8').includes(STUB_MARKER))
+    .filter((p) => p.route !== '/404.html' && !p.route.startsWith('/print/') && ![STUB_MARKER, UTILITY_MARKER].some((m) => readFileSync(p.file, 'utf8').includes(m)))
     .filter((p) => !routes.has(p.route))
     .map((p) => p.route);
   expect(extra).toEqual([]);

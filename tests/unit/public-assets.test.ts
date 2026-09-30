@@ -4,7 +4,7 @@ import { dirname, join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { MEDIA } from '../../src/config';
 import { SFX_NAMES } from '../../src/types';
-import { goatcounterSelfHosted, publicFileExists, soundAvailability } from '../../src/lib/public-assets';
+import { goatcounterSelfHosted, publicFileExists, soundAvailability, steamButtonAvailable } from '../../src/lib/public-assets';
 
 let root = '';
 
@@ -44,5 +44,13 @@ describe('public-assets', () => {
     expect(goatcounterSelfHosted(root)).toBe(false);
     touch(MEDIA.goatcounterSelfHosted);
     expect(goatcounterSelfHosted(root)).toBe(true);
+  });
+
+  it('AL-16: steamButtonAvailable is true only when public/img/sits_01.png exists (R-19: no file, no Steam image button)', () => {
+    expect(steamButtonAvailable(root)).toBe(false);
+    touch('img/sits_02.png');
+    expect(steamButtonAvailable(root)).toBe(false);
+    touch('img/sits_01.png');
+    expect(steamButtonAvailable(root)).toBe(true);
   });
 });

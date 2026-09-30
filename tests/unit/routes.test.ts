@@ -134,7 +134,7 @@ describe('route table v2 (final names, A-2)', () => {
     expect(parseRoute('/data/projects/kickick-park')).toEqual({ route: '/data/projects/kickick-park/', lang: 'ko', variant: 'data', base: '/projects/kickick-park/', kind: 'variant' });
     expect(parseRoute('/game/records/?x=1#job-fit')?.base).toBe('/records/');
     expect(parseRoute('/en/stats/')).toEqual({ route: '/en/stats/', lang: 'en', variant: null, base: '/stats/', kind: 'shared' });
-    for (const bad of ['/records/', '/data/player-log/', '/game/nope/', '/404.html', '/print/resume-ko/', '/en/en/']) {
+    for (const bad of ['/records/', '/data/player-log/', '/game/nope/', '/404.html', '/print/resume-ko/', '/en/en/', '/link-return/', '/en/link-return/']) {
       expect(parseRoute(bad), bad).toBeNull();
     }
     for (const lang of ['ko', 'en'] as const) {
@@ -142,6 +142,12 @@ describe('route table v2 (final names, A-2)', () => {
         for (const route of variantRoutes(variant, lang)) expect(parseRoute(route)?.route, route).toBe(route);
       }
     }
+  });
+
+  it('AL-16: /link-return/ is a utility page outside the route table', () => {
+    expect(parseRoute('/link-return/')).toBeNull();
+    expect(parseRoute('/link-return/?s=abc#gh=x')).toBeNull();
+    expect(allRoutes().filter((r) => r.includes('link-return'))).toEqual([]);
   });
 
   it('variantParamsFor lists the versions that have a base path', () => {

@@ -1,0 +1,43 @@
+---
+// /link-return/ (account-link AL-16, spec §4.2, §4.3, §10): the popup relay page. GitHub's login popup comes back here
+// with `#gh=<ticket>&n=<nonce>` or `#gh-error=<code>[&n=…]` (the relay Worker's fixed LINK_RETURN), Steam's OpenID
+// popup with `?openid.*&s=<state>`. The inline script posts one message on BroadcastChannel('acct-link') to the
+// management tab, removes the query and fragment from this page's URL, and tries to close the window. It does not use
+// window.opener (the popup is opened with opener = null). The two sentences are always shown: window.close() can be
+// ignored (a changed browsing context), and without JavaScript they are all the page is.
+// A utility page (data-utility-page): no layout, not in the route table, not in the sitemap, noindex, no canonical,
+// no analytics, no island, no module script. Astro + csp-finalize give it the site's hash-based CSP meta.
+---
+<html lang="ko" data-utility-page>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="robots" content="noindex">
+    <title>이 창을 닫아 주세요</title>
+    <link rel="icon" href="/favicon.ico" sizes="32x32">
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  </head>
+  <body>
+    <main>
+      <p>이 창을 닫아 주세요.</p>
+      <p lang="en">You can close this window.</p>
+    </main>
+    <script is:inline>
+(() => {
+  const q = new URLSearchParams(location.search);
+  const h = new URLSearchParams(location.hash.slice(1));
+  let msg = null;
+  if ([...q.keys()].some((k) => k.startsWith('openid.'))) {
+    const params = {};
+    for (const [k, v] of q) if (k.startsWith('openid.')) params[k] = v;
+    msg = { kind: 'steam', params, s: q.get('s') ?? '' };
+  } else if (h.has('gh')) msg = { kind: 'gh', ticket: h.get('gh'), n: h.get('n') ?? '' };
+  else if (h.has('gh-error')) msg = { kind: 'gh-error', code: h.get('gh-error'), n: h.has('n') ? h.get('n') : null };
+  history.replaceState(null, '', location.pathname);
+  if (msg && 'BroadcastChannel' in window) { const ch = new BroadcastChannel('acct-link'); ch.postMessage(msg); ch.close(); }
+  window.close();
+})();
+    </script>
+  </body>
+</html>

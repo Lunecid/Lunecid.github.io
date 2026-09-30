@@ -25,7 +25,9 @@ const GENERATED_DIR = fileURLToPath(
 
 /** Print routes are PDF sources only: keep them out of the sitemap. @param {string} page absolute URL */
 export function sitemapFilter(page) {
-  return !new URL(page).pathname.startsWith('/print/');
+  const path = new URL(page).pathname;
+  // AL-16: /link-return/ is the account-link popup relay page (a utility page, noindex), never listed.
+  return !path.startsWith('/print/') && path !== '/link-return/';
 }
 
 /**

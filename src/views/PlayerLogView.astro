@@ -17,7 +17,7 @@ import { relayOrigin } from '../lib/csp';
 import { buildFavoriteGames, buildFavoriteTiles } from '../lib/favorites';
 import { generated } from '../lib/generated';
 import { availableAchievements } from '../lib/achievements';
-import { soundAvailability } from '../lib/public-assets';
+import { soundAvailability, steamButtonAvailable } from '../lib/public-assets';
 import { ACHIEVEMENT_TRIGGERS, GAME_IDS } from '../types';
 import { resolveDeep } from '../lib/facts';
 import { getFactSource } from '../lib/portfolio';
@@ -72,7 +72,7 @@ const labels = {
     achievements={siteAchievements}
   >
     {anyAccountEnabled && (
-      <AccountLinks slot="accounts" client:idle lang={lang} tiles={accountTiles} labels={accountLinksLabels(lang)} relay={relayOrigin(process.env)} steamButton={false} />
+      <AccountLinks slot="accounts" client:idle lang={lang} tiles={accountTiles} labels={accountLinksLabels(lang)} relay={relayOrigin(process.env)} steamButton={steamButtonAvailable()} />
     )}
   </MembershipRow>
   <script is:inline type="application/json" id="acct-status" set:html={acctStatus} />

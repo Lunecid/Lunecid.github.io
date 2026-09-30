@@ -57,6 +57,9 @@ describe('toolchain', () => {
     expect(sitemapFilter('https://lunecid.github.io/en/')).toBe(true);
     expect(sitemapFilter('https://lunecid.github.io/en/game/projects/kickick-park/')).toBe(true);
     expect(sitemapFilter('https://lunecid.github.io/')).toBe(true);
+    // AL-16: the popup relay page is a utility page, never in the sitemap.
+    expect(sitemapFilter('https://lunecid.github.io/link-return/')).toBe(false);
+    expect(sitemapFilter('https://lunecid.github.io/link-returns/')).toBe(true);
   });
 
   it('AL-8 (DV-32): the @generated alias is src/data/generated, and tests/fixtures/generated only when SB_E2E_ACCOUNTS=1', { timeout: 60_000 }, async () => {

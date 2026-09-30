@@ -26,6 +26,18 @@ for (const route of ROUTES) {
   });
 }
 
+// AL-16: the popup relay page runs its inline script and calls window.close(); a tab with one history entry would
+// close, so it is opened after another page (the close is then refused) and checked with each message kind.
+for (const path of ['/link-return/', '/link-return/?s=abc&openid.mode=id_res', '/link-return/#gh-error=denied']) {
+  test(`no CSP violation on ${path}`, async ({ page }) => {
+    await page.goto('/404.html');
+    await page.goto(path, { waitUntil: 'load' });
+    await page.waitForTimeout(300);
+    expect(await collectViolations(page)).toEqual([]);
+    await expect(page.locator('html')).toHaveAttribute('data-utility-page', '');
+  });
+}
+
 for (const stub of legacyPaths()) {
   test(`the legacy stub ${stub} forwards under its CSP`, async ({ page }) => {
     const seen: string[] = [];

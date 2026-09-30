@@ -19,6 +19,14 @@ export function soundAvailability(root?: string): { bgm: boolean; sfx: boolean }
   };
 }
 
+/**
+ * AL-16 (R-19): Valve's unmodified "Sign in through Steam" image is served from this site (CSP img-src 'self'). The
+ * owner's Steam image button renders only when the file is really there; otherwise manual SteamID64 entry is open.
+ */
+export function steamButtonAvailable(root?: string): boolean {
+  return publicFileExists('/img/sits_01.png', root);
+}
+
 /** public/js/count.v5.js exists (self-hosted GoatCounter script); otherwise the CDN script with SRI is used. */
 export function goatcounterSelfHosted(root?: string): boolean {
   return publicFileExists(MEDIA.goatcounterSelfHosted, root);
