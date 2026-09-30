@@ -1,0 +1,6 @@
+{
+  "_note": "synthetic fixture from spec §6.3 (field list only), not a recorded response",
+  "1011": { "Name": "Avatar_Synth_A", "CircleIcon": "/ui/zzz/IconRoleCircleSynthA.png", "Rarity": 4 },
+  "1021": { "Name": "Avatar_Synth_B", "CircleIcon": "/ui/zzz/IconRoleCircleSynthB.webp", "Rarity": 3 },
+  "1031": { "Name": "Avatar_Synth_C", "CircleIcon": "/ui/IconRoleCircleSynthC.png", "Rarity": 3 }
+}

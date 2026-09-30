@@ -1,0 +1,28 @@
+{
+  "_note": "synthetic fixture from spec §6.2 (field list only), not a recorded response",
+  "playerInfo": {
+    "nickname": "SynthWanderer",
+    "level": 57,
+    "signature": "synthetic player-written signature",
+    "worldLevel": 8,
+    "nameCardId": 210001,
+    "finishAchievementNum": 812,
+    "towerFloorIndex": 12,
+    "towerLevelIndex": 3,
+    "towerStarIndex": 9,
+    "theaterActIndex": 8,
+    "theaterStarIndex": 6,
+    "showAvatarInfoList": [
+      { "avatarId": 10000901, "level": 90 },
+      { "avatarId": 10000902, "level": 80, "costumeId": 200901 },
+      { "avatarId": 10000903, "level": 70 },
+      { "avatarId": 10000904, "level": 60 },
+      { "avatarId": 10000905, "level": 50 }
+    ],
+    "profilePicture": { "id": 1901 }
+  },
+  "uid": "618285856",
+  "region": "SYNTH",
+  "owner": { "hash": "synthetic-owner-hash", "username": "synthetic-owner" },
+  "ttl": 60
+}

@@ -1,0 +1,30 @@
+{
+  "_note": "synthetic fixture from spec §6.3 (field list only), not a recorded response",
+  "PlayerInfo": {
+    "ShowcaseDetail": {
+      "AvatarList": [
+        { "Id": 1011, "Level": 60, "TalentLevel": 6, "SkinId": 0, "ObtainmentTimestamp": 1700000000, "EquippedList": [{ "Slot": 1 }] },
+        { "Id": 1021, "Level": 50, "TalentLevel": 2, "SkinId": 0, "ObtainmentTimestamp": 1700000001 },
+        { "Id": 1031, "Level": 40, "TalentLevel": 0, "SkinId": 0, "ObtainmentTimestamp": 1700000002 }
+      ]
+    },
+    "SocialDetail": {
+      "ProfileDetail": {
+        "Nickname": "SynthProxy",
+        "Level": 55,
+        "ProfileId": 3100001,
+        "CallingCardId": 3300001,
+        "Title": 0,
+        "TitleInfo": { "Title": 3500001, "ColorA": "synthetic-a", "ColorB": "synthetic-b" }
+      },
+      "Desc": "synthetic player-written text",
+      "MedalList": [
+        { "MedalType": 1, "Value": 30, "MedalIcon": 4000001, "MedalScore": 100 },
+        { "MedalType": 3, "Value": 5, "MedalIcon": 4000003, "MedalScore": 200 }
+      ]
+    }
+  },
+  "uid": "1300025292",
+  "ttl": 60,
+  "region": "SYNTH"
+}

@@ -1,0 +1,5 @@
+{
+  "_note": "synthetic fixture from spec §6.3 (field list only), not a recorded response",
+  "ko": { "Avatar_Synth_A": "합성 에이전트 가", "Avatar_Synth_B": "합성 에이전트 나", "Avatar_Synth_C": "합성 에이전트 다", "Title_Synth": "합성 칭호" },
+  "en": { "Avatar_Synth_A": "Synthetic Agent A", "Avatar_Synth_B": "Synthetic Agent B", "Avatar_Synth_C": "Synthetic Agent C", "Title_Synth": "Synthetic Title" }
+}

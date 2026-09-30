@@ -1,0 +1,5 @@
+{
+  "_note": "synthetic fixture from spec §6.2 (field list only), not a recorded response",
+  "ko": { "900001": "합성 캐릭터 가", "900002": "합성 캐릭터 나", "900003": "합성 캐릭터 다", "900004": "‮합성 캐릭터 라 긴 이름 0123456789012345678901234567890123456789012345" },
+  "en": { "900001": "Synthetic A", "900002": "Synthetic B", "900003": "Synthetic C", "900004": "‮Synthetic D with a very long name 01234567890123456789012345" }
+}

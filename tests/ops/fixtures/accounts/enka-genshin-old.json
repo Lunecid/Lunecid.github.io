@@ -1,0 +1,19 @@
+{
+  "_note": "synthetic fixture from spec §6.2 (field list only), not a recorded response",
+  "playerInfo": {
+    "nickname": "SynthWanderer",
+    "level": 35,
+    "worldLevel": 4,
+    "nameCardId": 210001,
+    "finishAchievementNum": 120,
+    "towerFloorIndex": 8,
+    "towerLevelIndex": 2,
+    "showAvatarInfoList": [
+      { "avatarId": 10000901, "level": 40 },
+      { "avatarId": 10000905, "level": 20 }
+    ],
+    "profilePicture": { "avatarId": 10000901 }
+  },
+  "uid": "618285856",
+  "ttl": 60
+}

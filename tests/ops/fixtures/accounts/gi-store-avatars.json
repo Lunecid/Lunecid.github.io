@@ -1,0 +1,12 @@
+{
+  "_note": "synthetic fixture from spec §6.2 (field list only), not a recorded response",
+  "10000901": { "NameTextMapHash": 900001, "SideIconName": "/ui/UI_AvatarIcon_Side_SynthA.png", "Costumes": {} },
+  "10000902": {
+    "NameTextMapHash": 900002,
+    "SideIconName": "/ui/UI_AvatarIcon_Side_SynthB.png",
+    "Costumes": { "200901": { "SideIconName": "/ui/UI_AvatarIcon_Side_SynthB_Alt.png" } }
+  },
+  "10000903": { "NameTextMapHash": 900003, "SideIconName": "/ui/../UI_AvatarIcon_Side_SynthC.png" },
+  "10000904": { "NameTextMapHash": 900004, "SideIconName": "/ui/UI_AvatarIcon_Side_SynthD.gif" },
+  "10000905": { "NameTextMapHash": 900005, "SideIconName": "https://enka.network/ui/UI_AvatarIcon_Side_SynthE.png" }
+}
