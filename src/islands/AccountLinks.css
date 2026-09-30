@@ -1,0 +1,121 @@
+/* LINKED ACCOUNTS row under the membership card (account-link spec §3.1, §3.5, §3.7; plan AL-10).
+   Tokens only (colour literals live in tokens.css). --acct-tint arrives as a style attribute and is a background
+   only, never a text colour. Transitions: transform and colours only; every motion has both reduce paths. */
+
+/* No shown tile (the dark release): a zero-height frame that adds nothing to the layout. */
+.acct-row--empty { display: block; height: 0; margin: 0; padding: 0; }
+
+.acct-links { min-width: 0; margin-top: 24px; }
+@media (min-width: 1068px) { .acct-links { margin-top: 36px; } }
+.acct-links__cap { margin: 0 0 12px; }
+
+.acct-row {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(76px, 96px)); gap: 20px 16px;
+  margin: 0; padding: 0; list-style: none;
+}
+/* ≤480px: fluid 56–76px columns so the five tiles share one row at 375 (a 76px minimum would allow four). */
+@media (max-width: 480px) { .acct-row { grid-template-columns: repeat(auto-fill, minmax(56px, 1fr)); gap: 16px 6px; } }
+.acct-row__item { min-width: 0; }
+/* Without JavaScript an opened <details> spans the whole row (spec §3.1). */
+.acct-row__item:has(> details[open]) { grid-column: 1 / -1; }
+
+.acct-tile { min-width: 0; }
+.acct-tile__sum {
+  display: grid; justify-items: start; align-content: start; gap: 6px;
+  min-width: var(--tap); min-height: var(--tap); cursor: pointer; list-style: none; color: var(--hud-muted);
+}
+.acct-tile__sum::-webkit-details-marker { display: none; }
+.acct-tile__sum::marker { content: ""; }
+.acct-tile__sum:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
+
+/* the tile: a cut-corner tinted plate (1px line), two corner brackets, the site's own mono glyph */
+.acct-tile__frame {
+  position: relative; isolation: isolate; display: grid; place-items: center;
+  width: 100%; max-width: 96px; aspect-ratio: 1;
+}
+@media (max-width: 480px) { .acct-tile__frame { max-width: 76px; } }
+.acct-tile__frame::before, .acct-tile__frame::after {
+  content: ""; position: absolute; z-index: -1;
+  clip-path: polygon(0 0, calc(100% - var(--cut-btn)) 0, 100% var(--cut-btn), 100% 100%, var(--cut-btn) 100%, 0 calc(100% - var(--cut-btn)));
+}
+.acct-tile__frame::before { inset: 0; background: var(--hud-line); }
+.acct-tile__frame::after { inset: 1px; background: linear-gradient(var(--acct-tint), var(--acct-tint)), var(--hud-bg); }
+.acct-tile__corners { position: absolute; inset: 0; pointer-events: none; transition: transform var(--dur-hover) var(--ease-out); }
+.acct-tile__corners::before, .acct-tile__corners::after {
+  content: ""; position: absolute; width: var(--bracket-sm); height: var(--bracket-sm);
+  border: 2px solid var(--hud-line-strong); transition: border-color var(--dur-hover) linear;
+}
+.acct-tile__corners::before { left: -2px; top: -2px; border-right: 0; border-bottom: 0; }
+.acct-tile__corners::after { right: -2px; bottom: -2px; border-left: 0; border-top: 0; }
+.acct-tile__glyph {
+  font: 700 var(--fs-sub)/1 var(--font-mono); letter-spacing: .04em; color: var(--hud-text);
+  transition: transform var(--dur-hover) var(--ease-out);
+}
+.acct-tile__name {
+  max-width: 100%; font: 600 var(--fs-label)/1.35 var(--font-sans); color: var(--hud-muted);
+  overflow-wrap: anywhere; transition: color var(--dur-hover) linear;
+}
+.acct-tile__teaser { font: 600 var(--fs-label)/1.2 var(--font-mono); letter-spacing: .02em; color: var(--hud-muted); overflow-wrap: normal; } /* breaks only at spaces and the <wbr> before a dot */
+@media (max-width: 480px) { .acct-tile__teaser { letter-spacing: 0; } }
+/* Korean text never sits in a mono face (these are lang="en"; the rule guards a future Korean value) */
+.acct-tile__glyph:lang(ko), .acct-tile__teaser:lang(ko), .acct-card__head:lang(ko), .acct-card__item-meta:lang(ko) { font-family: var(--font-sans); letter-spacing: 0; }
+
+.acct-tile__sum:focus-visible .acct-tile__corners { transform: scale(1.06); }
+.acct-tile__sum:focus-visible .acct-tile__corners::before, .acct-tile__sum:focus-visible .acct-tile__corners::after { border-color: var(--accent); }
+.acct-tile__sum:focus-visible .acct-tile__glyph { transform: translateY(-2px); }
+@media (hover: hover) {
+  .acct-tile__sum:hover .acct-tile__corners { transform: scale(1.06); }
+  .acct-tile__sum:hover .acct-tile__corners::before, .acct-tile__sum:hover .acct-tile__corners::after { border-color: var(--accent); }
+  .acct-tile__sum:hover .acct-tile__glyph { transform: translateY(-2px); }
+  .acct-tile__sum:hover .acct-tile__name { color: var(--hud-text); }
+}
+.acct-tile__sum:active .acct-tile__corners::before, .acct-tile__sum:active .acct-tile__corners::after { border-color: var(--accent-hover); }
+.acct-tile__sum:active .acct-tile__name { color: var(--hud-text); }
+.acct-tile[open] .acct-tile__corners::before, .acct-tile[open] .acct-tile__corners::after { border-color: var(--accent); }
+
+/* reduced motion (both paths): colour only, no scale or shift */
+@media (prefers-reduced-motion: reduce) {
+  .acct-tile__sum .acct-tile__corners, .acct-tile__sum .acct-tile__glyph { transform: none !important; transition: none; }
+}
+:root[data-motion="reduce"] .acct-tile__sum .acct-tile__corners, :root[data-motion="reduce"] .acct-tile__sum .acct-tile__glyph { transform: none !important; transition: none; }
+
+/* the static card: the whole account card as HTML inside the opened <details> (no JavaScript needed, G-010) */
+.acct-card--static {
+  display: grid; gap: 14px; max-width: 560px; margin-top: 12px; padding: 16px;
+  border: 1px solid var(--hud-line); background: var(--hud-panel); color: var(--hud-text);
+}
+.acct-card__banner { margin: -16px -16px 0; background: var(--acct-tint); }
+.acct-card__banner img, .acct-card__avatar img { display: block; width: 100%; height: auto; }
+.acct-card__id { display: flex; align-items: center; gap: 14px; min-width: 0; }
+.acct-card__avatar { flex: none; width: 64px; background: var(--acct-tint); }
+.acct-card__names { display: grid; gap: 2px; min-width: 0; }
+.acct-card__head { margin: 0; font: 600 var(--fs-label)/1.5 var(--font-mono); letter-spacing: var(--ls-label); color: var(--hud-muted); }
+.acct-card__title { margin: 0; font: 800 var(--fs-sub)/1.2 var(--font-sans); color: var(--hud-strong); overflow-wrap: anywhere; }
+.acct-card__sub { margin: 0; font-size: var(--fs-small); color: var(--hud-muted); }
+.acct-card__stats { display: grid; gap: 8px; margin: 0; }
+.acct-card__stat { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.acct-card__stat dt { min-width: 0; font-size: var(--fs-small); color: var(--hud-muted); }
+.acct-card__stat dd { flex: none; margin: 0; white-space: nowrap; font: 700 var(--fs-body)/1.3 var(--font-sans); color: var(--hud-text); }
+.acct-card__items { display: flex; flex-wrap: wrap; gap: 10px 16px; margin: 0; padding: 0; list-style: none; }
+.acct-card__items li { display: grid; grid-template-columns: auto 1fr; column-gap: 8px; align-items: center; font-size: var(--fs-label); }
+.acct-card__item-img { grid-row: span 2; width: 48px; height: 48px; object-fit: cover; }
+.acct-card__item-name { color: var(--hud-text); }
+.acct-card__item-meta { color: var(--hud-muted); }
+.acct-card__link {
+  display: inline-flex; align-items: center; gap: 4px; justify-self: start; min-height: var(--tap);
+  font: 700 var(--fs-small)/1.3 var(--font-sans); color: var(--accent); text-decoration: none;
+  transition: color var(--dur-hover) linear;
+}
+@media (hover: hover) {
+  .acct-card__link:hover { color: var(--accent-hover); text-decoration: underline; text-underline-offset: .2em; }
+}
+.acct-card__link:active { color: var(--accent-hover); }
+.acct-card__note, .acct-card__asof, .acct-card__data, .acct-card__notices p { margin: 0; font-size: var(--fs-label); line-height: 1.5; color: var(--hud-muted); }
+.acct-card__notices { display: grid; gap: 4px; }
+
+@media (forced-colors: active) {
+  .acct-tile__frame { outline: 1px solid CanvasText; }
+  .acct-card--static { border-color: CanvasText; }
+}
+/* controls do not print (P-12) */
+@media print { .acct-links, .acct-row { display: none; } }

@@ -3,6 +3,8 @@
  * Player Log first row (#membership): the ZZZ-style membership card beside the favourite-character tiles. When the
  * art for a tile is missing (D-1) the site-achievement progress panel takes the free space: alone when there are no
  * tiles, under the tiles when only some exist. With all three tiles the row is card + tiles, as in the mockup.
+ * Slot `accounts` (account-link AL-10): the LINKED ACCOUNTS row, inside the HUD container after the card grid, so its
+ * tiles share the card column's left edge at every width. Empty slot → the container holds only the grid.
  */
 import MembershipCard from './MembershipCard.astro';
 import FavoriteTiles from './FavoriteTiles.astro';
@@ -24,18 +26,21 @@ const { lang, membership, tiles, tileSlots, achievements } = Astro.props;
 const showMeter = tiles.length < tileSlots;
 ---
 <section id="membership" class:list={['pl-intro', 'hud-grid', { 'pl-intro--meter': showMeter }]} aria-label={t(lang, 'section.membershipCard.title')}>
-  <div class="container container--hud pl-intro__grid">
-    <MembershipCard
-      headingLevel={2}
-      fields={membership.fields}
-      sticker={membership.sticker}
-      memberSince={membership.memberSince}
-      photoAlt={t(lang, 'card.photoAlt')}
-    />
-    <div class="pl-intro__side">
-      <FavoriteTiles lang={lang} tiles={tiles} />
-      {showMeter && <AchievementMeter lang={lang} defs={achievements} />}
+  <div class="container container--hud">
+    <div class="pl-intro__grid">
+      <MembershipCard
+        headingLevel={2}
+        fields={membership.fields}
+        sticker={membership.sticker}
+        memberSince={membership.memberSince}
+        photoAlt={t(lang, 'card.photoAlt')}
+      />
+      <div class="pl-intro__side">
+        <FavoriteTiles lang={lang} tiles={tiles} />
+        {showMeter && <AchievementMeter lang={lang} defs={achievements} />}
+      </div>
     </div>
+    <slot name="accounts" />
   </div>
 </section>
 

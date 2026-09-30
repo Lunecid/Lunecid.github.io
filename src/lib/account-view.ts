@@ -4,33 +4,23 @@
 // both read links/riot.json (one Riot ID variable); each Riot tile picks its own link.
 import type { ImageMetadata } from 'astro';
 import type { FavoriteGameData } from '../content/schemas';
-import type { Lang, UiKey } from '../i18n/ui';
+import { ui, type Lang, type UiKey } from '../i18n/ui';
 import { formatDate, formatNumber, t } from '../i18n/utils';
-import { GAME_IDS, type NoticeKey } from '../types';
+import type { NoticeKey } from '../types';
+import { noticeLines } from './notices';
 import { RECENT_PLAYTIME_WEEKS } from './account-config';
 import { HREF_ALLOW } from './account-ids';
-import { isFresh } from './freshness';
+import { TILE_SLOTS, TILE_SOURCES, resolveTile, tileGames, type AccountSource, type AccountTileKey, type ResolvedTile, type TileState } from './account-state';
 import type { AccountCard, AccountFeed, AccountMetric, AccountMetricKey, RiotLinks } from './generated';
 import type { IslandImage } from './island-image';
 import { islandImage } from './island-image.server';
 
-/** favorites.yaml game ids that can make a tile. */
-export type AccountTileKey = 'genshin' | 'zzz' | 'lol' | 'tft' | 'steam';
-/** = integration.platform of the tile's game. */
-export type AccountSource = 'enka-genshin' | 'enka-zzz' | 'steam' | 'riot';
+// The pure part (tile games, states, #acct-status) lives in account-state.ts so the e2e suite can run it without
+// astro:assets; every name stays importable from here.
+export { TILE_SLOTS, TILE_SOURCES, accountStatus, accountStatusJson } from './account-state';
+export type { AccountSource, AccountStatus, AccountTileKey, TileState } from './account-state';
+
 export type AccountGlyph = 'GI' | 'ZZZ' | 'STM' | 'LOL' | 'TFT';
-
-/** Tile key → where its data comes from; Riot tiles pick one link each (owner answer 2026-10-01). */
-export const TILE_SOURCES: Readonly<Record<AccountTileKey, { source: AccountSource; link?: 'lol' | 'tft' }>> = {
-  genshin: { source: 'enka-genshin' },
-  zzz: { source: 'enka-zzz' },
-  steam: { source: 'steam' },
-  lol: { source: 'riot', link: 'lol' },
-  tft: { source: 'riot', link: 'tft' },
-};
-
-/** #acct-status slot order: the ACCOUNT_VARS account order, the two Riot tiles last (both use ACCOUNT_RIOT_ID). */
-export const TILE_SLOTS: readonly AccountTileKey[] = ['genshin', 'zzz', 'steam', 'lol', 'tft'];
 
 /** The site's own HUD monograms (R-11: no game logo). */
 export const TILE_GLYPHS: Readonly<Record<AccountTileKey, AccountGlyph>> = { genshin: 'GI', zzz: 'ZZZ', steam: 'STM', lol: 'LOL', tft: 'TFT' };
@@ -84,8 +74,6 @@ const DATA_SOURCE: Readonly<Partial<Record<AccountSource, string>>> = { 'enka-ge
 
 const NEUTRAL_TINT: Readonly<Record<'steam' | 'riot', string>> = { steam: 'var(--acct-tint-steam)', riot: 'var(--acct-tint-riot)' };
 
-export type TileState = 'shown' | 'unlinked' | 'error' | 'stale';
-
 export interface AccountStatView {
   key: AccountMetricKey;
   label: string;
@@ -132,49 +120,7 @@ export interface AccountTile {
   maxAgeDays?: number;
 }
 
-export interface AccountStatus {
-  runId: string | null;
-  platforms: { slot: number; state: 'shown' | 'hidden' | 'absent'; fetchedAt?: string }[];
-}
-
 const RIOT_SITE: Readonly<Record<'lol' | 'tft', 'op.gg' | 'lolchess.gg'>> = { lol: 'op.gg', tft: 'lolchess.gg' };
-
-function isTileKey(id: string): id is AccountTileKey {
-  return Object.hasOwn(TILE_SOURCES, id);
-}
-
-/** The favorites games that make a tile: an AccountTileKey with integration.enabled, in GAME_IDS order. */
-function tileGames(games: readonly FavoriteGameData[]): (FavoriteGameData & { id: AccountTileKey })[] {
-  return games
-    .filter((g): g is FavoriteGameData & { id: AccountTileKey } => isTileKey(g.id) && g.integration.enabled)
-    .sort((a, b) => GAME_IDS.indexOf(a.id) - GAME_IDS.indexOf(b.id));
-}
-
-function pickCard(feed: AccountFeed, lang: Lang): AccountCard | undefined {
-  return feed.cards.find((c) => c.lang === lang) ?? feed.cards[0];
-}
-
-interface Resolved {
-  state: TileState;
-  feed?: AccountFeed;
-  card?: AccountCard;
-  riotHref?: string;
-}
-
-function resolve(key: AccountTileKey, feeds: Readonly<Record<string, AccountFeed>>, links: RiotLinks | undefined, lang: Lang, now: number): Resolved {
-  const { source, link } = TILE_SOURCES[key];
-  if (link !== undefined) {
-    if (links === undefined) return { state: 'unlinked' };
-    const href = links.links[link];
-    return typeof href === 'string' && HREF_ALLOW[link].test(href) ? { state: 'shown', riotHref: href } : { state: 'error' };
-  }
-  const feed = Object.hasOwn(feeds, source) ? feeds[source] : undefined;
-  if (feed === undefined) return { state: 'unlinked' };
-  const card = feed.status === 'ok' ? pickCard(feed, lang) : undefined;
-  if (card === undefined) return { state: 'error', feed };
-  if (!isFresh(feed, now)) return { state: 'stale', feed };
-  return { state: 'shown', feed, card };
-}
 
 const num = (value: number, lang: Lang): string => formatNumber(value, lang);
 
@@ -237,7 +183,7 @@ async function imageOf(name: string | undefined, images: Readonly<Record<string,
   return islandImage(images[name] as ImageMetadata, widths, sizes);
 }
 
-async function cardView(key: AccountTileKey, r: Resolved, links: RiotLinks | undefined, images: Readonly<Record<string, ImageMetadata>>, lang: Lang): Promise<AccountCardView | undefined> {
+async function cardView(key: AccountTileKey, r: ResolvedTile, links: RiotLinks | undefined, images: Readonly<Record<string, ImageMetadata>>, lang: Lang): Promise<AccountCardView | undefined> {
   const { source, link } = TILE_SOURCES[key];
   if (link !== undefined) {
     if (links === undefined || r.riotHref === undefined) return undefined;
@@ -295,7 +241,7 @@ export async function buildAccountView(
   return Promise.all(
     tileGames(games).map(async (game): Promise<AccountTile> => {
       const key = game.id;
-      const r = resolve(key, feeds, links, lang, now);
+      const r = resolveTile(key, feeds, links, lang, now);
       const tile: AccountTile = {
         slot: TILE_SLOTS.indexOf(key),
         key,
@@ -320,35 +266,38 @@ export async function buildAccountView(
   );
 }
 
-/** The #acct-status JSON (R-10): coarse states only, never an ID, a name or a reason. One entry per enabled tile. */
-export function accountStatus(
-  games: readonly FavoriteGameData[],
-  feeds: Readonly<Record<string, AccountFeed>>,
-  links: RiotLinks | undefined,
-  now: number = Date.now(),
-  runId: string | null = process.env.GITHUB_RUN_ID ?? null,
-): AccountStatus {
-  const enabled = new Set(tileGames(games).map((g) => g.id));
-  const platforms: AccountStatus['platforms'] = [];
-  TILE_SLOTS.forEach((key, slot) => {
-    if (!enabled.has(key)) return;
-    const r = resolve(key, feeds, links, 'ko', now);
-    const entry: AccountStatus['platforms'][number] = { slot, state: r.state === 'shown' ? 'shown' : r.state === 'unlinked' ? 'absent' : 'hidden' };
-    if (r.feed !== undefined && typeof r.feed.fetchedAt === 'string') entry.fetchedAt = r.feed.fetchedAt;
-    platforms.push(entry);
-  });
-  return { runId, platforms };
-}
-
-/** JSON for the inline #acct-status script: '<' escaped so no value can close the element (as src/lib/analytics.ts). */
-export function accountStatusJson(status: AccountStatus): string {
-  return JSON.stringify(status).replace(/</g, '\\u003c');
-}
-
 /** 'YYYY.MM.DD HH:MM KST' (ko) / 'Mon D, YYYY HH:MM KST' (en), in Asia/Seoul: the same output as StatsSummary's asOf. */
 export function formatAsOfKst(iso: string, lang: Lang): string {
   const d = new Date(iso);
   const day = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Seoul', year: 'numeric', month: '2-digit', day: '2-digit' }).format(d);
   const time = new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Seoul', hour: '2-digit', minute: '2-digit', hour12: false }).format(d);
   return `${formatDate(day, lang)} ${time} KST`;
+}
+
+/** The visitor strings the AccountLinks island needs, resolved on the server (never a management string). */
+export interface AccountLinksLabels {
+  /** The row caption in the page language ('연동 계정' / 'LINKED ACCOUNTS'). */
+  caption: string;
+  /** The mono English caption (lang="en"), shown before the Korean one on ko pages. */
+  captionEn: string;
+  fetchedAt: string;
+  newTab: string;
+  /** '{title} 프로필 이미지' — the island fills {title}. */
+  avatarAlt: string;
+  riot: { lol: string; tft: string; external: string };
+  /** The per-card notice lines (spec §9.3) by notice key, already in the page language where localised. */
+  notices: Partial<Record<NoticeKey, { text: string; english: boolean }[]>>;
+}
+
+export function accountLinksLabels(lang: Lang): AccountLinksLabels {
+  const keys = [...new Set(Object.values(CARD_NOTICES).flat())];
+  return {
+    caption: t(lang, 'accounts.caption'),
+    captionEn: t('en', 'accounts.caption'),
+    fetchedAt: t(lang, 'accounts.fetchedAt'),
+    newTab: t(lang, 'accounts.newTab'),
+    avatarAlt: ui[lang]['accounts.avatarAlt'], // the raw template: t() rejects an unfilled {title}
+    riot: { lol: t(lang, 'accounts.riot.lol'), tft: t(lang, 'accounts.riot.tft'), external: t(lang, 'accounts.riot.external') },
+    notices: Object.fromEntries(keys.map((key) => [key, noticeLines([key]).map((line) => ({ text: t(lang, line.key), english: line.english }))])),
+  };
 }

@@ -140,3 +140,19 @@ describe('buildFavoriteTiles', () => {
     for (const line of imports) expect(line).toMatch(/^import type /);
   });
 });
+
+describe('favorites.yaml account switches (AL-10; owner answers 2026-10-01, OQ-1 and OQ-2)', () => {
+  it('the five tile games are on, dnf, Eternal Return and Hearthstone off; LoL and TFT both read the Riot ID; account stays null', () => {
+    expect(Object.fromEntries(games.map((g) => [g.id, g.integration.enabled]))).toEqual({
+      zzz: true, genshin: true, lol: true, tft: true, dnf: false, 'eternal-return': false, hearthstone: false, steam: true,
+    });
+    expect(games.filter((g) => g.id === 'lol' || g.id === 'tft').map((g) => g.integration.platform)).toEqual(['riot', 'riot']);
+    for (const g of games) expect(g.account).toBeNull();
+  });
+
+  it('the header comment states the switch, the variables, the data folders and the repository rule', () => {
+    const header = readFileSync(join(root, 'src/data/favorites.yaml'), 'utf8').split(/\r?\n/).filter((l) => l.startsWith('#')).join('\n');
+    for (const part of ['ACCOUNT_', 'src/lib/account-config.ts', 'src/data/generated/accounts/', 'src/data/generated/links/', '계정 아이콘 배경']) expect(header).toContain(part);
+    expect(header).not.toMatch(/@[a-z0-9.-]+\.[a-z]{2,}/i); // no e-mail login in the repository
+  });
+});

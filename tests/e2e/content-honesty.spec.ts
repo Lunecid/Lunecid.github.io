@@ -79,6 +79,8 @@ test.describe('D-13: the Player Log shows only what exists', () => {
       await page.locator('#favorite-games').scrollIntoViewIfNeeded();
       await expect(page.locator('.fg__scene')).toHaveCount(1);
       await expect(page.locator('.fg-acct')).toHaveCount(0);
+      // AL-10: no account feed locally, so the LINKED ACCOUNTS row shows no tile
+      await expect(page.locator('#membership .acct-tile')).toHaveCount(0);
       await expect(page.locator('.page-head__intro')).not.toContainText(/파이프라인|pipeline/i);
       await expect(page.locator('#membership')).toBeVisible();
       await expect(page.locator('#site-achievements')).toBeVisible();

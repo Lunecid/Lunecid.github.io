@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { createRequire } from 'node:module';
 import { describe, expect, it } from 'vitest';
 import photo from '../../src/assets/photo/photo-id.webp';
 import MembershipRow from '../../src/components/player-log/MembershipRow.astro';
@@ -12,14 +13,17 @@ import type { FavoriteTile } from '../../src/lib/favorites';
 import { loadFactSource } from '../helpers/fact-source';
 import { readSource, renderAstro } from './helpers';
 
+// jsdom ships no type declarations; the node project only needs its parser here.
+const { JSDOM } = createRequire(import.meta.url)('jsdom') as { JSDOM: new (html: string) => { window: { document: Document } } };
 const defs = parseYamlList(readFileSync(join(process.cwd(), 'src/data/achievements.yaml'), 'utf8')).map((a) => achievementSchema.parse(a));
 // The committed photo stands in for character art (the tiles only need an ImageMetadata).
 const tile = (id: FavoriteTile['id'], name: string): FavoriteTile => ({ id, name, caption: 'GENSHIN · FAVORITE', image: photo, objectPosition: '50% 10%' });
 const THREE = [tile('remielle', '레미엘'), tile('eula', '유라'), tile('mona', '모나')];
 
-const render = (tiles: FavoriteTile[], lang: 'ko' | 'en' = 'ko') =>
+const render = (tiles: FavoriteTile[], lang: 'ko' | 'en' = 'ko', slots?: Record<string, string>) =>
   renderAstro(MembershipRow, {
     props: { lang, membership: membershipCard(resolveDeep(playerLogCopy[lang], lang, loadFactSource()).membership, lang === 'ko' ? '게임 데이터 분석가 · 연구자' : 'Game Data Analyst · Researcher'), tiles, tileSlots: 3, achievements: defs },
+    slots,
     url: lang === 'en' ? '/en/game/player-log/' : '/game/player-log/',
   });
 
@@ -50,9 +54,28 @@ describe('MembershipRow (Player Log first row)', () => {
     expect(html.indexOf('data-ach-meter')).toBeGreaterThan(html.lastIndexOf('fav-tile'));
   });
 
+  it('AL-10: the accounts slot renders inside the HUD container, after the card grid (not inside it)', async () => {
+    for (const tiles of [THREE, []]) {
+      const html = await render(tiles, 'ko', { accounts: '<div class="acct-probe">probe</div>' });
+      const doc = new JSDOM(html).window.document;
+      const probe = doc.querySelector('.acct-probe');
+      expect(probe).not.toBeNull();
+      const container = probe?.parentElement;
+      expect(container?.matches('#membership > .container.container--hud')).toBe(true);
+      expect(probe?.closest('.pl-intro__grid')).toBeNull();
+      expect(probe?.previousElementSibling?.classList.contains('pl-intro__grid')).toBe(true);
+      expect(container?.querySelector('.pl-intro__grid .mcard')).not.toBeNull();
+    }
+    // without slot content the container holds only the grid (no empty wrapper, no stray node)
+    const bare = new JSDOM(await render(THREE)).window.document;
+    expect(bare.querySelector('#membership > .container.container--hud')?.children).toHaveLength(1);
+  });
+
   it('the row uses the HUD container and the 440px card column from 1068px', () => {
     const src = readSource('src/components/player-log/MembershipRow.astro');
-    expect(src).toContain('class="container container--hud pl-intro__grid"');
+    // AL-10: the container holds the card grid and, after it, the LINKED ACCOUNTS slot (tiles align with the card column)
+    expect(src).toMatch(/<div class="container container--hud">\s*<div class="pl-intro__grid">/);
+    expect(src).toMatch(/<\/div>\s*<slot name="accounts" \/>\s*<\/div>\s*<\/section>/);
     expect(src).toMatch(/@media \(min-width: 1068px\) \{[\s\S]*?grid-template-columns:\s*minmax\(0, 440px\) 1fr/);
   });
 });

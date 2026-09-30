@@ -9,6 +9,7 @@ docs/superpowers/
 node_modules/
 dist/
 dist-no-art/
+dist-e2e-accounts/
 .astro/
 .env
 .env.*

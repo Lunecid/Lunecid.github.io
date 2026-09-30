@@ -4,9 +4,18 @@
 #   쇼케이스에서 고른 게임은 URL에 반영하지 않는다.
 # - 캐릭터 이미지는 장식이므로 화면에서는 alt=""로 둔다. 저작권 표기는 notices(ui.ts의 notice.*)로 따로 보여 준다.
 # - 캐릭터 이미지는 HoYoverse 공식 홈페이지 원본을 사용자 허락을 받은 뒤 받아 src/assets/characters/<id>.png로 직접 호스팅한다(spec §8, §13). 핫링크 금지.
-# - tint는 쇼케이스 배경 색조에만 쓴다(spec §4: 캐릭터 고유색은 플레이 로그·쇼케이스에만).
-# - account는 v1에서 모두 null이다. 값이 없으면 계정 카드는 잠금 상태로 보인다.
-#   연동을 켜면 빌드 때 생성되는 src/data/generated/accounts/<integration.platform>.json을 읽는다(커밋하지 않음, spec §6·§7.1).
+# - tint는 쇼케이스 배경 색조와 계정 아이콘 배경에만 쓴다. 글자 색으로 쓰지 않는다(spec §4: 캐릭터 고유색은 플레이 로그·쇼케이스에만).
+# - 계정 연동(LINKED ACCOUNTS 줄, account-link 설계 §9.4):
+#   - integration.enabled는 커밋된 주 스위치다. 켠 게임도 빌드가 정상·신선한 데이터를 받았을 때만 아이콘이 보인다(두 스위치).
+#     지금 켠 것: zzz, genshin, lol, tft, steam. dnf·eternal-return·hearthstone은 꺼 둔다(이터널 리턴·하스스톤은 계정 카드를
+#     만들지 않음, 2026-10-01 주인 답).
+#   - 계정 값(UID, SteamID64, Riot ID)은 yaml이 아니라 GitHub Actions 변수 ACCOUNT_*에 둔다.
+#   - Steam 게임 부분과 필터는 src/lib/account-config.ts에 있다.
+#   - 데이터는 빌드 때 src/data/generated/accounts/, 링크는 src/data/generated/links/에 생긴다(커밋하지 않음).
+#   - LoL과 TFT는 Riot ID 변수 하나(ACCOUNT_RIOT_ID)에서 나오는 아이콘 두 개다(op.gg, lolchess.gg 링크). platform은 둘 다 riot.
+#   - account는 null로 둔다(스키마 z.null()).
+#   - 저장소 규칙: 공개 게임 ID는 저장소에 있어도 된다(실행 기록과 카드에 어차피 공개됨). 주인이 Cloudflare·GitHub·Steam에
+#     로그인하는 이메일과 모든 비밀값은 저장소에 절대 넣지 않는다.
 # - locked: true 인 게임은 목록에 비활성 버튼으로만 보이고 선택할 수 없다.
 #   TFT는 LoL과 같은 Riot ID로 연동한다(account-link 설계 A-1·A-13). 이터널 리턴·하스스톤은 연동 계획이 없어 '소개 준비 중'이며,
 #   주인이 소개(why·meta)를 주면 locked를 푼다(2026-09-30 주인 요청으로 추가). TFT·하스스톤은 같은 날 주인이 준 장르와
@@ -42,7 +51,7 @@ games:
     notices: [cognosphere, zzz-fan-guide, fan-content]
     integration:
       platform: enka-zzz
-      enabled: false
+      enabled: true
     account: null
 
   - id: genshin
@@ -77,7 +86,7 @@ games:
     notices: [cognosphere, fan-content]
     integration:
       platform: enka-genshin
-      enabled: false
+      enabled: true
     account: null
 
   - id: lol
@@ -96,7 +105,7 @@ games:
     notices: []
     integration:
       platform: riot
-      enabled: false
+      enabled: true
     account: null
 
   - id: tft
@@ -115,7 +124,7 @@ games:
     notices: []
     integration:
       platform: riot
-      enabled: false
+      enabled: true
     account: null
 
   - id: dnf
@@ -191,5 +200,5 @@ games:
     notices: []
     integration:
       platform: steam
-      enabled: false
+      enabled: true
     account: null

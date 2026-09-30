@@ -9,8 +9,11 @@ import SiteAchievementList from '../components/player-log/SiteAchievementList.as
 import { membershipCard, playerLogCopy } from '../data/copy/player-log';
 import type { Lang } from '../i18n/ui';
 import { t } from '../i18n/utils';
+import AccountLinks from '../islands/AccountLinks';
 import FavoriteGames from '../islands/FavoriteGames';
 import { characterCredit, characters } from '../lib/characters';
+import { TILE_SOURCES, accountLinksLabels, accountStatus, accountStatusJson, buildAccountView } from '../lib/account-view';
+import { relayOrigin } from '../lib/csp';
 import { buildFavoriteGames, buildFavoriteTiles } from '../lib/favorites';
 import { generated } from '../lib/generated';
 import { availableAchievements } from '../lib/achievements';
@@ -39,9 +42,17 @@ const defs = (await getCollection('achievements'))
 // and GameAchievements renders nothing. The bgm-on achievement is listed only when the BGM file exists.
 const showcase = await buildFavoriteGames(games.filter((g) => !g.locked), lang);
 const tiles = buildFavoriteTiles(games, lang);
-const accounts = generated.accounts();
+// LINKED ACCOUNTS (account-link AL-10): both switches must be on — the committed favorites.yaml switch and an ok,
+// fresh feed (R-4). With any switch on the island always renders, client:idle (R-8), even with no tile to show.
+// The showcase and GameAchievements get no feeds (R-6, DV-4): FavoriteGames' AccountPanel stays asleep.
+const accountFeeds = generated.accounts();
+const riotLinks = generated.links();
+const accountTiles = await buildAccountView(games, accountFeeds, riotLinks, generated.accountImages(), lang);
+const anyAccountEnabled = games.some((g) => g.integration.enabled && Object.hasOwn(TILE_SOURCES, g.id));
+const acctStatus = accountStatusJson(accountStatus(games, accountFeeds, riotLinks));
+const steamShown = accountTiles.some((tile) => tile.key === 'steam' && tile.state === 'shown');
 const siteAchievements = availableAchievements(defs, soundAvailability());
-const notices = characters.notices(['remielle', 'eula', 'mona']);
+const notices = [...characters.notices(['remielle', 'eula', 'mona']), ...(steamShown ? (['valve'] as const) : [])];
 const credit = characterCredit(['remielle', 'eula', 'mona'], lang);
 const labels = {
   tablist: t(lang, 'favorites.tablist'),
@@ -59,7 +70,12 @@ const labels = {
     tiles={tiles}
     tileSlots={games.reduce((n, g) => n + g.characters.length, 0)}
     achievements={siteAchievements}
-  />
+  >
+    {anyAccountEnabled && (
+      <AccountLinks slot="accounts" client:idle lang={lang} tiles={accountTiles} labels={accountLinksLabels(lang)} relay={relayOrigin(process.env)} steamButton={false} />
+    )}
+  </MembershipRow>
+  <script is:inline type="application/json" id="acct-status" set:html={acctStatus} />
   {/* section#favorite-games (contract §5.14); unnamed wrapper, the island renders its own labelled section.fg inside */}
   <section id="favorite-games" class="pl-showcase">
     <div class="pl-showcase__inner">
@@ -68,13 +84,13 @@ const labels = {
         lang={lang}
         heading={{ caption: t(lang, 'section.favoriteGames'), title: t(lang, 'section.favoriteGames.title') }}
         games={showcase}
-        accounts={accounts}
+        accounts={{}}
         credit={credit}
         labels={labels}
       />
     </div>
   </section>
-  <GameAchievements lang={lang} platforms={copy.gamePlatforms} accounts={accounts} />
+  <GameAchievements lang={lang} platforms={copy.gamePlatforms} accounts={{}} />
   <SiteAchievementList lang={lang} defs={siteAchievements} />
 </BaseLayout>
 

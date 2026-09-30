@@ -1,6 +1,7 @@
 import { defineConfig, devices } from '@playwright/test';
 const PORT = Number(process.env.E2E_PORT ?? 4329);
 const NO_ART_PORT = Number(process.env.E2E_NO_ART_PORT ?? 4330);
+const E2E_ACCOUNTS_PORT = Number(process.env.E2E_ACCOUNTS_PORT ?? 4332);
 const channel = process.env.PW_CHANNEL; // 'chrome' locally on Windows, unset in CI
 export default defineConfig({
   testDir: 'tests/e2e',
@@ -19,6 +20,16 @@ export default defineConfig({
       command: `npm run build -- --outDir dist-no-art && npm run preview -- --outDir dist-no-art --host 127.0.0.1 --port ${NO_ART_PORT} --ignore-lock`,
       env: { SB_NO_ART: '1' },
       url: `http://127.0.0.1:${NO_ART_PORT}/`,
+      reuseExistingServer: false,
+      timeout: 240_000,
+    },
+    // Account-link fixture build (tests/e2e/accounts.spec.ts): the test-only SB_E2E_ACCOUNTS switch points the
+    // @generated alias at the synthetic feeds of tests/fixtures/generated and the relay at the fixture origin, into
+    // dist-e2e-accounts/ (never deployed; the workflow never sets the switch).
+    {
+      command: `npm run build -- --outDir dist-e2e-accounts && npm run preview -- --outDir dist-e2e-accounts --host 127.0.0.1 --port ${E2E_ACCOUNTS_PORT} --ignore-lock`,
+      env: { SB_E2E_ACCOUNTS: '1' },
+      url: `http://127.0.0.1:${E2E_ACCOUNTS_PORT}/`,
       reuseExistingServer: false,
       timeout: 240_000,
     },
