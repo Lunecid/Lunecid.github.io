@@ -45,7 +45,8 @@ test.describe('D-2 XL steps: the section container widens; every band keeps one 
       expect(await page.locator('#hero-name').evaluate((el) => parseFloat(getComputedStyle(el).fontSize))).toBe(nameSize);
 
       await open(page, '/game/player-log/', width);
-      expect((await box(page.locator('.pl-intro__grid'))).width, 'Player Log first row').toBeCloseTo(container, 0);
+      // AL-10 split the row: the container is the grid's parent (the grid is its content box, the accounts slot below it)
+      expect((await box(page.locator('.container:has(> .pl-intro__grid)'))).width, 'Player Log first row').toBeCloseTo(container, 0);
       expect((await box(page.locator('.pl-showcase__inner'))).width, 'showcase').toBeCloseTo(container, 0);
     });
   }
