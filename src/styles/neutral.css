@@ -2,6 +2,8 @@
    P1-10 skeleton: readable, light, no game chrome; P2-11 designs these pages. Colours only through --nt-* tokens. */
 .nt-header { border-bottom: 1px solid var(--nt-rule); background: var(--nt-bg); }
 .nt-header__bar { max-width: var(--container); margin-inline: auto; padding-inline: var(--gutter); min-height: var(--nav-h); display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+/* P2-10: the chooser's header has no brand; its language switch keeps the right edge. */
+.nt-header__bar--lang-only { justify-content: flex-end; }
 .nt-header__brand, .nt-header__lang a { display: inline-flex; align-items: center; min-height: var(--tap); min-width: var(--tap); color: var(--nt-ink); font-weight: 700; text-decoration: none; }
 .nt-header__lang a { font-weight: 500; text-decoration: underline; text-underline-offset: 3px; color: var(--nt-accent); }
 .nt-footer { margin-top: auto; border-top: 1px solid var(--nt-rule); background: var(--nt-bg); color: var(--nt-muted); font-size: var(--fs-small); }

@@ -226,13 +226,13 @@ test('the Korean paper page loads the Korean serif and no other page does', () =
   assert.deepEqual(withSerif.sort(), ['/data/research/cog-2026-engagement/', '/game/research/cog-2026-engagement/']);
 });
 
-test('general-version pages declare the Korean heading face, no other page does, and no page preloads it (P2-3)', () => {
+test('general-version pages and the chooser declare the Korean heading face, no other page does, and no page preloads it (P2-3, P2-10)', () => {
   /** @type {string[]} */
   const wrong = [];
   for (const p of builtPages()) {
     const html = readFileSync(p.file, 'utf8');
     const declares = fontFaces(new JSDOM(html).window.document).some((f) => f.family === SERIF_KO_HEAD_FAMILY);
-    const general = /^\/(en\/)?data\//.test(p.route);
+    const general = /^\/(en\/)?data\//.test(p.route) || p.route === '/' || p.route === '/en/';
     if (declares !== general) wrong.push(`${p.route}: declares=${declares}`);
     if (/<link rel="preload"[^>]*sb-serif-kr-head/.test(html)) wrong.push(`${p.route}: preloads the heading face`);
   }

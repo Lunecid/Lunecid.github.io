@@ -10,6 +10,7 @@ import { otherLang, switchLocalePath, t } from '../i18n/utils';
 import { chooserInitScript } from '../lib/chooser-init';
 import { FONT_URL, fontFaceCss } from '../lib/fonts';
 import { HEAD_INIT_SCRIPT } from '../lib/head-init';
+import { chooserHref } from '../lib/links';
 import { NEUTRAL_IDENTITY } from '../variants/neutral';
 import HeadMeta from './partials/HeadMeta.astro';
 import NeutralHeader from '../components/neutral/NeutralHeader.astro';
@@ -28,9 +29,15 @@ interface Props {
   /** P1-14: 'chooser' inlines the pre-paint redirect as the first <script> (only '/' and '/en/'). */
   headScript?: 'chooser';
   analytics?: 'always' | 'unless-redirecting';
+  /** 'lang-only': the chooser's header (spec §6: the language switch only). */
+  header?: 'full' | 'lang-only';
 }
-const { lang, title, description, page, ogSlug, noindex = false, altLangHref, jsonLd, headScript, analytics = 'always' } = Astro.props;
+const { lang, title, description, page, ogSlug, noindex = false, altLangHref, jsonLd, headScript, analytics = 'always', header = 'full' } = Astro.props;
 const altHref = altLangHref === undefined ? switchLocalePath(Astro.url.pathname, otherLang(lang)) : altLangHref;
+// The chooser's language switch keeps ?choose (spec §5.5): /?choose ↔ /en/?choose, so a visitor with a stored choice
+// who switches language stays on the chooser instead of being redirected by the pre-paint script (P1-14). The hreflang
+// <link>s keep the canonical / and /en/ (HeadMeta builds them from the pathname, not from this href).
+const headerAltHref = header === 'lang-only' ? chooserHref(otherLang(lang), { choose: true }) : altHref;
 ---
 <!doctype html>
 <html lang={lang} data-variant="neutral" data-page={page} data-motion="full">
@@ -48,7 +55,7 @@ const altHref = altLangHref === undefined ? switchLocalePath(Astro.url.pathname,
   </head>
   <body>
     <a class="skip-link" href="#main">{t(lang, 'site.skipToContent')}</a>
-    <NeutralHeader lang={lang} altLangHref={altHref} />
+    <NeutralHeader lang={lang} altLangHref={headerAltHref} brand={header === 'full'} />
     <main id="main" tabindex="-1"><slot /></main>
     <NeutralFooter lang={lang} contact={page !== 'not-found'} />
   </body>

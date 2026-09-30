@@ -8,13 +8,15 @@ import { NEUTRAL_IDENTITY } from '../../variants/neutral';
 interface Props {
   lang: Lang;
   altLangHref: string | null;
+  /** false on the chooser: no brand link. */
+  brand?: boolean;
 }
-const { lang, altLangHref } = Astro.props;
+const { lang, altLangHref, brand = true } = Astro.props;
 const other = otherLang(lang);
 ---
 <header class="nt-header">
-  <div class="nt-header__bar">
-    <a class="nt-header__brand" href={chooserHref(lang)} data-nt-brand>{NEUTRAL_IDENTITY.siteTitle[lang]}</a>
+  <div class:list={['nt-header__bar', { 'nt-header__bar--lang-only': !brand }]}>
+    {brand && <a class="nt-header__brand" href={chooserHref(lang)} data-nt-brand>{NEUTRAL_IDENTITY.siteTitle[lang]}</a>}
     {altLangHref !== null && (
       <p class="nt-header__lang"><a href={altLangHref} hreflang={other} lang={other} data-nt-lang>{languages[other]}</a></p>
     )}

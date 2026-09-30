@@ -10,15 +10,17 @@ test.describe('language switch resolves on every route', () => {
       const other = otherLang(lang);
       const expected = switchLocalePath(route, other);
       expect(koPathOf(expected), 'the switch targets the same page').toBe(koPathOf(route));
+      // P2-10 (D-6): the chooser's switch keeps ?choose (spec §5.5), so a stored choice does not redirect it away.
+      const target = route === '/' || route === '/en/' ? `${expected}?choose` : expected;
 
       const response = await page.goto(route);
       expect(response?.status(), route).toBe(200);
       const link = page.locator('a[hreflang]').first(); // first in DOM order = the HUD nav language link
       await expect(link).toHaveAttribute('hreflang', other);
-      await expect(link).toHaveAttribute('href', expected);
+      await expect(link).toHaveAttribute('href', target);
 
-      const switched = await page.goto(expected);
-      expect(switched?.status(), expected).toBe(200);
+      const switched = await page.goto(target);
+      expect(switched?.status(), target).toBe(200);
       await expect(page.locator('html')).toHaveAttribute('lang', other);
     });
   }
