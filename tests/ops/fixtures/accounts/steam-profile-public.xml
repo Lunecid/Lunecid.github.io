@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<!-- synthetic fixture from spec §6.5 (privacyState only), not a recorded response -->
+<profile>
+	<steamID64>76561197960435530</steamID64>
+	<steamID><![CDATA[SynthSteamer]]></steamID>
+	<privacyState>public</privacyState>
+	<visibilityState>3</visibilityState>
+</profile>

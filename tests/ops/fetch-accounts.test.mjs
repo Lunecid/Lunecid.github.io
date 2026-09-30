@@ -2,15 +2,26 @@
 // Every fetch is injected (a recording fetchImpl returning Response objects); no test reaches the network. The
 // fixtures under tests/ops/fixtures/accounts/ are synthetic (built from the spec's field lists, OQ-9); their `_note` key
 // is stripped before use. The UIDs are the spec's public examples, never the owner's.
-// AL-6 adds the Steam, Riot and entry parts to this file.
+// AL-6 (spec §5.1–5.5, §6.5–6.7, R-3, R-10, R-13, R-15) adds the Steam, Riot and entry parts below the Enka part: the
+// Steam fixtures are synthetic too (§6.5 field list; the XML ones carry the note as a comment), the Steam ID and Riot
+// ID are the spec's public examples, and the Steam key is a fake built at run time.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
+import { mkdtemp, readdir, readFile, rm, stat, writeFile } from 'node:fs/promises';
+import { spawnSync } from 'node:child_process';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { fetchGenshin, shapeGenshin } from '../../scripts/accounts/enka-genshin.mjs';
 import { fetchZzz, shapeZzz } from '../../scripts/accounts/enka-zzz.mjs';
 import { cleanText, imagePathOk } from '../../scripts/accounts/enka-common.mjs';
 import { USER_AGENT } from '../../scripts/accounts/safe-fetch.mjs';
 import { REASON_TEXT } from '../../scripts/accounts/reasons.mjs';
+import { fetchSteam, shapeSteam } from '../../scripts/accounts/steam.mjs';
+import { fetchRiotLinks } from '../../scripts/accounts/riot-links.mjs';
+import { fetchAccounts, runFetchAccounts, summaryMarkdown, writeAccounts } from '../../scripts/fetch-accounts.mjs';
+import { STEAM_GAME_FILTER, STEAM_SHOW_GAMES, STEAM_TOP_GAMES } from '../../src/lib/account-config.ts';
 
 const GI_UID = '618285856';
 const ZZZ_UID = '1300025292';
@@ -533,6 +544,585 @@ test('odd store shapes (arrays, numbers, nulls) never throw; the parts that need
   profile.playerInfo.showAvatarInfoList = [null, 5, { avatarId: {} }, { avatarId: 10000901, level: 'x' }];
   const card = shapeGenshin(profile, GI_STORE(), 'ko');
   assert.deepEqual(card.items.map((i) => keys(i)), [['name']]);
+});
+
+// ——— Steam (spec §6.5) ———
+
+const STEAM_ID = '76561197960435530';
+/** A Steam-key-shaped fake (32 hex), built at run time so no key-like literal is committed (gitleaks). */
+const FAKE_KEY = ['0123456789', 'abcdef', '0123456789', 'ABCDEF'].join('');
+const STEAM_ENV = { ACCOUNT_STEAM_ID64: STEAM_ID, ACCOUNT_STEAM_NAME: ' synthsteamer ', STEAM_API_KEY: FAKE_KEY };
+const SUMMARIES_URL = `https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v2/?steamids=${STEAM_ID}`;
+const XML_URL = `https://steamcommunity.com/profiles/${STEAM_ID}/?xml=1`;
+const LEVEL_URL = `https://api.steampowered.com/IPlayerService/GetSteamLevel/v1/?steamid=${STEAM_ID}`;
+const GAMES_URL = `https://api.steampowered.com/IPlayerService/GetOwnedGames/v1/?steamid=${STEAM_ID}&include_appinfo=1&include_played_free_games=1`;
+const AVATAR_URL = 'https://avatars.fastly.steamstatic.com/0000000000000000000000000000000000000abc_full.jpg';
+const ICON_URL = (appid, hash) => `https://media.steampowered.com/steamcommunity/public/images/apps/${appid}/${hash}.jpg`;
+const GAMES_ON = { showGames: true, filter: { mode: 'exclude', appIds: [] } };
+
+/** A Steam fixture without its `_note`; the XML ones keep their note as a comment. */
+function steamFixture(name) {
+  const text = readFileSync(new URL(`./fixtures/accounts/${name}`, import.meta.url), 'utf8');
+  if (name.endsWith('.xml')) {
+    assert.match(text, /<!-- synthetic fixture from spec §6\.5/, `${name} is marked synthetic`);
+    return text;
+  }
+  const data = JSON.parse(text);
+  assert.match(String(data._note), /^synthetic fixture from spec §6\.5/, `${name} is marked synthetic`);
+  delete data._note;
+  return data;
+}
+
+/** A recording fake for the Steam hosts. Unknown URLs answer 599 (a test failure shows up as a missing part). */
+function steamFake({ summaries = steamFixture('steam-summaries.json'), xml = steamFixture('steam-profile-public.xml'), level = steamFixture('steam-level.json'), games = steamFixture('steam-owned-games.json'), override } = {}) {
+  /** @type {{ url: string; headers: Headers; init: RequestInit }[]} */
+  const calls = [];
+  /** @type {typeof fetch} */
+  const fetchImpl = async (input, init = {}) => {
+    const url = String(input);
+    calls.push({ url, headers: new Headers(init.headers), init });
+    const forced = override?.(url);
+    if (forced) return forced;
+    if (url === SUMMARIES_URL) return jsonRes(summaries);
+    if (url === XML_URL) return new Response(xml, { status: 200, headers: { 'content-type': 'text/xml; charset=utf-8' } });
+    if (url === LEVEL_URL) return jsonRes(level);
+    if (url === GAMES_URL) return jsonRes(games);
+    if (url.startsWith('https://avatars.fastly.steamstatic.com/') || url.startsWith('https://media.steampowered.com/')) {
+      return new Response(JPG, { status: 200, headers: { 'content-type': 'image/jpeg' } });
+    }
+    return new Response('unexpected', { status: 599 });
+  };
+  return { calls, fetchImpl };
+}
+const keyedCalls = (calls) => calls.filter((c) => c.headers.has('x-webapi-key'));
+
+test('Steam ok path (games off, the committed default): exact feed, card and metric key sets; level only; link; avatar', async () => {
+  assert.equal(STEAM_SHOW_GAMES, false, 'the committed switch ships off (OQ-15, AL-24 turns it on)');
+  const { calls, fetchImpl } = steamFake();
+  const res = await fetchSteam(STEAM_ENV, deps(fetchImpl));
+  assert.equal(res.platform, 'steam');
+  assert.equal(res.state, 'written');
+  const { feed } = res;
+  assert.deepEqual(keys(feed), ['attribution', 'cards', 'fetchedAt', 'maxAgeDays', 'platform', 'schemaVersion', 'status']);
+  assert.equal(feed.schemaVersion, 1);
+  assert.equal(feed.platform, 'steam');
+  assert.equal(feed.status, 'ok');
+  assert.equal(feed.fetchedAt, NOW.toISOString());
+  assert.equal(feed.maxAgeDays, 7);
+  assert.equal(feed.attribution, 'Steam Web API');
+  assert.deepEqual(feed.cards.map((c) => c.lang), ['ko', 'en']);
+  const [ko, en] = feed.cards;
+  assert.deepEqual({ ...ko, lang: 'x' }, { ...en, lang: 'x' }, 'Steam text is not localised: both cards carry the same content');
+  assert.deepEqual(keys(ko), ['image', 'items', 'lang', 'link', 'metrics', 'stats', 'title']);
+  assert.equal(ko.title, 'SynthSteamer');
+  assert.deepEqual(ko.stats, []);
+  assert.deepEqual(ko.metrics, [{ key: 'steamLevel', value: 42 }]);
+  assert.deepEqual(ko.items, []);
+  assert.deepEqual(ko.link, { kind: 'steam', href: `https://steamcommunity.com/profiles/${STEAM_ID}` });
+  assert.match(ko.image, /^[0-9a-f]{12}\.jpg$/);
+  assert.deepEqual(res.images.map((i) => i.name), [ko.image]);
+
+  // Calls in the spec's order; no GetOwnedGames while the switch is off.
+  assert.deepEqual(calls.map((c) => c.url), [SUMMARIES_URL, XML_URL, LEVEL_URL, AVATAR_URL]);
+  assert.equal(calls.some((c) => c.url.includes('GetOwnedGames')), false);
+  for (const c of calls) assert.equal(c.headers.get('user-agent'), USER_AGENT);
+});
+
+test('Steam: the key travels only in x-webapi-key on api.steampowered.com, never as key=, with redirect: error', async () => {
+  const { calls, fetchImpl } = steamFake();
+  await fetchSteam(STEAM_ENV, deps(fetchImpl, { config: GAMES_ON }));
+  assert.equal(calls.length, 8, 'summaries, xml, level, games, the avatar and three icons, nothing else');
+  for (const c of calls) {
+    assert.equal(/[?&]key=/i.test(c.url), false, c.url);
+    assert.equal(c.url.includes(FAKE_KEY), false, c.url);
+    const host = new URL(c.url).hostname;
+    if (host === 'api.steampowered.com') {
+      assert.equal(c.headers.get('x-webapi-key'), FAKE_KEY);
+      assert.equal(c.init.redirect, 'error');
+    } else {
+      assert.equal(c.headers.has('x-webapi-key'), false, `${host} gets no key`);
+      assert.notEqual(c.init.redirect, 'error');
+    }
+  }
+  assert.deepEqual(keyedCalls(calls).map((c) => c.url), [SUMMARIES_URL, LEVEL_URL, GAMES_URL]);
+});
+
+test('Steam games on (injected): ownedGames, playtimeTotal and playtime2w in hours; top 3 by playtime_forever with icons', async () => {
+  const { calls, fetchImpl } = steamFake();
+  const res = await fetchSteam(STEAM_ENV, deps(fetchImpl, { config: GAMES_ON }));
+  const [ko] = res.feed.cards;
+  assert.deepEqual(ko.metrics, [
+    { key: 'steamLevel', value: 42 },
+    { key: 'ownedGames', value: 5 },
+    { key: 'playtimeTotal', value: 321, unit: 'hours' },
+    { key: 'playtime2w', value: 3, unit: 'hours' },
+  ]);
+  assert.equal(STEAM_TOP_GAMES, 3);
+  assert.deepEqual(ko.items.map((i) => [i.name, i.meta]), [['Synthetic Game B', '150 H'], ['Synthetic Game A', '100 H'], ['Synthetic Game C', '50 H']]);
+  for (const item of ko.items) assertItemShape(item);
+  for (const item of ko.items) assert.match(item.image, /^[0-9a-f]{12}\.jpg$/);
+  const icons = calls.filter((c) => c.url.startsWith('https://media.steampowered.com/')).map((c) => c.url).sort();
+  assert.deepEqual(icons, [ICON_URL(9000001, 'a1'.repeat(20)), ICON_URL(9000002, 'b2'.repeat(20)), ICON_URL(9000003, 'c3'.repeat(20))]);
+  assert.equal(res.images.length, 4);
+});
+
+test('Steam game filter: a filtered appid appears in no item, icon or name; totals are Steam full values', async () => {
+  for (const [filter, expectNames, hidden] of [
+    [{ mode: 'exclude', appIds: [9000002] }, ['Synthetic Game A', 'Synthetic Game C', 'Synthetic Game D'], ['Synthetic Game B', '9000002', 'b2b2']],
+    [{ mode: 'allow', appIds: [9000004, 9000005] }, ['Synthetic Game D', 'Synthetic Game E'], ['Synthetic Game A', 'Synthetic Game B', 'Synthetic Game C', '9000001', '9000002', '9000003']],
+  ]) {
+    const { calls, fetchImpl } = steamFake();
+    const res = await fetchSteam(STEAM_ENV, deps(fetchImpl, { config: { showGames: true, filter } }));
+    const [ko] = res.feed.cards;
+    assert.deepEqual(ko.items.map((i) => i.name), expectNames, filter.mode);
+    assert.deepEqual(ko.metrics.slice(1), [
+      { key: 'ownedGames', value: 5 },
+      { key: 'playtimeTotal', value: 321, unit: 'hours' },
+      { key: 'playtime2w', value: 3, unit: 'hours' },
+    ]);
+    const text = JSON.stringify(res.feed);
+    const iconCalls = calls.filter((c) => c.url.startsWith('https://media.steampowered.com/')).map((c) => c.url).join(' ');
+    for (const h of hidden) {
+      assert.equal(text.includes(h), false, `${filter.mode}: ${h} in the feed`);
+      assert.equal(iconCalls.includes(h), false, `${filter.mode}: ${h} icon requested`);
+    }
+  }
+});
+
+test('Steam games off → no GetOwnedGames request and no game metric or item; the default config is account-config.ts', async () => {
+  for (const config of [undefined, { showGames: STEAM_SHOW_GAMES, filter: STEAM_GAME_FILTER }, { showGames: false, filter: { mode: 'allow', appIds: [9000001] } }]) {
+    const { calls, fetchImpl } = steamFake();
+    const res = await fetchSteam(STEAM_ENV, deps(fetchImpl, config ? { config } : {}));
+    assert.equal(calls.some((c) => c.url.includes('GetOwnedGames')), false);
+    assert.deepEqual(res.feed.cards[0].metrics.map((m) => m.key), ['steamLevel']);
+    assert.deepEqual(res.feed.cards[0].items, []);
+  }
+  // The pure shaper, both ways.
+  const summary = steamFixture('steam-summaries.json').response.players[0];
+  const games = steamFixture('steam-owned-games.json').response;
+  const off = shapeSteam(summary, 42, games, 'ko', undefined, { showGames: false, filter: STEAM_GAME_FILTER });
+  assert.deepEqual(off.metrics, [{ key: 'steamLevel', value: 42 }]);
+  assert.deepEqual(off.items, []);
+  const on = shapeSteam(summary, 42, games, 'en', undefined, GAMES_ON);
+  assert.equal(on.lang, 'en');
+  assert.deepEqual(on.metrics.map((m) => m.key), ['steamLevel', 'ownedGames', 'playtimeTotal', 'playtime2w']);
+  assert.equal(on.items.length, 3);
+  assert.equal('image' in on, false, 'no image name given → no avatar');
+});
+
+test('Steam: only the allow-listed fields are kept (no realname, country, dates, state, current game)', async () => {
+  const { fetchImpl } = steamFake();
+  const res = await fetchSteam(STEAM_ENV, deps(fetchImpl, { config: GAMES_ON }));
+  const text = JSON.stringify(res.feed);
+  for (const word of ['realname', 'loccountrycode', 'timecreated', 'lastlogoff', 'personastate', 'gameextrainfo', 'gameid', 'Synthetic Realname', 'ZZ', '1000000000', '1700000000', 'Synthetic Game In Progress', 'profilestate', 'communityvisibilitystate', 'avatarfull', 'steamid', 'img_icon_url', 'playtime_forever', 'appid']) {
+    assert.equal(text.includes(word), false, word);
+  }
+  for (const card of res.feed.cards) {
+    assert.deepEqual(keys(card), ['image', 'items', 'lang', 'link', 'metrics', 'stats', 'title']);
+    for (const m of card.metrics) for (const k of Object.keys(m)) assert.ok(['key', 'value', 'unit'].includes(k), `metric key ${k}`);
+  }
+});
+
+test('Steam: communityvisibilitystate 1 → not-public; XML privacyState private → not-public; nothing stored', async () => {
+  const summaries = steamFixture('steam-summaries.json');
+  summaries.response.players[0].communityvisibilitystate = 1;
+  let fake = steamFake({ summaries });
+  let res = await fetchSteam(STEAM_ENV, deps(fake.fetchImpl));
+  assert.deepEqual(res.feed, { schemaVersion: 1, platform: 'steam', status: 'error', fetchedAt: NOW.toISOString(), maxAgeDays: 7, attribution: 'Steam Web API', reason: 'not-public', cards: [] });
+  assert.deepEqual(res.images, []);
+  assert.deepEqual(fake.calls.map((c) => c.url), [SUMMARIES_URL]);
+
+  fake = steamFake({ xml: steamFixture('steam-profile-private.xml') });
+  res = await fetchSteam(STEAM_ENV, deps(fake.fetchImpl));
+  assert.equal(res.feed.status, 'error');
+  assert.equal(res.feed.reason, 'not-public');
+  assert.deepEqual(res.feed.cards, []);
+  assert.deepEqual(res.images, []);
+  assert.deepEqual(fake.calls.map((c) => c.url), [SUMMARIES_URL, XML_URL], 'no level, games or image request after a private XML');
+
+  // An XML without a privacyState element (or another profile's XML) never passes as public.
+  for (const xml of ['<profile><steamID64>76561197960435530</steamID64></profile>', '<profile><steamID64>76561197960435531</steamID64><privacyState>public</privacyState></profile>', 'not xml at all']) {
+    const f = steamFake({ xml });
+    const r = await fetchSteam(STEAM_ENV, deps(f.fetchImpl));
+    assert.equal(r.feed.status, 'error', xml);
+    assert.ok(['not-public', 'bad-response'].includes(r.feed.reason), xml);
+  }
+});
+
+test('Steam: name mismatch → name-mismatch, no cards, zero images, nothing after the summaries request', async () => {
+  const fake = steamFake();
+  const res = await fetchSteam({ ...STEAM_ENV, ACCOUNT_STEAM_NAME: 'SomeoneElse' }, deps(fake.fetchImpl, { config: GAMES_ON }));
+  assert.deepEqual(res.feed, { schemaVersion: 1, platform: 'steam', status: 'error', fetchedAt: NOW.toISOString(), maxAgeDays: 7, attribution: 'Steam Web API', reason: 'name-mismatch', cards: [] });
+  assert.deepEqual(res.images, []);
+  assert.equal(fake.calls.length, 1);
+});
+
+test('Steam: key missing → no-key without authFailed; no ID → skipped; bad ID → invalid-id; no name → no-name; zero requests', async () => {
+  const fake = steamFake();
+  for (const key of [undefined, '', '   ']) {
+    const res = await fetchSteam({ ...STEAM_ENV, STEAM_API_KEY: key }, deps(fake.fetchImpl));
+    assert.equal(res.feed.status, 'error');
+    assert.equal(res.feed.reason, 'no-key');
+    assert.equal('authFailed' in res.feed, false);
+    assert.deepEqual(res.feed.cards, []);
+  }
+  for (const env of [{}, { ACCOUNT_STEAM_ID64: '' }, { ACCOUNT_STEAM_ID64: '  ', ACCOUNT_STEAM_NAME: 'x', STEAM_API_KEY: FAKE_KEY }]) {
+    assert.deepEqual(await fetchSteam(env, deps(fake.fetchImpl)), { platform: 'steam', state: 'skipped' });
+  }
+  for (const bad of ['76561197960265728', 'https://steamcommunity.com/id/robinwalker', '7656119796043553', 'abc']) {
+    const res = await fetchSteam({ ...STEAM_ENV, ACCOUNT_STEAM_ID64: bad }, deps(fake.fetchImpl));
+    assert.equal(res.feed.reason, 'invalid-id', bad);
+  }
+  for (const name of [undefined, '', '  ']) {
+    const res = await fetchSteam({ ...STEAM_ENV, ACCOUNT_STEAM_NAME: name }, deps(fake.fetchImpl));
+    assert.equal(res.feed.reason, 'no-name');
+  }
+  assert.equal(fake.calls.length, 0);
+  // A profile URL is accepted as the canonical ID (parseSteamId64).
+  const url = steamFake();
+  const ok = await fetchSteam({ ...STEAM_ENV, ACCOUNT_STEAM_ID64: `https://steamcommunity.com/profiles/${STEAM_ID}/` }, deps(url.fetchImpl));
+  assert.equal(ok.feed.status, 'ok');
+  assert.equal(url.calls[0].url, SUMMARIES_URL);
+});
+
+test('Steam: 401/403 → auth + authFailed; other statuses map like Enka; authFailed only for auth', async () => {
+  for (const [status, reason] of [[401, 'auth'], [403, 'auth'], [400, 'http-400'], [404, 'http-404'], [429, 'http-429'], [500, 'http-5xx'], [503, 'http-5xx']]) {
+    const fake = steamFake({ override: (u) => (u === SUMMARIES_URL ? jsonRes({}, status) : null) });
+    const res = await fetchSteam(STEAM_ENV, deps(fake.fetchImpl));
+    assert.equal(res.feed.status, 'error', String(status));
+    assert.equal(res.feed.reason, reason, String(status));
+    assert.equal(res.feed.authFailed === true, reason === 'auth', String(status));
+    if (reason === 'auth') assert.deepEqual(keys(res.feed), ['attribution', 'authFailed', 'cards', 'fetchedAt', 'maxAgeDays', 'platform', 'reason', 'schemaVersion', 'status']);
+    assert.equal(fake.calls.length, 1);
+  }
+  // A key rejected on a later keyed call is still an auth failure.
+  const late = steamFake({ override: (u) => (u === LEVEL_URL ? jsonRes({}, 403) : null) });
+  const res = await fetchSteam(STEAM_ENV, deps(late.fetchImpl));
+  assert.equal(res.feed.reason, 'auth');
+  assert.equal(res.feed.authFailed, true);
+  const timeout = steamFake({ override: () => { throw new DOMException('timeout', 'TimeoutError'); } });
+  const t = await fetchSteam(STEAM_ENV, deps(timeout.fetchImpl));
+  assert.equal(t.feed.reason, 'timeout');
+  assert.equal('authFailed' in t.feed, false);
+  for (const body of ['nope', '{}', '{"response":{"players":[{"steamid":"76561197960435531","communityvisibilitystate":3,"personaname":"SynthSteamer"}]}}', '{"response":{"players":[{"steamid":"76561197960435530","communityvisibilitystate":3}]}}']) {
+    const f = steamFake({ override: (u) => (u === SUMMARIES_URL ? jsonRes(body) : null) });
+    const r = await fetchSteam(STEAM_ENV, deps(f.fetchImpl));
+    assert.equal(r.feed.reason, 'bad-response', body);
+  }
+  // Steam answers an unknown account with an empty list: reported like a missing account.
+  const empty = steamFake({ summaries: { response: { players: [] } } });
+  assert.equal((await fetchSteam(STEAM_ENV, deps(empty.fetchImpl))).feed.reason, 'http-404');
+});
+
+test('Steam: a 30x from api.steampowered.com is an error after exactly one keyed request (never followed)', async () => {
+  for (const redirect of [
+    () => new Response(null, { status: 302, headers: { location: 'https://evil.example/collect' } }),
+    () => new Response(null, { status: 301, headers: { location: 'https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v2/' } }),
+    () => { throw new TypeError('fetch failed', { cause: new Error('unexpected redirect') }); },
+  ]) {
+    const fake = steamFake({ override: (u) => (u === SUMMARIES_URL ? redirect() : null) });
+    const res = await fetchSteam(STEAM_ENV, deps(fake.fetchImpl));
+    assert.equal(res.feed.status, 'error');
+    assert.equal(res.feed.reason, 'bad-response');
+    assert.equal('authFailed' in res.feed, false);
+    assert.equal(keyedCalls(fake.calls).length, 1);
+    assert.equal(fake.calls.length, 1);
+    assert.equal(fake.calls[0].init.redirect, 'error');
+  }
+});
+
+test('Steam: player_level absent (field name unconfirmed) → no steamLevel metric, status still ok; a failed level call is left out too', async () => {
+  for (const override of [(u) => (u === LEVEL_URL ? jsonRes({ response: {} }) : null), (u) => (u === LEVEL_URL ? jsonRes({}, 500) : null)]) {
+    const fake = steamFake({ override });
+    const res = await fetchSteam(STEAM_ENV, deps(fake.fetchImpl));
+    assert.equal(res.feed.status, 'ok');
+    assert.deepEqual(res.feed.cards[0].metrics, []);
+    assert.equal(res.feed.cards[0].title, 'SynthSteamer');
+  }
+});
+
+test('Steam: a failed avatar or icon drops only that picture; a non-Steam avatar host is never requested', async () => {
+  const fake = steamFake({ override: (u) => (u === AVATAR_URL ? new Response('<html>', { status: 200, headers: { 'content-type': 'text/html' } }) : null) });
+  const res = await fetchSteam(STEAM_ENV, deps(fake.fetchImpl, { config: GAMES_ON }));
+  assert.equal(res.feed.status, 'ok');
+  assert.equal('image' in res.feed.cards[0], false);
+  assert.equal(res.feed.cards[0].items.length, 3);
+  const summaries = steamFixture('steam-summaries.json');
+  summaries.response.players[0].avatarfull = 'https://evil.example/a.jpg';
+  const other = steamFake({ summaries });
+  const r2 = await fetchSteam(STEAM_ENV, deps(other.fetchImpl));
+  assert.equal(r2.feed.status, 'ok');
+  assert.equal(other.calls.some((c) => c.url.includes('evil.example')), false);
+  assert.equal('image' in r2.feed.cards[0], false);
+});
+
+// ——— Riot links (spec §6.6; OWNER 2026-10-01 OQ-2: LoL and TFT are separate tiles, each link checked on its own) ———
+
+const RIOT_ID = 'Hide on bush#KR1';
+const LOL_URL = 'https://op.gg/lol/summoners/kr/Hide%20on%20bush-KR1';
+const TFT_URL = 'https://lolchess.gg/profile/kr/Hide%20on%20bush-KR1';
+const html = (status = 200, headers = {}) => new Response(status >= 300 && status < 400 ? null : '<html></html>', { status, headers: { 'content-type': 'text/html', ...headers } });
+function riotFake({ lol = () => html(), tft = () => html() } = {}) {
+  const calls = [];
+  /** @type {typeof fetch} */
+  const fetchImpl = async (input, init = {}) => {
+    const url = String(input);
+    calls.push({ url, headers: new Headers(init.headers), init });
+    if (url === LOL_URL) return lol();
+    if (url === TFT_URL) return tft();
+    return new Response('unexpected', { status: 599 });
+  };
+  return { calls, fetchImpl };
+}
+
+test('Riot: a valid ID → both links (exact RiotLinks shape); one GET to each site, no credentials', async () => {
+  const fake = riotFake();
+  const res = await fetchRiotLinks({ ACCOUNT_RIOT_ID: RIOT_ID }, deps(fake.fetchImpl));
+  assert.deepEqual(res, { platform: 'riot', state: 'written', links: { schemaVersion: 1, platform: 'riot', status: 'ok', fetchedAt: NOW.toISOString(), riotId: RIOT_ID, links: { lol: LOL_URL, tft: TFT_URL } } });
+  assert.deepEqual(fake.calls.map((c) => c.url), [LOL_URL, TFT_URL]);
+  for (const c of fake.calls) {
+    assert.equal(c.headers.get('user-agent'), USER_AGENT);
+    assert.equal(c.headers.has('x-webapi-key'), false);
+    assert.equal(c.headers.has('authorization'), false);
+  }
+  assert.equal(fake.calls[1].init.redirect, 'manual', 'lolchess is not followed');
+  // NFD input is stored NFC, like the links.
+  const nfd = await fetchRiotLinks({ ACCOUNT_RIOT_ID: '프로게이머에요#KR1'.normalize('NFD') }, deps(riotFake({ lol: () => html(), tft: () => html() }).fetchImpl));
+  assert.equal(nfd.state, 'written');
+  assert.equal(nfd.links.riotId, '프로게이머에요#KR1');
+});
+
+test('Riot: op.gg 404 → no lol, tft kept; lolchess Location /search? → no tft, lol kept (each link on its own)', async () => {
+  let res = await fetchRiotLinks({ ACCOUNT_RIOT_ID: RIOT_ID }, deps(riotFake({ lol: () => html(404) }).fetchImpl));
+  assert.deepEqual(res.links.links, { tft: TFT_URL });
+  assert.deepEqual(keys(res.links.links), ['tft']);
+  res = await fetchRiotLinks({ ACCOUNT_RIOT_ID: RIOT_ID }, deps(riotFake({ tft: () => html(302, { location: '/search?region=kr&name=x' }) }).fetchImpl));
+  assert.deepEqual(res.links.links, { lol: LOL_URL });
+  res = await fetchRiotLinks({ ACCOUNT_RIOT_ID: RIOT_ID }, deps(riotFake({ tft: () => html(302, { location: 'https://lolchess.gg/search?name=x' }) }).fetchImpl));
+  assert.deepEqual(res.links.links, { lol: LOL_URL });
+  // A lolchess redirect elsewhere (not a search) keeps the link; it is not followed.
+  const other = riotFake({ tft: () => html(301, { location: 'https://lolchess.gg/profile/kr/Hide%20on%20bush-KR1/set' }) });
+  res = await fetchRiotLinks({ ACCOUNT_RIOT_ID: RIOT_ID }, deps(other.fetchImpl));
+  assert.deepEqual(res.links.links, { lol: LOL_URL, tft: TFT_URL });
+  assert.equal(other.calls.length, 2);
+});
+
+test('Riot: 403, 5xx, network error, timeout and odd content keep the links (CI IPs may be blocked)', async () => {
+  const throwTimeout = () => { throw new DOMException('timeout', 'TimeoutError'); };
+  const throwNet = () => { throw new TypeError('fetch failed'); };
+  for (const answer of [() => html(403), () => html(500), () => html(503), throwNet, throwTimeout, () => new Response('x', { status: 200, headers: { 'content-type': 'image/gif' } }), () => html(400)]) {
+    const res = await fetchRiotLinks({ ACCOUNT_RIOT_ID: RIOT_ID }, deps(riotFake({ lol: answer, tft: answer }).fetchImpl));
+    assert.equal(res.state, 'written');
+    assert.deepEqual(res.links.links, { lol: LOL_URL, tft: TFT_URL });
+  }
+});
+
+test('Riot: both links dropped → no file; no ID → skipped; invalid ID → no file and zero requests', async () => {
+  const both = await fetchRiotLinks({ ACCOUNT_RIOT_ID: RIOT_ID }, deps(riotFake({ lol: () => html(404), tft: () => html(302, { location: '/search?q=1' }) }).fetchImpl));
+  assert.equal(both.state, 'skipped');
+  assert.equal('links' in both, false);
+  const fake = riotFake();
+  for (const env of [{}, { ACCOUNT_RIOT_ID: '' }, { ACCOUNT_RIOT_ID: '   ' }]) assert.deepEqual(await fetchRiotLinks(env, deps(fake.fetchImpl)), { platform: 'riot', state: 'skipped' });
+  for (const bad of ['Hide on bush', 'Hide on bush#', '#KR1', 'ab#KR1', 'Hide/on#KR1', 'Hide%on#KR1', 'Hide‮on#KR1', 'Hide on bush#K', 'a'.repeat(70)]) {
+    const res = await fetchRiotLinks({ ACCOUNT_RIOT_ID: bad }, deps(fake.fetchImpl));
+    assert.equal(res.state, 'skipped', bad);
+    assert.equal(res.reason, 'invalid-id', bad);
+    assert.equal('links' in res, false);
+  }
+  assert.equal(fake.calls.length, 0);
+});
+
+// ——— the entry script (spec §5.1, §5.3, §5.4, R-10) ———
+
+const ENTRY = fileURLToPath(new URL('../../scripts/fetch-accounts.mjs', import.meta.url));
+const ALL_ENV = { ...GI_ENV, ...ZZZ_ENV, ...STEAM_ENV, ACCOUNT_RIOT_ID: RIOT_ID };
+/** Every value the env holds, as the owner typed it and trimmed: none may reach the console or the summary. */
+const ENV_VALUES = [...new Set(Object.values(ALL_ENV).flatMap((v) => [v, v.trim()]))];
+
+/** One fetch for all four platforms, routed by URL to the per-platform fakes above. */
+function allFake(overrides = {}) {
+  const gi = giFake(overrides.gi);
+  const zzz = zzzFake(overrides.zzz);
+  const steam = steamFake(overrides.steam);
+  const riot = riotFake(overrides.riot);
+  const calls = [];
+  /** @type {typeof fetch} */
+  const fetchImpl = (input, init) => {
+    const url = String(input);
+    calls.push(url);
+    const host = new URL(url).hostname;
+    if (host === 'op.gg' || host === 'lolchess.gg') return riot.fetchImpl(input, init);
+    if (/steam/.test(host)) return steam.fetchImpl(input, init);
+    if (/\/(api\/zzz|store\/zzz|ui\/zzz)\//.test(url)) return zzz.fetchImpl(input, init);
+    return gi.fetchImpl(input, init);
+  };
+  return { calls, fetchImpl, steam };
+}
+
+async function captureConsole(fn) {
+  const lines = [];
+  const saved = { log: console.log, error: console.error, warn: console.warn, info: console.info };
+  for (const k of Object.keys(saved)) console[k] = (...args) => lines.push(args.map(String).join(' '));
+  try {
+    return { value: await fn(), lines };
+  } finally {
+    Object.assign(console, saved);
+  }
+}
+
+async function listFiles(dir) {
+  try {
+    return (await readdir(dir, { recursive: true, withFileTypes: true })).filter((e) => e.isFile()).map((e) => join(e.parentPath ?? e.path, e.name));
+  } catch {
+    return [];
+  }
+}
+
+test('entry: all variables empty → zero requests, no files, four skipped log lines', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'af-empty-'));
+  try {
+    const { calls, fetchImpl } = allFake();
+    const summaryFile = join(dir, 'summary.md');
+    const { lines } = await captureConsole(() => runFetchAccounts({ env: {}, fetchImpl, now: () => NOW, outDir: join(dir, 'out'), summaryFile }));
+    assert.equal(calls.length, 0);
+    assert.deepEqual(lines, ['accounts: enka-genshin skipped', 'accounts: enka-zzz skipped', 'accounts: steam skipped', 'accounts: riot skipped']);
+    assert.deepEqual(await listFiles(join(dir, 'out')), []);
+    const summary = await readFile(summaryFile, 'utf8');
+    assert.match(summary, /^### Account fetch$/m);
+    assert.equal((summary.match(/\| skipped \|/g) ?? []).length, 4);
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test('entry as a process: no variables → exit code 0, only the four log lines, nothing written; the summary is appended', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'af-proc-'));
+  try {
+    const summaryFile = join(dir, 'summary.md');
+    await writeFile(summaryFile, 'earlier step\n');
+    const out = join(dir, 'af');
+    const run = spawnSync(process.execPath, [ENTRY, '--out', out], { env: { PATH: process.env.PATH ?? '', GITHUB_STEP_SUMMARY: summaryFile }, encoding: 'utf8', timeout: 30_000 });
+    assert.equal(run.status, 0, run.stderr);
+    assert.deepEqual(run.stdout.trim().split('\n'), ['accounts: enka-genshin skipped', 'accounts: enka-zzz skipped', 'accounts: steam skipped', 'accounts: riot skipped']);
+    assert.deepEqual(await listFiles(out), []);
+    const summary = await readFile(summaryFile, 'utf8');
+    assert.ok(summary.startsWith('earlier step\n'), 'appended, not replaced');
+    assert.match(summary, /### Account fetch/);
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test('entry with fixtures: files at the fixed paths; images before feeds; no env value or key in the console or summary', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'af-full-'));
+  try {
+    const { calls, fetchImpl } = allFake();
+    const out = join(dir, 'out');
+    const summaryFile = join(dir, 'summary.md');
+    const { value: results, lines } = await captureConsole(() => runFetchAccounts({ env: ALL_ENV, fetchImpl, now: () => NOW, outDir: out, summaryFile }));
+    assert.deepEqual(results.map((r) => r.platform), ['enka-genshin', 'enka-zzz', 'steam', 'riot']);
+    assert.deepEqual(lines, ['accounts: enka-genshin ok', 'accounts: enka-zzz ok', 'accounts: steam ok', 'accounts: riot ok']);
+
+    const files = (await listFiles(out)).map((f) => f.slice(out.length + 1).split('\\').join('/')).sort();
+    const feeds = ['accounts/enka-genshin.json', 'accounts/enka-zzz.json', 'accounts/steam.json', 'links/riot.json'];
+    const images = files.filter((f) => f.startsWith('accounts/img/'));
+    assert.deepEqual(files.filter((f) => !f.startsWith('accounts/img/')), feeds.sort());
+    assert.ok(images.length >= 8);
+    for (const f of images) assert.match(f, /^accounts\/img\/[0-9a-f]{12}\.(png|jpg|webp)$/);
+    const imgTimes = await Promise.all(images.map(async (f) => (await stat(join(out, f))).mtimeMs));
+    const feedTimes = await Promise.all(feeds.map(async (f) => (await stat(join(out, f))).mtimeMs));
+    assert.ok(Math.max(...imgTimes) <= Math.min(...feedTimes), 'every image is written before any feed JSON');
+    assert.equal(files.some((f) => /\.tmp$/.test(f) || f.split('/').pop().startsWith('.')), false, 'no temp file left');
+
+    const steam = JSON.parse(await readFile(join(out, 'accounts/steam.json'), 'utf8'));
+    assert.equal(steam.status, 'ok');
+    const riot = JSON.parse(await readFile(join(out, 'links/riot.json'), 'utf8'));
+    assert.deepEqual(riot.links, { lol: LOL_URL, tft: TFT_URL });
+    // Every card image named in a feed was written.
+    for (const f of feeds.slice(0, 3)) {
+      const feed = JSON.parse(await readFile(join(out, f), 'utf8'));
+      for (const card of feed.cards) for (const n of [card.image, card.banner, ...card.items.map((i) => i.image)].filter(Boolean)) assert.ok(images.includes(`accounts/img/${n}`), `${f}: ${n}`);
+    }
+
+    // The key: in no request URL, no written file, no log line, not in the summary.
+    for (const url of calls) assert.equal(url.includes(FAKE_KEY), false);
+    for (const f of files) assert.equal((await readFile(join(out, f))).includes(Buffer.from(FAKE_KEY)), false, f);
+    const summary = await readFile(summaryFile, 'utf8');
+    const printed = [...lines, summary].join('\n');
+    for (const v of [...ENV_VALUES, FAKE_KEY, FAKE_KEY.toLowerCase(), 'Hide%20on%20bush', 'SynthWanderer', 'SynthSteamer', 'SynthProxy']) {
+      assert.equal(printed.toLowerCase().includes(v.toLowerCase()), false, `printed: ${v}`);
+    }
+    assert.equal(summaryMarkdown(results), summary.trimEnd() + '\n');
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test('entry: error feeds are still written (authFailed reaches check-fetch-status); log lines name only the reason', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'af-err-'));
+  try {
+    const { fetchImpl } = allFake({ steam: { override: (u) => (u === SUMMARIES_URL ? jsonRes({}, 403) : null) }, gi: { profile: { playerInfo: { nickname: 'SomeoneElse' } } } });
+    const env = { ...ALL_ENV, ACCOUNT_ZZZ_UID: 'bad', ACCOUNT_RIOT_ID: 'bad' };
+    const { lines } = await captureConsole(() => runFetchAccounts({ env, fetchImpl, now: () => NOW, outDir: dir, summaryFile: undefined }));
+    assert.deepEqual(lines, ['accounts: enka-genshin error:name-mismatch', 'accounts: enka-zzz error:invalid-id', 'accounts: steam error:auth', 'accounts: riot error:invalid-id']);
+    const steam = JSON.parse(await readFile(join(dir, 'accounts/steam.json'), 'utf8'));
+    assert.equal(steam.authFailed, true);
+    assert.deepEqual(steam.cards, []);
+    assert.equal((await listFiles(join(dir, 'links'))).length, 0, 'no riot file for an invalid ID');
+    assert.equal((await listFiles(join(dir, 'accounts/img'))).length, 0, 'no image from any failed platform');
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test('fetchAccounts: the four platforms in a fixed order; a thrown fetch never escapes', async () => {
+  const boom = async () => {
+    throw new Error('boom');
+  };
+  const results = await fetchAccounts(ALL_ENV, boom, () => NOW);
+  assert.deepEqual(results.map((r) => r.platform), ['enka-genshin', 'enka-zzz', 'steam', 'riot']);
+  for (const r of results.slice(0, 3)) assert.equal(r.feed.status, 'error', r.platform);
+  assert.equal(results[3].state, 'written', 'network errors keep the Riot links');
+  const empty = await fetchAccounts({}, boom);
+  assert.deepEqual(empty.map((r) => r.state), ['skipped', 'skipped', 'skipped', 'skipped']);
+});
+
+test('writeAccounts: fixed file names only; an image name that is not <12 hex>.<png|jpg|webp> is never written', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'af-write-'));
+  try {
+    const feed = { schemaVersion: 1, platform: 'steam', status: 'ok', fetchedAt: NOW.toISOString(), maxAgeDays: 7, attribution: 'Steam Web API', cards: [] };
+    await writeAccounts(dir, [
+      { platform: 'steam', state: 'written', feed, images: [{ name: '../escape.png', bytes: PNG }, { name: 'abcdefabcdef.gif', bytes: PNG }, { name: 'abcdefabcdef.png', bytes: PNG }] },
+      { platform: 'evil/../../x', state: 'written', feed: { ...feed, platform: 'evil' }, images: [] },
+      { platform: 'riot', state: 'skipped' },
+    ]);
+    const files = (await listFiles(dir)).map((f) => f.slice(dir.length + 1).split('\\').join('/')).sort();
+    assert.deepEqual(files, ['accounts/img/abcdefabcdef.png', 'accounts/steam.json']);
+    assert.equal(await readFile(join(dir, 'accounts/steam.json'), 'utf8'), `${JSON.stringify(feed, null, 2)}\n`);
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test('summaryMarkdown: one row per platform; every reason with its ko and en sentence; no URL, value or body', () => {
+  const reasons = Object.keys(REASON_TEXT);
+  assert.equal(reasons.length, 13);
+  const results = reasons.map((reason) => ({ platform: 'steam', state: 'written', feed: { schemaVersion: 1, platform: 'steam', status: 'error', fetchedAt: NOW.toISOString(), maxAgeDays: 7, attribution: 'Steam Web API', reason, cards: [] }, images: [] }));
+  results.push({ platform: 'riot', state: 'skipped', reason: 'invalid-id' }, { platform: 'enka-zzz', state: 'skipped' });
+  const md = summaryMarkdown(results);
+  const lines = md.trimEnd().split('\n');
+  assert.equal(lines[0], '### Account fetch');
+  assert.equal(lines[1], '');
+  assert.equal(lines[2], '| platform | status | reason | 조치 | Action |');
+  assert.equal(lines[3], '|---|---|---|---|---|');
+  assert.equal(lines.length, 4 + results.length);
+  reasons.forEach((reason, i) => assert.equal(lines[4 + i], `| steam | error | ${reason} | ${REASON_TEXT[reason].ko} | ${REASON_TEXT[reason].en} |`));
+  assert.equal(lines.at(-2), `| riot | error | invalid-id | ${REASON_TEXT['invalid-id'].ko} | ${REASON_TEXT['invalid-id'].en} |`);
+  assert.equal(lines.at(-1), '| enka-zzz | skipped | - | - | - |');
+  assert.equal(/https?:\/\/|www\.|op\.gg|lolchess|steamcommunity|steampowered|x-webapi-key/i.test(md), false);
+  const ok = summaryMarkdown([{ platform: 'riot', state: 'written', links: { schemaVersion: 1, platform: 'riot', status: 'ok', fetchedAt: NOW.toISOString(), riotId: RIOT_ID, links: { lol: LOL_URL } } }]);
+  assert.equal(ok.trimEnd().split('\n').at(-1), '| riot | ok | - | - | - |');
+  assert.equal(ok.includes('Hide'), false);
 });
 
 // ——— helpers ———

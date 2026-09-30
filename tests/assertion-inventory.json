@@ -119,7 +119,7 @@
   "tests/ops/dist-links.test.mjs": 10,
   "tests/ops/external-assets.test.mjs": 41,
   "tests/ops/fetch-accounts-deps.test.mjs": 12,
-  "tests/ops/fetch-accounts.test.mjs": 155,
+  "tests/ops/fetch-accounts.test.mjs": 329,
   "tests/ops/font-coverage.test.mjs": 42,
   "tests/ops/head-order.test.mjs": 11,
   "tests/ops/image-metadata.test.mjs": 5,

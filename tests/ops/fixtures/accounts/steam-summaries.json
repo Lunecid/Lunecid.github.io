@@ -1,0 +1,22 @@
+{
+  "_note": "synthetic fixture from spec §6.5 (field list only), not a recorded response",
+  "response": {
+    "players": [
+      {
+        "steamid": "76561197960435530",
+        "communityvisibilitystate": 3,
+        "profilestate": 1,
+        "personaname": "SynthSteamer",
+        "profileurl": "https://steamcommunity.com/profiles/76561197960435530/",
+        "avatarfull": "https://avatars.fastly.steamstatic.com/0000000000000000000000000000000000000abc_full.jpg",
+        "realname": "Synthetic Realname",
+        "loccountrycode": "ZZ",
+        "timecreated": 1000000000,
+        "lastlogoff": 1700000000,
+        "personastate": 1,
+        "gameextrainfo": "Synthetic Game In Progress",
+        "gameid": "9000099"
+      }
+    ]
+  }
+}

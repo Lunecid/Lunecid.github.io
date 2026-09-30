@@ -1,0 +1,13 @@
+{
+  "_note": "synthetic fixture from spec §6.5 (field list only), not a recorded response",
+  "response": {
+    "game_count": 5,
+    "games": [
+      { "appid": 9000001, "name": "Synthetic Game A", "playtime_forever": 6000, "playtime_2weeks": 120, "img_icon_url": "a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1" },
+      { "appid": 9000002, "name": "Synthetic Game B", "playtime_forever": 9000, "playtime_2weeks": 60, "img_icon_url": "b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2" },
+      { "appid": 9000003, "name": "Synthetic Game C", "playtime_forever": 3000, "img_icon_url": "c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3" },
+      { "appid": 9000004, "name": "Synthetic Game D", "playtime_forever": 1200, "img_icon_url": "d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4d4" },
+      { "appid": 9000005, "name": "Synthetic Game E", "playtime_forever": 60, "img_icon_url": "e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5e5" }
+    ]
+  }
+}
