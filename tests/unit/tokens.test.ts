@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { HUD_LABEL_LIME, NAV_HEIGHT_PX } from '../../src/config';
 import { contrast, parseRules as parseCss, splitSelectors } from '../helpers/css';
@@ -90,6 +90,23 @@ describe('design tokens (src/styles/tokens.css)', () => {
       '--tint-mona': 'rgba(122,108,240,.16)',
     });
     expect(tints).toHaveLength(3);
+  });
+
+  it('AL-9: the two account tints exist with alpha .16–.18 and are never a text colour', () => {
+    const decls = rootDecls(BASE);
+    const expected: Record<string, string> = { '--acct-tint-steam': 'rgba(139,147,161,.16)', '--acct-tint-riot': 'rgba(232,234,237,.16)' };
+    for (const [name, value] of Object.entries(expected)) {
+      expect(squash(decls.get(name)), name).toBe(value);
+      const alpha = Number(/,([\d.]+)\)$/.exec(value)?.[1]);
+      expect(alpha, name).toBeGreaterThanOrEqual(0.16);
+      expect(alpha, name).toBeLessThanOrEqual(0.18);
+    }
+    const files = readdirSync(new URL('../../src/', import.meta.url), { recursive: true, encoding: 'utf8' }).filter((f) => /\.(css|astro|tsx)$/.test(f));
+    expect(files.length).toBeGreaterThan(20);
+    const asText = /(?<![-\w])color\s*:[^;}]*--acct-tint/;
+    for (const f of files) expect(asText.test(read(`src/${f.replace(/\\/g, '/')}`)), f).toBe(false);
+    expect(asText.test('.x{color: var(--acct-tint)}')).toBe(true);
+    expect(asText.test('.x{background-color: var(--acct-tint)}')).toBe(false);
   });
 
   it('type scale per breakpoint', () => {

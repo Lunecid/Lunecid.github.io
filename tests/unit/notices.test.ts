@@ -12,4 +12,12 @@ describe('noticeLines (P2-1: shared by SiteFooter and DataFooter)', () => {
     expect(NOTICE_LINES['fan-content']).toEqual([{ key: 'footer.fanContent', english: false }]);
     expect(NOTICE_LINES.riot).toEqual([{ key: 'notice.riot', english: true }]);
   });
+  it('AL-9 (DV-7): valve = the English trademark line, then the localised as-is/non-affiliation line; NOTICE_KEYS order', () => {
+    expect(noticeLines(['valve'])).toEqual([
+      { key: 'notice.valve', english: true },
+      { key: 'footer.valveDisclaimer', english: false },
+    ]);
+    expect(NOTICE_KEYS).toEqual(['cognosphere', 'zzz-fan-guide', 'fan-content', 'riot', 'valve']);
+    expect(noticeLines(['valve', 'cognosphere', 'riot'])).toEqual([...NOTICE_LINES.cognosphere, ...NOTICE_LINES.riot, ...NOTICE_LINES.valve]);
+  });
 });

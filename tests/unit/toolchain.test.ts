@@ -223,6 +223,7 @@ describe('toolchain', () => {
     expect(new Set(types.ACHIEVEMENT_TRIGGERS).size).toBe(types.ACHIEVEMENT_TRIGGERS.length);
     expect(types.ACHIEVEMENT_TRIGGERS).not.toContain('visit-404');
     expect(types.NOTICE_KEYS).toContain('riot');
+    expect(types.NOTICE_KEYS).toContain('valve'); // AL-9
     expect(types.CERTIFICATE_IDS).toEqual(['busan-mayor-award', 'cds-encouragement-award', 'multicampus-grand-award']);
     expect(types.GAME_IDS).toEqual(['zzz', 'genshin', 'lol', 'tft', 'dnf', 'eternal-return', 'hearthstone', 'steam']);
     expect(types.SFX_NAMES).toEqual(['move', 'select', 'open', 'close']);

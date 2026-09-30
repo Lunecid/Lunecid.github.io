@@ -107,6 +107,11 @@
   --tint-eula: rgba(80, 160, 255, .16);
   --tint-mona: rgba(122, 108, 240, .16);
 
+  /* ── account icon backgrounds only; never a text colour; not a brand colour (account-link spec §3.1, AL-9).
+        Neutral greys of --hud-muted and --hud-text at the character tints' alpha. Riot = the LoL and TFT tiles. ── */
+  --acct-tint-steam: rgba(139, 147, 161, .16);
+  --acct-tint-riot: rgba(232, 234, 237, .16);
+
   /* ── typography (spec §4; mobile-first values = "<734") ── */
   /* "SB Sans" is the build-time subset of Pretendard Variable (renamed: "Pretendard" is an OFL Reserved Font
      Name); "JetBrains Mono Variable" is the fontsource latin file of JetBrains Mono. @font-face: src/lib/fonts.ts. */

@@ -1,5 +1,5 @@
 // Rights-holder notice lines per NoticeKey (moved from SiteFooter.astro in P2-1; SiteFooter and DataFooter share it).
-// notice.* are verbatim English rights-holder texts; footer.fanContent is in the page language.
+// notice.* are verbatim English rights-holder texts; footer.fanContent and footer.valveDisclaimer are in the page language.
 import type { UiKey } from '../i18n/utils';
 import { NOTICE_KEYS, type NoticeKey } from '../types';
 
@@ -16,6 +16,12 @@ export const NOTICE_LINES: Readonly<Record<NoticeKey, readonly NoticeLine[]>> = 
   ],
   'fan-content': [{ key: 'footer.fanContent', english: false }],
   riot: [{ key: 'notice.riot', english: true }],
+  // AL-9 (plan DV-7): the spec's one Korean sentence is split so that notice.* stays identical in ko and en —
+  // the English trademark line, then the localised as-is / non-affiliation line.
+  valve: [
+    { key: 'notice.valve', english: true },
+    { key: 'footer.valveDisclaimer', english: false },
+  ],
 };
 
 /** The lines of the given notices, always in NOTICE_KEYS order. */

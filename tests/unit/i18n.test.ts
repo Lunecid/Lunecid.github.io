@@ -45,10 +45,88 @@ describe('ui.ts', () => {
 
   it('notice.* strings are identical across locales', () => {
     const noticeKeys = (koKeys as UiKey[]).filter((k) => k.startsWith('notice.'));
-    expect(noticeKeys).toEqual(['notice.cognosphere', 'notice.riot', 'notice.zzzCopyright', 'notice.zzzLegalStatement']);
+    expect(noticeKeys).toEqual(['notice.cognosphere', 'notice.riot', 'notice.valve', 'notice.zzzCopyright', 'notice.zzzLegalStatement']);
     for (const key of noticeKeys) expect(ui.en[key], key).toBe(ui.ko[key]);
     expect(ui.ko['notice.cognosphere']).toBe('© All rights reserved by COGNOSPHERE. Other properties belong to their respective owners.');
     expect(ui.ko['notice.riot']).toMatch(/^Seongeun Baek's portfolio isn't endorsed by Riot Games /);
+    // AL-9 (DV-7): the spec's Korean notice.valve sentence is split; notice.valve is the English trademark line.
+    expect(ui.ko['notice.valve']).toBe('© Valve Corporation. Steam and the Steam logo are trademarks and/or registered trademarks of Valve Corporation in the U.S. and/or other countries.');
+    expect(ui.ko['footer.valveDisclaimer']).toBe('Steam 데이터는 Steam Web API로 받아 있는 그대로 보여 드립니다. 이 사이트는 Valve와 제휴하거나 보증받지 않았습니다.');
+    expect(ui.en['footer.valveDisclaimer']).not.toBe(ui.ko['footer.valveDisclaimer']);
+  });
+
+  it('AL-9: accounts.* values have no digit literal outside {…} placeholders (spec §9.5)', () => {
+    const accountKeys = (koKeys as UiKey[]).filter((k) => k.startsWith('accounts.'));
+    expect(accountKeys.length).toBeGreaterThan(40);
+    for (const lang of LOCALES) {
+      for (const key of accountKeys) {
+        const bare = ui[lang][key].replace(/\{\w+\}/g, '');
+        expect(/\d/.test(bare), `${lang} ${key}: "${ui[lang][key]}"`).toBe(false);
+      }
+    }
+  });
+
+  it('AL-9: the spec\'s Korean account strings are verbatim', () => {
+    const ko: Partial<Record<UiKey, string>> = {
+      'accounts.caption': '연동 계정',
+      'accounts.game.genshin': '원신',
+      'accounts.game.zzz': '젠레스 존 제로',
+      'accounts.game.lol': '리그 오브 레전드',
+      'accounts.game.tft': '전략적 팀 전투',
+      'accounts.game.steam': 'Steam',
+      'accounts.close': '닫기',
+      'accounts.prev': '이전 계정: {game}',
+      'accounts.next': '다음 계정: {game}',
+      'accounts.position': '{n} / {total}',
+      'accounts.fetchedAt': '기준 시각',
+      'accounts.data': '데이터: {source}',
+      'accounts.stat.ar': '모험 등급',
+      'accounts.stat.achievements': '업적',
+      'accounts.stat.abyss': '나선 비경',
+      'accounts.stat.theater': '환상극',
+      'accounts.stat.worldLevel': '세계 레벨',
+      'accounts.stat.ikLevel': '인터노트 레벨',
+      'accounts.stat.medal.1': '시유 방어전',
+      'accounts.stat.medal.2': '모의 전투 타워',
+      'accounts.stat.medal.3': '위험 강습',
+      'accounts.stat.medal.4': '최후의 결전',
+      'accounts.stat.steamLevel': 'Steam 레벨',
+      'accounts.stat.ownedGames': '보유 게임',
+      'accounts.stat.playtimeTotal': '총 플레이',
+      'accounts.stat.playtime2w': '최근 {n}주',
+      'accounts.value.abyss': '{floor}층 {chamber}방',
+      'accounts.value.theater': '{act}막',
+      'accounts.value.hours': '{n}시간',
+      'accounts.teaser.genshin': 'AR {n}',
+      'accounts.teaser.zzz': 'LV {n}',
+      'accounts.teaser.steam': '{n} H',
+      'accounts.teaser.lol': 'op.gg',
+      'accounts.teaser.tft': 'lolchess.gg',
+      'accounts.teaserSr.genshin': '모험 등급 {n}',
+      'accounts.teaserSr.zzz': '인터노트 레벨 {n}',
+      'accounts.teaserSr.steam': '총 플레이 {n}시간',
+      'accounts.teaserSr.lol': 'op.gg 전적 링크',
+      'accounts.teaserSr.tft': 'lolchess.gg 전적 링크',
+      'accounts.riot.lol': 'LoL 전적 보기 (op.gg)',
+      'accounts.riot.tft': 'TFT 전적 보기 (lolchess.gg)',
+      'accounts.riot.external': '외부 전적 사이트로 이동합니다. 이 사이트와 관계가 없는 사이트이며 새 탭에서 열립니다.',
+      'accounts.newTab': '새 탭에서 열림',
+      'accounts.state.unlinked': '미연동',
+      'accounts.state.error': '오류',
+      'accounts.state.stale': '오래됨',
+      'accounts.manage': '연동 관리',
+      'accounts.unsaved': '저장하지 않은 변경이 있습니다.',
+      'accounts.discard': '버리고 닫기',
+      'accounts.keepEditing': '계속 편집',
+      'accounts.avatarAlt': '{title} 프로필 이미지',
+      'accounts.framed': '이 화면은 다른 페이지 안에서 열 수 없습니다.',
+    };
+    for (const [key, value] of Object.entries(ko)) expect(ui.ko[key as UiKey], key).toBe(value);
+    for (const key of ['accounts.caption', 'accounts.teaser.genshin', 'accounts.teaser.zzz', 'accounts.teaser.steam', 'accounts.teaser.lol', 'accounts.teaser.tft'] as const) {
+      expect(ui.en[key], key).toMatch(/^[\x20-\x7e]+$/);
+    }
+    expect(ui.en['accounts.caption']).toBe('LINKED ACCOUNTS');
+    for (const key of (koKeys as UiKey[]).filter((k) => k.startsWith('accounts.'))) expect(ui.en[key], key).not.toMatch(/[가-힣]/);
   });
 
   it('contract §5.3 keys carry the agreed strings', () => {

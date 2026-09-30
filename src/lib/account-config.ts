@@ -10,4 +10,6 @@ export const METRIC_MAX: { readonly ar: number | null; readonly abyssStars: numb
 /** 미확인 ZZZ medal Value units per MedalType (spec §6.3): a type without a confirmed unit is not shipped. */
 export const MEDAL_UNITS: Readonly<Partial<Record<1 | 2 | 3 | 4, 'score' | 'stars'>>> = {};
 export const ACCOUNT_MAX_AGE_DAYS = 7;
+/** Steam's playtime_2weeks window in weeks; the label says '최근 {n}주' because copy holds no digits (plan DV-28). */
+export const RECENT_PLAYTIME_WEEKS = 2;
 export const FREE_TEXT_MAX = 40;
