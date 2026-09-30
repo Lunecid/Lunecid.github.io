@@ -22,7 +22,7 @@ const progressTemplate = ui[lang]['achievement.progress'];
     {/* light HUD rows (P1-9): a square star slot (gold once unlocked), title and text, the state as a square tag */}
     <ol class="site-ach__list" role="list">
       {defs.map((d) => (
-        <li class="site-ach__item" data-ach-id={d.id} data-unlocked="false">
+        <li class="site-ach__item" data-ach-id={d.id} data-unlocked="false" data-secret={d.hidden ? '' : undefined}>
           <span class="site-ach__icon" aria-hidden="true">★</span>
           <div class="site-ach__body">
             {/* P-02 (F-087): a hidden title reads as the sr-only sentence, not as a heading named '???'; reveal() replaces both spans. */}

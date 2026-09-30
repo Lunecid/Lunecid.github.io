@@ -30,6 +30,8 @@ const lines = noticeLines(notices);
 // are SITE.email and SITE.githubUrl, read here directly (as HomeView and RecordsView do).
 const person = { email: SITE.email, github: SITE.githubUrl };
 const pathname = Astro.url.pathname;
+// G-026 (P-12): the page's canonical address, printed at the foot of a printout (display:none on screen).
+const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
 ---
 <footer class="data-footer">
   <div class="container data-footer__inner">
@@ -51,6 +53,7 @@ const pathname = Astro.url.pathname;
         {lines.map((line) => <p class="data-footer__notice" lang={line.english ? 'en' : undefined}>{t(lang, line.key)}</p>)}
       </div>
     )}
+    <p class="data-footer__canonical" lang="en">{canonicalUrl}</p>
   </div>
 </footer>
 
@@ -87,6 +90,11 @@ const pathname = Astro.url.pathname;
   .data-footer__motion[aria-pressed="true"] { border-color: var(--ed-ink); }
   .data-footer__motion-chip { margin-left: .4em; font-weight: 700; }
   .data-footer__notice { max-width: var(--measure); }
+  /* G-026 (P-12): print-only; display:none keeps it out of the screen layout and the accessibility tree. */
+  .data-footer__canonical { display: none; }
+  @media print {
+    .data-footer__canonical { display: block; grid-column: 1 / -1; overflow-wrap: anywhere; }
+  }
   @media (min-width: 1068px) {
     .data-footer__inner { grid-template-columns: auto 1fr auto auto; align-items: center; column-gap: 24px; }
     /* P-04: the contact row gets its own row under copy, links, updated and the motion toggle. */

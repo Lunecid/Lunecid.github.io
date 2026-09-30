@@ -104,3 +104,61 @@ html.js .site-ach__nojs { display: none; }
 .ed-head__intro { max-width: var(--measure); color: var(--page-muted); }
 .ed-label { font-size: var(--fs-caption); line-height: var(--lh-caption); color: var(--page-muted); }
 .ed-label:lang(en) { font-family: var(--font-ed-serif); font-style: italic; }
+
+/* ── Print (P-12: G-023..G-026, G-028). Screen rendering is untouched: every rule sits inside @media print, and the
+   footers' canonical URL line is display:none on screen. The palette switch (G-023) is in tokens.css. The game rules
+   are keyed on :root[data-variant="game"]; the general pages keep their own print behaviour apart from the shared
+   page-break rules (G-025) and their footer's canonical line. ── */
+@media print {
+  /* G-023: white paper, black ink; no HUD grid; the filled buttons print as ink on paper with or without backgrounds. */
+  :root[data-variant="game"], :root[data-variant="game"] body { background: var(--hud-bg); color-scheme: light; }
+  :root[data-variant="game"] .hud-grid { background: none; }
+  :root[data-variant="game"] .btn--fill { color: var(--hud-text); --cut-fill: var(--hud-bg); }
+  :root[data-variant="game"] .tag-filter__btn[aria-pressed="true"] { background: none; color: var(--hud-text); }
+
+  /* G-024: only <main> and the footer's canonical line print; in-page controls that do nothing on paper stay out;
+     the paper disclosures print open. */
+  :root[data-variant="game"] body > :not(main, .site-footer) { display: none !important; }
+  :root[data-variant="game"] .site-footer { padding-block: 8px 0; border-top: 0; }
+  :root[data-variant="game"] .site-footer__inner > :not(.site-footer__canonical) { display: none !important; }
+  :root[data-variant="game"] [data-screen-only] { display: none !important; }
+  :root[data-variant="game"] .pub__panel[id$="-abstract"],
+  :root[data-variant="game"] .pub__panel[id$="-bibtex"] { display: block !important; }
+  :root[data-variant="game"] .pub__panel-label { display: block !important; }
+  dialog.image-viewer { display: none !important; }
+
+  /* G-025: page breaks. */
+  h2, h3, .sec-head, .audience__label { break-after: avoid; }
+  figure, .figure, .pd__fig, figure.chart, .interests__fig, .audience__block, .pub, .cart, .cart__body,
+  .ed-figure, .ed-item { break-inside: avoid; }
+  /* A paper card prints its abstract and BibTeX open (G-024), which makes it nearly a page tall: kept whole it strands
+     its section head on a page of its own, so it may break, between its panels rather than inside them. */
+  :root[data-variant="game"] .pub:has(.pub__panel) { break-inside: auto; }
+  .pub__panel { break-inside: avoid; }
+  figcaption { break-before: avoid; }
+  p, li { orphans: 3; widows: 3; }
+  :root[data-variant] .pd__fig img, :root[data-variant] .figure img { max-height: 120mm; width: auto; }
+  /* The project cover prints on page 1 under the details table: the section's top padding goes and the cover is
+     capped a little lower (100mm) so the cover and its caption fit below the table on A4 with 10mm margins. */
+  :root[data-variant="game"] .pd-sec { padding-top: 0; }
+  :root[data-variant] .pd__fig img { max-height: 100mm; }
+
+  /* G-026: printed link targets. External links print their URL (not the BibTeX block, and not a link whose text is
+     already its URL: .paper__link); a site-relative PDF prints its full address. The ::after of a cut-corner button
+     or a .hit target is a positioned decoration layer on screen, so here it is reset to plain inline text. */
+  :root[data-variant="game"] main a[href^="http"]:not(.bib a, .paper__link)::after,
+  :root[data-variant="game"] main a[href$=".pdf"]:not([href^="http"])::after {
+    content: " (" attr(href) ")";
+    position: static; inset: auto; z-index: auto; width: auto; height: auto;
+    transform: none; clip-path: none; background: none;
+    font-weight: 400; overflow-wrap: anywhere;
+  }
+  :root[data-variant="game"] main a[href$=".pdf"]:not([href^="http"])::after { content: " (" var(--print-origin) attr(href) ")"; }
+
+  /* G-028: no menu, a capped hero artifact, no secret achievements, brackets as thin black frames. */
+  :root[data-variant="game"] nav.mm, :root[data-variant="game"] .mm-sec { display: none !important; }
+  :root[data-variant="game"] .hero__artifact { max-height: 70mm; overflow: hidden; }
+  :root[data-variant="game"] [data-secret] { display: none !important; }
+  :root[data-variant="game"] .bracket { border: .5pt solid var(--hud-text); }
+  :root[data-variant="game"] .bracket::before, :root[data-variant="game"] .bracket::after { display: none; }
+}

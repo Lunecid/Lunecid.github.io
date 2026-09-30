@@ -101,6 +101,7 @@
   "tests/e2e/not-found.spec.ts": 13,
   "tests/e2e/paper-page.spec.ts": 40,
   "tests/e2e/pdf.spec.ts": 7,
+  "tests/e2e/print.spec.ts": 32,
   "tests/e2e/reading-areas.spec.ts": 71,
   "tests/e2e/responsive.spec.ts": 29,
   "tests/e2e/screenshots.spec.ts": 0,

@@ -34,6 +34,8 @@ const noticeLines = linesFor(notices);
 // are SITE.email and SITE.githubUrl, read here directly (as HomeView and RecordsView do).
 const person = { email: SITE.email, github: SITE.githubUrl };
 const pathname = Astro.url.pathname;
+// G-026 (P-12): the page's canonical address, printed at the foot of a printout (display:none on screen).
+const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
 
 const links = SHARED_NAV.map((item) => ({ href: pageHref(item.base, { lang, variant: null }), label: t(lang, item.label) }));
 links.push({ href: chooserHref(lang, { choose: true }), label: t(lang, 'nav.chooser') });
@@ -79,6 +81,7 @@ links.push({ href: chooserHref(lang, { choose: true }), label: t(lang, 'nav.choo
         ))}
       </div>
     )}
+    <p class="site-footer__canonical" lang="en">{canonicalUrl}</p>
   </div>
 </footer>
 
@@ -197,6 +200,11 @@ links.push({ href: chooserHref(lang, { choose: true }), label: t(lang, 'nav.choo
   .site-footer__motion-note {
     font-family: var(--font-sans);
     color: var(--hud-muted);
+  }
+  /* G-026 (P-12): print-only; display:none keeps it out of the screen layout and the accessibility tree. */
+  .site-footer__canonical { display: none; }
+  @media print {
+    .site-footer__canonical { display: block; overflow-wrap: anywhere; }
   }
   .site-footer__notices {
     display: grid;

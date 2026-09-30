@@ -24,7 +24,7 @@ const { lang, table, summaryId, caption, tone } = Astro.props;
 const NUMBER = /^[-−]?\d+(?:[.,]\d+)?%?$/;
 ---
 
-<details class:list={['chart__table', `chart__table--${tone}`]}>
+<details class:list={['chart__table', `chart__table--${tone}`]} data-screen-only>
   <summary class="chart__summary" id={summaryId}>{t(lang, 'action.viewAsTable')}</summary>
   <div class="chart__table-scroll" data-table-scroll data-label-id={summaryId}>
     <table class:list={[{ 'ed-table': tone === 'editorial' }]}>

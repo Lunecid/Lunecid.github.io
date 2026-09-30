@@ -30,7 +30,7 @@ const pending = !paper.pdf && !paper.doi && paper.statusNote ? `${t(lang, 'resea
 const abstractId = `${idBase}-abstract`;
 const bibtexId = `${idBase}-bibtex`;
 ---
-<div class="pub__links">
+<div class="pub__links" data-screen-only>
   {paper.href && <a class="pub__btn" href={paper.href}>{t(lang, 'action.paperPage')}</a>}
   <button type="button" class="pub__btn" aria-expanded="false" aria-controls={abstractId} data-trigger="open-abstract" data-disclosure>
     {t(lang, 'research.abstract')}

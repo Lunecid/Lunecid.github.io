@@ -196,7 +196,7 @@ const columns = lang === 'ko' ? ['모델', '입력 표현', 'AUC'] : ['Model', '
   </figcaption>
   {/* Final fix 2 item 23: the table view sits after the figcaption (still inside the figure), so the figure's name is
       the caption and the source line only, not "… View as table AUC by model". */}
-  <details class="chart__table">
+  <details class="chart__table" data-screen-only>
     <summary class="chart__summary" id={summaryId}>{t(lang, 'action.viewAsTable')}</summary>
     {/* Final review fix 1 item 5: numbers and model names never break; if the three columns are wider than a phone's
         box, the table scrolls inside this box. Fix round 2 item 8: the script below makes the box a focusable region

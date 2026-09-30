@@ -202,4 +202,16 @@
 /* Printed paper page (D-15): black on white. */
 @media print {
   :root { --paper-bg: #FFFFFF; --paper-ink: #000000; --paper-muted: #000000; }
+  /* G-023 (P-12): the game version prints black on white. Background graphics are off by default, so the dark HUD
+     ground is gone and its light text would print white on white. The accent darkens to an olive that reads on
+     paper (8.6:1 on white) and --grid-line clears the HUD grid. The general pages keep their own light palette. */
+  :root:not([data-variant="data"]) {
+    --hud-bg: #FFFFFF; --hud-panel: #FFFFFF;
+    --hud-text: #000000; --hud-strong: #000000;
+    --hud-muted: #333333;
+    --accent: #3D5200;
+    --grid-line: transparent;
+  }
+  /* G-026 (P-12): the origin printed before a site-relative PDF link (base.css); the same value as SITE.url. */
+  :root { --print-origin: "https://lunecid.github.io"; }
 }

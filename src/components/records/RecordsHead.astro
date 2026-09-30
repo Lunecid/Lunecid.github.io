@@ -79,7 +79,7 @@ const jumps = [
         </ul>
       </div>
     </div>
-    <nav class="rnav" aria-label={t(lang, 'records.jump')}>
+    <nav class="rnav" aria-label={t(lang, 'records.jump')} data-screen-only>
       <ol class="rnav__list" role="list">
         {jumps.map((jump) => <li><a class="rnav__link" href={jump.href}>{jump.label}</a></li>)}
       </ol>
