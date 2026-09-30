@@ -1,0 +1,13 @@
+{
+  "name": "account-relay",
+  "main": "src/index.mjs",
+  "compatibility_date": "2026-09-29",
+  // Turning workers.dev off in the dashboard alone would be undone by the next deploy.
+  "workers_dev": true,
+  // No public version or preview addresses: the only host that reaches this Worker is its workers.dev address.
+  "preview_urls": false,
+  // Invocation logs would record request and response metadata; the code logs only "relay: <path> ok|error:<code>".
+  "observability": { "enabled": true, "logs": { "invocation_logs": false } }
+  // No vars: fixed values are code constants (a deploy overwrites dashboard vars).
+  // No ratelimits block: the binding is optional (free-plan support unconfirmed); the code uses it only when present.
+}

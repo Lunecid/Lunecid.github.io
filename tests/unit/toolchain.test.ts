@@ -125,6 +125,24 @@ describe('toolchain', () => {
     }
   });
 
+  it('AL-14: the relay Worker is outside the site toolchain — tsconfig excludes workers, wrangler state and .dev.vars are ignored, the root manifest has no wrangler', () => {
+    const tsconfig = JSON.parse(read('tsconfig.json')) as { exclude: string[] };
+    expect(tsconfig.exclude).toContain('workers');
+    const ignored = read('.gitignore').split('\n').map((l) => l.trim());
+    for (const line of ['.dev.vars*', '.wrangler/', '.env', '.env.*']) expect(ignored, line).toContain(line);
+    // Not an npm workspace: the root manifest and lockfile never pull in wrangler (spec §5.7.1).
+    const pkg = JSON.parse(read('package.json')) as Record<string, unknown> & { dependencies: Record<string, string>; devDependencies: Record<string, string> };
+    expect(Object.hasOwn(pkg, 'workspaces')).toBe(false);
+    expect({ ...pkg.dependencies, ...pkg.devDependencies }).not.toHaveProperty('wrangler');
+    expect(read('package-lock.json')).not.toContain('wrangler');
+    // The Worker's own package pins wrangler exactly and keeps its own lockfile.
+    const worker = JSON.parse(read('workers/account-relay/package.json')) as { devDependencies: Record<string, string> };
+    expect(worker.devDependencies.wrangler).toMatch(/^\d+\.\d+\.\d+$/);
+    expect(existsSync(new URL('../../workers/account-relay/package-lock.json', import.meta.url))).toBe(true);
+    // vitest never collects the Worker (its tests are node:test files under tests/ops).
+    expect(read('vitest.config.ts')).not.toContain('workers');
+  });
+
   it('.gitattributes has one binary pattern per line', () => {
     const lines = read('.gitattributes').split('\n').filter((l) => l.trim() !== '');
     expect(lines[0]).toBe('* text=auto eol=lf');

@@ -15,6 +15,10 @@ dist-e2e-accounts/
 .env.*
 !.env.example
 
+# Cloudflare Worker (workers/account-relay): local secrets and wrangler state are never committed
+.dev.vars*
+.wrangler/
+
 # OS
 .DS_Store
 Thumbs.db
