@@ -637,3 +637,122 @@ test.describe('N15: case-study layout (F-006, F-041, F-080, F-040)', () => {
     expect(report.minEm, JSON.stringify(report)).toBeGreaterThanOrEqual(34);
   });
 });
+
+// Audit P-08 (P2-8): F-046, F-058, F-059, F-063, F-071 in both versions of /records/ and the game home band.
+test.describe('P-08: records and profile fixes (F-046, F-058, F-059, F-063, F-071)', () => {
+  for (const width of [768, 1024, 1440]) {
+    test(`F-059: /en/…/records/ has no date split inside a meta segment at ${width}`, async ({ page }) => {
+      await page.setViewportSize({ width, height: 900 });
+      for (const route of ['/en/game/records/', '/en/data/records/']) {
+        await page.goto(route, { waitUntil: 'networkidle' });
+        await settle(page);
+        const segments = await page.locator('#inventory td [class$="__seg"]').evaluateAll((els) =>
+          els.map((el) => ({ text: el.textContent ?? '', lines: new Set(Array.from(el.getClientRects()).map((r) => Math.round(r.top))).size })),
+        );
+        expect(segments.length, route).toBeGreaterThan(5);
+        expect(segments.filter((s) => s.lines > 1), route).toEqual([]);
+      }
+    });
+  }
+
+  test('F-058: the link-name census on /records/ shows unique names (one name, one destination)', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    for (const route of ['/game/records/', '/en/game/records/', '/data/records/', '/en/data/records/']) {
+      await page.goto(route, { waitUntil: 'networkidle' });
+      const census = await page.locator('main').evaluate((main) => {
+        const byName = new Map<string, Set<string>>();
+        for (const a of Array.from(main.querySelectorAll('a[href]'))) {
+          const name = (a.getAttribute('aria-label') ?? a.textContent ?? '').replace(/\s+/g, ' ').trim();
+          byName.set(name, (byName.get(name) ?? new Set()).add(a.getAttribute('href') ?? ''));
+        }
+        return [...byName].filter(([, hrefs]) => hrefs.size > 1).map(([name, hrefs]) => `${name}: ${[...hrefs].join(' | ')}`);
+      });
+      expect(census, route).toEqual([]);
+      await expect(page.locator('#awards a.award__cert').first()).toHaveAttribute('aria-haspopup', 'dialog');
+    }
+  });
+
+  test('F-063: no rounded element in the home light band (#hello)', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    for (const route of ['/game/', '/en/game/']) {
+      await page.goto(route, { waitUntil: 'networkidle' });
+      await settle(page);
+      const rounded = await page.locator('#hello').evaluate((band) =>
+        [band, ...Array.from(band.querySelectorAll('*'))]
+          .filter((el) => {
+            const s = getComputedStyle(el);
+            return parseFloat(s.borderTopLeftRadius) > 0 || parseFloat(s.borderBottomRightRadius) > 0;
+          })
+          .map((el) => `${el.tagName.toLowerCase()}.${Array.from(el.classList).join('.')}`),
+      );
+      expect(rounded, route).toEqual([]);
+      // the ◆ bullets stay; the skill chips keep the dark chip fill
+      await expect(page.locator('#hello .hello__list--records li').first()).toContainText('◆');
+      expect(await page.locator('#hello .hello__chips li').first().evaluate((el) => getComputedStyle(el).backgroundColor)).not.toBe('rgba(0, 0, 0, 0)');
+    }
+  });
+
+  for (const [width, height] of [[375, 812], [768, 1024], [1024, 768], [1440, 900], [812, 375]] as const) {
+    test(`F-046: the /records/ greeting stays below the page H1 and is at most weight 800 at ${width}x${height}`, async ({ page }) => {
+      await page.setViewportSize({ width, height });
+      for (const route of ['/game/records/', '/data/records/']) {
+        await page.goto(route, { waitUntil: 'networkidle' });
+        await settle(page);
+        const [h1, hello] = await Promise.all(
+          ['main h1', '#profile-title'].map((sel) =>
+            page.locator(sel).evaluate((el) => ({ size: parseFloat(getComputedStyle(el).fontSize), weight: Number(getComputedStyle(el).fontWeight) })),
+          ),
+        );
+        expect(hello!.size, route).toBeLessThan(h1!.size);
+        expect(hello!.weight, route).toBeLessThanOrEqual(800);
+      }
+    });
+  }
+
+  test('F-071: the /records/ jump links are at least 8px apart at 375', async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 812 });
+    await page.goto('/game/records/', { waitUntil: 'networkidle' });
+    const boxes = await page.locator('#profile .rnav__link').evaluateAll((els) => els.map((el) => el.getBoundingClientRect().toJSON() as Rect));
+    expect(boxes).toHaveLength(6);
+    for (let i = 1; i < boxes.length; i++) {
+      const [a, b] = [boxes[i - 1]!, boxes[i]!];
+      const sameRow = Math.abs(a.top - b.top) < 1;
+      const gap = sameRow ? b.left - a.right : b.top - a.bottom;
+      expect(gap, `link ${i} → ${i + 1}`).toBeGreaterThanOrEqual(8 - 0.5);
+    }
+  });
+});
+
+// Audit P-09 (P2-8, G-022): the job-fit qualifiers are visible without hover, on touch and on desktop.
+for (const [label, use] of [
+  ['1024 touch', { viewport: { width: 1024, height: 768 }, hasTouch: true }],
+  ['1440 mouse', { viewport: { width: 1440, height: 900 }, hasTouch: false }],
+] as const) {
+  test.describe(`P-09: job-fit notes visible at ${label}`, () => {
+    test.use(use);
+    // the general table is in its pending state until P3-1 adds jobfit.data.yaml (contract §2.6); its notes render
+    // through the same markup (tests/astro/editorial-records.test.ts renders the editorial branch with the game data)
+    for (const route of ['/game/records/', '/en/game/records/']) {
+      test(route, async ({ page }) => {
+        await page.goto(route, { waitUntil: 'networkidle' });
+        const ko = !route.startsWith('/en/');
+        const inProgress = page.locator('#job-fit .jobfit__ev-note', { hasText: ko ? '(진행 중)' : '(in progress)' });
+        const graduation = page.locator('#job-fit .jobfit__ev-note', { hasText: ko ? /\(\d{4}년 \d{1,2}월 졸업 예정\)/ : /\(expected [A-Z][a-z]+ \d{4}\)/ });
+        await expect(inProgress).toBeVisible();
+        await expect(graduation).toBeVisible();
+        // the note grows its row by at most 24px
+        for (const note of [inProgress, graduation]) {
+          const growth = await note.evaluate((el) => {
+            const row = el.closest('tr')!;
+            const withNote = row.getBoundingClientRect().height;
+            (el as HTMLElement).style.display = 'none';
+            const without = row.getBoundingClientRect().height;
+            (el as HTMLElement).style.display = '';
+            return withNote - without;
+          });
+          expect(growth, route).toBeLessThanOrEqual(24);
+        }
+      });
+    }
+  });
+}

@@ -105,6 +105,14 @@ export interface CredentialItem {
   href?: string;
 }
 
+/**
+ * F-059 (P-08): the date column of a credential row as its ' · ' parts ('Dec 15, 2024', 'Valid until Dec 15, 2026'),
+ * so CredentialList can keep each part on one line from 734px (a date never splits inside a part). No meta: [].
+ */
+export function metaSegments(item: Pick<CredentialItem, 'meta'>): string[] {
+  return item.meta ? item.meta.split(' · ').filter((part) => part.trim() !== '') : [];
+}
+
 /** Items for the four CredentialList sections. Languages with `records: false` are PDF-only and skipped. */
 export function credentialItems(
   resume: Pick<ResumeData, 'activities' | 'certifications' | 'languages' | 'training'>,

@@ -10,19 +10,22 @@ import type { PaperCardData } from '../../lib/publications';
 import type { Lang } from '../../i18n/ui';
 import { t } from '../../i18n/utils';
 import PaperLinks from './PaperLinks.astro';
+import type { VariantId } from '../../variants/ids';
 
 interface Props {
+  /** P2-8: 'data' renders a plain list row (no panel, no corner marks, the oral talk as words). */
+  variant: VariantId;
   lang: Lang;
   paper: PaperCardData;
   headingLevel?: 2 | 3 | 4;
   compact?: boolean;
 }
 
-const { lang, paper, headingLevel = 3, compact = false } = Astro.props;
+const { variant, lang, paper, headingLevel = 3, compact = false } = Astro.props;
 const Heading = `h${headingLevel}` as 'h2' | 'h3' | 'h4';
 const gloss = lang === 'ko' ? paper.titleGloss : null;
 ---
-<article class:list={['pub', { 'pub--compact': compact, 'pub--oral': paper.oral, 'bracket bracket--sm': paper.oral }]} data-paper={paper.id}>
+<article class:list={['pub', { 'pub--compact': compact }, variant === 'data' ? 'pub--ed' : { 'pub--oral': paper.oral, 'bracket bracket--sm': paper.oral }]} data-paper={paper.id}>
   {!compact && (
     <div class="pub__media">
       {/* F-057: decorative thumbnail — Fig. 1 alt lives on the interest-row figure only (/research/). */}
@@ -30,7 +33,7 @@ const gloss = lang === 'ko' ? paper.titleGloss : null;
     </div>
   )}
   <div class="pub__body">
-    <Heading class="pub__title" lang="en">{paper.href ? <a href={paper.href}>{paper.title}</a> : paper.title}</Heading>
+    <Heading class="pub__title" lang="en">{paper.href ? <a class={variant === 'data' ? 'hit' : undefined} href={paper.href}>{paper.title}</a> : paper.title}</Heading>
     {gloss && <p class="pub__gloss">{gloss} <span class="pub__gloss-mark">({t(lang, 'research.gloss')})</span></p>}
     <p class="pub__authors" lang="en">
       {paper.authors.map((author, i) => (
@@ -39,7 +42,9 @@ const gloss = lang === 'ko' ? paper.titleGloss : null;
     </p>
     <p class="pub__venue">
       <span lang="en">{paper.venue}</span>
-      {paper.oral && <span class="pub__oral" lang="en">{t(lang, 'research.oral')}</span>}
+      {paper.oral && (variant === 'data'
+        ? <span class="pub__oral-ed">{t(lang, 'research.oralPresentation')}</span>
+        : <span class="pub__oral" lang="en">{t(lang, 'research.oral')}</span>)}
     </p>
     <p class="pub__tldr">{paper.tldr}</p>
     <PaperLinks lang={lang} paper={paper} />
@@ -71,6 +76,9 @@ const gloss = lang === 'ko' ? paper.titleGloss : null;
   .pub__title { font-size: 18px; font-weight: 700; line-height: 1.4; }
   .pub__title a { color: var(--read-text); text-decoration: none; transition: color var(--dur-hover) linear; }
   .pub__title a:hover { color: var(--accent-deep); text-decoration: underline; }
+  /* General version: the hover stays in the one editorial accent (no accent-deep on general pages; this scoped rule
+     would otherwise outrank editorial.css by source order). */
+  .pub--ed .pub__title a:hover { color: var(--ed-accent); }
   .pub__gloss { margin-top: 4px; font-size: 14px; line-height: 1.5; color: var(--read-muted); }
   .pub__gloss-mark { white-space: nowrap; }
   .pub__authors { margin-top: 6px; font-size: 14px; line-height: 1.5; color: var(--read-muted); }
@@ -100,4 +108,7 @@ const gloss = lang === 'ko' ? paper.titleGloss : null;
     .pub { grid-template-columns: 200px minmax(0, 1fr); gap: 20px; padding: 20px; }
     .pub--compact { grid-template-columns: minmax(0, 1fr); }
   }
+  /* General version (P2-8): a list row, not a panel; the oral talk as words after the venue. */
+  .pub--ed { padding: 16px 0; background: transparent; border: 0; border-bottom: var(--ed-rule-w) solid var(--ed-rule); }
+  .pub__oral-ed { margin-left: .5em; font-weight: 700; }
 </style>

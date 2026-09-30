@@ -285,6 +285,16 @@ describe('jobfitSchema', () => {
     expect(jobfitSchema.safeParse({ ...validJobfit, sample: { count: 13, years: '2024–2026', note: 'x' } }).success).toBe(false);
   });
 
+  it('P-09 (§1.9/§2.6): an evidence item may carry a { ko, en } note; a plain-string note is rejected', () => {
+    const withNote = (note: unknown) => validJobfit.rows.map((r, i) => (i === 0 ? { ...r, evidence: [{ ...r.evidence[0], note }] } : r));
+    expect(jobfitSchema.safeParse({ ...validJobfit, rows: withNote(L('진행 중', 'in progress')) }).success).toBe(true);
+    expect(jobfitSchema.safeParse({ ...validJobfit, rows: withNote('진행 중') }).success).toBe(false);
+    expect(jobfitSchema.safeParse({ ...validJobfit, rows: withNote({ ko: '진행 중' }) }).success).toBe(false);
+    // on the row itself a note is not part of the schema (evidence items only)
+    const rowNote = validJobfit.rows.map((r, i) => (i === 0 ? { ...r, note: L('진행 중', 'in progress') } : r));
+    expect(jobfitSchema.safeParse({ ...validJobfit, rows: rowNote }).data?.rows[0]).not.toHaveProperty('note');
+  });
+
   it('jobfitSchema: plan may be null (empty next step), sources is one note without posting links (D-6)', () => {
     const noPlan = validJobfit.rows.map((r, i) => (i === 0 ? { ...r, plan: null } : r));
     expect(jobfitSchema.safeParse({ ...validJobfit, rows: noPlan }).success).toBe(true);

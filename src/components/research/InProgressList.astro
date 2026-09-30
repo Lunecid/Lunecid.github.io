@@ -25,9 +25,20 @@ const rows = items.map((item) => ({
   href: item.href === null ? null : pageHref(item.href, { lang, variant }),
 }));
 ---
-<section id="in-progress" class="progress-list read read-sec" aria-labelledby="in-progress-title">
+<section id="in-progress" class:list={['progress-list', variant === 'data' ? 'ed-sec' : ['read', 'read-sec']]} aria-labelledby="in-progress-title">
   <div class="container">
     <SectionHead variant={variant} id="in-progress-title" caption={captionFor(getVariant(variant), 'inProgress', lang)} title={t(lang, 'research.inProgress')} />
+    {variant === 'data' ? (
+      <ol class="ed-list" role="list">
+        {rows.map((row) => (
+          <li class="ed-item" data-item={row.id}>
+            <p class="ed-tag">{row.status}</p>
+            <h3 class="ed-item__title" data-serif>{row.href ? <a class="hit" href={row.href}>{row.title}</a> : row.title}</h3>
+            <p class="ed-body">{row.body}</p>
+          </li>
+        ))}
+      </ol>
+    ) : (
     <ol class="progress-list__items lh-rows" role="list">
       {rows.map((row, i) => (
         <li class="progress-list__item lh-row" data-item={row.id}>
@@ -40,6 +51,7 @@ const rows = items.map((item) => ({
         </li>
       ))}
     </ol>
+    )}
   </div>
 </section>
 

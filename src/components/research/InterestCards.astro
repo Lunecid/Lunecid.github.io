@@ -11,6 +11,7 @@ import type { researchPage } from '../../data/research-page';
 import { figureCopy, overallAuc } from '../../data/research/cog-2026';
 import type { Lang } from '../../i18n/ui';
 import { t } from '../../i18n/utils';
+import { editorialFigureLabel } from '../../lib/figures';
 import { INTEREST_FIGURE_SIZES, fitWidths, sourceSize } from '../../lib/images';
 import { captionFor, getVariant, type VariantId } from '../../variants';
 
@@ -38,10 +39,55 @@ const fullLabel = t(lang, 'action.fullSize');
 // 1440x900 and 2560x1440), so it loads eagerly; the rest stay lazy. No fetchpriority: on phones it is below the fold,
 // and the browser raises an in-view image's priority itself.
 const firstImageFigure = interests.find((item) => item.figure !== 'auc')?.figure;
+// P2-8: the general version shows the same figures as plain list rows, numbered 그림 1–3 in page order (spec §8).
+const editorial = variant === 'data';
 ---
-<section id="interests" class="interests read read-sec" aria-labelledby="interests-title">
+<section id="interests" class:list={['interests', editorial ? 'ed-sec' : ['read', 'read-sec']]} aria-labelledby="interests-title">
   <div class="container">
     <SectionHead variant={variant} id="interests-title" caption={captionFor(getVariant(variant), 'interests', lang)} title={t(lang, 'research.interests')} />
+    {editorial ? (
+      <ol class="ed-list" role="list">
+        {interests.map((item, i) => (
+          <li class="ed-item interests-ed__row" data-interest={item.id}>
+            <div>
+              <h3 class="ed-item__title" data-serif>{item.title[lang]}</h3>
+              <p class="ed-body">{item.body[lang]}</p>
+            </div>
+            {item.figure === 'auc' ? (
+              <AucOverallChart lang={lang} rows={overallAuc} caption={figureCopy.aucOverall.caption[lang]} alt={figureCopy.aucOverall.alt[lang]} idPrefix="interests-auc" tone="editorial" figureNumber={i + 1} />
+            ) : (
+              <figure class="ed-figure">
+                <Picture
+                  class="interests__img"
+                  src={IMAGES[item.figure].src}
+                  alt={IMAGES[item.figure].copy.alt[lang]}
+                  formats={['avif', 'webp']}
+                  fallbackFormat="webp"
+                  widths={fitWidths([360, 400, 540, 720], sourceSize(IMAGES[item.figure].src).width)}
+                  sizes={INTEREST_FIGURE_SIZES}
+                  loading={item.figure === firstImageFigure ? 'eager' : 'lazy'}
+                />
+                <figcaption class="ed-figcap">
+                  <span class="ed-figcap__num">{editorialFigureLabel(lang, i + 1)}</span> {IMAGES[item.figure].copy.caption[lang]}
+                  <a
+                    class="interests__full hit"
+                    href={fullImages[item.figure].src}
+                    aria-label={`${fullLabel} · ${t(lang, 'project.figure', { n: i + 1 })}`}
+                    aria-haspopup="dialog"
+                    data-viewer="figures"
+                    data-viewer-w={fullImages[item.figure].attributes.width}
+                    data-viewer-h={fullImages[item.figure].attributes.height}
+                    data-viewer-label={t(lang, 'project.figure', { n: i + 1 })}
+                    data-viewer-caption={IMAGES[item.figure].copy.caption[lang]}
+                    data-viewer-alt={IMAGES[item.figure].copy.alt[lang]}
+                  >{fullLabel}</a>
+                </figcaption>
+              </figure>
+            )}
+          </li>
+        ))}
+      </ol>
+    ) : (
     <ol class="interests__rows lh-rows" role="list">
       {interests.map((item, i) => (
         <li class="interests__row lh-row" data-interest={item.id}>
@@ -88,6 +134,7 @@ const firstImageFigure = interests.find((item) => item.figure !== 'auc')?.figure
         </li>
       ))}
     </ol>
+    )}
   </div>
 </section>
 
@@ -127,5 +174,10 @@ const firstImageFigure = interests.find((item) => item.figure !== 'auc')?.figure
   @media (min-width: 1068px) {
     .interests__row { grid-template-columns: 4.5em minmax(0, 1fr) minmax(0, 400px); column-gap: 32px; align-items: start; }
     .interests__fig { grid-column: 3; grid-row: 1; }
+  }
+  /* General version (P2-8) */
+  .interests-ed__row { display: grid; gap: 16px; }
+  @media (min-width: 1068px) {
+    .interests-ed__row { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); column-gap: 40px; align-items: start; }
   }
 </style>

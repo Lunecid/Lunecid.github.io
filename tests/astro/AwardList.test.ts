@@ -38,6 +38,9 @@ describe('AwardList.astro', () => {
       expect(attr(m[0], 'href')).toBe(CERT_HREFS[m[1] as CertificateId]);
     }
     expect(html.match(/상장 보기/g)).toHaveLength(3);
+    // F-058 (P-08): each link's name says which contest it belongs to (sr-only suffix), so the three names differ.
+    const certNames = [...html.matchAll(/상장 보기<span class="sr-only"[^>]*> · ([^<]+)<\/span><\/a>/g)].map((m) => m[1]);
+    expect(new Set(certNames).size).toBe(3);
     expect(html).toContain('최우수상(부산광역시장상)');
     expect(html).toMatch(/<time[^>]*datetime="2025-07-11"[^>]*>2025\.07\.11<\/time>/);
     expect(html).toMatch(/<span(?=[^>]*class="award__medal award__medal--silver")[^>]*>장려<\/span>/);
@@ -59,11 +62,11 @@ describe('AwardList.astro', () => {
     const cds = chunks.find((chunk) => chunk.includes('data-award="cds-encouragement-award"'));
     expect(cds).toBeDefined();
     expect(cds).not.toMatch(/href="\/game\/projects\//);
-    expect(html).toMatch(/<a[^>]*href="\/game\/projects\/school-zone-blindspots\/"[^>]*>프로젝트 보기<\/a>/);
-    expect(html).toMatch(/<a[^>]*href="\/game\/projects\/kickick-park\/"[^>]*>프로젝트 보기<\/a>/);
+    expect(html).toMatch(/<a[^>]*href="\/game\/projects\/school-zone-blindspots\/"[^>]*>프로젝트 보기<span class="sr-only"[^>]*> · [^<]+<\/span><\/a>/);
+    expect(html).toMatch(/<a[^>]*href="\/game\/projects\/kickick-park\/"[^>]*>프로젝트 보기<span class="sr-only"[^>]*> · [^<]+<\/span><\/a>/);
 
     const noImages = await renderAstro(AwardList, { props: { variant: 'game', lang: 'en', awards: awardItems(REFS, awards, { lang: 'en', variant: 'game' }, {}) } });
     expect(noImages).not.toContain('data-cert-id');
-    expect(noImages).toMatch(/<a[^>]*href="\/en\/game\/projects\/kickick-park\/"[^>]*>View project<\/a>/);
+    expect(noImages).toMatch(/<a[^>]*href="\/en\/game\/projects\/kickick-park\/"[^>]*>View project<span class="sr-only"[^>]*> · [^<]+<\/span><\/a>/);
   });
 });

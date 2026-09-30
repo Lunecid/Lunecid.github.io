@@ -58,7 +58,7 @@ function scanned(): Leaf[] {
     const rel = `src/data/${file}`;
     const data = load(readFileSync(join(ROOT, rel), 'utf8')) as {
       sample: { count: number; years: string }; intro: unknown; sources: { note: unknown };
-      rows: { id: string; requirement: unknown; plan: unknown; evidence: { label: unknown; short?: unknown }[] }[];
+      rows: { id: string; requirement: unknown; plan: unknown; evidence: { label: unknown; short?: unknown; note?: unknown }[] }[];
     };
     const ctx: FactContext = { table: data.sample };
     leaves(data.intro, `${rel} intro`, null, out, ctx);
@@ -69,6 +69,7 @@ function scanned(): Leaf[] {
       row.evidence.forEach((ev, i) => {
         leaves(ev.label, `${rel} rows[${row.id}].evidence[${i}].label`, null, out, ctx);
         if (ev.short !== undefined) leaves(ev.short, `${rel} rows[${row.id}].evidence[${i}].short`, null, out, ctx);
+        if (ev.note !== undefined) leaves(ev.note, `${rel} rows[${row.id}].evidence[${i}].note`, null, out, ctx);
       });
     }
   }

@@ -34,23 +34,30 @@ const labNote = resolveIdentity(v, lang, facts).labNote;
 const papers = (await getPublications()).map((entry) => toPaperCard(entry, { lang, variant }));
 const years = [...new Set(papers.map((paper) => paper.year))].sort((a, b) => b - a);
 const ids = (await getPerson()).researchIds;
+// P2-8: the general version renders editorial markup; the Academic CV is the same PDF on both versions (P1-17).
+const editorial = v.theme === 'editorial';
+const academicCv = DOCUMENTS[v.documents.academic];
 ---
 <Layout lang={lang} variant={variant} title={meta.title} description={meta.description} page="research" section="research" sectionIndex>
   <PageHeader lang={lang} variant={variant} label={captionFor(v, 'pageResearch', lang)} title={t(lang, 'research.title')} intro={resolveFacts(researchPage.intro[lang], lang, facts)}>
     {/* D-7: professors reach the Academic CV from the research page header (and from #for-labs below). */}
-    <p class="research-cv"><a class="btn btn--line cut cut--line" href={DOCUMENTS[v.documents.academic]} title={t(lang, 'nav.cvAcademic')} download>{t(lang, 'nav.cvAcademic')} <span aria-hidden="true">↓</span></a></p>
+    {editorial ? (
+      <p class="research-cv"><a class="ed-link" href={academicCv} title={t(lang, 'nav.cvAcademic')} download>{t(lang, 'nav.cvAcademic')} <span aria-hidden="true">↓</span></a></p>
+    ) : (
+      <p class="research-cv"><a class="btn btn--line cut cut--line" href={academicCv} title={t(lang, 'nav.cvAcademic')} download>{t(lang, 'nav.cvAcademic')} <span aria-hidden="true">↓</span></a></p>
+    )}
   </PageHeader>
   <InterestCards lang={lang} variant={variant} interests={resolveLocalizedDeep(researchPage.interests, facts)} />
-  <section id="publications" class="pub__section read read-sec" aria-labelledby="publications-title">
+  <section id="publications" class:list={['pub__section', editorial ? 'ed-sec' : ['read', 'read-sec']]} aria-labelledby="publications-title">
     {getVariant(variant).modules.includes('characterArt') && <GhostArt side="left" />}
     <div class="container">
       <SectionHead variant={variant} id="publications-title" caption={captionFor(getVariant(variant), 'publications', lang)} title={t(lang, 'research.publications')} />
       {years.map((year) => (
         <div class="pub__year">
-          <h3 class="pub__year-title tnum"><span class="lh-idx">{year}</span></h3>
+          {editorial ? <h3 class="pub__year-title tnum">{year}</h3> : <h3 class="pub__year-title tnum"><span class="lh-idx">{year}</span></h3>}
           <ol class="pub__list" role="list">
             {papers.filter((paper) => paper.year === year).map((paper) => (
-              <li><PublicationItem lang={lang} paper={paper} headingLevel={4} /></li>
+              <li><PublicationItem variant={variant} lang={lang} paper={paper} headingLevel={4} /></li>
             ))}
           </ol>
         </div>
@@ -58,6 +65,20 @@ const ids = (await getPerson()).researchIds;
     </div>
   </section>
   <InProgressList lang={lang} variant={variant} items={resolveLocalizedDeep(researchPage.ongoing, facts)} />
+  {editorial ? (
+    <section id="for-labs" class="for-labs ed-sec" aria-labelledby="for-labs-title">
+      <div class="container">
+        <SectionHead variant={variant} id="for-labs-title" caption={captionFor(v, 'forLabs', lang)} title={labNote.title} />
+        <p class="ed-body for-labs__body">{labNote.body}</p>
+        <ul class="ed-links" role="list">
+          <li><a class="ed-link" href={`mailto:${SITE.email}`}>{SITE.email}</a></li>
+          <li><a class="ed-link" href={academicCv} title={t(lang, 'nav.cvAcademic')} download>{t(lang, 'nav.cvAcademic')} <span aria-hidden="true">↓</span></a></li>
+          {ids.scholar && <li><a class="ed-link" href={ids.scholar}>Google Scholar <span aria-hidden="true">↗</span></a></li>}
+          {ids.orcid && <li><a class="ed-link" href={ids.orcid}>ORCID <span aria-hidden="true">↗</span></a></li>}
+        </ul>
+      </div>
+    </section>
+  ) : (
   <section id="for-labs" class="for-labs read read-sec" aria-labelledby="for-labs-title">
     <div class="container">
       {/* light HUD panel with corner marks, like [ NOW PLAYING ] (P1-9) */}
@@ -66,13 +87,14 @@ const ids = (await getPerson()).researchIds;
         <p class="for-labs__body">{labNote.body}</p>
         <ul class="for-labs__links lh-chips" role="list">
           <li><a class="lh-chip lh-chip--mono" href={`mailto:${SITE.email}`}>{SITE.email}</a></li>
-          <li><a class="lh-chip" href={DOCUMENTS[v.documents.academic]} title={t(lang, 'nav.cvAcademic')} download>{t(lang, 'nav.cvAcademic')} <span aria-hidden="true">↓</span></a></li>
+          <li><a class="lh-chip" href={academicCv} title={t(lang, 'nav.cvAcademic')} download>{t(lang, 'nav.cvAcademic')} <span aria-hidden="true">↓</span></a></li>
           {ids.scholar && <li><a class="lh-chip" href={ids.scholar}>Google Scholar</a></li>}
           {ids.orcid && <li><a class="lh-chip" href={ids.orcid}>ORCID</a></li>}
         </ul>
       </div>
     </div>
   </section>
+  )}
   <ImageViewer
     client:idle
     labels={{
@@ -90,6 +112,7 @@ const ids = (await getPerson()).researchIds;
   .pub__section { position: relative; overflow: hidden; }
   .pub__section > .container { position: relative; z-index: 1; }
   .pub__year { margin-top: 24px; padding-top: 8px; border-top: 1px solid var(--read-line-strong); }
+  .ed-sec .pub__year { border-top-color: var(--ed-rule); }
   .pub__year-title { font-size: var(--fs-label); line-height: 1.5; }
   .pub__list { margin-top: 12px; display: grid; gap: 16px; }
   .for-labs { padding-bottom: 64px; }

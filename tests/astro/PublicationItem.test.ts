@@ -40,7 +40,8 @@ const en: PaperCardData = {
   thumbAlt: 'Figure 1 of the paper.',
 };
 
-const render = (props: Record<string, unknown>) => renderAstro(PublicationItem, { props });
+// P2-8: PublicationItem takes the version; every existing case renders the game markup.
+const render = (props: Record<string, unknown>) => renderAstro(PublicationItem, { props: { variant: 'game', ...props } });
 
 describe('PublicationItem.astro', () => {
   it('English title, gloss only on ko', async () => {

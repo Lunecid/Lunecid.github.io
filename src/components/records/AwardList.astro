@@ -17,9 +17,28 @@ interface Props {
 
 const { lang, variant, awards } = Astro.props;
 ---
-<section id="awards" class="rec read-sec" aria-labelledby="awards-title">
+<section id="awards" class:list={['rec', variant === 'data' ? 'ed-sec' : 'read-sec']} aria-labelledby="awards-title">
   <div class="container">
     <SectionHead variant={variant} id="awards-title" caption={captionFor(getVariant(variant), 'achievements', lang)} title={t(lang, 'records.awards')} />
+    {variant === 'data' ? (
+      <ul class="ed-list" role="list">
+        {awards.map((award) => (
+          <li class="ed-item award-ed" data-award={award.id}>
+            <p class="ed-tag">{award.medal.label}</p>
+            <h3 class="ed-item__title" data-serif>{award.title}</h3>
+            <p class="ed-body">{award.contest}</p>
+            <p class="ed-meta">{award.org} · <time datetime={award.dateIso}>{award.date}</time></p>
+            {award.redactionNote && <p class="ed-meta">{award.redactionNote}</p>}
+            {(award.certHref || award.projectHref) && (
+              <ul class="ed-links" role="list">
+                {award.certHref && <li><a class="ed-link award__cert" href={award.certHref} data-cert-id={award.id} data-viewer="certificates" data-viewer-w={award.certWidth ?? undefined} data-viewer-h={award.certHeight ?? undefined} data-viewer-srcset={award.certSrcSet ?? undefined} data-viewer-sizes={award.certSizes ?? undefined} data-viewer-label={t(lang, 'modal.certificate')} data-viewer-caption={award.certCaption ?? undefined} data-viewer-alt={award.certAlt ?? undefined} aria-haspopup="dialog">{t(lang, 'action.viewCertificate')}<span class="sr-only"> · {award.contest}</span></a></li>}
+                {award.projectHref && <li><a class="ed-link award__project" href={award.projectHref}>{t(lang, 'action.viewProject')}<span class="sr-only"> · {award.contest}</span> <span aria-hidden="true">→</span></a></li>}
+              </ul>
+            )}
+          </li>
+        ))}
+      </ul>
+    ) : (
     <ul class="award__list lh-rows" role="list">
       {awards.map((award) => (
         <li class="award" data-award={award.id}>
@@ -48,15 +67,16 @@ const { lang, variant, awards } = Astro.props;
                     data-viewer-caption={award.certCaption ?? undefined}
                     data-viewer-alt={award.certAlt ?? undefined}
                     aria-haspopup="dialog"
-                  >{t(lang, 'action.viewCertificate')}</a>
+                  >{t(lang, 'action.viewCertificate')}<span class="sr-only"> · {award.contest}</span></a>
                 </li>
               )}
-              {award.projectHref && <li><a class="award__project lh-chip" href={award.projectHref}>{t(lang, 'action.viewProject')}</a></li>}
+              {award.projectHref && <li><a class="award__project lh-chip" href={award.projectHref}>{t(lang, 'action.viewProject')}<span class="sr-only"> · {award.contest}</span></a></li>}
             </ul>
           )}
         </li>
       ))}
     </ul>
+    )}
   </div>
 </section>
 

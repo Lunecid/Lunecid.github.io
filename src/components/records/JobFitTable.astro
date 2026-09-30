@@ -42,14 +42,14 @@ const rows = (data?.rows ?? []).map((row) => ({
   requirement: r(row.requirement[lang]),
   // one value per requirement part (jobfit.<id>.yaml joins them with ' · ')
   frequency: row.frequency.split(' · '),
-  evidence: row.evidence.map((e) => ({ label: r(e.label[lang]), short: e.short ? r(e.short[lang]) : null, href: pageHref(e.href, { lang, variant }) })),
+  evidence: row.evidence.map((e) => ({ label: r(e.label[lang]), short: e.short ? r(e.short[lang]) : null, note: e.note ? r(e.note[lang]) : null, href: pageHref(e.href, { lang, variant }) })),
   status: row.status,
   statusLabel: t(lang, STATUS_KEY[row.status]),
   plan: row.plan === null ? null : r(row.plan[lang]),
 }));
 const title = t(lang, 'jobfit.title');
 ---
-<section id="job-fit" class="jobfit read-sec" aria-labelledby="job-fit-title">
+<section id="job-fit" class:list={['jobfit', variant === 'data' ? ['jobfit--ed', 'ed-sec'] : 'read-sec']} aria-labelledby="job-fit-title">
   <div class="container">
     <SectionHead variant={variant} id="job-fit-title" caption={captionFor(getVariant(variant), 'jobFit', lang)} title={title} />
     {data ? (
@@ -80,7 +80,7 @@ const title = t(lang, 'jobfit.title');
                               <a class="jobfit__ev" href={e.href} title={e.label}><span class="jobfit__ev-short" aria-hidden="true">{e.short}</span><span class="jobfit__ev-full">{e.label}</span>{external && <span class="jobfit__ev-arrow" aria-hidden="true">↗</span>}</a>
                             ) : (
                               <a class="jobfit__ev" href={e.href}>{e.label}{external && <span class="jobfit__ev-arrow" aria-hidden="true">↗</span>}</a>
-                            )}
+                            )}{e.note && <span class="jobfit__ev-note">({e.note})</span>}
                           </li>
                         );
                       })}
@@ -119,6 +119,16 @@ const title = t(lang, 'jobfit.title');
      rendering it as visible space. A real margin survives either layout mode. */
   .jobfit__ev-arrow { margin-inline-start: .25em; }
   .jobfit__none { color: var(--read-muted); }
+  /* P-09 (G-022): the honesty/timing qualifier ('(진행 중)', the graduation month) as a visible small mono line right
+     under its link on every device, never only in the title tooltip; Hangul in the sans face (Korean-mono rule).
+     contain: inline-size keeps the note out of the item's width, so a note never re-wraps the evidence links of a
+     table row: the row grows by the note's one line (≤ 24px, P-09 acceptance), and the text may run past its short
+     link into the free space below the neighbouring link (whose 44px target ends above it). */
+  .jobfit__ev-note {
+    display: block; contain: inline-size; padding-bottom: 4px;
+    font-family: var(--font-mono); font-size: var(--fs-caption); line-height: 1.4; color: var(--read-muted); white-space: nowrap;
+  }
+  .jobfit__ev-note:lang(ko) { font-family: var(--font-sans); letter-spacing: 0; }
   .jobfit__label { font-size: 13px; font-weight: 700; color: var(--read-muted); }
 
   /* Status badges (P2-18): square tags, one look per state; AA text contrast on each fill. */
@@ -203,5 +213,35 @@ const title = t(lang, 'jobfit.title');
     .jobfit__col-status { width: 12%; }
     .jobfit__col-plan { width: 31%; }
     .jobfit__table th, .jobfit__table td { padding-right: 16px; }
+  }
+
+  /* General version (P2-8, spec §8 tables): thin rules, a bold head rule, frequencies right-aligned, each status one
+     text badge in ink — no accent-deep fill, no gold. */
+  .jobfit--ed .jobfit__asof time,
+  .jobfit--ed .jobfit__freq-value { font-family: var(--font-sans); }
+  .jobfit--ed .jobfit__req,
+  .jobfit--ed .jobfit__sources-title { color: var(--ed-ink); }
+  .jobfit--ed .jobfit__asof,
+  .jobfit--ed .jobfit__none,
+  .jobfit--ed .jobfit__label,
+  .jobfit--ed .jobfit__note,
+  .jobfit--ed .jobfit__ev-note { color: var(--ed-muted); }
+  .jobfit--ed .jobfit__status--met { background: var(--ed-fill); border-color: var(--ed-fill); color: var(--ed-fill-ink); }
+  .jobfit--ed .jobfit__status--partial { background: var(--ed-bg); border-color: var(--ed-ink); color: var(--ed-ink); }
+  .jobfit--ed .jobfit__status--in-progress { background: var(--ed-bg); border: 1px dashed var(--ed-ink); color: var(--ed-ink); }
+  .jobfit--ed .jobfit__status--later,
+  .jobfit--ed .jobfit__status--n-a { background: var(--ed-bg); border-color: var(--ed-rule); color: var(--ed-muted); }
+  @media (max-width: 733.98px) {
+    .jobfit--ed .jobfit__row { background: var(--ed-bg); border-color: var(--ed-rule); }
+    .jobfit--ed .jobfit__evidence,
+    .jobfit--ed .jobfit__evidence li { border-color: var(--ed-rule); }
+  }
+  @media (min-width: 734px) {
+    .jobfit--ed .jobfit__table { border-top: 0; }
+    .jobfit--ed .jobfit__table th,
+    .jobfit--ed .jobfit__table td { border-bottom-color: var(--ed-rule); }
+    .jobfit--ed .jobfit__head th { color: var(--ed-ink); border-bottom: var(--ed-rule-w-strong) solid var(--ed-rule-strong); }
+    .jobfit--ed .jobfit__head th:nth-child(2),
+    .jobfit--ed .jobfit__freq { text-align: end; }
   }
 </style>

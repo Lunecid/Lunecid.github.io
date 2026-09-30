@@ -6,6 +6,7 @@ import { jobfitSchema } from '../../src/content/schemas';
 import { parseYamlDocument } from '../../src/content/yaml-loader';
 import type { Lang } from '../../src/i18n/ui';
 import { formatDate } from '../../src/i18n/utils';
+import { resolveFacts } from '../../src/lib/facts';
 import type { JobfitStatus } from '../../src/types';
 import { anchorBlock, readSource, renderAstro } from './helpers';
 import { loadFactSource } from '../helpers/fact-source';
@@ -126,6 +127,24 @@ describe('JobFitTable.astro', () => {
       expect(e.label.ko).toContain(e.short.ko);
       expect(e.label.en).toContain(e.short.en);
     }
+  });
+
+  it('P-09 (G-022): honesty and timing qualifiers are a visible note after the evidence link, not tooltip text', async () => {
+    const facts = loadFactSource();
+    const ko = await render('ko');
+    const en = await render('en');
+    const notes = (html: string) => [...html.matchAll(/<\/a><span class="jobfit__ev-note"[^>]*>([^<]+)<\/span>/g)].map((m) => m[1]);
+    expect(notes(ko)).toEqual(['(진행 중)', `(${resolveFacts('{person.graduation}', 'ko', facts)} 졸업 예정)`]);
+    expect(notes(en)).toEqual(['(in progress)', `(expected ${resolveFacts('{person.graduation}', 'en', facts)})`]);
+    // the qualifier left the title (hover-only) text; the note data holds the timing as a token, never a literal date
+    expect(ko).not.toMatch(/title="[^"]*(진행 중|졸업 예정)/);
+    expect(en).not.toMatch(/title="[^"]*(in progress|expected)/);
+    const raw = jobfit.rows.flatMap((row) => row.evidence).filter((e) => e.note);
+    expect(raw.map((e) => e.note)).toEqual([{ ko: '진행 중', en: 'in progress' }, { ko: '{person.graduation} 졸업 예정', en: 'expected {person.graduation}' }]);
+    // mono in both branches, with the Korean-mono rule
+    const src = readSource('src/components/records/JobFitTable.astro');
+    expect(src).toMatch(/\.jobfit__ev-note \{[^}]*font-family: var\(--font-mono\)/);
+    expect(src).toMatch(/\.jobfit__ev-note:lang\(ko\) \{ font-family: var\(--font-sans\); letter-spacing: 0; \}/);
   });
 
   it('P2-18: status badges look different per state (filled / outline / gold dashed / grey)', () => {

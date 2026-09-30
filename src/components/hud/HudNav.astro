@@ -300,8 +300,10 @@ const currentValue = exact ? 'page' : 'true';
     .hud-nav__lang--bar {
       display: none;
     }
+    /* F-071 (P-08): 8px between the phone bar's targets; measured at 320 and 375 with BGM, CV and the menu toggle
+       (VariantSwitch sits in the panel there): the bar stays one 52px line, 17px free beside the brand at 320. */
     .hud-nav__tools {
-      gap: 6px;
+      gap: 8px;
     }
     :global(html:not(.js)) .hud-nav {
       position: relative;

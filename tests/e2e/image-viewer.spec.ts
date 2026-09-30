@@ -13,6 +13,7 @@ const PAGES = [
   { path: '/game/projects/school-zone-blindspots/', scope: 'main', label: 'case study' },
   { path: '/game/research/', scope: '#interests', label: 'research' },
   { path: '/data/projects/school-zone-blindspots/', scope: 'main', label: 'general case study' },
+  { path: '/data/research/', scope: '#interests', label: 'general research' },
 ] as const;
 
 /** data-state=open, full image decoded, and every dialog animation/transition finished. */
@@ -537,12 +538,14 @@ test.describe('image viewer', () => {
     await expect(page).toHaveURL(/\/game\/$/);
   });
 
-  test('/game/records/#view-<id> opens the certificate on load', async ({ page }) => {
-    await page.goto('/game/records/#view-busan-mayor-award', { waitUntil: 'networkidle' });
-    await settle(page);
-    await expect(page.locator('dialog.image-viewer')).toHaveAttribute('open', '', { timeout: 5000 });
-    await expect(page.locator('dialog.image-viewer .image-viewer__img')).toBeVisible();
-  });
+  for (const path of ['/game/records/#view-busan-mayor-award', '/data/records/#view-busan-mayor-award']) {
+    test(`${path} opens the certificate on load`, async ({ page }) => {
+      await page.goto(path, { waitUntil: 'networkidle' });
+      await settle(page);
+      await expect(page.locator('dialog.image-viewer')).toHaveAttribute('open', '', { timeout: 5000 });
+      await expect(page.locator('dialog.image-viewer .image-viewer__img')).toBeVisible();
+    });
+  }
 
   test('B7: focused Next shows a visible accent focus ring', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });

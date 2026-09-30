@@ -1,7 +1,7 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import type { Page } from '@playwright/test';
-import { test, expect, dataPath } from './helpers';
+import { test, expect, builtRoutes, dataPath } from './helpers';
 import { MONO_FAMILY, SANS_FAMILY, SERIF_KO_FAMILY, SERIF_KO_HEAD_FAMILY } from '../../src/lib/fonts';
 import { cmapCodePoints, woff2Tables } from '../../scripts/fonts/sfnt.mjs';
 
@@ -123,3 +123,17 @@ test('English general home: the heading face is declared but never downloaded (i
   expect(await faceStatus(page, SERIF_KO_HEAD_FAMILY)).toEqual(['unloaded']); // declared once, not loaded (red before Step 6)
   expect(requested.filter((url) => url.includes('sb-serif-kr-head'))).toEqual([]);
 });
+
+for (const route of builtRoutes({ variant: 'data' })) {
+  test(`${route}: every visible heading with Hangul carries data-serif (P2-3 rule)`, async ({ page }) => {
+    await page.goto(route, { waitUntil: 'domcontentloaded' });
+    const missing = await page.locator('main').evaluate((main) =>
+      Array.from(main.querySelectorAll('h1, h2, h3, h4'))
+        // exempt: visually hidden headings (no glyph drawn) and the paper sheet (its own "SB Serif KR" face)
+        .filter((h) => !h.closest('.sr-only, .paper'))
+        .filter((h) => /\p{Script=Hangul}/u.test(h.textContent ?? '') && !h.hasAttribute('data-serif'))
+        .map((h) => `${h.tagName.toLowerCase()}.${h.getAttribute('class') ?? ''}: ${(h.textContent ?? '').trim().slice(0, 24)}`),
+    );
+    expect(missing).toEqual([]);
+  });
+}

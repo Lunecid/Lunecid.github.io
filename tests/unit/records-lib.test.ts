@@ -12,6 +12,7 @@ import {
   evidenceHref,
   evidenceLabel,
   isExpired,
+  metaSegments,
   projectSummaryItems,
   skillGroups,
   todayIso,
@@ -182,6 +183,18 @@ describe('records helpers', () => {
       meta: '2025.08',
       href: 'https://dacon.io/myprofile/530929/competition',
     });
+  });
+
+  it('F-059 (P-08): metaSegments splits the date column on " · " so each date stays whole', () => {
+    expect(metaSegments({ meta: 'Dec 15, 2024 · Valid until Dec 15, 2026' })).toEqual(['Dec 15, 2024', 'Valid until Dec 15, 2026']);
+    expect(metaSegments({ meta: 'Sep 2023 – Mar 2024 · 956 hours' })).toEqual(['Sep 2023 – Mar 2024', '956 hours']);
+    expect(metaSegments({ meta: '2024.09.06' })).toEqual(['2024.09.06']);
+    expect(metaSegments({})).toEqual([]);
+    // every rendered meta of the real résumé: the segments joined back give the same text
+    for (const lang of ['ko', 'en'] as const) {
+      const items = Object.values(credentialItems(resume, lang, '2026-01-01')).flat();
+      for (const item of items) expect(metaSegments(item).join(' · ')).toBe(item.meta ?? '');
+    }
   });
 
   it('awardItems keeps resume order and links certificates and projects', () => {

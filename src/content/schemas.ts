@@ -239,7 +239,9 @@ export const jobfitSchema = z
           requirement: localized,
           frequency: z.string().regex(/^\d+\/\d+( · \d+\/\d+)*$/),
           // short: the label shown in the table from 734px (P1-11); a part of `label`, which stays the accessible name and title.
-          evidence: z.array(z.object({ label: localized, short: localized.optional(), href: z.string().min(1) })),
+          // note (P2-8 P-09, contract §1.9/§2.6): an honesty or timing qualifier shown as a visible suffix after the link
+          // (never only in the title tooltip); timing notes use tokens ('{person.graduation} 졸업 예정').
+          evidence: z.array(z.object({ label: localized, short: localized.optional(), note: localized.optional(), href: z.string().min(1) })),
           status: z.enum(JOBFIT_STATUSES),
           // null = no next step: met rows and rows without a genuine skill step stay empty (D-6).
           plan: localized.nullable(),

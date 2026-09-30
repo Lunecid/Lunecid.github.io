@@ -22,9 +22,33 @@ const groups = [
 ].filter((group) => group.items.length > 0);
 const title = t(lang, 'records.skills');
 ---
-<section id="skills" class="rec read-sec" aria-labelledby="skills-title">
+<section id="skills" class:list={['rec', variant === 'data' ? 'ed-sec' : 'read-sec']} aria-labelledby="skills-title">
   <div class="container">
     <SectionHead variant={variant} id="skills-title" caption={captionFor(getVariant(variant), 'skills', lang)} title={title} />
+    {variant === 'data' ? (
+      <table class="ed-table skills-ed">
+        <caption class="sr-only">{title}</caption>
+        <colgroup><col class="skills-ed__col-name" /><col /></colgroup>
+        <thead>
+          <tr><th scope="col">{title}</th><th scope="col">{t(lang, 'records.evidence')}</th></tr>
+        </thead>
+        {groups.map((group) => (
+          <tbody data-group={group.key}>
+            <tr><th colspan="2" scope="rowgroup" class="skills-ed__group">{group.title}</th></tr>
+            {group.items.map((skill) => (
+              <tr>
+                <th scope="row" lang="en">{skill.name}</th>
+                <td>
+                  <ul class="ed-links" role="list">
+                    {skill.evidence.map((e) => <li><a class="ed-link" href={e.href}>{e.label}{e.href.startsWith('http') && <Fragment> <span aria-hidden="true">↗</span></Fragment>}</a></li>)}
+                  </ul>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        ))}
+      </table>
+    ) : (
     <table class="skills__table lh-table">
       <caption class="sr-only">{title}</caption>
       <colgroup><col class="skills__col-name" /><col /></colgroup>
@@ -47,6 +71,7 @@ const title = t(lang, 'records.skills');
         </tbody>
       ))}
     </table>
+    )}
   </div>
 </section>
 
@@ -60,4 +85,9 @@ const title = t(lang, 'records.skills');
     .skills__col-name { width: 220px; }
     .skills__name { font-size: 15px; }
   }
+  /* General version (P2-8) */
+  .skills-ed { margin-top: 20px; table-layout: fixed; }
+  .skills-ed__col-name { width: 34%; }
+  .skills-ed__group { padding-top: 18px; font-weight: 700; }
+  @media (min-width: 734px) { .skills-ed__col-name { width: 22%; } }
 </style>

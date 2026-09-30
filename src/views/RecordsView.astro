@@ -40,6 +40,8 @@ const ctx = { lang, variant };
 const v = getVariant(variant);
 const facts = await getFactSource();
 const identity = resolveIdentity(v, lang, facts);
+// P2-8: the general version renders editorial markup (no light-HUD wrapper).
+const editorial = v.theme === 'editorial';
 
 const resume = await getResume();
 const jobfit = await getJobfit(v.jobfit);
@@ -102,14 +104,14 @@ const meta = pageMetaFor('records', lang, variant, facts);
     contact={{ email: SITE.email, github: SITE.githubUrl, dacon: SITE.daconUrl }}
     ids={resume.researchIds}
   />
-  <div class="read">
+  <div class={editorial ? 'records-ed' : 'read'}>
     <EducationTimeline lang={lang} variant={variant} items={resume.education} />
-    <section id="publications" class="rec read-sec" aria-labelledby="publications-title">
+    <section id="publications" class:list={['rec', editorial ? 'ed-sec' : 'read-sec']} aria-labelledby="publications-title">
       <div class="container">
         <SectionHead variant={variant} id="publications-title" caption={captionFor(getVariant(variant), 'publications', lang)} title={t(lang, 'records.publications')} />
         <ol class="rec__pubs" role="list">
           {papers.map((paper) => (
-            <li><PublicationItem lang={lang} paper={paper} headingLevel={3} compact /></li>
+            <li><PublicationItem variant={variant} lang={lang} paper={paper} headingLevel={3} compact /></li>
           ))}
         </ol>
       </div>

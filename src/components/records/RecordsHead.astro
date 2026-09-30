@@ -24,13 +24,14 @@ interface Props {
   status: string;
   tagline: string;
   documents: { id: string; label: string; href: string }[];
-  /** The filled button: the version's résumé in the page language (D-7). */
-  primary: string;
+  /** The filled button: the version's résumé in the page language (D-7); defaults to getVariant(variant).documents.resume[lang]. */
+  primary?: string;
   contact: { email: string; github: string; dacon: string };
   ids?: { scholar: string | null; orcid: string | null };
 }
 
-const { lang, variant, name, headline, status, tagline, documents, primary, contact, ids } = Astro.props;
+const { lang, variant, name, headline, status, tagline, documents, contact, ids } = Astro.props;
+const primary = Astro.props.primary ?? getVariant(variant).documents.resume[lang];
 const researcherLinks = [
   ids?.scholar ? { label: 'Google Scholar', href: ids.scholar } : null,
   ids?.orcid ? { label: 'ORCID', href: ids.orcid } : null,
@@ -45,6 +46,7 @@ const jumps = [
   { href: '#documents', label: 'PDF' },
 ];
 ---
+{variant === 'game' ? (
 <section id="profile" class="rhead read" aria-labelledby="profile-title">
   {getVariant(variant).modules.includes('characterArt') && <GhostArt side="right" />}
   <div class="container">
@@ -84,6 +86,45 @@ const jumps = [
     </nav>
   </div>
 </section>
+) : (
+  <section id="profile" class="rhead-ed ed-sec" aria-labelledby="profile-title">
+    <div class="container">
+      <div class="rhead-ed__grid">
+        <Picture
+          class="rhead__photo"
+          src={photo}
+          formats={['avif', 'webp']}
+          fallbackFormat="webp"
+          widths={fitWidths([120, 240, 354], sourceSize(photo).width)}
+          sizes="(min-width: 1068px) 176px, (min-width: 734px) 150px, 112px"
+          priority
+          alt={t(lang, 'card.photoAlt')}
+        />
+        <div class="rhead-ed__intro">
+          <SectionLabel variant={variant} en={captionFor(getVariant(variant), 'profile', lang)} />
+          <h2 id="profile-title" class="rhead-ed__hello" data-serif>{`${t(lang, 'section.hello')}!`}</h2>
+          <p class="rhead-ed__name">{name}</p>
+          <p class="ed-meta">{status}</p>
+        </div>
+        <div class="rhead-ed__more">
+          <p class="ed-body">{tagline}</p>
+          <div class="rhead-ed__docs"><DocButtons variant={variant} documents={documents} primary={primary} /></div>
+          <ul class="ed-links" role="list">
+            <li><a class="ed-link" href={`mailto:${contact.email}`}>{contact.email}</a></li>
+            <li><a class="ed-link" href={contact.github}>GitHub <span aria-hidden="true">↗</span></a></li>
+            <li><a class="ed-link" href={contact.dacon}>DACON <span aria-hidden="true">↗</span></a></li>
+            {researcherLinks.map((link) => <li><a class="ed-link" href={link.href}>{link.label} <span aria-hidden="true">↗</span></a></li>)}
+          </ul>
+        </div>
+      </div>
+      <nav class="rnav-ed" aria-label={t(lang, 'records.jump')}>
+        <ol class="ed-links" role="list">
+          {jumps.map((jump) => <li><a class="ed-link" href={jump.href}>{jump.label}</a></li>)}
+        </ol>
+      </nav>
+    </div>
+  </section>
+)}
 
 <style>
   .rhead { position: relative; overflow: hidden; padding-block: 32px 0; }
@@ -102,7 +143,8 @@ const jumps = [
      the photo's height and left a ~117px empty band between the status line and the tagline from 734px on. */
   .rhead__grid > :global(picture) { grid-area: photo; }
   .rhead__intro { grid-area: intro; min-width: 0; }
-  .rhead__hello { margin-top: 4px; font-size: 28px; font-weight: 900; line-height: 1.2; }
+  /* F-046 (P-08): weight 800 like the page H1 and smaller than it at every width (28/34/40 under 32/48/56) */
+  .rhead__hello { margin-top: 4px; font-size: 28px; font-weight: 800; line-height: 1.2; }
   .rhead__name { margin-top: 6px; font-size: var(--fs-sub); font-weight: 800; line-height: var(--lh-sub); }
   .rhead__role { margin-top: 4px; font-size: 15px; font-weight: 700; line-height: 1.5; color: var(--read-text); }
   .rhead__status { margin-top: 4px; font-size: 14px; line-height: 1.6; color: var(--read-muted); }
@@ -113,7 +155,8 @@ const jumps = [
   .rhead__contact a { display: inline-flex; align-items: center; min-height: var(--tap); }
   /* In-page bar: square mono-caps links on a hairline, like a HUD tab row */
   .rnav { margin-top: 24px; border-top: 1px solid var(--read-line-strong); border-bottom: 1px solid var(--read-line); }
-  .rnav__list { display: flex; flex-wrap: wrap; gap: 0 4px; }
+  /* F-071 (P-08): 8px between neighbouring targets on phones, across and between rows */
+  .rnav__list { display: flex; flex-wrap: wrap; gap: 8px 8px; }
   .rnav__link {
     display: inline-flex; align-items: center; justify-content: center; min-height: var(--tap); min-width: var(--tap); padding-inline: 10px;
     font-size: 14px; font-weight: 700; color: var(--read-text); text-decoration: none;
@@ -123,6 +166,8 @@ const jumps = [
      44px target too and every text gap is the same; the first link reaches into the container's gutter instead (its
      text stays on the section's left edge). The old one-sided padding made it 34px wide, and a min-width then widened
      only its gap. */
+  /* F-071 (P-08): the 8px list gap is taken; the 10px padding stays (8px would make '학력' narrower than 44px, and its
+     min-width would then widen only its own gap). */
   .rnav__list li:first-child .rnav__link { margin-left: -10px; }
   .rnav__link:hover { color: var(--accent-deep); text-decoration: underline; text-underline-offset: .2em; }
   @media (min-width: 734px) {
@@ -139,5 +184,28 @@ const jumps = [
     .rhead__grid { grid-template-columns: 176px minmax(0, 1fr); column-gap: 36px; }
     .rhead__grid :global(.rhead__photo) { width: 176px; }
     .rhead__hello { font-size: 40px; }
+  }
+  /* F-046: on short landscape screens the page H1 shrinks to min(--fs-display, 12svh) (PageHeader); the greeting
+     shrinks with it and stays below it. */
+  @media (min-width: 734px) and (max-height: 500px) {
+    .rhead__hello { font-size: min(34px, 9svh); }
+  }
+  @media (min-width: 1068px) and (max-height: 500px) {
+    .rhead__hello { font-size: min(40px, 9svh); }
+  }
+  /* General version (P2-8) */
+  .rhead-ed__grid { display: grid; grid-template-columns: 112px minmax(0, 1fr); gap: 16px 20px; align-items: start; }
+  .rhead-ed__more { grid-column: 1 / -1; display: grid; gap: 12px; }
+  .rhead-ed__hello { margin-top: 4px; font-size: var(--fs-h2); line-height: var(--lh-h2); }
+  .rhead-ed__name { margin-top: 4px; font-size: var(--fs-sub); font-weight: 700; }
+  .rnav-ed { margin-top: 20px; padding-top: 8px; border-top: var(--ed-rule-w) solid var(--ed-rule); }
+  /* two-syllable jump labels (학력, 수상, …) are narrower than 44px: the target keeps the 44×44 minimum */
+  .rnav-ed .ed-link { min-width: var(--tap); justify-content: center; }
+  @media (min-width: 734px) {
+    .rhead-ed__grid { grid-template-columns: 150px minmax(0, 1fr); }
+  }
+  @media (min-width: 1068px) {
+    .rhead-ed__grid { grid-template-columns: 176px minmax(0, 1fr) minmax(0, 1fr); column-gap: 32px; }
+    .rhead-ed__more { grid-column: auto; }
   }
 </style>
