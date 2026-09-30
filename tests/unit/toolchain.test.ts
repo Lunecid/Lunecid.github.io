@@ -128,8 +128,10 @@ describe('toolchain', () => {
     expect(BGM_TIME_KEY).toBe(STORAGE_KEYS.bgmTime);
   });
 
-  it('config.ts and types.ts have no import statements', () => {
-    for (const rel of ['src/config.ts', 'src/types.ts']) {
+  it('config.ts, types.ts, account-ids.ts and account-config.ts have no import statements', () => {
+    // AL-3: account-ids.ts and account-config.ts are also read by the fetch-accounts job (Node type stripping, no npm
+    // dependencies) and by the relay Worker (esbuild), so they follow the same import-free, erasable-only rule.
+    for (const rel of ['src/config.ts', 'src/types.ts', 'src/lib/account-ids.ts', 'src/lib/account-config.ts']) {
       const src = read(rel);
       expect(src, rel).not.toMatch(/^\s*import\b/m);
       expect(src, rel).not.toMatch(/\bfrom\s+['"]/);
@@ -139,6 +141,12 @@ describe('toolchain', () => {
     // Plain Node (type stripping, Node >= 22.18) must load both files, as scripts/*.mjs do.
     const out = execFileSync(process.execPath, ['-e', "Promise.all([import('./src/config.ts'), import('./src/types.ts')]).then(([c, t]) => console.log(c.DOCUMENTS['resume-ko'] + ' ' + t.CHARACTER_IDS.join(',')))"], { encoding: 'utf8' });
     expect(out.trim()).toBe('/cv/seongeun-baek-resume-ko.pdf remielle,eula,mona');
+    const accounts = execFileSync(
+      process.execPath,
+      ['--input-type=module', '-e', "const [i, c] = await Promise.all([import('./src/lib/account-ids.ts'), import('./src/lib/account-config.ts')]); console.log(i.ACCOUNT_VARS.length + ' ' + i.RIOT_REGION + ' ' + c.STEAM_SHOW_GAMES + ' ' + i.validateVar('ACCOUNT_GENSHIN_UID', ' 618285856 ').ok)"],
+      { encoding: 'utf8' },
+    );
+    expect(accounts.trim()).toBe('7 kr false true');
   });
 
   it('P1-2: src/variants/ids.ts is import-free and plain Node loads src/lib/routes.ts', async () => {

@@ -152,6 +152,7 @@
   "tests/react/use-count-up.test.ts": 8,
   "tests/react/variant-runtime.test.ts": 12,
   "tests/react/viewer-queue.test.ts": 43,
+  "tests/unit/account-ids.test.ts": 36,
   "tests/unit/analytics.test.ts": 15,
   "tests/unit/assertion-inventory.test.ts": 6,
   "tests/unit/certificates.test.ts": 17,
@@ -205,7 +206,7 @@
   "tests/unit/stats-hygiene.test.ts": 27,
   "tests/unit/style-rules.test.ts": 47,
   "tests/unit/tokens.test.ts": 104,
-  "tests/unit/toolchain.test.ts": 85,
+  "tests/unit/toolchain.test.ts": 86,
   "tests/unit/variants.test.ts": 74,
   "tests/unit/yaml-loader.test.ts": 33
 }
