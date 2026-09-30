@@ -20,7 +20,7 @@ describe('Lighthouse budget (A-21, P1-19)', () => {
   it('3 mobile runs for the chooser and both homes, 1 mobile run for the secondary list, 1 desktop run for all', () => {
     expect(paths(mobile)).toEqual(['/', '/game/', '/data/']);
     expect(mobile.ci.collect.numberOfRuns).toBe(3);
-    expect(paths(secondary)).toEqual(['/en/game/', '/game/projects/', '/game/research/cog-2026-engagement/', '/game/records/', '/game/player-log/', '/data/projects/', '/data/records/', '/stats/', '/404.html']);
+    expect(paths(secondary)).toEqual(['/en/game/', '/game/projects/', '/game/research/cog-2026-engagement/', '/game/records/', '/game/player-log/', '/data/projects/', '/data/projects/school-zone-blindspots/', '/data/research/cog-2026-engagement/', '/data/records/', '/stats/', '/404.html']);
     expect(secondary.ci.collect.numberOfRuns).toBe(1);
     expect(paths(desktop)).toEqual([...paths(mobile), ...paths(secondary)]);
     expect(desktop.ci.collect.numberOfRuns).toBe(1);
@@ -29,6 +29,7 @@ describe('Lighthouse budget (A-21, P1-19)', () => {
     expect(secondary.ci.collect.settings.preset).toBeUndefined();
     // Counts are computed from the configs (contract §2.1), never pinned; the budget only has to beat the pre-move
     // configs: 6 URLs × 3 mobile runs + 6 URLs × 3 desktop runs = 36.
+    // P1-19: 9 + 9 + 12 = 30 runs; P2-13: 9 + 11 + 14 = 34 (contract A-21).
     const runs = paths(mobile).length * mobile.ci.collect.numberOfRuns + paths(secondary).length * secondary.ci.collect.numberOfRuns + paths(desktop).length * desktop.ci.collect.numberOfRuns;
     expect(runs).toBeLessThan(36);
     for (const p of paths(desktop)) expect([...allRoutes(), '/404.html'], p).toContain(p);

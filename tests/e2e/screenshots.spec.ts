@@ -8,6 +8,10 @@ const PAGES = [
   { route: gamePath('/projects/'), name: 'game-projects' },
   { route: gamePath('/records/'), name: 'game-records' },
   { route: gamePath('/player-log/'), name: 'game-player-log' },
+  { route: '/?choose', name: 'chooser' },
+  { route: '/data/', name: 'data-home' },
+  { route: '/data/projects/', name: 'data-projects' },
+  { route: '/data/records/', name: 'data-records' },
 ] as const;
 
 /** Scrolls the whole page once so lazy images load and client:visible islands hydrate, then returns to the top. */

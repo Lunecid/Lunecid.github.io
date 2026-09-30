@@ -173,6 +173,7 @@
   "tests/unit/images.test.ts": 23,
   "tests/unit/konami.test.ts": 9,
   "tests/unit/lighthouse-config.test.ts": 19,
+  "tests/unit/lighthouse-coverage.test.ts": 3,
   "tests/unit/links.test.ts": 32,
   "tests/unit/neutral-css.test.ts": 3,
   "tests/unit/news-lib.test.ts": 18,

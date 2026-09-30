@@ -9,6 +9,8 @@
         "http://localhost/game/records/",
         "http://localhost/game/player-log/",
         "http://localhost/data/projects/",
+        "http://localhost/data/projects/school-zone-blindspots/",
+        "http://localhost/data/research/cog-2026-engagement/",
         "http://localhost/data/records/",
         "http://localhost/stats/",
         "http://localhost/404.html"
