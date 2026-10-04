@@ -4,6 +4,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import type { Page } from '@playwright/test';
 import { test, expect } from './helpers';
+import { ACCOUNTS_ORIGIN } from './ports';
 import { SITE } from '../../src/config';
 
 // P-12 (G-023..G-026, G-028): the print pass of the game version. Each page prints the way a visitor's "Save as PDF"
@@ -133,7 +134,7 @@ test.describe('print (P-12)', () => {
   });
 
   test('AL-11: the account dialog, opened on screen, does not print (fixture build)', async ({ page }) => {
-    await page.goto(`http://127.0.0.1:${Number(process.env.E2E_ACCOUNTS_PORT ?? 4332)}/game/player-log/`, { waitUntil: 'load' });
+    await page.goto(`${ACCOUNTS_ORIGIN}/game/player-log/`, { waitUntil: 'load' });
     await page.locator('#membership button.acct-tile').first().click();
     const dialog = page.locator('dialog#acct-dlg');
     await expect(dialog).toBeVisible();

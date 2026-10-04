@@ -5,14 +5,13 @@ import { DOCUMENTS, NAV_HEIGHT_PX } from '../../src/config';
 import type { Lang } from '../../src/i18n/ui';
 import { allRoutes, anchorsFor, legacyRedirects, parseRoute, routePath, type RouteKind } from '../../src/lib/routes';
 import type { VariantId } from '../../src/variants/ids';
+import { ORIGIN } from './ports';
 
 export { expect };
 
 /** Height of the sticky HUD nav in CSS px (src/config.ts NAV_HEIGHT_PX = tokens.css --nav-h = 52). */
 export const NAV_HEIGHT: number = NAV_HEIGHT_PX;
 
-const PORT = Number(process.env.E2E_PORT ?? 4329);
-const ORIGIN = `http://127.0.0.1:${PORT}`;
 const DIST = join(process.cwd(), 'dist');
 
 /** Section ids that render only with data or content (§5.4 "Conditional section ids"). */
@@ -157,7 +156,7 @@ export async function baseLinks(page: Page): Promise<string[]> {
 }
 
 /** Origin of the no-art build: playwright.config.ts's second web server (dist-no-art/, built with SB_NO_ART=1). */
-export const NO_ART_ORIGIN = `http://127.0.0.1:${Number(process.env.E2E_NO_ART_PORT ?? 4330)}`;
+export { NO_ART_ORIGIN } from './ports';
 
 /** Waits for the CRT intro (home only) to finish and for web fonts, so layout is final. */
 export async function settle(page: Page): Promise<void> {
