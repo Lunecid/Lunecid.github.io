@@ -81,7 +81,7 @@ describe('toolchain', () => {
     }
     // tsconfig mirrors the real path (the alias's only other home); the workflow never sets the switch (AL-1's csp case).
     const tsconfig = JSON.parse(read('tsconfig.json')) as { compilerOptions: { paths?: Record<string, string[]> } };
-    expect(tsconfig.compilerOptions.paths).toEqual({ '@generated/*': ['src/data/generated/*'] });
+    expect(tsconfig.compilerOptions.paths).toEqual({ '@generated/*': ['./src/data/generated/*'] });
     expect(read('.github/workflows/deploy.yml')).not.toContain('SB_E2E_ACCOUNTS');
   });
 
