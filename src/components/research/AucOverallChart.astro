@@ -54,6 +54,14 @@ interface Layout {
   top: number;
   row: number;
   groupGap: number;
+  /** Tick values under the axis. */
+  ticks: number[];
+  /** The model name ends this far left of the plot; unused when labelAbove. */
+  labelGap: number;
+  /** A value starts this far right of its dot; the highlighted one uses HL_VALUE_GAP. */
+  valueGap: number;
+  /** No room left of the plot: the model name sits above its row, the group name at the plot's right end. */
+  labelAbove: boolean;
 }
 
 /** F-085: the ring round the highlighted dot (2px stroke; every dot, the highlighted one included, has r = 6). */
@@ -86,110 +94,58 @@ function place(layout: Layout): {
   return { rows: placed, groups, axisY, h: axisY + 48, x };
 }
 
-const wideLayout: Layout = { w: 560, left: 150, right: 490, top: 36, row: 30, groupGap: 14 };
-const compactLayout: Layout = { w: 280, left: 90, right: 222, top: 34, row: 28, groupGap: 12 };
-const narrowLayout: Layout = { w: 280, left: 20, right: 224, top: 34, row: 44, groupGap: 14 };
-const wide = place(wideLayout);
-const compact = place(compactLayout);
-const narrow = place(narrowLayout);
-const wideChanceX = wide.x(CHANCE_AUC);
-const compactChanceX = compact.x(CHANCE_AUC);
-const narrowChanceX = narrow.x(CHANCE_AUC);
-const titleIdWide = `${idPrefix}-title-wide`;
-const descIdWide = `${idPrefix}-desc-wide`;
-const titleIdCompact = `${idPrefix}-title-compact`;
-const descIdCompact = `${idPrefix}-desc-compact`;
-const titleIdNarrow = `${idPrefix}-title-narrow`;
-const descIdNarrow = `${idPrefix}-desc-narrow`;
+// The template renders one box per layout from this list; a single space separates the boxes, as it separates sibling elements.
+const KINDS = ['wide', 'compact', 'narrow'] as const;
+const layouts: Record<(typeof KINDS)[number], Layout> = {
+  wide: { w: 560, left: 150, right: 490, top: 36, row: 30, groupGap: 14, ticks: TICKS, labelGap: 12, valueGap: 12, labelAbove: false },
+  compact: { w: 280, left: 90, right: 222, top: 34, row: 28, groupGap: 12, ticks: COMPACT_TICKS, labelGap: 10, valueGap: 11, labelAbove: false },
+  narrow: { w: 280, left: 20, right: 224, top: 34, row: 44, groupGap: 14, ticks: TICKS, labelGap: 0, valueGap: 12, labelAbove: true },
+};
+const charts = KINDS.map((kind) => {
+  const layout = layouts[kind];
+  const placed = place(layout);
+  return { kind, layout, placed, chanceX: placed.x(CHANCE_AUC), titleId: `${idPrefix}-title-${kind}`, descId: `${idPrefix}-desc-${kind}` };
+});
 const tableCaptionId = `${idPrefix}-table-caption`;
 const summaryId = `${idPrefix}-table-summary`;
 const columns = lang === 'ko' ? ['모델', '입력 표현', 'AUC'] : ['Model', 'Input view', 'AUC'];
 ---
 <figure class:list={['chart', 'chart--overall', { 'chart--hud': tone === 'hud' }, tone === 'editorial' && ['chart--editorial', 'ed-figure']]}>
-  <div class="chart__scroll chart__scroll--wide" data-table-scroll data-label-id={titleIdWide}>
-    <svg class="chart__svg" viewBox={`0 0 ${wideLayout.w} ${wide.h}`} role="img" aria-labelledby={titleIdWide} aria-describedby={descIdWide}>
-      <title id={titleIdWide}>{lang === 'ko' ? '모델별 AUC 점 그래프' : 'AUC by model, dot plot'}</title>
-      <desc id={descIdWide}>{alt}</desc>
-      <line class="chart__axis-line" x1={wideLayout.left} x2={wideLayout.right} y1={wide.axisY} y2={wide.axisY} />
-      {TICKS.map((v) => (
-        <g class="chart__tick-group">
-          <line class="chart__tick-line" x1={wide.x(v)} x2={wide.x(v)} y1={wide.axisY} y2={wide.axisY + 5} />
-          <text class="chart__tick" data-tick={v.toFixed(2)} x={wide.x(v)} y={wide.axisY + 22} text-anchor="middle">{v.toFixed(2)}</text>
-        </g>
-      ))}
-      <text class="chart__axis-title" x={wideLayout.right} y={wide.axisY + 41} text-anchor="end">AUC →</text>
-      <line class="chart__chance" data-value={CHANCE_AUC} x1={wideChanceX} x2={wideChanceX} y1={wideLayout.top - 10} y2={wide.axisY} />
-      <text class="chart__chance-label" x={wideChanceX + 6} y={wideLayout.top - 14}>{t(lang, 'research.chance')}</text>
-      {wide.groups.map((group) => (
-        <text class="chart__group" x={wideLayout.left - 12} y={group.y} text-anchor="end">{group.name}</text>
-      ))}
-      {wide.rows.map((row) => (
-        <g class="chart__row" data-model={row.id}>
-          <line class="chart__guide" x1={wideLayout.left} x2={wideLayout.right} y1={row.cy} y2={row.cy} />
-          <text class:list={['chart__label', { 'chart__label--hl': row.highlight }]} x={wideLayout.left - 12} y={row.cy + 5} text-anchor="end">{row.model}</text>
-          {row.highlight && <circle class="chart__ring" cx={row.cx} cy={row.cy} r={RING_R} />}
-          <circle class:list={['chart__dot', { 'chart__dot--hl': row.highlight }]} cx={row.cx} cy={row.cy} r={6} />
-          <text class:list={['chart__value', { 'chart__value--hl': row.highlight }]} x={row.cx + (row.highlight ? HL_VALUE_GAP : 12)} y={row.cy + 5}>{row.label}</text>
-        </g>
-      ))}
-    </svg>
-  </div>
-  <div class="chart__scroll chart__scroll--compact" data-table-scroll data-label-id={titleIdCompact}>
-    <svg class="chart__svg chart__svg--compact" viewBox={`0 0 ${compactLayout.w} ${compact.h}`} role="img" aria-labelledby={titleIdCompact} aria-describedby={descIdCompact}>
-      <title id={titleIdCompact}>{lang === 'ko' ? '모델별 AUC 점 그래프' : 'AUC by model, dot plot'}</title>
-      <desc id={descIdCompact}>{alt}</desc>
-      <line class="chart__axis-line" x1={compactLayout.left} x2={compactLayout.right} y1={compact.axisY} y2={compact.axisY} />
-      {COMPACT_TICKS.map((v) => (
-        <g class="chart__tick-group">
-          <line class="chart__tick-line" x1={compact.x(v)} x2={compact.x(v)} y1={compact.axisY} y2={compact.axisY + 5} />
-          <text class="chart__tick" data-tick={v.toFixed(2)} x={compact.x(v)} y={compact.axisY + 22} text-anchor="middle">{v.toFixed(2)}</text>
-        </g>
-      ))}
-      <text class="chart__axis-title" x={compactLayout.right} y={compact.axisY + 41} text-anchor="end">AUC →</text>
-      <line class="chart__chance" data-value={CHANCE_AUC} x1={compactChanceX} x2={compactChanceX} y1={compactLayout.top - 10} y2={compact.axisY} />
-      <text class="chart__chance-label" x={compactChanceX + 6} y={compactLayout.top - 14}>{t(lang, 'research.chance')}</text>
-      {compact.groups.map((group) => (
-        <text class="chart__group" x={compactLayout.left - 10} y={group.y} text-anchor="end">{group.name}</text>
-      ))}
-      {compact.rows.map((row) => (
-        <g class="chart__row" data-model={row.id}>
-          <line class="chart__guide" x1={compactLayout.left} x2={compactLayout.right} y1={row.cy} y2={row.cy} />
-          <text class:list={['chart__label', { 'chart__label--hl': row.highlight }]} x={compactLayout.left - 10} y={row.cy + 5} text-anchor="end">{row.model}</text>
-          {row.highlight && <circle class="chart__ring" cx={row.cx} cy={row.cy} r={RING_R} />}
-          <circle class:list={['chart__dot', { 'chart__dot--hl': row.highlight }]} cx={row.cx} cy={row.cy} r={6} />
-          <text class:list={['chart__value', { 'chart__value--hl': row.highlight }]} x={row.cx + (row.highlight ? HL_VALUE_GAP : 11)} y={row.cy + 5}>{row.label}</text>
-        </g>
-      ))}
-    </svg>
-  </div>
-  <div class="chart__scroll chart__scroll--narrow" data-table-scroll data-label-id={titleIdNarrow}>
-    <svg class="chart__svg chart__svg--narrow" viewBox={`0 0 ${narrowLayout.w} ${narrow.h}`} role="img" aria-labelledby={titleIdNarrow} aria-describedby={descIdNarrow}>
-      <title id={titleIdNarrow}>{lang === 'ko' ? '모델별 AUC 점 그래프' : 'AUC by model, dot plot'}</title>
-      <desc id={descIdNarrow}>{alt}</desc>
-      <line class="chart__axis-line" x1={narrowLayout.left} x2={narrowLayout.right} y1={narrow.axisY} y2={narrow.axisY} />
-      {TICKS.map((v) => (
-        <g class="chart__tick-group">
-          <line class="chart__tick-line" x1={narrow.x(v)} x2={narrow.x(v)} y1={narrow.axisY} y2={narrow.axisY + 5} />
-          <text class="chart__tick" data-tick={v.toFixed(2)} x={narrow.x(v)} y={narrow.axisY + 22} text-anchor="middle">{v.toFixed(2)}</text>
-        </g>
-      ))}
-      <text class="chart__axis-title" x={narrowLayout.right} y={narrow.axisY + 41} text-anchor="end">AUC →</text>
-      <line class="chart__chance" data-value={CHANCE_AUC} x1={narrowChanceX} x2={narrowChanceX} y1={narrowLayout.top - 10} y2={narrow.axisY} />
-      <text class="chart__chance-label" x={narrowChanceX + 6} y={narrowLayout.top - 14}>{t(lang, 'research.chance')}</text>
-      {narrow.groups.map((group) => (
-        <text class="chart__group" x={narrowLayout.right} y={group.y} text-anchor="end">{group.name}</text>
-      ))}
-      {narrow.rows.map((row) => (
-        <g class="chart__row" data-model={row.id}>
-          <text class:list={['chart__label', { 'chart__label--hl': row.highlight }]} x={narrowLayout.left} y={row.cy - 12}>{row.model}</text>
-          <line class="chart__guide" x1={narrowLayout.left} x2={narrowLayout.right} y1={row.cy} y2={row.cy} />
-          {row.highlight && <circle class="chart__ring" cx={row.cx} cy={row.cy} r={RING_R} />}
-          <circle class:list={['chart__dot', { 'chart__dot--hl': row.highlight }]} cx={row.cx} cy={row.cy} r={6} />
-          <text class:list={['chart__value', { 'chart__value--hl': row.highlight }]} x={row.cx + (row.highlight ? HL_VALUE_GAP : 12)} y={row.cy + 5}>{row.label}</text>
-        </g>
-      ))}
-    </svg>
-  </div>
+  {charts.map(({ kind, layout, placed, chanceX, titleId, descId }, index) => (
+    <Fragment>{index > 0 && ' '}<div class={`chart__scroll chart__scroll--${kind}`} data-table-scroll data-label-id={titleId}>
+      <svg class:list={['chart__svg', kind !== 'wide' && `chart__svg--${kind}`]} viewBox={`0 0 ${layout.w} ${placed.h}`} role="img" aria-labelledby={titleId} aria-describedby={descId}>
+        <title id={titleId}>{lang === 'ko' ? '모델별 AUC 점 그래프' : 'AUC by model, dot plot'}</title>
+        <desc id={descId}>{alt}</desc>
+        <line class="chart__axis-line" x1={layout.left} x2={layout.right} y1={placed.axisY} y2={placed.axisY} />
+        {layout.ticks.map((v) => (
+          <g class="chart__tick-group">
+            <line class="chart__tick-line" x1={placed.x(v)} x2={placed.x(v)} y1={placed.axisY} y2={placed.axisY + 5} />
+            <text class="chart__tick" data-tick={v.toFixed(2)} x={placed.x(v)} y={placed.axisY + 22} text-anchor="middle">{v.toFixed(2)}</text>
+          </g>
+        ))}
+        <text class="chart__axis-title" x={layout.right} y={placed.axisY + 41} text-anchor="end">AUC →</text>
+        <line class="chart__chance" data-value={CHANCE_AUC} x1={chanceX} x2={chanceX} y1={layout.top - 10} y2={placed.axisY} />
+        <text class="chart__chance-label" x={chanceX + 6} y={layout.top - 14}>{t(lang, 'research.chance')}</text>
+        {placed.groups.map((group) => (
+          <text class="chart__group" x={layout.labelAbove ? layout.right : layout.left - layout.labelGap} y={group.y} text-anchor="end">{group.name}</text>
+        ))}
+        {placed.rows.map((row) => (
+          <g class="chart__row" data-model={row.id}>
+            {layout.labelAbove ? (
+              <Fragment><text class:list={['chart__label', { 'chart__label--hl': row.highlight }]} x={layout.left} y={row.cy - 12}>{row.model}</text>
+              <line class="chart__guide" x1={layout.left} x2={layout.right} y1={row.cy} y2={row.cy} /></Fragment>
+            ) : (
+              <Fragment><line class="chart__guide" x1={layout.left} x2={layout.right} y1={row.cy} y2={row.cy} />
+              <text class:list={['chart__label', { 'chart__label--hl': row.highlight }]} x={layout.left - layout.labelGap} y={row.cy + 5} text-anchor="end">{row.model}</text></Fragment>
+            )}
+            {row.highlight && <circle class="chart__ring" cx={row.cx} cy={row.cy} r={RING_R} />}
+            <circle class:list={['chart__dot', { 'chart__dot--hl': row.highlight }]} cx={row.cx} cy={row.cy} r={6} />
+            <text class:list={['chart__value', { 'chart__value--hl': row.highlight }]} x={row.cx + (row.highlight ? HL_VALUE_GAP : layout.valueGap)} y={row.cy + 5}>{row.label}</text>
+          </g>
+        ))}
+      </svg>
+    </div></Fragment>
+  ))}
   <figcaption class="chart__caption">
     <p class="chart__caption-text">{tone === 'editorial' && figureNumber !== undefined && <span class="ed-figcap__num">{editorialFigureLabel(lang, figureNumber)}</span>}{caption}</p>
     <p class="chart__source">{t(lang, 'research.aucSource')}</p>
