@@ -1,23 +1,5 @@
 // Batch 4 layout pins in a real browser: D-2 XL steps, D-3 home cartridges, P2-16 hero lines, P2-21 figure frame.
-import type { Locator, Page } from '@playwright/test';
-import { test, expect, settle } from './helpers';
-
-interface Box {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-}
-async function box(locator: Locator): Promise<Box> {
-  const b = await locator.boundingBox();
-  expect(b, 'element has a layout box').toBeTruthy();
-  return b as Box;
-}
-async function open(page: Page, route: string, width: number, height = 900): Promise<void> {
-  await page.setViewportSize({ width, height });
-  await page.goto(route, { waitUntil: 'networkidle' });
-  await settle(page);
-}
+import { test, expect, box, openAt, type Box } from './helpers';
 
 test.describe('D-2 XL steps: the section container widens; every band keeps one left edge (batch 5 item 11)', () => {
   // [viewport, HUD container, gutter, name font size]
@@ -29,7 +11,7 @@ test.describe('D-2 XL steps: the section container widens; every band keeps one 
   ] as const;
   for (const [width, container, gutter, nameSize] of STEPS) {
     test(`${width}px: container ${container}px (gutter ${gutter}px) for HUD and light bands, name ${nameSize}px`, async ({ page }) => {
-      await open(page, '/game/', width);
+      await openAt(page, '/game/', width);
       for (const selector of ['.hud-nav__bar', '.hero__inner', '.mm-sec__inner', '#featured-projects .container', '.site-footer__inner']) {
         expect((await box(page.locator(selector).first())).width, selector).toBeCloseTo(container, 0);
       }
@@ -44,7 +26,7 @@ test.describe('D-2 XL steps: the section container widens; every band keeps one 
       }
       expect(await page.locator('#hero-name').evaluate((el) => parseFloat(getComputedStyle(el).fontSize))).toBe(nameSize);
 
-      await open(page, '/game/player-log/', width);
+      await openAt(page, '/game/player-log/', width);
       // AL-10 split the row: the container is the grid's parent (the grid is its content box, the accounts slot below it)
       expect((await box(page.locator('.container:has(> .pl-intro__grid)'))).width, 'Player Log first row').toBeCloseTo(container, 0);
       expect((await box(page.locator('.pl-showcase__inner'))).width, 'showcase').toBeCloseTo(container, 0);
@@ -52,30 +34,30 @@ test.describe('D-2 XL steps: the section container widens; every band keeps one 
   }
 
   test('reading columns keep their measure and the paper sheet its width at 1920px', async ({ page }) => {
-    await open(page, '/game/projects/school-zone-blindspots/', 1440);
+    await openAt(page, '/game/projects/school-zone-blindspots/', 1440);
     const prose1440 = await box(page.locator('.prose.read > p').first());
-    await open(page, '/game/projects/school-zone-blindspots/', 1920);
+    await openAt(page, '/game/projects/school-zone-blindspots/', 1920);
     const prose1920 = await box(page.locator('.prose.read > p').first());
     expect(prose1920.width).toBeCloseTo(prose1440.width, 0);
     expect(prose1920.width).toBeLessThanOrEqual(38 * 17 + 1); // 38em at 17px
     expect((await box(page.locator('.pd'))).width, 'PROJECT DETAILS is a HUD panel: it widens').toBeCloseTo(1440, 0);
 
-    await open(page, '/game/research/cog-2026-engagement/', 1440);
+    await openAt(page, '/game/research/cog-2026-engagement/', 1440);
     const sheet1440 = await box(page.locator('.paper').first());
-    await open(page, '/game/research/cog-2026-engagement/', 1920);
+    await openAt(page, '/game/research/cog-2026-engagement/', 1920);
     const sheet1920 = await box(page.locator('.paper').first());
     expect(sheet1920.width).toBeCloseTo(sheet1440.width, 0);
   });
 
   test('P2-37: English prose is 36em (about 66 characters) wide; Korean prose stays 38em', async ({ page }) => {
-    await open(page, '/en/game/projects/school-zone-blindspots/', 1440);
+    await openAt(page, '/en/game/projects/school-zone-blindspots/', 1440);
     expect((await box(page.locator('.prose.read > p').first())).width).toBeCloseTo(36 * 17, 0);
-    await open(page, '/game/projects/school-zone-blindspots/', 1440);
+    await openAt(page, '/game/projects/school-zone-blindspots/', 1440);
     expect((await box(page.locator('.prose.read > p').first())).width).toBeCloseTo(38 * 17, 0);
   });
 
   test('/game/projects/ at 1920px: four columns, CoG + five projects fill two complete rows', async ({ page }) => {
-    await open(page, '/game/projects/', 1920);
+    await openAt(page, '/game/projects/', 1920);
     const grid = await box(page.locator('#project-grid'));
     const cards = await Promise.all((await page.locator('#project-grid .cart').all()).map(box));
     expect(cards).toHaveLength(6); // CoG (two columns) + five projects, the last spanning two columns = 8 cells
@@ -91,7 +73,7 @@ test.describe('D-2 XL steps: the section container widens; every band keeps one 
   // P-07 acceptance (F-062, owner decision 13): the double-width project slot holds a linked case study, not a card without a page.
   for (const width of [1440, 1920]) {
     test(`/game/projects/ at ${width}px: the double-width project card is a linked case study`, async ({ page }) => {
-      await open(page, '/game/projects/', width);
+      await openAt(page, '/game/projects/', width);
       const projects = page.locator('#project-grid .cart:not(.cart--wide)');
       const widths = await projects.evaluateAll((els) => els.map((el) => el.getBoundingClientRect().width));
       const single = Math.min(...widths);
@@ -107,7 +89,7 @@ test.describe('D-2 XL steps: the section container widens; every band keeps one 
 test.describe('D-3 / P1-5: home cartridges', () => {
   for (const width of [1440, 1920]) {
     test(`${width}px: CoG (two columns) + school-zone + kickick-park on one row, one height`, async ({ page }) => {
-      await open(page, '/game/', width);
+      await openAt(page, '/game/', width);
       const grid = await box(page.locator('#featured-projects .cart-grid'));
       const cards = page.locator('#featured-projects .cart');
       await expect(cards).toHaveCount(3);
@@ -123,7 +105,7 @@ test.describe('D-3 / P1-5: home cartridges', () => {
   }
 
   test('768px: no orphan cell — the wide CoG card, then the two projects side by side', async ({ page }) => {
-    await open(page, '/en/game/', 768, 1024);
+    await openAt(page, '/en/game/', 768, 1024);
     const grid = await box(page.locator('#featured-projects .cart-grid'));
     const boxes = await Promise.all((await page.locator('#featured-projects .cart').all()).map(box));
     expect(boxes).toHaveLength(3);
@@ -137,7 +119,7 @@ test.describe('P2-16: hero copy lines', () => {
   for (const route of ['/game/', '/en/game/']) {
     test(`STATUS value wraps under itself, not under the label (${route}, 375px and 1068px)`, async ({ page }) => {
       for (const width of [375, 1068]) {
-        await open(page, route, width);
+        await openAt(page, route, width);
         const label = await box(page.locator('.hero__status-label'));
         const lefts = await page.locator('.hero__status-value').evaluate((el) => {
           const range = document.createRange();
@@ -151,7 +133,7 @@ test.describe('P2-16: hero copy lines', () => {
   }
 
   test('the second button is "CV (PDF) ↓" naming its document; the job-fit link comes first in the contact row', async ({ page }) => {
-    await open(page, '/game/', 1440);
+    await openAt(page, '/game/', 1440);
     const cv = page.locator('.hero__ctas a').nth(1);
     await expect(cv).toHaveAccessibleName('CV (PDF) — 이력서 (PDF)');
     await expect(cv).toHaveAttribute('href', '/cv/seongeun-baek-resume-ko.pdf');
@@ -165,7 +147,7 @@ test.describe('P2-16: hero copy lines', () => {
 
 test.describe('P2-21: PROJECT DETAILS figure frame', () => {
   test('the FIG caption strip sits under the figure, and a short figure is centred beside the taller table', async ({ page }) => {
-    await open(page, '/game/projects/school-zone-blindspots/', 1440);
+    await openAt(page, '/game/projects/school-zone-blindspots/', 1440);
     await expect(page.locator('.pd__figcap-strip')).toHaveText('FIG · RISK HEATMAP');
     const fig = await box(page.locator('.pd__fig'));
     const img = await box(page.locator('.pd__fig img'));

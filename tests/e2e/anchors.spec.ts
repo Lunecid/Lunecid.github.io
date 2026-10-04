@@ -1,5 +1,5 @@
 import type { Page } from '@playwright/test';
-import { test, expect, NAV_HEIGHT, gamePath } from './helpers';
+import { test, expect, NAV_HEIGHT, gamePath, settle } from './helpers';
 import { allRoutes, anchorsFor, parseRoute } from '../../src/lib/routes';
 import { t } from '../../src/i18n/utils';
 import type { Lang } from '../../src/i18n/ui';
@@ -8,12 +8,6 @@ import { gameVariant } from '../../src/variants/game';
 import { loadFactSource } from '../helpers/fact-source';
 
 const LANGS: Lang[] = ['ko', 'en'];
-
-/** Waits for the CRT intro (home only) to finish and for web fonts, so positions are final. */
-async function settle(page: Page): Promise<void> {
-  await page.waitForFunction(() => !document.documentElement.hasAttribute('data-intro'));
-  await page.evaluate(() => document.fonts.ready.then(() => true));
-}
 
 /** Viewport position of #id and the bottom edge of the sticky HUD nav; null when #id does not exist. */
 async function landing(page: Page, id: string) {

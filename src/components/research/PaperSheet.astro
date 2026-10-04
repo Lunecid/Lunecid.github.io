@@ -114,7 +114,7 @@ const links = [
     color: var(--paper-ink);
     color-scheme: light;
     font-family: var(--font-paper);
-    font-size: 17px;
+    font-size: var(--fs-body);
     font-weight: 400;
     line-height: 1.5;
   }
@@ -125,7 +125,7 @@ const links = [
   /* ── Header: running line, title, (ko) Korean title, author blocks ── */
   .paper__head { text-align: center; }
   .paper__running {
-    font-size: 14px;
+    font-size: var(--fs-meta);
     line-height: 1.4;
     font-variant-caps: small-caps;
     letter-spacing: .05em;
@@ -142,13 +142,13 @@ const links = [
   }
   .paper__title-ko {
     margin-top: 12px;
-    font-size: 17px;
+    font-size: var(--fs-body);
     line-height: 1.5;
     color: var(--paper-muted);
     text-wrap: balance;
     word-break: keep-all;
   }
-  .paper__title-ko-mark { font-size: 14px; white-space: nowrap; }
+  .paper__title-ko-mark { font-size: var(--fs-meta); white-space: nowrap; }
   .paper__authors {
     margin-top: 28px;
     display: flex;
@@ -157,9 +157,9 @@ const links = [
     gap: 16px 56px;
   }
   .paper__author { display: flex; flex-direction: column; align-items: center; }
-  .paper__author-name { font-size: 15px; line-height: 1.4; }
+  .paper__author-name { font-size: var(--fs-small); line-height: 1.4; }
   /* \IEEEauthorblockA is italic. */
-  .paper__affil { font-size: 14px; line-height: 1.4; font-style: italic; color: var(--paper-muted); }
+  .paper__affil { font-size: var(--fs-meta); line-height: 1.4; font-style: italic; color: var(--paper-muted); }
 
   /* ── Run-in blocks: "Abstract—We study…" ── */
   .paper__block { margin-top: 18px; }
@@ -190,10 +190,10 @@ const links = [
     margin-bottom: 12px;
     border-top: 1px solid var(--paper-rule);
   }
-  .paper__note, .paper__links { font-size: 15px; line-height: 1.5; color: var(--paper-muted); }
+  .paper__note, .paper__links { font-size: var(--fs-small); line-height: 1.5; color: var(--paper-muted); }
   .paper__note:lang(ko) { word-break: keep-all; }
   .paper__links { margin-top: 6px; }
-  .paper__link { font-family: var(--font-mono); font-size: 13px; overflow-wrap: anywhere; word-break: break-all; }
+  .paper__link { font-family: var(--font-mono); font-size: var(--fs-caption); overflow-wrap: anywhere; word-break: break-all; }
   .paper__foot :global(.bib) { margin-top: 28px; }
   .paper__end { height: 1px; }
 

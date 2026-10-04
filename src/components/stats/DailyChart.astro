@@ -66,17 +66,17 @@ const last = bars[bars.length - 1]?.day ?? '';
   .stats__chart-wrap { margin-top: 16px; position: relative; }
   .stats__chart-max {
     position: absolute; top: 0; right: 0; z-index: 1; margin: 0; padding: 0 2px;
-    font: 600 12px/1.2 var(--font-mono); color: var(--read-muted); background: var(--read-card);
+    font: 600 var(--fs-min)/1.2 var(--font-mono); color: var(--read-muted); background: var(--read-card);
   }
   .stats__chart-scroll { overflow-x: auto; }
   .stats__chart { display: block; width: 100%; height: 160px; }
   .stats__bar { fill: var(--read-muted); }
   .stats__max-line { stroke: var(--read-muted); stroke-width: 1; stroke-dasharray: 4 3; vector-effect: non-scaling-stroke; }
-  .stats__axis { display: flex; justify-content: space-between; margin-top: 6px; font: 500 13px/1.4 var(--font-mono); color: var(--read-muted); }
+  .stats__axis { display: flex; justify-content: space-between; margin-top: 6px; font: 500 var(--fs-label)/1.4 var(--font-mono); color: var(--read-muted); }
   .stats__details { margin-top: 12px; }
   .stats__details summary { display: inline-flex; align-items: center; min-height: var(--tap); cursor: pointer; color: var(--accent-deep); }
   .stats__table-scroll { overflow-x: auto; }
-  .stats__table { width: 100%; border-collapse: collapse; font-size: 15px; }
+  .stats__table { width: 100%; border-collapse: collapse; font-size: var(--fs-small); }
   .stats__table th, .stats__table td { padding: 6px 10px; text-align: left; border-bottom: 1px solid var(--read-line); }
   .stats__table td:last-child, .stats__table th:last-child { text-align: right; }
   /* P2-11: on neutral pages the table toggle is a link in the neutral accent (accent-deep is the game green). */

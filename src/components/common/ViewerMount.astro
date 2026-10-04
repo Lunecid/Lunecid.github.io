@@ -1,0 +1,23 @@
+---
+// The image viewer's one mount: every page that opens figures or certificates in the viewer renders it once, with the
+// five labels in the page language. The triggers (data-viewer) are in Figure, AwardList and ProjectDetails.
+import type { Lang } from '../../i18n/ui';
+import { ui } from '../../i18n/ui';
+import { t } from '../../i18n/utils';
+import ImageViewer from '../../islands/ImageViewer';
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+---
+<ImageViewer
+  client:idle
+  labels={{
+    dialog: t(lang, 'modal.viewer'),
+    close: t(lang, 'action.close'),
+    previous: t(lang, 'viewer.previous'),
+    next: t(lang, 'viewer.next'),
+    counter: ui[lang]['viewer.counter'],
+  }}
+/>

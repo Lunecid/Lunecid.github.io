@@ -167,9 +167,9 @@ describe('AucOverallChart.astro', () => {
     expect(src).toMatch(/\.chart__svg\s*\{[^}]*min-width:\s*560px/);
     expect(src).toMatch(/\.chart__svg--compact,\s*\n\s*\.chart__svg--narrow\s*\{[^}]*min-width:\s*0/);
     expect(src).toMatch(/\.chart__scroll\s*\{[^}]*overflow-x:\s*auto/);
-    expect(src).toMatch(/wideLayout:\s*Layout\s*=\s*\{\s*w:\s*560/);
-    expect(src).toMatch(/compactLayout:\s*Layout\s*=\s*\{\s*w:\s*280/);
-    expect(src).toMatch(/narrowLayout:\s*Layout\s*=\s*\{\s*w:\s*280/);
+    expect(src).toMatch(/\n  wide:\s*\{\s*w:\s*560/);
+    expect(src).toMatch(/\n  compact:\s*\{\s*w:\s*280/);
+    expect(src).toMatch(/\n  narrow:\s*\{\s*w:\s*280/);
   });
 
   it('tone="hud" marks the figure for the dark HUD styles; the default stays the light reading style', async () => {

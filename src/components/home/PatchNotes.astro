@@ -54,7 +54,7 @@ const { lang, variant, notes } = Astro.props;
   }
   .pn__ptr {
     position: absolute; left: -15px; top: 18px;
-    font-size: 12px; line-height: 1; color: var(--accent);
+    font-size: var(--fs-min); line-height: 1; color: var(--accent);
     opacity: 0; transform: translateX(-4px);
     transition: opacity var(--dur-hover) linear, transform var(--dur-press) var(--ease-out);
   }
@@ -69,7 +69,7 @@ const { lang, variant, notes } = Astro.props;
   }
   .pn__tag:lang(en) { font-family: var(--font-mono); letter-spacing: .06em; }
   .pn__body { grid-area: body; min-width: 0; }
-  .pn__title { font-size: 17px; font-weight: 700; line-height: 1.45; color: var(--hud-strong); }
+  .pn__title { font-size: var(--fs-body); font-weight: 700; line-height: 1.45; color: var(--hud-strong); }
   .pn__link { color: var(--accent); text-decoration: none; text-underline-offset: .2em; transition: color var(--dur-hover) linear; }
   .pn__link:hover { color: var(--accent-hover); text-decoration: underline; }
   .pn__text { margin-top: 2px; max-width: var(--measure); font-size: var(--fs-small); line-height: 1.6; color: var(--hud-muted); }

@@ -1,7 +1,9 @@
 import { mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 import type { Page } from '@playwright/test';
-import { test, gamePath } from './helpers';
+import { test, gamePath, SHOTS, SHOTS_SKIP } from './helpers';
+
+test.skip(!SHOTS, SHOTS_SKIP);
 
 const PAGES = [
   { route: gamePath('/'), name: 'game-home' },

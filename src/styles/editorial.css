@@ -84,7 +84,7 @@
 :root[data-variant="data"] article.ed-prose strong { font-weight: 700; }
 :root[data-variant="data"] article.ed-prose blockquote { padding: 4px 0 4px 16px; border-left: var(--ed-rule-w-strong) solid var(--ed-rule-strong); color: var(--ed-muted); }
 :root[data-variant="data"] article.ed-prose code { padding: .1em .35em; border: var(--ed-rule-w) solid var(--paper-code-line); background: var(--paper-code-bg); color: var(--paper-ink); font-family: var(--font-mono); font-size: .9em; }
-:root[data-variant="data"] article.ed-prose pre { max-width: 100%; overflow-x: auto; padding: 14px 16px; background: var(--paper-code-bg); color: var(--paper-ink); border: var(--ed-rule-w) solid var(--paper-code-line); font-family: var(--font-mono); font-size: 14px; line-height: 1.6; }
+:root[data-variant="data"] article.ed-prose pre { max-width: 100%; overflow-x: auto; padding: 14px 16px; background: var(--paper-code-bg); color: var(--paper-ink); border: var(--ed-rule-w) solid var(--paper-code-line); font-family: var(--font-mono); font-size: var(--fs-meta); line-height: 1.6; }
 :root[data-variant="data"] article.ed-prose pre code { padding: 0; border: 0; background: none; font-size: inherit; }
 :root[data-variant="data"] article.ed-prose .prose-table { max-width: 100%; overflow-x: auto; }
 :root[data-variant="data"] article.ed-prose table { width: 100%; border-collapse: collapse; font-size: var(--fs-small); line-height: 1.5; }

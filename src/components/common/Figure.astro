@@ -110,7 +110,7 @@ const fullLabel = t(lang, 'action.fullSize');
   /* F-042 part 3 (P-06): the lh-frame panel with its corner marks frames the game figure, so the image itself has no
      grey border (border 0 also beats read.css's `.prose figure img` frame in the case-study body). */
   .figure :global(img) { display: block; width: 100%; height: auto; border: 0; background: var(--read-card); }
-  .figure__cap { margin-top: 10px; font-size: 15px; line-height: 1.6; color: var(--read-muted); }
+  .figure__cap { margin-top: 10px; font-size: var(--fs-small); line-height: 1.6; color: var(--read-muted); }
   .figure__num { margin-right: .5em; font-weight: 700; color: var(--read-text); }
   /* padding + a matching negative margin enlarge the tap target without inflating the caption's line box
      (a plain min-height here doubles the wrapped line's height — P2-12); absolute floor is 24x24 (spec §5). */

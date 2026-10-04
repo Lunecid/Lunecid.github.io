@@ -2,22 +2,14 @@ import { test, expect, basePathOf, builtRoutes, dataPath, horizontalOverflow, se
 import { DOCUMENTS } from '../../src/config';
 import { getVariant } from '../../src/variants';
 
-test.describe('no horizontal overflow on every route', () => {
+// Both checks read the same loaded page, so each route is navigated once; the first is soft so a route that fails both reports both.
+test.describe('every route: no horizontal overflow, no rendered text below 12px', () => {
   for (const route of builtRoutes()) {
     test(route, async ({ page }) => {
       await page.goto(route, { waitUntil: 'networkidle' });
       await settle(page);
       const result = await horizontalOverflow(page);
-      expect(result.scrollWidth, `${route} scrolls sideways; widest elements: ${result.offenders.join(', ')}`).toBeLessThanOrEqual(result.width);
-    });
-  }
-});
-
-test.describe('no rendered text below 12px', () => {
-  for (const route of builtRoutes()) {
-    test(route, async ({ page }) => {
-      await page.goto(route, { waitUntil: 'networkidle' });
-      await settle(page);
+      expect.soft(result.scrollWidth, `${route} scrolls sideways; widest elements: ${result.offenders.join(', ')}`).toBeLessThanOrEqual(result.width);
       expect(await textBelow12px(page), `${route}: text rendered below 12px`).toEqual([]);
     });
   }

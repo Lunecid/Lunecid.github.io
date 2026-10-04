@@ -146,12 +146,12 @@ const jumps = [
   /* F-046 (P-08): weight 800 like the page H1 and smaller than it at every width (28/34/40 under 32/48/56) */
   .rhead__hello { margin-top: 4px; font-size: 28px; font-weight: 800; line-height: 1.2; }
   .rhead__name { margin-top: 6px; font-size: var(--fs-sub); font-weight: 800; line-height: var(--lh-sub); }
-  .rhead__role { margin-top: 4px; font-size: 15px; font-weight: 700; line-height: 1.5; color: var(--read-text); }
-  .rhead__status { margin-top: 4px; font-size: 14px; line-height: 1.6; color: var(--read-muted); }
+  .rhead__role { margin-top: 4px; font-size: var(--fs-small); font-weight: 700; line-height: 1.5; color: var(--read-text); }
+  .rhead__status { margin-top: 4px; font-size: var(--fs-meta); line-height: 1.6; color: var(--read-muted); }
   .rhead__more { grid-area: more; min-width: 0; }
   .rhead__tagline { max-width: var(--measure); font-size: var(--fs-body); font-weight: 700; line-height: var(--lh-body); }
   .rhead__docs { margin-top: 16px; }
-  .rhead__contact { margin-top: 10px; display: flex; flex-wrap: wrap; gap: 0 18px; font-size: 15px; }
+  .rhead__contact { margin-top: 10px; display: flex; flex-wrap: wrap; gap: 0 18px; font-size: var(--fs-small); }
   .rhead__contact a { display: inline-flex; align-items: center; min-height: var(--tap); }
   /* In-page bar: square mono-caps links on a hairline, like a HUD tab row */
   .rnav { margin-top: 24px; border-top: 1px solid var(--read-line-strong); border-bottom: 1px solid var(--read-line); }
@@ -159,7 +159,7 @@ const jumps = [
   .rnav__list { display: flex; flex-wrap: wrap; gap: 8px 8px; }
   .rnav__link {
     display: inline-flex; align-items: center; justify-content: center; min-height: var(--tap); min-width: var(--tap); padding-inline: 10px;
-    font-size: 14px; font-weight: 700; color: var(--read-text); text-decoration: none;
+    font-size: var(--fs-meta); font-weight: 700; color: var(--read-text); text-decoration: none;
     transition: color var(--dur-hover) linear, background-color var(--dur-hover) linear;
   }
   /* Final fix 2 item 16 / round 2 item 3: every link keeps padding on both sides, so the shortest label ("학력") is a

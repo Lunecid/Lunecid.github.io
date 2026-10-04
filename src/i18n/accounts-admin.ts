@@ -132,6 +132,13 @@ const ko = {
   'label:chip': '빌드 중 · {n}분',
   'label:game.shown': '{game} · 표시 중',
   'label:game.hidden': '{game} · 표시 안 됨',
+  // not from the spec: no run id from the relay, the minutes line, the run link, the page check, the 45-minute stop
+  dispatched: '빌드를 시작했습니다. 진행은 워크플로 화면에서 볼 수 있습니다.',
+  'label:elapsed': '{n}분 지남 · 예상 {eta}분',
+  'label:runLink': 'GitHub Actions 실행 기록',
+  'result.checking': '배포는 끝났습니다. 사이트에 반영됐는지 확인하는 중입니다.',
+  'result.notYet': '이 실행의 결과가 아직 사이트에 없습니다. 실행 링크에서 진행을 확인한 뒤 다시 눌러 주세요.',
+  'result.timeout': '오래 걸려 진행 확인을 멈췄습니다. 실행 링크에서 결과를 볼 수 있습니다.',
 
   // without signing in (§4.8)
   'label:noLogin': '로그인 없이 하기',
@@ -145,6 +152,9 @@ const ko = {
   'label:psNote': 'Windows PowerShell 기준',
   skippedShell: '아래 변수는 값에 큰따옴표나 역슬래시가 있어 명령으로 넣지 않습니다. 위 웹 화면에서 넣어 주세요.',
   skippedInvalid: '아래 칸은 값이 형식에 맞지 않아 명령에서 뺐습니다. 칸을 먼저 고쳐 주세요.',
+  'label:copy': '명령 복사',
+  copied: '명령을 복사했습니다.',
+  copyFailed: '복사하지 못했습니다. 명령을 직접 선택해 복사해 주세요.',
 } as const satisfies Record<string, string>;
 
 export type AdminKey = keyof typeof ko;
@@ -268,6 +278,12 @@ const en: AdminCopy = {
   'label:chip': 'Building · {n} min',
   'label:game.shown': '{game} · shown',
   'label:game.hidden': '{game} · not shown',
+  dispatched: 'The build has started. The workflow page shows its progress.',
+  'label:elapsed': '{n} min elapsed · expected {eta} min',
+  'label:runLink': 'GitHub Actions run',
+  'result.checking': 'The deploy has finished. Checking that the site shows it.',
+  'result.notYet': "This run's result is not on the site yet. Check the run link, then press again.",
+  'result.timeout': 'Progress tracking stopped because the run took too long. The run link shows the result.',
 
   'label:noLogin': 'Without signing in',
   webVars: "Open the repository's Actions variables page. Press the pencil icon of an existing variable, or New repository variable for a missing one, enter the name and value, then press Update variable (Add variable for a new one).",
@@ -280,6 +296,9 @@ const en: AdminCopy = {
   'label:psNote': 'For Windows PowerShell',
   skippedShell: 'The variables below have a double quote or a backslash in their value, so they are not set by command. Please set them on the web page above.',
   skippedInvalid: 'The fields below were left out of the commands because their values have the wrong format. Please fix the fields first.',
+  'label:copy': 'Copy the commands',
+  copied: 'Copied the commands.',
+  copyFailed: 'Could not copy. Please select the commands and copy them yourself.',
 };
 
 export const adminCopy: { readonly ko: AdminCopy; readonly en: AdminCopy } = { ko, en };

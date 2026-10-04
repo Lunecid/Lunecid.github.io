@@ -15,11 +15,9 @@ import ProjectLinks from '../components/projects/ProjectLinks.astro';
 import ProjectAudience from '../components/projects/ProjectAudience.astro';
 import NextProject from '../components/projects/NextProject.astro';
 import Figure from '../components/common/Figure.astro';
-import ImageViewer from '../islands/ImageViewer';
+import ViewerMount from '../components/common/ViewerMount.astro';
 import type { Certificate } from '../lib/certificates';
 import type { Lang } from '../i18n/ui';
-import { ui } from '../i18n/ui';
-import { t } from '../i18n/utils';
 import { projectPageMeta } from '../data/copy/pages';
 import { getAwards, resolveOrder } from '../lib/portfolio';
 import { hasProjectPage, projectDetailRows, toCartridge } from '../lib/projects';
@@ -115,18 +113,7 @@ const next = nextEntry ? toCartridge(nextEntry, { lang, variant }) : undefined;
   <FigureList lang={lang} variant={variant} figures={rest.map((index) => numbered[index]!)} />
   <ProjectLinks lang={lang} variant={variant} links={data.links} />
   {next && <NextProject lang={lang} variant={variant} next={next} />}
-  {hasViewer && (
-    <ImageViewer
-      client:idle
-      labels={{
-        dialog: t(lang, 'modal.viewer'),
-        close: t(lang, 'action.close'),
-        previous: t(lang, 'viewer.previous'),
-        next: t(lang, 'viewer.next'),
-        counter: ui[lang]['viewer.counter'],
-      }}
-    />
-  )}
+  {hasViewer && <ViewerMount lang={lang} />}
 </Layout>
 
 <script>

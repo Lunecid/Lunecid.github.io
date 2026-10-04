@@ -72,7 +72,7 @@ const bibtexId = `${idBase}-bibtex`;
     border: 1px solid var(--read-line-strong);
     background: none;
     appearance: none;
-    font: 600 13px/1 var(--font-mono);
+    font: 600 var(--fs-label)/1 var(--font-mono);
     color: var(--read-text);
     text-decoration: none;
     cursor: pointer;
@@ -101,11 +101,11 @@ const bibtexId = `${idBase}-bibtex`;
      never applies and the panel stays in normal flow, always visible, as fix round 1 item 7 requires. */
   :global(html.js) .pub__panel:not([data-open]) { display: none; }
   /* Fix round 3 item 3: the caption that stands in for the (now hidden) toggle button's own label, no-JS only. */
-  .pub__panel-label { margin: 0 0 6px; font: 700 13px/1.4 var(--font-mono); color: var(--read-muted); }
+  .pub__panel-label { margin: 0 0 6px; font: 700 var(--fs-label)/1.4 var(--font-mono); color: var(--read-muted); }
   .pub__panel-label:lang(ko) { font-family: var(--font-sans); }
   :global(html.js) .pub__panel-label { display: none; }
   .pub__abstract {
     padding: 12px 14px; background: var(--read-bg); border-left: 2px solid var(--read-line-strong);
-    font-size: 15px; line-height: 1.7; max-width: var(--measure);
+    font-size: var(--fs-small); line-height: 1.7; max-width: var(--measure);
   }
 </style>

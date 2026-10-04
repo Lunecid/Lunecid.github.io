@@ -1,9 +1,10 @@
-// AL-18: ManagePanel part 1 — login, fields, check buttons, Steam and save (account-link spec §4.1–§4.4, §4.7, §4.8,
-// §3.7, §11.1 ManagePanel row). The AL-17 core runs for real (createRelay, the handle box, the form store); only the
-// browser surface is fake: fetch answers per relay path/op, window.open returns a recorder, the BroadcastChannel is an
-// EventTarget the test emits on, and setTimeout/now are a manual scheduler (the session clock and the minutes line
-// move only when a test advances it). Every test also checks that nothing secret reaches storage, a cookie or the
-// console. Fake handles and tickets are built at run time.
+// AL-18: ManagePanel part 1 — login, fields, check buttons, Steam and save; part 2 — rebuild, run progress,
+// per-game results, the §4.7 table row by row, the copy button of §4.8 (account-link spec §4.1–§4.8, §3.7, §11.1
+// ManagePanel row). The AL-17 core runs for real (createRelay, the handle box, the form store, pollRun); only the
+// browser surface is fake: fetch answers per relay path/op (and per path for the same-origin page read), window.open
+// returns a recorder, the BroadcastChannel is an EventTarget the test emits on, and setTimeout/now are a manual
+// scheduler (the session clock, polling and the minutes lines move only when a test advances it). Every test also
+// checks that nothing secret reaches storage, a cookie or the console. Fake handles and tickets are built at run time.
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { act, cleanup, render, screen, waitFor, within } from '@testing-library/react';
@@ -106,11 +107,14 @@ function setup(o: Setup = {}) {
     'vars.set': (_b, url) => reply(url, 200, { ok: true }),
     'vars.delete': (_b, url) => reply(url, 200, { ok: true }),
     dispatch: (_b, url) => reply(url, 200, { runId: 7, htmlUrl: null }),
+    'run.get': (_b, url) => reply(url, 200, { status: 'in_progress', conclusion: null, htmlUrl: null }),
+    'run.jobs': (_b, url) => reply(url, 200, []),
     ...o.answers,
   };
+  // relay calls are keyed by op (or path), same-origin page reads (a relative URL) by their path
   const fetch = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
     const url = String(input);
-    const path = new URL(url).pathname;
+    const path = new URL(url, location.href).pathname;
     const body = typeof init?.body === 'string' ? (JSON.parse(init.body) as Record<string, unknown>) : null;
     const key = path === '/gh/api' ? String(body?.op) : path;
     calls.push({ url, key, body, init: init ?? {} });
@@ -126,6 +130,7 @@ function setup(o: Setup = {}) {
   });
   const channels: FakeChannel[] = [];
   const assigned: string[] = [];
+  let reloads = 0;
   const wakes = new Set<() => void>();
   const beacons: [string, string][] = [];
   const deps: AdminDeps = {
@@ -140,7 +145,7 @@ function setup(o: Setup = {}) {
     now: clock.now,
     setTimeout: clock.setTimeout,
     clearTimeout: clock.clearTimeout,
-    location: { assign: (url: string) => void assigned.push(url) } as unknown as Location,
+    location: { assign: (url: string) => void assigned.push(url), reload: () => void (reloads += 1) } as unknown as Location,
     history: window.history,
     sendBeacon: (url, data) => {
       beacons.push([url, data]);
@@ -171,6 +176,7 @@ function setup(o: Setup = {}) {
     onDirtyChange,
     current: o.current ?? null,
     loginError: o.loginError ?? null,
+    onBuildChip: o.onBuildChip,
   };
   const user = userEvent.setup();
   const view = render(<ManagePanel {...props} />);
@@ -190,6 +196,7 @@ function setup(o: Setup = {}) {
     popups,
     channels,
     assigned,
+    reloads: () => reloads,
     beacons,
     wake: () => act(() => {
       for (const w of [...wakes]) w();
@@ -240,6 +247,59 @@ const steamFields = (s: string) => ({
   s,
 });
 
+// ---- runs ------------------------------------------------------------------------------------------------------------
+
+const RUNS = 'https://github.com/Lunecid/Lunecid.github.io/actions/runs/';
+const WORKFLOW = 'https://github.com/Lunecid/Lunecid.github.io/actions/workflows/deploy.yml';
+const runInfo = (status: string, conclusion: string | null = null, htmlUrl: string | null = null) => ({ status, conclusion, htmlUrl });
+const job = (name: string, status: string, conclusion: string | null = null, stepsDone = 0, stepsTotal = 0) => ({ name, status, conclusion, stepsDone, stepsTotal });
+const finished = (name: string, conclusion = 'success') => job(name, 'completed', conclusion);
+const fmt = (template: string, values: Record<string, string | number>) => template.replace(/\{(\w+)\}/g, (_m, k: string) => String(values[k]));
+
+/** A run whose run.get / run.jobs answers the test changes between polls; failGet replaces the run.get answer. */
+function scriptedRun(run: unknown, jobs: unknown = []) {
+  const state: { run: unknown; jobs: unknown; failGet: Answer | null } = { run, jobs, failGet: null };
+  const answers: Record<string, Answer> = {
+    'run.get': (b, url) => (state.failGet ? state.failGet(b, url) : reply(url, 200, state.run)),
+    'run.jobs': (_b, url) => reply(url, 200, state.jobs),
+  };
+  return { state, answers };
+}
+
+/** The player-log page as the result check reads it: only its #acct-status matters (spec §4.6). */
+function sitePage(url: string, runId: string | null, platforms: { slot: number; state: string }[]): Response {
+  const json = JSON.stringify({ runId, platforms }).replace(/</g, '\\u003c');
+  const html = `<!doctype html><html lang="ko"><head><title>Player log</title></head><body><main>…</main><script type="application/json" id="acct-status">${json}</script></body></html>`;
+  const res = new Response(html, { status: 200, headers: { 'Content-Type': 'text/html' } });
+  Object.defineProperty(res, 'url', { value: new URL(url, location.href).href });
+  return res;
+}
+
+const rebuildButton = () => screen.getByRole('button', { name: C['label:rebuild'] });
+const buildArea = (t: T) => t.container.querySelector<HTMLElement>('[data-mp="build"]') as HTMLElement;
+const buildAlert = (t: T) => buildArea(t).querySelector<HTMLElement>('[role="alert"]') as HTMLElement;
+const buildStatus = (t: T) => buildArea(t).querySelector<HTMLElement>('[role="status"]') as HTMLElement;
+const noLogin = (t: T) => t.container.querySelector('details[data-mp="no-login"]') as HTMLDetailsElement;
+const count = (t: T, key: string) => t.keys().filter((k) => k === key).length;
+/** Lets pending fetch answers land (a Response body resolves within a macrotask). */
+async function settle(): Promise<void> {
+  for (let i = 0; i < 3; i += 1) await act(() => new Promise<void>((resolve) => setTimeout(resolve, 0)));
+}
+/** Moves the manual clock to the next poll and lets its answers land. */
+async function nextPoll(t: T, ms = 20_000): Promise<void> {
+  const before = count(t, 'run.get');
+  t.advance(ms);
+  await waitFor(() => expect(count(t, 'run.get')).toBe(before + 1));
+  await settle();
+}
+/** Signed in, [다시 빌드] pressed, the first poll answered. */
+async function tracked(t: T): Promise<void> {
+  await login(t);
+  await t.user.click(rebuildButton());
+  await waitFor(() => expect(count(t, 'run.jobs')).toBe(1));
+  await settle();
+}
+
 // ---- the sinks must stay silent --------------------------------------------------------------------------------------
 
 let sinks: [string, MockInstance][] = [];
@@ -272,7 +332,9 @@ describe('before login', () => {
   it('the owner line, an empty error line before the only control [GitHub로 로그인]; no input, no form, no password, no request', () => {
     const t = setup();
     expect(screen.getByText(C.owner)).toBeInTheDocument();
-    expect([...t.container.querySelectorAll('button')]).toEqual([loginButton()]);
+    // outside the "without signing in" section (its copy button needs no login, spec §4.8)
+    expect([...t.container.querySelectorAll('button')].filter((b) => !b.closest('details[data-mp="no-login"]'))).toEqual([loginButton()]);
+    expect(within(noLogin(t)).getAllByRole('button').map((b) => b.textContent)).toEqual([C['label:copy']]);
     expect(screen.queryAllByRole('textbox')).toEqual([]);
     expect(t.container.querySelector('form, input[type="password"], input')).toBeNull();
     expect(errorLine(t)).toHaveAttribute('role', 'alert');
@@ -312,12 +374,16 @@ describe('before login', () => {
     expect((t.container.querySelector('details[data-mp="no-login"]') as HTMLDetailsElement).open).toBe(true);
   });
 
-  it('loginError kinds: gh-error codes, unknown codes and a failed same-tab /gh/session (ticket, network, rate with its time)', () => {
+  it('loginError kinds: gh-error codes, unknown codes and a failed same-tab /gh/session (ticket, network, rate with its time: at most a day on, a minute for a bad retryAfter)', () => {
     const cases: [ManagePanelProps['loginError'], string][] = [
       [{ kind: 'gh-error', code: 'x-y' }, C.unknown],
       [{ kind: 'relay', code: 'ticket' }, C.ticket],
       [{ kind: 'relay', code: 'network' }, C.network],
       [{ kind: 'relay', code: 'rate', retryAfter: 120 }, C.rate.replace('{time}', kst(1_800_000_000_000 + 120_000))],
+      [{ kind: 'relay', code: 'rate', retryAfter: 90_000 }, C.rate.replace('{time}', kst(1_800_000_000_000 + 86_400_000))],
+      [{ kind: 'relay', code: 'rate', retryAfter: Number.NaN }, C.rate.replace('{time}', kst(1_800_000_000_000 + 60_000))],
+      [{ kind: 'relay', code: 'rate', retryAfter: Number.POSITIVE_INFINITY }, C.rate.replace('{time}', kst(1_800_000_000_000 + 60_000))],
+      [{ kind: 'relay', code: 'rate', retryAfter: -120 }, C.rate.replace('{time}', kst(1_800_000_000_000 + 60_000))],
     ];
     for (const [loginError, text] of cases) {
       const t = setup({ loginError });
@@ -1047,6 +1113,29 @@ describe('session end', () => {
     expect(errorLine(t)).toHaveTextContent(C.revokeUnconfirmed);
   });
 
+  it('a login that ends under a focused control that goes with it moves focus to the error line, which says why: [저장] (idle), [로그아웃] and [다시 빌드] (a wake after the beacon)', async () => {
+    const t = setup();
+    await login(t);
+    screen.getByRole('button', { name: C['label:save'] }).focus();
+    t.advance(15 * MIN);
+    await waitFor(() => expect(loginButton()).toBeInTheDocument());
+    expect(document.activeElement).toBe(errorLine(t));
+    expect(errorLine(t)).toHaveTextContent(C.loginEnded);
+    cleanup();
+    for (const [name, run] of [[C['label:logout'], false], [C['label:rebuild'], true]] as const) {
+      const u = setup();
+      if (run) await tracked(u);
+      else await login(u);
+      screen.getByRole('button', { name }).focus();
+      act(() => u.admin.relay.beaconLogout());
+      u.wake();
+      await waitFor(() => expect(loginButton()).toBeInTheDocument());
+      expect(document.activeElement, name).toBe(errorLine(u));
+      expect(errorLine(u)).toHaveTextContent(C.revokeUnconfirmed);
+      cleanup();
+    }
+  });
+
   it('the handle, ticket, login nonce and Steam state never reach the DOM', async () => {
     const t = setup();
     const n = await login(t);
@@ -1077,5 +1166,758 @@ describe('without signing in', () => {
     expect(within(fallback).getByText(C.skippedShell).nextElementSibling).toHaveTextContent('ACCOUNT_ZZZ_NAME');
     expect(within(fallback).getByText(C.skippedInvalid).nextElementSibling).toHaveTextContent('ACCOUNT_ZZZ_UID');
     expect(within(fallback).getByText(C['label:psNote'])).toBeInTheDocument();
+  });
+
+  it('the copy button after the commands copies exactly their lines and says so in a status; a refused copy says so too', async () => {
+    const t = setup();
+    await login(t);
+    await t.user.type(field(C['label:field.ACCOUNT_GENSHIN_UID']), '618285856');
+    await t.user.type(field(C['label:field.ACCOUNT_GENSHIN_NAME']), "It's");
+    const fallback = noLogin(t);
+    const pre = fallback.querySelector('pre') as HTMLElement;
+    const button = within(fallback).getByRole('button', { name: C['label:copy'] });
+    expect(pre.compareDocumentPosition(button) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(within(fallback).getByText(C['label:psNote']).compareDocumentPosition(pre) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    await t.user.click(button);
+    const note = await within(fallback).findByText(C.copied);
+    expect(note).toHaveAttribute('role', 'status');
+    expect(await navigator.clipboard.readText()).toBe(pre.textContent);
+    expect((await navigator.clipboard.readText()).split('\n')).toEqual([
+      "gh variable set ACCOUNT_GENSHIN_UID --body '618285856' -R Lunecid/Lunecid.github.io",
+      "gh variable set ACCOUNT_GENSHIN_NAME --body 'It''s' -R Lunecid/Lunecid.github.io",
+      'gh workflow run deploy.yml --ref main -R Lunecid/Lunecid.github.io',
+    ]);
+    // the note belongs to the lines it copied
+    await t.user.type(field(C['label:field.ACCOUNT_GENSHIN_NAME']), 's');
+    expect(within(fallback).queryByText(C.copied)).toBeNull();
+    vi.spyOn(navigator.clipboard, 'writeText').mockRejectedValue(new Error('denied'));
+    await t.user.click(button);
+    await within(fallback).findByText(C.copyFailed);
+    expect(t.fetch.mock.calls.every(([url]) => String(url).startsWith(RELAY))).toBe(true);
+  });
+});
+
+// ---- rebuild (§4.5) ----------------------------------------------------------------------------------------------------
+
+describe('rebuild', () => {
+  it('[다시 빌드] only while signed in; dispatch is the bare op (no ref, no inputs); runId null → the workflow page, no polling', async () => {
+    const t = setup({ answers: { dispatch: (_b, url) => reply(url, 200, { runId: null, htmlUrl: null }) } });
+    expect(screen.queryByRole('button', { name: C['label:rebuild'] })).toBeNull();
+    await login(t);
+    await t.user.click(rebuildButton());
+    await within(buildStatus(t)).findByText(C.dispatched);
+    expect(t.calls.filter((c) => c.key === 'dispatch').map((c) => c.body)).toEqual([{ op: 'dispatch' }]);
+    expect(within(buildArea(t)).getByRole('link', { name: linkNamed(C['label:webRunLink']) })).toHaveAttribute('href', WORKFLOW);
+    t.advance(5 * MIN);
+    await settle();
+    expect(t.keys().filter((k) => k.startsWith('run.'))).toEqual([]);
+    expect(rebuildButton()).not.toHaveAttribute('aria-disabled');
+  });
+
+  it('a run id → run.get and run.jobs at once, then every 20 s; [다시 빌드] is aria-disabled meanwhile; a run link must pass RUN_URL_RE and name this run', async () => {
+    const r = scriptedRun(runInfo('in_progress', null, `${RUNS}8`), [job('build', 'in_progress', null, 2, 9)]);
+    const t = setup({ answers: { dispatch: (_b, url) => reply(url, 200, { runId: 7, htmlUrl: 'https://github.com/Lunecid/elsewhere/actions/runs/7' }), ...r.answers } });
+    await tracked(t);
+    expect(t.calls.filter((c) => c.key.startsWith('run.')).map((c) => c.body)).toEqual([{ op: 'run.get', runId: 7 }, { op: 'run.jobs', runId: 7 }]);
+    // neither the dispatch answer's link (another repository) nor run.get's (another run) is used
+    expect(within(buildArea(t)).getByRole('link', { name: linkNamed(C['label:webRunLink']) })).toHaveAttribute('href', WORKFLOW);
+    rebuildButton().focus();
+    expect(rebuildButton()).toHaveAttribute('aria-disabled', 'true');
+    await t.user.keyboard('{Enter}');
+    expect(count(t, 'dispatch')).toBe(1);
+    expect(document.activeElement).toBe(rebuildButton()); // still focusable while it waits
+    r.state.run = runInfo('in_progress', null, `${RUNS}7`);
+    r.state.jobs = [job('build', 'in_progress', null, 3, 9)];
+    t.advance(20_000 - 1);
+    await settle();
+    expect(count(t, 'run.get')).toBe(1);
+    await nextPoll(t, 1);
+    await within(buildArea(t)).findByText(fmt(C['label:steps'], { done: 3, total: 9 }), { exact: false });
+    expect(within(buildArea(t)).getByRole('link', { name: linkNamed(C['label:runLink']) })).toHaveAttribute('href', `${RUNS}7`);
+  });
+
+  it("409 busy → the busy text, that run's link and tracking of that run, §4.8 open; without a run id → the text and the workflow page only", async () => {
+    const t = setup({ answers: { dispatch: (_b, url) => reply(url, 409, { error: 'busy', runId: 99 }) } });
+    await login(t);
+    await t.user.click(rebuildButton());
+    await within(buildAlert(t)).findByText(C.busy);
+    expect(within(buildArea(t)).getByRole('link', { name: linkNamed(C['label:runLink']) })).toHaveAttribute('href', `${RUNS}99`);
+    await waitFor(() => expect(t.calls.filter((c) => c.key === 'run.get').map((c) => c.body?.runId)).toEqual([99]));
+    expect(noLogin(t).open).toBe(true);
+    expect(rebuildButton()).toHaveAttribute('aria-disabled', 'true');
+    cleanup();
+    const u = setup({ answers: { dispatch: (_b, url) => reply(url, 409, { error: 'busy' }) } });
+    await login(u);
+    await u.user.click(rebuildButton());
+    await within(buildAlert(u)).findByText(C.busy);
+    expect(within(buildArea(u)).getByRole('link', { name: linkNamed(C['label:webRunLink']) })).toHaveAttribute('href', WORKFLOW);
+    await settle();
+    expect(u.keys().filter((k) => k.startsWith('run.'))).toEqual([]);
+    expect(rebuildButton()).not.toHaveAttribute('aria-disabled');
+  });
+
+  it('two presses in one task (a script, not a person) leave one poll loop: from then on only the newer run is polled', async () => {
+    let id = 6;
+    const t = setup({ answers: { dispatch: (_b, url) => reply(url, 200, { runId: (id += 1), htmlUrl: null }) } });
+    await login(t);
+    await act(async () => {
+      rebuildButton().click();
+      rebuildButton().click();
+    });
+    await settle();
+    const before = t.calls.length;
+    for (let i = 0; i < 3; i += 1) {
+      t.advance(20_000);
+      await settle();
+    }
+    expect(t.calls.slice(before).filter((c) => c.key === 'run.get').map((c) => c.body?.runId)).toEqual([8, 8, 8]);
+  });
+
+  it('a dispatch answer that lands after unmount, or after a newer [다시 빌드], starts no polling', async () => {
+    const answered = Promise.withResolvers<void>();
+    const t = setup({
+      answers: {
+        dispatch: async (_b, url) => {
+          await answered.promise;
+          return reply(url, 200, { runId: 7, htmlUrl: null });
+        },
+      },
+    });
+    await login(t);
+    await t.user.click(rebuildButton());
+    await waitFor(() => expect(count(t, 'dispatch')).toBe(1));
+    t.unmount();
+    await act(async () => answered.resolve());
+    await settle();
+    t.advance(5 * MIN);
+    await settle();
+    expect(t.keys().filter((k) => k.startsWith('run.'))).toEqual([]);
+    cleanup();
+    // two presses in one task: the older dispatch's answer is dropped, so its run is never polled
+    let id = 6;
+    const u = setup({ answers: { dispatch: (_b, url) => reply(url, 200, { runId: (id += 1), htmlUrl: null }) } });
+    await login(u);
+    await act(async () => {
+      rebuildButton().click();
+      rebuildButton().click();
+    });
+    await settle();
+    expect(count(u, 'dispatch')).toBe(2);
+    expect(u.calls.filter((c) => c.key === 'run.get').map((c) => c.body?.runId)).toEqual([8]);
+  });
+
+  it('a 429 whose retryAfter is beyond a day: the rate text with the time a day on, §4.8 open, [다시 빌드] free', async () => {
+    const t = setup({ answers: { dispatch: (_b, url) => reply(url, 429, { error: 'rate', retryAfter: 1e13 }) } });
+    await login(t);
+    await t.user.click(rebuildButton());
+    await within(buildAlert(t)).findByText(fmt(C.rate, { time: kst(t.clock.now() + 86_400_000) }));
+    expect(noLogin(t).open).toBe(true);
+    expect(rebuildButton()).not.toHaveAttribute('aria-disabled');
+  });
+});
+
+// ---- progress (§4.6) ---------------------------------------------------------------------------------------------------
+
+describe('progress', () => {
+  it('a stage line per job in a polite role=status that changes only with the stage; steps, elapsed and expected minutes sit outside it', async () => {
+    const r = scriptedRun(runInfo('queued'));
+    const t = setup({ answers: r.answers });
+    await tracked(t);
+    const status = buildStatus(t);
+    expect(status.textContent).toBe(C['stage.queued']);
+    const stageAfterPoll = async (jobs: unknown[], key: keyof typeof C) => {
+      r.state.run = runInfo('in_progress');
+      r.state.jobs = jobs;
+      await nextPoll(t);
+      await waitFor(() => expect(status.textContent).toBe(C[key]));
+    };
+    await stageAfterPoll([job('secrets-scan', 'in_progress'), job('fetch-accounts', 'queued')], 'stage.secrets-scan');
+    // two jobs at once (in any answer order): the one furthest along the pipeline
+    await stageAfterPoll([job('fetch-accounts', 'in_progress'), job('secrets-scan', 'in_progress')], 'stage.fetch-accounts');
+    await stageAfterPoll([finished('secrets-scan'), finished('fetch-accounts'), job('build', 'in_progress', null, 2, 9)], 'stage.build');
+    const meta = buildArea(t).querySelector('.mp-build__meta') as HTMLElement;
+    expect(meta).toHaveTextContent(fmt(C['label:steps'], { done: 2, total: 9 }));
+    expect(meta).toHaveTextContent(fmt(C['label:elapsed'], { n: 1, eta: 20 })); // three polls, 60 s after the start
+    expect(meta.closest('[role="status"], [aria-live]')).toBeNull();
+    // more steps of the same stage: the live region is not touched, so nothing is announced again
+    const touched: MutationRecord[] = [];
+    const observer = new MutationObserver((records) => touched.push(...records));
+    observer.observe(status, { subtree: true, childList: true, characterData: true, attributes: true });
+    r.state.jobs = [finished('secrets-scan'), finished('fetch-accounts'), job('build', 'in_progress', null, 5, 9)];
+    await nextPoll(t);
+    await waitFor(() => expect(meta).toHaveTextContent(fmt(C['label:steps'], { done: 5, total: 9 })));
+    observer.disconnect();
+    expect(touched).toEqual([]);
+    // between two jobs the last stage stays
+    r.state.jobs = [finished('secrets-scan'), finished('fetch-accounts'), finished('build'), job('deploy', 'queued')];
+    await nextPoll(t);
+    expect(status.textContent).toBe(C['stage.build']);
+    await stageAfterPoll([finished('secrets-scan'), finished('fetch-accounts'), finished('build'), job('deploy', 'in_progress')], 'stage.deploy');
+    await stageAfterPoll([finished('build'), finished('deploy'), job('fetch-health', 'in_progress')], 'stage.fetch-health');
+  });
+
+  it('polls only while the tab is visible and waits retryAfter; a polling failure (rate with its time, gh-perm, upstream) shows in the alert with §4.8 open until a good answer', async () => {
+    const r = scriptedRun(runInfo('in_progress'), [job('build', 'in_progress', null, 1, 9)]);
+    const t = setup({ answers: r.answers });
+    await tracked(t);
+    expect(noLogin(t).open).toBe(false);
+    r.state.failGet = (_b, url) => reply(url, 429, { error: 'rate', retryAfter: 120 });
+    await nextPoll(t);
+    const failedAt = t.clock.now();
+    await within(buildAlert(t)).findByText(fmt(C.rate, { time: kst(failedAt + 120_000) }));
+    expect(noLogin(t).open).toBe(true);
+    r.state.failGet = null;
+    t.advance(120_000 - 1);
+    await settle();
+    expect(count(t, 'run.get')).toBe(2);
+    await nextPoll(t, 1);
+    await waitFor(() => expect(buildAlert(t)).toHaveTextContent(''));
+    r.state.failGet = (_b, url) => reply(url, 403, { error: 'gh-perm' });
+    await nextPoll(t);
+    await within(buildAlert(t)).findByText(C['gh-perm']);
+    // the same failure 20 s later does not reopen §4.8 once the owner closed it; a different one does
+    await t.user.click(within(noLogin(t)).getByText(C['label:noLogin']));
+    await settle(); // the details' toggle event is a queued task
+    expect(noLogin(t).open).toBe(false);
+    await nextPoll(t);
+    expect(count(t, 'run.get')).toBe(5);
+    expect(noLogin(t).open).toBe(false);
+    r.state.failGet = (_b, url) => reply(url, 502, { error: 'upstream' });
+    await nextPoll(t);
+    await within(buildAlert(t)).findByText(C.upstream);
+    expect(noLogin(t).open).toBe(true);
+    r.state.failGet = null;
+    const hidden = vi.spyOn(document, 'visibilityState', 'get').mockReturnValue('hidden');
+    const calls = count(t, 'run.get');
+    t.advance(5 * MIN);
+    await settle();
+    expect(count(t, 'run.get')).toBe(calls);
+    hidden.mockRestore();
+    await nextPoll(t);
+    await waitFor(() => expect(buildAlert(t)).toHaveTextContent(''));
+  });
+
+  it('a polling failure is announced, and reopens §4.8, once per code until a good answer: a rate with a new time each minute, two failures taking turns', async () => {
+    const closeNoLogin = async (t: T) => {
+      await t.user.click(within(noLogin(t)).getByText(C['label:noLogin']));
+      await settle(); // the details' toggle event is a queued task
+      expect(noLogin(t).open).toBe(false);
+    };
+    // GitHub's secondary limit: the same retryAfter each time, so each failure carries a later time
+    const r = scriptedRun(runInfo('in_progress'), [job('build', 'in_progress', null, 1, 9)]);
+    const t = setup({ answers: r.answers });
+    await tracked(t);
+    r.state.failGet = (_b, url) => reply(url, 429, { error: 'rate', retryAfter: 60 });
+    await nextPoll(t);
+    const first = fmt(C.rate, { time: kst(t.clock.now() + 60_000) });
+    await within(buildAlert(t)).findByText(first);
+    await closeNoLogin(t);
+    for (let i = 0; i < 3; i += 1) {
+      await nextPoll(t, 60_000);
+      expect(noLogin(t).open).toBe(false);
+      expect(buildAlert(t).textContent).toBe(first);
+    }
+    cleanup();
+    // upstream and network taking turns: each is announced, and opens §4.8, once
+    const s = scriptedRun(runInfo('in_progress'), [job('build', 'in_progress', null, 1, 9)]);
+    const u = setup({ answers: s.answers });
+    await tracked(u);
+    let n = 0;
+    s.state.failGet = (_b, url) => ((n += 1) % 2 === 1 ? reply(url, 502, { error: 'upstream' }) : Promise.reject(new TypeError('Failed to fetch')));
+    await nextPoll(u);
+    await within(buildAlert(u)).findByText(C.upstream);
+    await closeNoLogin(u);
+    await nextPoll(u);
+    await within(buildAlert(u)).findByText(C.network);
+    expect(noLogin(u).open).toBe(true);
+    await closeNoLogin(u);
+    for (let i = 0; i < 2; i += 1) {
+      await nextPoll(u);
+      expect(noLogin(u).open).toBe(false);
+      expect(buildAlert(u)).toHaveTextContent(C.network);
+    }
+  });
+
+  it('a polling 429 whose retryAfter is beyond a day: the time a day on, §4.8 open, and the 45-minute stop still ends the tracking', async () => {
+    const r = scriptedRun(runInfo('in_progress', null, `${RUNS}7`), [job('build', 'in_progress', null, 1, 9)]);
+    const t = setup({ answers: r.answers });
+    await tracked(t);
+    r.state.failGet = (_b, url) => reply(url, 429, { error: 'rate', retryAfter: 1e13 });
+    await nextPoll(t);
+    await within(buildAlert(t)).findByText(fmt(C.rate, { time: kst(t.clock.now() + 86_400_000) }));
+    expect(noLogin(t).open).toBe(true);
+    r.state.failGet = null;
+    t.advance(45 * MIN - 20_000 - 1); // the wait runs into the 45-minute stop
+    await settle();
+    expect(count(t, 'run.get')).toBe(2);
+    expect(within(buildStatus(t)).queryByText(C['result.timeout'])).toBeNull();
+    t.advance(1);
+    await within(buildStatus(t)).findByText(C['result.timeout']);
+    expect(within(buildArea(t)).getByRole('link', { name: linkNamed(C['label:runLink']) })).toHaveAttribute('href', `${RUNS}7`);
+    expect(rebuildButton()).not.toHaveAttribute('aria-disabled');
+  });
+
+  it('the idle clock waits while a run is tracked (no warning, no logout over quiet minutes) and starts afresh when the run ends (§4.2)', async () => {
+    const r = scriptedRun(runInfo('in_progress'), [job('build', 'in_progress', null, 1, 9)]);
+    const t = setup({ answers: r.answers });
+    await login(t);
+    t.advance(12 * MIN);
+    await t.user.click(rebuildButton());
+    await waitFor(() => expect(count(t, 'run.jobs')).toBe(1));
+    const hidden = vi.spyOn(document, 'visibilityState', 'get').mockReturnValue('hidden');
+    t.advance(20 * MIN);
+    await settle();
+    expect(screen.queryByText(fmt(C.idleWarn, { n: 2 }))).toBeNull();
+    expect(t.box.get()).toBe(HANDLE);
+    expect(t.keys()).not.toContain('/gh/logout');
+    hidden.mockRestore();
+    r.state.run = runInfo('completed', 'failure');
+    r.state.jobs = [finished('build', 'failure'), finished('deploy', 'skipped')];
+    await nextPoll(t);
+    await within(buildStatus(t)).findByText(C['result.failed']);
+    t.advance(13 * MIN - 1);
+    expect(screen.queryByText(fmt(C.idleWarn, { n: 2 }))).toBeNull();
+    t.advance(1);
+    await screen.findByText(fmt(C.idleWarn, { n: 2 }));
+    t.advance(2 * MIN);
+    await waitFor(() => expect(loginButton()).toBeInTheDocument());
+    expect(t.keys().at(-1)).toBe('/gh/logout');
+  });
+
+  it('while a run is tracked, onBuildChip gets the chip for the 연동 관리 button (빌드 중 · {n}분, minute by minute), then null', async () => {
+    const onBuildChip = vi.fn();
+    const r = scriptedRun(runInfo('in_progress'));
+    const t = setup({ onBuildChip, answers: r.answers });
+    await login(t);
+    expect(onBuildChip).not.toHaveBeenCalled();
+    await t.user.click(rebuildButton());
+    await waitFor(() => expect(onBuildChip).toHaveBeenLastCalledWith(fmt(C['label:chip'], { n: 0 })));
+    const hidden = vi.spyOn(document, 'visibilityState', 'get').mockReturnValue('hidden');
+    t.advance(MIN);
+    await waitFor(() => expect(onBuildChip).toHaveBeenLastCalledWith(fmt(C['label:chip'], { n: 1 })));
+    t.advance(6 * MIN);
+    await waitFor(() => expect(onBuildChip).toHaveBeenLastCalledWith(fmt(C['label:chip'], { n: 7 })));
+    hidden.mockRestore();
+    r.state.run = runInfo('completed', 'failure');
+    r.state.jobs = [finished('build', 'failure')];
+    await nextPoll(t);
+    await waitFor(() => expect(onBuildChip).toHaveBeenLastCalledWith(null));
+    expect(onBuildChip.mock.calls.filter(([chip]) => chip === null)).toHaveLength(1);
+  });
+
+  it('the login ending stops polling: after [로그아웃] no run call, the stopped text, the verified run link and [결과 확인], which reads the page without a login', async () => {
+    const r = scriptedRun(runInfo('in_progress', null, `${RUNS}7`), [job('build', 'in_progress', null, 1, 9)]);
+    const t = setup({ answers: { ...r.answers, '/game/player-log/': (_b, url) => sitePage(url, '7', [{ slot: 0, state: 'shown' }, { slot: 2, state: 'hidden' }]) } });
+    await tracked(t);
+    await t.user.click(screen.getByRole('button', { name: C['label:logout'] }));
+    await within(buildStatus(t)).findByText(C['result.loginEnded']);
+    const polled = count(t, 'run.get');
+    t.advance(5 * MIN);
+    await settle();
+    expect(count(t, 'run.get')).toBe(polled);
+    expect(within(buildArea(t)).getByRole('link', { name: linkNamed(C['label:runLink']) })).toHaveAttribute('href', `${RUNS}7`);
+    expect(screen.queryByRole('button', { name: C['label:rebuild'] })).toBeNull();
+    await t.user.click(within(buildArea(t)).getByRole('button', { name: C['label:checkResult'] }));
+    await within(buildStatus(t)).findByText(fmt(C['label:game.shown'], { game: '원신' }));
+    expect(within(buildStatus(t)).getByText(fmt(C['label:game.hidden'], { game: 'Steam' }))).toBeInTheDocument();
+    expect(buildStatus(t)).toHaveTextContent(C['result.reasons']);
+    expect(buildStatus(t)).not.toHaveTextContent(C['result.steamHint']); // the hint belongs to a fetch-health failure
+    expect(t.calls.filter((c) => c.key === '/game/player-log/').map((c) => [c.url, c.init])).toEqual([['/game/player-log/?r=7', { cache: 'no-store' }]]);
+    expect(t.box.get()).toBeNull();
+  });
+
+  it('a 401 handle while polling ends the login: the handle text and the unconfirmed revoke in the error line (focus there), then the stopped text, the run link and [결과 확인] (one read, no retries)', async () => {
+    const r = scriptedRun(runInfo('in_progress', null, `${RUNS}7`));
+    const t = setup({ answers: { ...r.answers, '/game/player-log/': (_b, url) => sitePage(url, '6', [{ slot: 0, state: 'shown' }]) } });
+    await tracked(t);
+    r.state.failGet = (_b, url) => reply(url, 401, { error: 'handle' });
+    await nextPoll(t);
+    await waitFor(() => expect(loginButton()).toBeInTheDocument());
+    expect(errorLine(t)).toHaveTextContent(C.handle);
+    expect(errorLine(t)).toHaveTextContent(C.revokeUnconfirmed);
+    expect(document.activeElement).toBe(errorLine(t));
+    expect(within(buildStatus(t)).getByText(C['result.loginEnded'])).toBeInTheDocument();
+    expect(within(buildArea(t)).getByRole('link', { name: linkNamed(C['label:runLink']) })).toHaveAttribute('href', `${RUNS}7`);
+    expect(within(buildArea(t)).getByRole('button', { name: C['label:checkResult'] })).toBeInTheDocument();
+    expect(noLogin(t).open).toBe(true);
+    expect(t.box.get()).toBeNull();
+    const polled = count(t, 'run.get');
+    t.advance(5 * MIN);
+    await settle();
+    expect(count(t, 'run.get')).toBe(polled);
+    // the page still carries an older run: [결과 확인] says so after one read
+    await t.user.click(within(buildArea(t)).getByRole('button', { name: C['label:checkResult'] }));
+    await within(buildStatus(t)).findByText(C['result.notYet']);
+    t.advance(10 * MIN);
+    await settle();
+    expect(count(t, '/game/player-log/')).toBe(1);
+  });
+
+  it('the 60-minute cap ending the login under the focused [다시 빌드] of a tracked run moves focus to the error line, which says why', async () => {
+    const t = setup();
+    await login(t);
+    for (let i = 0; i < 4; i += 1) {
+      t.advance(10 * MIN);
+      await t.user.click(heading()); // activity keeps the idle clock fresh
+    }
+    await t.user.click(rebuildButton()); // 40 minutes in
+    await waitFor(() => expect(count(t, 'run.jobs')).toBe(1));
+    await settle();
+    expect(document.activeElement).toBe(rebuildButton()); // aria-disabled keeps it focusable
+    vi.spyOn(document, 'visibilityState', 'get').mockReturnValue('hidden');
+    t.advance(20 * MIN);
+    await waitFor(() => expect(loginButton()).toBeInTheDocument());
+    expect(screen.queryByRole('button', { name: C['label:rebuild'] })).toBeNull();
+    expect(document.activeElement).toBe(errorLine(t));
+    expect(errorLine(t)).toHaveTextContent(C.loginEnded);
+    expect(within(buildStatus(t)).getByText(C['result.loginEnded'])).toBeInTheDocument();
+  });
+
+  it('45 minutes without an end → the timeout text, the run link and [결과 확인]; [다시 빌드] is free again', async () => {
+    const r = scriptedRun(runInfo('in_progress', null, `${RUNS}7`));
+    const t = setup({ answers: r.answers });
+    await tracked(t);
+    vi.spyOn(document, 'visibilityState', 'get').mockReturnValue('hidden');
+    t.advance(45 * MIN - 1);
+    expect(within(buildStatus(t)).queryByText(C['result.timeout'])).toBeNull();
+    t.advance(1);
+    await within(buildStatus(t)).findByText(C['result.timeout']);
+    expect(within(buildArea(t)).getByRole('button', { name: C['label:checkResult'] })).toBeInTheDocument();
+    expect(within(buildArea(t)).getByRole('link', { name: linkNamed(C['label:runLink']) })).toHaveAttribute('href', `${RUNS}7`);
+    expect(rebuildButton()).not.toHaveAttribute('aria-disabled');
+  });
+
+  it('no stylesheet rule hides a live region while it is empty (it would leave the accessibility tree and go unannounced)', async () => {
+    const t = setup();
+    await tracked(t);
+    const regions = [...t.container.querySelectorAll<HTMLElement>('[role="status"], [role="alert"]')];
+    const classes = new Set(regions.flatMap((el) => [...el.classList]));
+    expect(classes).toEqual(new Set(['mp__alert', 'mp__warn', 'mp-steam__result', 'mp-build__status']));
+    const css = readFileSync(join(process.cwd(), 'src/islands/account/ManagePanel.css'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+    for (const [, selector = '', body = ''] of css.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
+      if ([...classes].some((c) => new RegExp(`\\.${c}(?![\\w-])`).test(selector))) expect(body, selector.trim()).not.toMatch(/display:\s*none|visibility:\s*hidden/);
+    }
+    expect(regions.find((el) => el.closest('.mp-nologin__copy'))).toBeDefined(); // the copy note: a bare span, no class
+  });
+
+  it('unmounting stops the polling', async () => {
+    const t = setup();
+    await tracked(t);
+    const polled = count(t, 'run.get');
+    t.unmount();
+    t.advance(5 * MIN);
+    await settle();
+    expect(count(t, 'run.get')).toBe(polled);
+  });
+});
+
+// ---- results (§4.6) ----------------------------------------------------------------------------------------------------
+
+describe('results', () => {
+  const PLATFORMS = [
+    { slot: 0, state: 'shown' },
+    { slot: 1, state: 'shown' },
+    { slot: 2, state: 'hidden' },
+    { slot: 3, state: 'shown' },
+    { slot: 4, state: 'absent' },
+  ];
+
+  it('deploy success → the same-origin ?r= check: a line per platform, the auth text after a fetch-health failure with the Steam hint, the Account fetch pointer, [새로 고침] last', async () => {
+    const r = scriptedRun(runInfo('in_progress', null, `${RUNS}7`));
+    const t = setup({ answers: { ...r.answers, '/game/player-log/': (_b, url) => sitePage(url, '7', PLATFORMS) } });
+    await tracked(t);
+    r.state.run = runInfo('completed', 'failure', `${RUNS}7`); // the run fails on fetch-health, after the deploy
+    r.state.jobs = [finished('secrets-scan'), finished('fetch-accounts'), finished('build'), finished('deploy'), finished('fetch-health', 'failure')];
+    await nextPoll(t);
+    const status = buildStatus(t);
+    await within(status).findByText(fmt(C['label:game.shown'], { game: '원신' }));
+    // tile order (the groups' order), one line each; LoL and TFT apart
+    expect([...status.querySelectorAll('p')].map((p) => p.textContent)).toEqual([
+      fmt(C['label:game.shown'], { game: '젠레스 존 제로' }),
+      fmt(C['label:game.shown'], { game: '원신' }),
+      fmt(C['label:game.shown'], { game: '리그 오브 레전드' }),
+      fmt(C['label:game.hidden'], { game: '전략적 팀 전투' }),
+      fmt(C['label:game.hidden'], { game: 'Steam' }),
+      C['result.authFailed'],
+      C['result.steamHint'],
+      C['result.reasons'],
+    ]);
+    expect(t.calls.filter((c) => c.key === '/game/player-log/').map((c) => [c.url, c.init])).toEqual([['/game/player-log/?r=7', { cache: 'no-store' }]]);
+    expect(within(buildArea(t)).getByRole('link', { name: linkNamed(C['label:runLink']) })).toHaveAttribute('href', `${RUNS}7`);
+    const refresh = within(buildArea(t)).getByRole('button', { name: C['label:refresh'] });
+    expect([...buildArea(t).querySelectorAll('a, button')].at(-1)).toBe(refresh);
+    await t.user.click(refresh);
+    expect(t.reloads()).toBe(1);
+  });
+
+  it('a fetch-health failure with Steam shown: the auth text without the Steam hint', async () => {
+    const r = scriptedRun(runInfo('in_progress'));
+    const t = setup({ answers: { ...r.answers, '/game/player-log/': (_b, url) => sitePage(url, '7', PLATFORMS.map((p) => ({ ...p, state: p.slot === 2 ? 'shown' : p.state }))) } });
+    await tracked(t);
+    r.state.run = runInfo('completed', 'failure');
+    r.state.jobs = [finished('build'), finished('deploy'), finished('fetch-health', 'failure')];
+    await nextPoll(t);
+    await within(buildStatus(t)).findByText(fmt(C['label:game.shown'], { game: 'Steam' }));
+    expect(buildStatus(t)).toHaveTextContent(C['result.authFailed']);
+    expect(buildStatus(t)).not.toHaveTextContent(C['result.steamHint']);
+    expect(buildStatus(t)).toHaveTextContent(C['result.reasons']); // TFT is not shown
+  });
+
+  it('all shown and no fetch-health failure: the lines only; an English page reads /en/game/player-log/', async () => {
+    const r = scriptedRun(runInfo('in_progress'));
+    const shown = PLATFORMS.map((p) => ({ ...p, state: 'shown' }));
+    // signed in through the same-tab return: the handle is in the box at mount
+    const t = setup({ lang: 'en', handle: true, answers: { ...r.answers, '/en/game/player-log/': (_b, url) => sitePage(url, '7', shown) } });
+    await t.user.click(await screen.findByRole('button', { name: adminCopy.en['label:rebuild'] }));
+    await waitFor(() => expect(count(t, 'run.jobs')).toBe(1));
+    r.state.run = runInfo('completed', 'success');
+    r.state.jobs = [finished('build'), finished('deploy'), finished('fetch-health', 'skipped')];
+    await nextPoll(t);
+    const status = buildStatus(t);
+    await waitFor(() => expect(status.querySelectorAll('p')).toHaveLength(5));
+    expect(status).not.toHaveTextContent(adminCopy.en['result.authFailed']);
+    expect(status).not.toHaveTextContent(adminCopy.en['result.reasons']);
+    expect(t.calls.filter((c) => c.key === '/en/game/player-log/').map((c) => c.url)).toEqual(['/en/game/player-log/?r=7']);
+  });
+
+  it('a CDN still serving the old page: checked again every 30 s for up to 10 minutes, then "잠시 뒤 새로 고침하면 보입니다"', async () => {
+    const r = scriptedRun(runInfo('in_progress'));
+    const t = setup({ answers: { ...r.answers, '/game/player-log/': (_b, url) => sitePage(url, '6', PLATFORMS) } });
+    await tracked(t);
+    r.state.run = runInfo('completed', 'success');
+    r.state.jobs = [finished('build'), finished('deploy')];
+    await nextPoll(t);
+    await within(buildStatus(t)).findByText(C['result.checking']);
+    expect(count(t, '/game/player-log/')).toBe(1);
+    for (let n = 2; n <= 20; n += 1) {
+      t.advance(30_000);
+      await waitFor(() => expect(count(t, '/game/player-log/')).toBe(n));
+      await settle();
+    }
+    expect(within(buildStatus(t)).queryByText(C['result.later'])).toBeNull(); // 9.5 minutes in
+    t.advance(30_000);
+    await within(buildStatus(t)).findByText(C['result.later']);
+    expect(count(t, '/game/player-log/')).toBe(21);
+    expect(within(buildStatus(t)).queryByText(C['result.checking'])).toBeNull();
+    t.advance(10 * MIN);
+    await settle();
+    expect(count(t, '/game/player-log/')).toBe(21);
+    expect(within(buildArea(t)).getByRole('button', { name: C['label:refresh'] })).toBeInTheDocument();
+  });
+
+  it('a page read that never answers counts as no match after 30 s: the page is read again, and the 10 minutes still end with "잠시 뒤 새로 고침하면 보입니다"', async () => {
+    const r = scriptedRun(runInfo('in_progress'));
+    const t = setup({ answers: { ...r.answers, '/game/player-log/': () => new Promise<Response>(() => undefined) } });
+    await tracked(t);
+    r.state.run = runInfo('completed', 'success');
+    r.state.jobs = [finished('build'), finished('deploy')];
+    await nextPoll(t);
+    await within(buildStatus(t)).findByText(C['result.checking']);
+    for (let i = 0; i < 20; i += 1) {
+      t.advance(30_000);
+      await settle();
+    }
+    // a read a minute (30 s without an answer, then the 30 s pause), the last one at the 10-minute mark
+    expect(count(t, '/game/player-log/')).toBe(11);
+    expect(within(buildStatus(t)).queryByText(C['result.later'])).toBeNull();
+    t.advance(30_000);
+    await within(buildStatus(t)).findByText(C['result.later']);
+    t.advance(10 * MIN);
+    await settle();
+    expect(count(t, '/game/player-log/')).toBe(11);
+    for (const c of t.calls.filter((x) => x.key === '/game/player-log/')) expect(c.init).toEqual({ cache: 'no-store' });
+  });
+
+  it('[결과 확인] with a read that never answers is free again after 30 s (the not-yet text); the late answer is dropped', async () => {
+    const late: (() => void)[] = [];
+    const r = scriptedRun(runInfo('in_progress', null, `${RUNS}7`));
+    const t = setup({
+      answers: {
+        ...r.answers,
+        '/game/player-log/': (_b, url) =>
+          late.length === 0 ? new Promise<Response>((resolve) => late.push(() => resolve(sitePage(url, '7', [{ slot: 0, state: 'shown' }])))) : sitePage(url, '7', [{ slot: 0, state: 'hidden' }]),
+      },
+    });
+    await tracked(t);
+    await t.user.click(screen.getByRole('button', { name: C['label:logout'] }));
+    await within(buildStatus(t)).findByText(C['result.loginEnded']);
+    const check = within(buildArea(t)).getByRole('button', { name: C['label:checkResult'] });
+    await t.user.click(check);
+    expect(check).toHaveAttribute('aria-disabled', 'true');
+    t.advance(30_000 - 1);
+    await settle();
+    expect(check).toHaveAttribute('aria-disabled', 'true');
+    t.advance(1);
+    await within(buildStatus(t)).findByText(C['result.notYet']);
+    expect(check).not.toHaveAttribute('aria-disabled');
+    // the first read answers now, too late to count
+    await act(async () => late[0]?.());
+    await settle();
+    expect(within(buildStatus(t)).getByText(C['result.notYet'])).toBeInTheDocument();
+    expect(buildStatus(t)).not.toHaveTextContent(fmt(C['label:game.shown'], { game: '원신' }));
+    // pressed again: this read answers in time
+    await t.user.click(check);
+    await within(buildStatus(t)).findByText(fmt(C['label:game.hidden'], { game: '원신' }));
+    expect(count(t, '/game/player-log/')).toBe(2);
+  });
+
+  it('a failed build or a cancelled run → the build-failed text and the run link; the site is not checked', async () => {
+    const endings: [string, unknown[]][] = [
+      ['failure', [finished('secrets-scan'), finished('build', 'failure'), finished('deploy', 'skipped')]],
+      ['cancelled', [finished('build', 'cancelled'), finished('deploy', 'cancelled')]],
+    ];
+    for (const [conclusion, jobs] of endings) {
+      const r = scriptedRun(runInfo('in_progress', null, `${RUNS}7`));
+      const t = setup({ answers: r.answers });
+      await tracked(t);
+      r.state.run = runInfo('completed', conclusion, `${RUNS}7`);
+      r.state.jobs = jobs;
+      await nextPoll(t);
+      await within(buildStatus(t)).findByText(C['result.failed']);
+      expect(within(buildArea(t)).getByRole('link', { name: linkNamed(C['label:runLink']) })).toHaveAttribute('href', `${RUNS}7`);
+      t.advance(MIN);
+      await settle();
+      expect(t.keys().filter((k) => k.includes('player-log'))).toEqual([]);
+      cleanup();
+    }
+  });
+
+  it('every request goes to the relay origin with the AL-17 options or to this site; none to api.github.com', async () => {
+    const r = scriptedRun(runInfo('in_progress'));
+    const t = setup({ answers: { ...r.answers, '/game/player-log/': (_b, url) => sitePage(url, '7', PLATFORMS) } });
+    await login(t);
+    await t.user.type(field(C['label:field.ACCOUNT_GENSHIN_UID']), '618285856');
+    await t.user.type(field(C['label:field.ACCOUNT_GENSHIN_NAME']), 'Traveler');
+    await t.user.click(screen.getByRole('button', { name: C['label:save'] }));
+    await screen.findByText(C.saved);
+    await t.user.click(rebuildButton());
+    await waitFor(() => expect(count(t, 'run.jobs')).toBe(1));
+    r.state.run = runInfo('completed', 'success');
+    r.state.jobs = [finished('build'), finished('deploy')];
+    await nextPoll(t);
+    await within(buildStatus(t)).findByText(fmt(C['label:game.shown'], { game: '원신' }));
+    expect(t.calls.map((c) => c.key)).toEqual(['/gh/session', 'vars.list', 'workflow.get', 'vars.set', 'vars.set', 'dispatch', 'run.get', 'run.jobs', 'run.get', 'run.jobs', '/game/player-log/']);
+    for (const c of t.calls) {
+      expect(c.url).not.toContain('api.github.com');
+      if (c.key === '/game/player-log/') {
+        expect(c.url.startsWith('/')).toBe(true);
+        continue;
+      }
+      expect(new URL(c.url).origin).toBe(RELAY);
+      expect(c.init).toMatchObject({ method: 'POST', credentials: 'omit', redirect: 'error', referrerPolicy: 'no-referrer', cache: 'no-store', mode: 'cors' });
+    }
+  });
+});
+
+// ---- the §4.7 table, row by row -----------------------------------------------------------------------------------------
+
+describe('errors (§4.7)', () => {
+  type Row = { row: string; text: string; readme?: boolean; setup?: Setup; run(t: T): Promise<HTMLElement> };
+  const START = 1_800_000_000_000; // the manual clock's start: nothing advances it in these rows
+  const viaChannel = (code: string) => async (t: T) => {
+    await t.user.click(loginButton());
+    const n = new URL(t.popups.at(-1)?.url ?? '').searchParams.get('n') ?? '';
+    await t.emit({ kind: 'gh-error', code, n });
+    return errorLine(t);
+  };
+  const viaDispatch = async (t: T) => {
+    await login(t);
+    await t.user.click(rebuildButton());
+    await waitFor(() => expect(count(t, 'dispatch')).toBe(1));
+    await settle();
+    return t.box.get() === null ? errorLine(t) : buildAlert(t);
+  };
+  const viaSave = async (t: T) => {
+    await login(t);
+    await t.user.type(field(C['label:field.ACCOUNT_GENSHIN_UID']), '618285856');
+    await t.user.type(field(C['label:field.ACCOUNT_GENSHIN_NAME']), 'Traveler');
+    await t.user.click(screen.getByRole('button', { name: C['label:save'] }));
+    await waitFor(() => expect(count(t, 'vars.set')).toBe(2));
+    await settle();
+    return t.container.querySelector('[data-mp="save-alert"]') as HTMLElement;
+  };
+  const viaSteam = async (t: T) => {
+    await login(t);
+    await t.emit(steamFields(await steamLogin(t)));
+    await waitFor(() => expect(count(t, '/openid/verify')).toBe(1));
+    await settle();
+    return t.container.querySelector('fieldset[data-group="steam"] [role="alert"]') as HTMLElement;
+  };
+  const dispatchAnswer = (status: number, body: unknown): Setup => ({ answers: { dispatch: (_b, url) => reply(url, status, body) } });
+  const genshinNameAnswer = (status: number, body: unknown): Setup => ({
+    answers: { 'vars.set': (b, url) => (b?.name === 'ACCOUNT_GENSHIN_NAME' ? reply(url, status, body) : reply(url, 200, { ok: true })) },
+  });
+  const steamAnswer = (status: number, body: unknown): Setup => ({ answers: { '/openid/verify': (_b, url) => reply(url, status, body) } });
+
+  const rows: Row[] = [
+    { row: 'login #gh-error=denied', text: 'GitHub 로그인을 취소했습니다.', run: viaChannel('denied') },
+    { row: 'login #gh-error=state', text: '로그인 확인 시간이 지났거나 다른 창에서 시작된 로그인입니다. 다시 로그인해 주세요.', run: viaChannel('state') },
+    { row: 'login #gh-error=exchange', text: 'GitHub 로그인을 끝내지 못했습니다. 다시 시도해 주세요.', run: viaChannel('exchange') },
+    { row: 'login #gh-error=not-owner', text: '사이트 주인 계정이 아닙니다. 로그인한 GitHub 계정을 확인해 주세요.', run: viaChannel('not-owner') },
+    { row: 'login #gh-error=no-access', text: 'GitHub App이 Lunecid.github.io에 설치되지 않았거나 권한이 부족합니다. README "연동 켜기"의 앱 설치 단계를 확인해 주세요.', readme: true, run: viaChannel('no-access') },
+    { row: 'login #gh-error=config', text: '중계 서버 설정이 끝나지 않았습니다. README "연동 켜기"의 비밀 넣기 단계를 확인해 주세요.', readme: true, run: viaChannel('config') },
+    { row: 'login #gh-error=upstream', text: 'GitHub가 응답하지 않아 로그인을 끝내지 못했습니다. 잠시 뒤 다시 로그인해 주세요.', run: viaChannel('upstream') },
+    { row: 'login #gh-error=rate', text: '로그인 시도가 너무 잦습니다. 잠시 뒤 다시 로그인해 주세요.', run: viaChannel('rate') },
+    {
+      row: 'relay-unset',
+      text: '중계 서버 주소가 아직 설정되지 않았습니다. README "연동 켜기"의 Cloudflare 단계부터 마쳐 주세요. 그동안은 아래 "로그인 없이 하기"로 할 수 있습니다.',
+      readme: true,
+      setup: { relay: null },
+      run: async (t) => t.container.querySelector('.mp__unset') as HTMLElement,
+    },
+    { row: 'Worker 401 handle', text: 'GitHub 로그인이 끝났습니다. 다시 로그인해 주세요.', setup: dispatchAnswer(401, { error: 'handle' }), run: viaDispatch },
+    {
+      row: 'Worker 401 ticket',
+      text: '로그인 확인 시간이 지났습니다. 다시 로그인해 주세요.',
+      setup: { answers: { '/gh/session': (_b, url) => reply(url, 401, { error: 'ticket' }) } },
+      run: async (t) => {
+        await t.user.click(loginButton());
+        const n = new URL(t.popups.at(-1)?.url ?? '').searchParams.get('n') ?? '';
+        await t.emit({ kind: 'gh', ticket: TICKET, n });
+        await waitFor(() => expect(count(t, '/gh/session')).toBe(1));
+        await settle();
+        return errorLine(t);
+      },
+    },
+    { row: 'Worker 403 forbidden', text: '허용되지 않은 요청입니다.', setup: dispatchAnswer(403, { error: 'forbidden' }), run: viaDispatch },
+    { row: 'Worker 400 invalid', text: '원신 닉네임 값이 형식에 맞지 않아 저장하지 않았습니다. 앞의 1개 항목은 저장했습니다.', setup: genshinNameAnswer(400, { error: 'invalid' }), run: viaSave },
+    { row: 'Worker 409 busy', text: '이미 빌드가 진행 중입니다. 끝난 뒤 다시 눌러 주세요.', setup: dispatchAnswer(409, { error: 'busy', runId: 99 }), run: viaDispatch },
+    { row: 'Worker 429 rate', text: `요청 한도에 도달했습니다. ${kst(START + 120_000)} 이후 다시 시도해 주세요.`, setup: dispatchAnswer(429, { error: 'rate', retryAfter: 120 }), run: viaDispatch },
+    { row: 'Worker 403 gh-perm', text: 'GitHub App 권한이 부족합니다. 앱 설정에서 Actions와 Variables를 Read and write로 두었는지 확인해 주세요.', setup: dispatchAnswer(403, { error: 'gh-perm' }), run: viaDispatch },
+    { row: 'Worker 422 gh-rejected', text: 'GitHub가 값을 거부했습니다.', setup: genshinNameAnswer(422, { error: 'gh-rejected' }), run: viaSave },
+    { row: 'Worker 422 dispatch', text: '워크플로를 시작할 수 없습니다. 워크플로가 꺼져 있는지 확인해 주세요.', setup: dispatchAnswer(422, { error: 'dispatch' }), run: viaDispatch },
+    { row: 'Worker 502 upstream', text: 'GitHub가 응답하지 않았습니다. 잠시 뒤 다시 시도해 주세요.', setup: dispatchAnswer(502, { error: 'upstream' }), run: viaDispatch },
+    { row: 'Worker 503 config', text: '중계 서버 설정이 끝나지 않았습니다. README "연동 켜기"의 비밀 넣기 단계를 확인해 주세요.', readme: true, setup: dispatchAnswer(503, { error: 'config' }), run: viaDispatch },
+    { row: 'an unknown code', text: '알 수 없는 오류가 났습니다. 아래 "로그인 없이 하기"로 할 수 있습니다.', setup: dispatchAnswer(418, { error: 'teapot' }), run: viaDispatch },
+    { row: 'Steam cancel', text: 'Steam 로그인을 끝내지 않았습니다.', setup: steamAnswer(400, { error: 'cancel' }), run: viaSteam },
+    { row: 'Steam invalid', text: 'Steam 로그인을 확인하지 못했습니다. 다시 시도하거나 SteamID64를 직접 넣어 주세요.', setup: steamAnswer(400, { error: 'invalid' }), run: viaSteam },
+    { row: 'Steam steam-busy', text: 'Steam이 지금 확인 요청을 받지 않습니다. 잠시 뒤 다시 시도하거나 SteamID64를 직접 넣어 주세요.', setup: steamAnswer(502, { error: 'steam-busy' }), run: viaSteam },
+    {
+      row: 'popup blocked',
+      text: '팝업이 막혔습니다. 이 사이트의 팝업을 허용해 주세요.',
+      setup: { blockPopups: true },
+      run: async (t) => {
+        await t.user.click(loginButton());
+        return errorLine(t);
+      },
+    },
+    {
+      row: 'network (TypeError)',
+      text: '중계 서버에 연결하지 못했습니다. 아래 "로그인 없이 하기"로 할 수 있습니다.',
+      setup: { answers: { dispatch: () => Promise.reject(new TypeError('Failed to fetch')) } },
+      run: viaDispatch,
+    },
+  ];
+
+  it.each(rows)('$row → its text on screen, §4.8 open', async ({ text, readme, setup: options, run }) => {
+    const t = setup(options);
+    const shown = await run(t);
+    // the message is the element's first text: a <span> in the request alerts, a text node in the relay-unset line
+    const first = shown.firstChild;
+    expect(first?.textContent).toBe(text);
+    if (readme) {
+      expect(within(shown).getByRole('link', { name: linkNamed(C['label:readme']) })).toHaveAttribute('href', 'https://github.com/Lunecid/Lunecid.github.io#연동-켜기');
+    }
+    expect(noLogin(t).open).toBe(true);
   });
 });

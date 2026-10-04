@@ -1,11 +1,15 @@
-import { test as base, expect, type Page } from '@playwright/test';
-import { existsSync } from 'node:fs';
-import { join } from 'node:path';
+import AxeBuilder from '@axe-core/playwright';
+import { test as base, expect, type BrowserContext, type Locator, type Page, type Route } from '@playwright/test';
+import { existsSync, readFileSync } from 'node:fs';
+import { createRequire } from 'node:module';
+import { dirname, join } from 'node:path';
 import { DOCUMENTS, NAV_HEIGHT_PX } from '../../src/config';
 import type { Lang } from '../../src/i18n/ui';
+import { E2E_RELAY_ORIGIN } from '../../src/lib/csp';
+import { steamButtonAvailable } from '../../src/lib/public-assets';
 import { allRoutes, anchorsFor, legacyRedirects, parseRoute, routePath, type RouteKind } from '../../src/lib/routes';
 import type { VariantId } from '../../src/variants/ids';
-import { ORIGIN } from './ports';
+import { ACCOUNTS_ORIGIN, ORIGIN } from './ports';
 
 export { expect };
 
@@ -43,6 +47,11 @@ export function builtRoutes(filter: { kind?: RouteKind; variant?: VariantId | nu
       && (filter.variant === undefined || info.variant === filter.variant)
       && (filter.lang === undefined || info.lang === filter.lang);
   });
+}
+/** True when the built page of `route` has an element with this id: a section that renders only with data (see stale-data.spec.ts). */
+export function builtHasId(route: string, id: string): boolean {
+  const file = join(DIST, route, 'index.html');
+  return existsSync(file) && new RegExp(`<[a-z][a-z0-9-]*\\b[^>]*\\bid="${id}"[^>]*>`).test(readFileSync(file, 'utf8'));
 }
 /** The old game URLs that now serve redirect stubs (P1-13). */
 export function legacyPaths(): string[] {
@@ -164,6 +173,38 @@ export async function settle(page: Page): Promise<void> {
   await page.evaluate(() => document.fonts.ready.then(() => true));
 }
 
+/**
+ * Opens `route` at a viewport (height 900 unless given) and settles. The viewport is set before the load, as pages do not
+ * expect it to change after; `reducedMotion` emulates the OS setting, also before the load.
+ */
+export async function openAt(page: Page, route: string, width: number, height = 900, opts: { reducedMotion?: boolean } = {}): Promise<void> {
+  if (opts.reducedMotion) await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.setViewportSize({ width, height });
+  await page.goto(route, { waitUntil: 'networkidle' });
+  await settle(page);
+}
+
+export interface Box {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+/** The layout box of `locator`; the test fails when it has none. */
+export async function box(locator: Locator): Promise<Box> {
+  const b = await locator.boundingBox();
+  expect(b, 'element has a layout box').toBeTruthy();
+  return b as Box;
+}
+
+/** The WCAG 2.0 to 2.2 level A and AA rule tags every axe check of the suite uses. */
+export const AXE_TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'];
+/** Runs axe on the page as it is now and fails with one line per violation: the rule id and its first three targets. */
+export async function expectNoAxeViolations(page: Page, label = 'axe violations'): Promise<void> {
+  const axe = await new AxeBuilder({ page }).withTags(AXE_TAGS).analyze();
+  expect(axe.violations.map((v) => `${v.id}: ${v.nodes.slice(0, 3).map((n) => n.target.join(' ')).join(' | ')}`), label).toEqual([]);
+}
+
 /** Document scroll width vs. viewport width, and up to five elements that stick out and are not inside a scroller. */
 export async function horizontalOverflow(page: Page): Promise<{ scrollWidth: number; width: number; offenders: string[] }> {
   return page.evaluate(() => {
@@ -219,6 +260,39 @@ export async function textBelow12px(page: Page): Promise<string[]> {
 }
 
 /**
+ * The two screenshot producers (screenshots.spec.ts and the ghost-art dump) assert nothing. They run where the output is
+ * used: in CI, whose workflow uploads test-results/screenshots, or on request with PW_SHOTS=1.
+ */
+export const SHOTS: boolean = Boolean(process.env.CI || process.env.PW_SHOTS);
+export const SHOTS_SKIP = 'writes screenshots only; runs in CI or with PW_SHOTS=1';
+
+/** Chromium version that the installed Playwright ships with (playwright-core's browsers.json), or null when unreadable. */
+function shippedChromium(): { playwright: string; chromium: string } | null {
+  try {
+    const dir = dirname(createRequire(import.meta.url).resolve('playwright-core/package.json'));
+    const playwright = (JSON.parse(readFileSync(join(dir, 'package.json'), 'utf8')) as { version?: string }).version;
+    const entries = (JSON.parse(readFileSync(join(dir, 'browsers.json'), 'utf8')) as { browsers?: { name: string; browserVersion?: string }[] }).browsers;
+    const chromium = entries?.find((b) => b.name === 'chromium')?.browserVersion;
+    return playwright && chromium ? { playwright, chromium } : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Why a test that is only checked on the Chromium the installed Playwright ships with should be skipped: the running
+ * browser (`browser.version()`) has a different major version, e.g. a container that links an older build for the
+ * revision Playwright asks for. null (run the test) when the majors match, when a version cannot be read, and for an
+ * installed-Chrome channel (PW_CHANNEL), which is not meant to match.
+ */
+export function chromiumMismatch(running: string): string | null {
+  const shipped = process.env.PW_CHANNEL ? null : shippedChromium();
+  if (!shipped || !/^\d+/.test(running)) return null;
+  if (Number.parseInt(running, 10) === Number.parseInt(shipped.chromium, 10)) return null;
+  return `Chromium ${running} is running; Playwright ${shipped.playwright} ships Chromium ${shipped.chromium}`;
+}
+
+/**
  * CSP check (account-link C0): call before the first navigation; every document the page loads from then on records its
  * `securitypolicyviolation` events as "<violated directive> <blocked URI>" (the listener is added before any page script).
  */
@@ -236,4 +310,161 @@ export async function collectViolations(page: Page): Promise<string[]> {
     if (!Array.isArray(list)) throw new Error('collectViolations: watchViolations(page) was not called before navigation');
     return [...list];
   });
+}
+
+/** The fixture build's relay origin: never deployed, and every request to it is answered by mockRelay. */
+export const RELAY = E2E_RELAY_ORIGIN;
+/** Fakes built at run time: the ticket has the relay's ticket shape, the run link the page's run-link shape. */
+export const FAKE_TICKET = 'tk_' + 'A'.repeat(44);
+export const FAKE_HANDLE = 'hd_' + 'H'.repeat(40);
+export const FAKE_RUN_ID = 4242;
+const FAKE_RUN_URL = `https://github.com/Lunecid/Lunecid.github.io/actions/runs/${FAKE_RUN_ID}`;
+/** The spec's public example SteamID64 and a made-up persona name. */
+export const FAKE_STEAM = { id: '76561197960435530', name: 'Robin' } as const;
+/** The deploy workflow's jobs in pipeline order. */
+const DEPLOY_JOBS = ['secrets-scan', 'fetch-accounts', 'build', 'deploy', 'fetch-health'] as const;
+/** A 1×1 PNG: the stand-in for Valve's button image while the file is not in public/. */
+const STAND_IN_PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=', 'base64');
+
+export interface RelayMock {
+  /** Every http(s) request of the context, popups included. */
+  seen: string[];
+  /** The requests off 127.0.0.1 that a route answered or cut. */
+  routed: Set<string>;
+  /** The /gh/login addresses the popup or the tab asked for. */
+  logins: URL[];
+  sessions: unknown[];
+  /** The /gh/api bodies in order. */
+  ops: Record<string, unknown>[];
+  verifies: Record<string, unknown>[];
+  /** run.get reports the run in progress (build at step 3 of 6) until finish(); then completed, every job a success. */
+  finish(): void;
+}
+
+/** Serves the page `route` asks for from the preview server, with `edit` applied to its HTML. */
+async function servePage(route: Route, edit: (html: string) => string): Promise<void> {
+  const res = await route.fetch();
+  const headers = { ...res.headers() };
+  delete headers['content-length'];
+  await route.fulfill({ status: res.status(), headers, body: edit(await res.text()) });
+}
+
+/**
+ * The relay Worker and Steam's OpenID endpoint for the fixture build (spec §11.1). Every route is on the context, so it
+ * covers the login popups too, and anything else off 127.0.0.1 is cut: no test reaches a real Worker, GitHub or Steam.
+ * /gh/login answers the popup with /link-return/#gh=<ticket>&n=<its n> (mode=tab is cut: the test reads its address);
+ * Steam's login answers /link-return/?s=<the s of its return_to>&openid.* (the test never needs the page's state);
+ * /gh/api answers per op; the page read /game/player-log/?r=<run> gets the real page with that run id in #acct-status,
+ * Steam hidden. `steam: true` turns the build's steamButton flag on in the served player log and answers Valve's image
+ * with a stand-in while the file is not in public/, so the Steam popup path runs before the owner adds the file.
+ */
+export async function mockRelay(context: BrowserContext, opts: { steam?: boolean } = {}): Promise<RelayMock> {
+  let done = false;
+  const mock: RelayMock = { seen: [], routed: new Set(), logins: [], sessions: [], ops: [], verifies: [], finish: () => void (done = true) };
+  context.on('request', (req) => {
+    if (/^https?:/.test(req.url())) mock.seen.push(req.url());
+  });
+  const cors = { 'access-control-allow-origin': ACCOUNTS_ORIGIN, vary: 'Origin' };
+  const json = (route: Route, body: unknown, status = 200) =>
+    route.fulfill({ status, headers: { ...cors, 'content-type': 'application/json' }, body: body === undefined ? '' : JSON.stringify(body) });
+  const job = (name: string, i: number) => {
+    const state = done || i < 2 ? 'completed' : i === 2 ? 'in_progress' : 'queued';
+    return { name, status: state, conclusion: state === 'completed' ? 'success' : null, stepsDone: state === 'completed' ? 6 : state === 'in_progress' ? 3 : 0, stepsTotal: 6 };
+  };
+  const api = (body: Record<string, unknown>): unknown => {
+    switch (body.op) {
+      case 'vars.list':
+        return [];
+      case 'workflow.get':
+        return { state: 'active' };
+      case 'vars.set':
+      case 'vars.delete':
+        return { ok: true };
+      case 'dispatch':
+        return { runId: FAKE_RUN_ID, htmlUrl: FAKE_RUN_URL };
+      case 'run.get':
+        return { status: done ? 'completed' : 'in_progress', conclusion: done ? 'success' : null, htmlUrl: FAKE_RUN_URL };
+      case 'run.jobs':
+        return DEPLOY_JOBS.map(job);
+      default:
+        return undefined;
+    }
+  };
+  // registered first: the routes after it take precedence
+  await context.route(
+    (url) => url.hostname !== '127.0.0.1',
+    (route) => {
+      mock.routed.add(route.request().url());
+      return route.abort();
+    },
+  );
+  await context.route(
+    (url) => url.origin === RELAY,
+    (route) => {
+      const req = route.request();
+      mock.routed.add(req.url());
+      if (req.method() === 'OPTIONS') {
+        return route.fulfill({ status: 204, headers: { ...cors, 'access-control-allow-methods': 'POST', 'access-control-allow-headers': 'authorization, content-type' } });
+      }
+      const url = new URL(req.url());
+      switch (url.pathname) {
+        case '/gh/login':
+          mock.logins.push(url);
+          if (url.searchParams.get('mode') === 'tab') return route.abort();
+          return route.fulfill({ status: 302, headers: { location: `${ACCOUNTS_ORIGIN}/link-return/#gh=${FAKE_TICKET}&n=${url.searchParams.get('n') ?? ''}` } });
+        case '/gh/session':
+          mock.sessions.push(req.postDataJSON());
+          return json(route, { handle: FAKE_HANDLE, expiresIn: 3600 });
+        case '/gh/logout':
+          return json(route, undefined, 204);
+        case '/openid/verify': {
+          const body = req.postDataJSON() as Record<string, unknown>;
+          mock.verifies.push(body);
+          return json(route, { steamid: FAKE_STEAM.id, state: body.s, personaname: FAKE_STEAM.name, profilePublic: true });
+        }
+        case '/gh/api': {
+          const body = req.postDataJSON() as Record<string, unknown>;
+          mock.ops.push(body);
+          return json(route, api(body));
+        }
+        default:
+          return route.abort();
+      }
+    },
+  );
+  await context.route(
+    (url) => url.origin === 'https://steamcommunity.com' && url.pathname === '/openid/login',
+    (route) => {
+      mock.routed.add(route.request().url());
+      const returnTo = new URL(route.request().url()).searchParams.get('openid.return_to');
+      if (returnTo === null) return route.abort();
+      const claimed = `https://steamcommunity.com/openid/id/${FAKE_STEAM.id}`;
+      const back = new URLSearchParams({
+        s: new URL(returnTo).searchParams.get('s') ?? '',
+        'openid.ns': 'http://specs.openid.net/auth/2.0',
+        'openid.mode': 'id_res',
+        'openid.op_endpoint': 'https://steamcommunity.com/openid/login',
+        'openid.claimed_id': claimed,
+        'openid.identity': claimed,
+        'openid.return_to': returnTo,
+        'openid.response_nonce': `${new Date().toISOString().slice(0, 19)}Z0`,
+        'openid.assoc_handle': '1234567890',
+        'openid.signed': 'signed,op_endpoint,claimed_id,identity,return_to,response_nonce,assoc_handle',
+        'openid.sig': 'c2lnbmF0dXJl',
+      });
+      return route.fulfill({ status: 302, headers: { location: `${ACCOUNTS_ORIGIN}/link-return/?${back.toString()}` } });
+    },
+  );
+  await context.route(
+    (url) => url.origin === ACCOUNTS_ORIGIN && url.pathname === '/game/player-log/' && url.searchParams.has('r'),
+    (route) => servePage(route, (html) => html.replace('"runId":null', `"runId":"${FAKE_RUN_ID}"`).replace('{"slot":2,"state":"shown"', '{"slot":2,"state":"hidden"')),
+  );
+  if (opts.steam && !steamButtonAvailable()) {
+    await context.route(
+      (url) => url.origin === ACCOUNTS_ORIGIN && url.pathname === '/game/player-log/' && !url.searchParams.has('r'),
+      (route) => servePage(route, (html) => html.replace('steamButton&quot;:[0,false]', 'steamButton&quot;:[0,true]')),
+    );
+    await context.route(`${ACCOUNTS_ORIGIN}/img/sits_01.png`, (route) => route.fulfill({ status: 200, contentType: 'image/png', body: STAND_IN_PNG }));
+  }
+  return mock;
 }

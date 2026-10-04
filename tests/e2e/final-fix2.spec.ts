@@ -5,28 +5,13 @@ import { existsSync, mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 import type { Locator, Page } from '@playwright/test';
 import sharp from 'sharp';
-import { test, expect, horizontalOverflow, settle } from './helpers';
+import { test, expect, box, horizontalOverflow, openAt, settle, type Box } from './helpers';
 
 const ART = (id: string): boolean => existsSync(join(process.cwd(), 'src', 'assets', 'characters', `${id}.png`));
 const HERO_ART = ART('remielle') && ART('eula');
 
-interface Box {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-}
-async function box(locator: Locator): Promise<Box> {
-  const b = await locator.boundingBox();
-  expect(b, 'element has a layout box').toBeTruthy();
-  return b as Box;
-}
-async function open(page: Page, route: string, width: number, height = 900): Promise<void> {
-  await page.emulateMedia({ reducedMotion: 'reduce' });
-  await page.setViewportSize({ width, height });
-  await page.goto(route, { waitUntil: 'networkidle' });
-  await settle(page);
-}
+/** Every page of this spec opens with the OS reduced-motion setting emulated. */
+const open = (page: Page, route: string, width: number, height = 900): Promise<void> => openAt(page, route, width, height, { reducedMotion: true });
 
 /** The candidate width the browser picked (from srcset) and the width the image is painted at (object-fit: cover). */
 async function servedVsPainted(img: Locator): Promise<{ served: number; largest: number; painted: number; widths: number[] }> {

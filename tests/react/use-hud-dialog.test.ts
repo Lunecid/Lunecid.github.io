@@ -1,10 +1,9 @@
 // AL-11: useHudDialog — the native <dialog> shell the account dialog uses (account-link spec §3.2, §3.6, §3.7; plan
 // DV-2: written after ImageViewer's pattern, ImageViewer untouched). The harness renders one <dialog> with an input,
-// a close button and the hook's controls; jsdom has no working showModal()/close(), so both are emulated as in
-// tests/react/ImageViewer.test.tsx.
+// a close button and the hook's controls; jsdom has no working showModal()/close(), so tests/setup-dom.ts emulates both.
 import { act, render } from '@testing-library/react';
 import { createElement, useEffect } from 'react';
-import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('../../src/lib/sound', () => ({ playSfx: vi.fn(() => Promise.resolve()) }));
 vi.mock('../../src/lib/scroll-lock', async (importOriginal) => {
@@ -18,25 +17,6 @@ import { useHudDialog, type HudDialog } from '../../src/lib/use-hud-dialog';
 
 const CLOSE = 300;
 const CLOSE_REDUCED = 150;
-
-beforeAll(() => {
-  Object.defineProperty(HTMLDialogElement.prototype, 'showModal', {
-    configurable: true,
-    writable: true,
-    value(this: HTMLDialogElement) {
-      this.setAttribute('open', '');
-    },
-  });
-  Object.defineProperty(HTMLDialogElement.prototype, 'close', {
-    configurable: true,
-    writable: true,
-    value(this: HTMLDialogElement) {
-      if (!this.hasAttribute('open')) return;
-      this.removeAttribute('open');
-      this.dispatchEvent(new Event('close'));
-    },
-  });
-});
 
 let api: HudDialog;
 const onClosed = vi.fn();

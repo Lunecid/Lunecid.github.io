@@ -8,8 +8,12 @@ interface Props {
 const { model } = Astro.props;
 const L = model.lang;
 const h = model.header;
+// English résumés are the compact one-pagers and link each project to its page. Korean résumés add the research-interest and
+// in-progress blocks, the projects note and the as-of line. A Korean-only block is written right after the element before it
+// and brings its own leading space, so an English page has no stray whitespace where it is absent.
+const en = L === 'en';
 ---
-<article class="print">
+<article class:list={['print', en && 'print--compact']}>
   <header class="print__head">
     <h1 class="print__name">{h.name}</h1>
     <p class="print__headline">{h.headline}</p>
@@ -21,14 +25,12 @@ const h = model.header;
       <li>{h.location}</li>
     </ul>
     <p class="print__affil">{h.affiliation}</p>
-  </header>
-
-  {model.researchInterests.length > 0 && (
+  </header>{!en && <Fragment>{' '}{model.researchInterests.length > 0 && (
     <section class="print__sec">
       <h2 class="print__h">{t(L, 'research.interests')}</h2>
       <p>{model.researchInterests.join(' · ')}</p>
     </section>
-  )}
+  )}</Fragment>}
 
   {model.education.length > 0 && (
     <section class="print__sec">
@@ -58,14 +60,12 @@ const h = model.header;
         ))}
       </ul>
     </section>
-  )}
-
-  {model.researchInProgress.length > 0 && (
+  )}{!en && <Fragment>{' '}{model.researchInProgress.length > 0 && (
     <section class="print__sec">
       <h2 class="print__h">{t(L, 'research.inProgress')}</h2>
       <ul class="print__list">{model.researchInProgress.map((r) => <li class="print__item">{r}</li>)}</ul>
     </section>
-  )}
+  )}</Fragment>}
 
   {model.projects.length > 0 && (
     <section class="print__sec">
@@ -74,11 +74,10 @@ const h = model.header;
         {model.projects.map((p) => (
           <li class="print__item">
             <p class="print__row"><strong>{p.title}</strong><span class="print__date">{p.period}</span></p>
-            <p class="print__meta">{p.org} · {p.team}</p>
+            <p class="print__meta">{p.org} · {p.team}{en && p.caseStudyHref && <Fragment> · <a href={p.caseStudyHref}>↗ {p.pageLabel}</a></Fragment>}</p>
             <ul class="print__bullets">{p.bullets.map((b) => <li>{b}</li>)}</ul>
           </li>
-        ))}
-        {model.projectsNote && <li class="print__item">{model.projectsNote}</li>}
+        ))}{!en && model.projectsNote && <Fragment>{' '}<li class="print__item">{model.projectsNote}</li></Fragment>}
       </ul>
     </section>
   )}
@@ -154,7 +153,5 @@ const h = model.header;
       <p><strong>{t(L, 'records.skillsPrimary')}</strong> {model.skills.primary.join(' · ')}</p>
       {model.skills.familiar.length > 0 && <p><strong>{t(L, 'records.skillsFamiliar')}</strong> {model.skills.familiar.join(' · ')}</p>}
     </section>
-  )}
-
-  <p class="print__foot">{t(L, 'jobfit.asOf')} {model.builtOn}</p>
+  )}{!en && <Fragment>{' '}<p class="print__foot">{t(L, 'jobfit.asOf')} {model.builtOn}</p></Fragment>}
 </article>

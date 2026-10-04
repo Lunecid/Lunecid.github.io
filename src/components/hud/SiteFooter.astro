@@ -7,6 +7,7 @@
 import type { Lang } from '../../i18n/ui';
 import { formatDate, t } from '../../i18n/utils';
 import { isCurrentPath } from '../../lib/footer-nav';
+import { kstIsoDate } from '../../lib/kst';
 import { chooserHref, pageHref } from '../../lib/links';
 import { noticeLines as linesFor } from '../../lib/notices';
 import { SITE } from '../../config';
@@ -20,14 +21,7 @@ interface Props {
 }
 const { lang, notices, builtAt } = Astro.props;
 
-const parts = new Intl.DateTimeFormat('en-CA', {
-  timeZone: 'Asia/Seoul',
-  year: 'numeric',
-  month: '2-digit',
-  day: '2-digit',
-}).formatToParts(builtAt);
-const part = (type: 'year' | 'month' | 'day'): string => parts.find((p) => p.type === type)?.value ?? '';
-const builtIso = `${part('year')}-${part('month')}-${part('day')}`;
+const builtIso = kstIsoDate(builtAt);
 
 const noticeLines = linesFor(notices);
 // P-04: getPerson() reads the resume collection, which the vitest container does not load; its email and github
@@ -42,7 +36,7 @@ links.push({ href: chooserHref(lang, { choose: true }), label: t(lang, 'nav.choo
 ---
 <footer class="site-footer">
   <div class="container container--hud site-footer__inner">
-    <p class="site-footer__copy">{t(lang, 'footer.copyright', { year: part('year') })}</p>
+    <p class="site-footer__copy">{t(lang, 'footer.copyright', { year: builtIso.slice(0, 4) })}</p>
     <ul class="site-footer__contact" role="list">
       <li><a class="site-footer__chip" href={`mailto:${person.email}`}><span class="site-footer__chip-face cut cut--line"><svg class="site-footer__icon" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M1.5 3.5h13v9h-13z M1.5 3.5 8 8.5l6.5-5" /></svg>{person.email}</span></a></li>
       <li><a class="site-footer__chip" href={person.github}><span class="site-footer__chip-face cut cut--line" lang="en">{t(lang, 'action.github')} <span aria-hidden="true">↗</span></span></a></li>
@@ -191,7 +185,7 @@ links.push({ href: chooserHref(lang, { choose: true }), label: t(lang, 'nav.choo
     display: inline-block;
     margin-inline-start: 6px;
     padding: 1px 5px;
-    font: 700 12px/1.4 var(--font-mono); /* site-wide floor: no rendered text below 12px */
+    font: 700 var(--fs-min)/1.4 var(--font-mono); /* site-wide floor: no rendered text below 12px */
     letter-spacing: .04em;
     border: 1px solid currentColor;
     border-radius: 2px;

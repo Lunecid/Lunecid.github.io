@@ -5,18 +5,12 @@ import { AWARD_LEVEL_MEDAL } from '../data/award-levels';
 import type { Lang } from '../i18n/ui';
 import { formatDate, formatPeriod, formatYm, t } from '../i18n/utils';
 import type { CertificateId } from '../types';
+import { kstIsoDate } from './kst';
 import { pageHref, paperBase, projectBase, type HrefContext } from './links';
 
 /** Today's date as YYYY-MM-DD in Asia/Seoul (the build date: drives the TOEIC expiry badge and the PDFs). */
 export function todayIso(now: Date = new Date()): string {
-  const parts = new Intl.DateTimeFormat('en-US', {
-    timeZone: 'Asia/Seoul',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  }).formatToParts(now);
-  const part = (type: 'year' | 'month' | 'day'): string => parts.find((p) => p.type === type)?.value ?? '';
-  return `${part('year')}-${part('month')}-${part('day')}`;
+  return kstIsoDate(now);
 }
 
 /** true when `today` (YYYY-MM-DD) is after `validUntil`; the last valid day is not expired; no date = never. */

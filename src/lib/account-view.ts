@@ -294,6 +294,21 @@ export interface AccountLinksLabels {
   position: string;
   /** The per-card notice lines (spec §9.3) by notice key, already in the page language where localised. */
   notices: Partial<Record<NoticeKey, { text: string; english: boolean }[]>>;
+  /**
+   * The island's own owner-mode words (spec §3.2, §4.1): ui.ts visitor strings, never the management copy, which only
+   * the lazy panel imports.
+   */
+  manage: {
+    /** The "연동 관리" button at the row's end. */
+    button: string;
+    /** The only line shown when ?manage is opened inside another page. */
+    framed: string;
+    unsaved: string;
+    discard: string;
+    keepEditing: string;
+    /** A status tile's word for a state other than shown. */
+    state: Record<Exclude<TileState, 'shown'>, string>;
+  };
 }
 
 export function accountLinksLabels(lang: Lang): AccountLinksLabels {
@@ -310,5 +325,13 @@ export function accountLinksLabels(lang: Lang): AccountLinksLabels {
     next: ui[lang]['accounts.next'],
     position: ui[lang]['accounts.position'],
     notices: Object.fromEntries(keys.map((key) => [key, noticeLines([key]).map((line) => ({ text: t(lang, line.key), english: line.english }))])),
+    manage: {
+      button: t(lang, 'accounts.manage'),
+      framed: t(lang, 'accounts.framed'),
+      unsaved: t(lang, 'accounts.unsaved'),
+      discard: t(lang, 'accounts.discard'),
+      keepEditing: t(lang, 'accounts.keepEditing'),
+      state: { unlinked: t(lang, 'accounts.state.unlinked'), error: t(lang, 'accounts.state.error'), stale: t(lang, 'accounts.state.stale') },
+    },
   };
 }

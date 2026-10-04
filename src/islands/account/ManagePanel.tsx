@@ -1,23 +1,27 @@
-// src/islands/account/ManagePanel.tsx — the owner management section (account-link spec §4.1–§4.4, §4.7, §4.8, §3.7;
-// plan AL-18, part 1: GitHub login, the per-game fields with their check buttons, Steam login, save, the no-login
-// fallback; AL-19 adds rebuild, progress and results). The lazy chunk of AccountLinks' ?manage mode (AL-20) and the
-// only importer of src/i18n/accounts-admin.ts. Requests, popups, channel messages and timers all go through the AL-17
-// core bound to the page by the caller (AdminApi), so tests inject fakes; the relay origin is admin.deps.relay alone.
-// The handle stays in admin.box, the login nonce and the Steam state in refs: none is rendered, stored or logged. Free
-// text (nicknames, Riot IDs, Steam names) is always a JSX text node. There is no <form> and no password field.
-// The panel owns the session clock (the 15-minute idle and the 60-minute cap logout), so AccountLinks must keep it
-// mounted for the page's life: closing the dialog hides it but never unmounts it (AL-20).
+// src/islands/account/ManagePanel.tsx — the owner management section (account-link spec §4.1–§4.8, §3.7; plan AL-18,
+// part 1: GitHub login, the per-game fields with their check buttons, Steam login, save, the no-login fallback; part 2:
+// rebuild, run progress, per-game results, the copy button of the fallback). The lazy chunk of AccountLinks'
+// ?manage mode (AL-20) and the only importer of src/i18n/accounts-admin.ts. Requests, popups, channel messages and
+// timers all go through the AL-17 core bound to the page by the caller (AdminApi), so tests inject fakes; the relay
+// origin is admin.deps.relay alone, and the one other request is the same-origin read of the player-log page after a
+// deploy. The handle stays in admin.box, the login nonce and the Steam state in refs: none is rendered, stored or
+// logged. Free text (nicknames, Riot IDs, Steam names) is always a JSX text node. There is no <form> and no password
+// field. The panel owns the session clock (the 15-minute idle and the 60-minute cap logout) and the run tracking, so
+// AccountLinks must keep it mounted for the page's life: closing the dialog hides it but never unmounts it (AL-20).
 import { useEffect, useId, useLayoutEffect, useRef, useState, type JSX, type ReactNode, type Ref } from 'react';
 import { ACCOUNT_ADMIN } from '../../config';
 import { adminCopy, type AdminKey } from '../../i18n/accounts-admin';
 import type { Lang } from '../../i18n/ui';
 import { STEAM_XML_CACHE_HOURS } from '../../lib/account-config';
 import {
+  RUN_URL_RE,
   RelayError,
   WORKFLOW_URL,
   createSessionClock,
   ghCommands,
   listenLinkChannel,
+  pollRun,
+  retryAfterSeconds,
   startGithubLogin,
   startGithubLoginSameTab,
   startSteamLogin,
@@ -29,6 +33,8 @@ import {
 } from '../../lib/account-admin';
 import { ACCOUNT_VARS, enkaProfileUrl, looksLikeSecret, normalize, parseHoyoUid, parseRiotId, parseSteamId64, riotLinks, validateVar, type AccountVar } from '../../lib/account-ids';
 import type { AccountTile, AccountTileKey } from '../../lib/account-view';
+import { routePath } from '../../lib/routes';
+import { BASE_PATH } from '../../variants/ids';
 import './ManagePanel.css';
 
 /** The AL-17 core bound to the page by AccountLinks (AL-20); tests pass fakes. */
@@ -61,6 +67,11 @@ export interface ManagePanelProps {
   /** The tile on screen: its group is highlighted, and before the form shows its state note leads the section. */
   current?: AccountTileKey | null;
   loginError?: LoginError | null;
+  /**
+   * While a run is tracked: the static chip for the "연동 관리" button ("빌드 중 · {n}분", spec §4.6), new each minute;
+   * null once tracking ends. AccountLinks shows it while the dialog is closed.
+   */
+  onBuildChip?(chip: string | null): void;
 }
 
 type GroupKey = 'zzz' | 'genshin' | 'riot' | 'steam';
@@ -68,6 +79,38 @@ type Field = AccountVar | 'riotConfirm';
 /** A line of copy with its values, an optional link after it and an optional second line. */
 type Msg = { key: AdminKey; vars?: Record<string, string | number>; link?: 'readme' | 'apps'; then?: Msg };
 type FocusTarget = 'first-control' | 'heading' | 'error' | 'manual' | 'cancel' | 'same-tab' | 'steam-unlink' | Field;
+
+/** The deploy workflow's jobs in pipeline order (.github/workflows/deploy.yml); each has its stage line (spec §4.6). */
+const JOBS = ['secrets-scan', 'fetch-accounts', 'build', 'deploy', 'fetch-health'] as const;
+type JobName = (typeof JOBS)[number];
+interface Job {
+  name: JobName;
+  status: string | null;
+  conclusion: string | null;
+  stepsDone: number;
+  stepsTotal: number;
+}
+type Stage = { key: AdminKey; done?: number; total?: number };
+/** A platform of a page's #acct-status (slot = the tile's slot). */
+type Platform = { slot: number; state: 'shown' | 'hidden' | 'absent' };
+/** The read of the player-log page with ?r=<run>: under way, gave up (later / notYet), or what the run put there. */
+type Site = 'checking' | 'later' | 'notYet' | readonly Platform[];
+/** [다시 빌드] and what followed (spec §4.5, §4.6). */
+interface Build {
+  /** The tracked run; null when there is none to follow (the workflow page is linked instead). */
+  id: number | null;
+  /** A verified run link (RUN_URL_RE and this run), else the workflow page. */
+  url: string;
+  startedAt: number;
+  /** started: dispatched without a run id; busy: another run, without an id; stopped: tracking ended without a result. */
+  phase: 'started' | 'busy' | 'tracking' | 'done' | 'stopped';
+  stage: Stage | null;
+  stopped: 'login' | 'timeout' | null;
+  result: 'deployed' | 'failed' | null;
+  /** fetch-health failed after the deploy (spec §4.6). */
+  authFailed: boolean;
+  site: Site | null;
+}
 
 const GROUP_OF: Readonly<Record<AccountTileKey, GroupKey>> = { genshin: 'genshin', zzz: 'zzz', lol: 'riot', tft: 'riot', steam: 'steam' };
 const ID_VAR: Readonly<Record<GroupKey, AccountVar>> = { genshin: 'ACCOUNT_GENSHIN_UID', zzz: 'ACCOUNT_ZZZ_UID', riot: 'ACCOUNT_RIOT_ID', steam: 'ACCOUNT_STEAM_ID64' };
@@ -99,6 +142,10 @@ const RELAY_CODES: ReadonlySet<string> = new Set(['relay-unset', 'handle', 'tick
 const README_KEYS: ReadonlySet<AdminKey> = new Set<AdminKey>(['gh.no-access', 'gh.config', 'config', 'relay-unset']);
 /** Added whenever the grant revoke is not confirmed: the beacon, a 401's revoke and a failed /gh/logout are fire-and-forget. */
 const UNCONFIRMED: Msg = { key: 'revokeUnconfirmed', link: 'apps' };
+const RUNS_URL = `${REPO_URL}/actions/runs/`;
+/** After a deploy the page is read again every 30 s for up to 10 minutes until it carries the run's id (spec §4.6). */
+const SITE_RETRY_MS = 30_000;
+const SITE_RETRY_CAP_MS = 10 * 60_000;
 
 const fill = (template: string, values: Record<string, string | number> = {}): string =>
   template.replace(/\{(\w+)\}/g, (whole, name: string) => (Object.hasOwn(values, name) ? String(values[name]) : whole));
@@ -135,6 +182,49 @@ function pageStates(): ReadonlyMap<number, string> | null {
   }
 }
 
+const isRecord = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v);
+const textOf = (v: unknown): string | null => (typeof v === 'string' ? v : null);
+const countOf = (v: unknown): number => (Number.isSafeInteger(v) && (v as number) >= 0 ? (v as number) : 0);
+const runIdOf = (v: unknown): number | null => (Number.isSafeInteger(v) && (v as number) > 0 ? (v as number) : null);
+
+/** The relay's htmlUrl only when it passes RUN_URL_RE and names this run (spec §4.5: the page checks it again). */
+function verifiedRunUrl(url: unknown, id: number): string | null {
+  return typeof url === 'string' && RUN_URL_RE.test(url) && url.endsWith(`/${id}`) ? url : null;
+}
+
+/** run.jobs as the deploy workflow's own jobs, in pipeline order. */
+function jobsOf(raw: unknown): Job[] {
+  if (!Array.isArray(raw)) return [];
+  const jobs: Job[] = [];
+  for (const j of raw) {
+    if (!isRecord(j) || !(JOBS as readonly unknown[]).includes(j.name)) continue;
+    jobs.push({ name: j.name as JobName, status: textOf(j.status), conclusion: textOf(j.conclusion), stepsDone: countOf(j.stepsDone), stepsTotal: countOf(j.stepsTotal) });
+  }
+  return jobs.sort((a, b) => JOBS.indexOf(a.name) - JOBS.indexOf(b.name));
+}
+
+/** The stage line (spec §4.6): waiting until the run starts, then the furthest job in progress; between jobs the last line stays. */
+function stageOf(status: string | null, jobs: Job[], prev: Stage | null): Stage {
+  if (status !== 'in_progress') return { key: 'stage.queued' };
+  const job = jobs.filter((j) => j.status === 'in_progress').at(-1);
+  if (job === undefined) return prev ?? { key: 'stage.queued' };
+  return job.name === 'build' ? { key: 'stage.build', done: job.stepsDone, total: job.stepsTotal } : { key: `stage.${job.name}` };
+}
+
+/** The platforms of a fetched page's #acct-status when this run built it; null otherwise (an older page, no status). */
+function platformsOf(html: string, id: number): Platform[] | null {
+  // DOMParser runs no script and loads nothing; only the JSON text of the one element is read
+  const text = new DOMParser().parseFromString(html, 'text/html').getElementById('acct-status')?.textContent ?? '';
+  let data: unknown;
+  try {
+    data = JSON.parse(text);
+  } catch {
+    return null;
+  }
+  if (!isRecord(data) || data.runId !== String(id) || !Array.isArray(data.platforms)) return null;
+  return data.platforms.filter((p): p is Platform => isRecord(p) && Number.isSafeInteger(p.slot) && (p.state === 'shown' || p.state === 'hidden' || p.state === 'absent'));
+}
+
 /** A link that opens in a new tab and says so (spec §3.7). */
 function NewTab({ href, label, newTab, className, linkRef }: { href: string; label: string; newTab: string; className?: string; linkRef?: Ref<HTMLAnchorElement> }): JSX.Element {
   return (
@@ -146,7 +236,7 @@ function NewTab({ href, label, newTab, className, linkRef }: { href: string; lab
 }
 
 export default function ManagePanel(props: ManagePanelProps): JSX.Element {
-  const { lang, tiles, steamButton, store, admin, focus, onDirtyChange, current = null, loginError = null } = props;
+  const { lang, tiles, steamButton, store, admin, focus, onDirtyChange, current = null, loginError = null, onBuildChip } = props;
   const relay = admin.deps.relay;
   const copy = adminCopy[lang];
   const uid = useId();
@@ -178,6 +268,10 @@ export default function ManagePanel(props: ManagePanelProps): JSX.Element {
   const [noLoginOpen, setNoLoginOpen] = useState(relay === null);
   const [states] = useState(pageStates);
   const [, setTick] = useState(0);
+  const [build, setBuild] = useState<Build | null>(null);
+  const [buildMsg, setBuildMsg] = useState<Msg | null>(null);
+  const [dispatching, setDispatching] = useState(false);
+  const [copied, setCopied] = useState<{ text: string; ok: boolean } | null>(null);
 
   const pendingN = useRef<string | null>(null);
   const pendingS = useRef<string | null>(null);
@@ -196,6 +290,18 @@ export default function ManagePanel(props: ManagePanelProps): JSX.Element {
   const steamUnlinkRef = useRef<HTMLInputElement>(null);
   const warnRef = useRef<HTMLDivElement>(null);
   const inputs = useRef(new Map<Field, HTMLInputElement>());
+  /** Bumped by every [다시 빌드], so answers about an earlier run are dropped. */
+  const buildSeq = useRef(0);
+  /** pollRun's cancel while a run is tracked. */
+  const stopPoll = useRef<(() => void) | null>(null);
+  const siteTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  /**
+   * The codes of the polling failures shown since the last good answer: each is announced, and opens §4.8, once. By
+   * code, not by text: a rate's time changes with every failure.
+   */
+  const pollErrors = useRef(new Set<AdminKey>());
+  const lastJobs = useRef<Job[]>([]);
+  const chipSent = useRef<string | null>(null);
 
   // groups in tile order; LoL and TFT make one Riot group
   const groups: { key: GroupKey; tiles: AccountTile[] }[] = [];
@@ -271,7 +377,7 @@ export default function ManagePanel(props: ManagePanelProps): JSX.Element {
     if (steam && isKey(steamKey)) return { key: steamKey };
     if (e.code === 'rate') {
       const now = admin.deps.now;
-      return { key: 'rate', vars: { time: kstTime(now() + (e.extra?.retryAfter ?? 60) * 1000) } };
+      return { key: 'rate', vars: { time: kstTime(now() + retryAfterSeconds(e.extra?.retryAfter, 60) * 1000) } };
     }
     if (RELAY_CODES.has(e.code) && isKey(e.code)) return README_KEYS.has(e.code) ? { key: e.code, link: 'readme' } : { key: e.code };
     return { key: 'unknown' };
@@ -305,6 +411,8 @@ export default function ManagePanel(props: ManagePanelProps): JSX.Element {
 
   /** The login has ended on this page: the line goes to the error line, a role="alert" (spec §3.7). */
   function dropSession(msg: Msg): void {
+    // a focused control that exists only while signed in goes now: focus moves to the line that says why
+    if (document.activeElement?.closest('.mp__head button, .mp__save, .mp__warn, .mp-steam')) requestFocus('error');
     clockRef.current?.stop();
     clockRef.current = null;
     pendingS.current = null;
@@ -312,17 +420,191 @@ export default function ManagePanel(props: ManagePanelProps): JSX.Element {
     setPerms(false);
     setPhase('ended');
     setAlert(msg);
+    stopTracking();
+  }
+
+  /** The relay refused the handle (401): the core cleared the box and asked for the revoke without waiting. */
+  function handleRefused(): void {
+    dropSession({ key: 'handle', then: UNCONFIRMED });
+    setNoLoginOpen(true);
+    requestFocus('error');
   }
 
   function onRequestError(e: unknown): void {
+    if (e instanceof RelayError && e.code === 'handle') return handleRefused();
     setNoLoginOpen(true);
-    if (e instanceof RelayError && e.code === 'handle') {
-      // the core cleared the box and asked the relay to revoke the grant, without waiting for the answer
-      dropSession({ key: 'handle', then: UNCONFIRMED });
-      requestFocus('error');
+    setAlert(errorMsg(e));
+  }
+
+  // ---- rebuild and run tracking (spec §4.5, §4.6) ----
+
+  /** Polling stops when the login ends under it: the run link and [결과 확인] stay (spec §4.6). */
+  function stopTracking(): void {
+    if (stopPoll.current === null) return;
+    stopPoll.current();
+    stopPoll.current = null;
+    setBuild((b) => (b === null ? b : { ...b, phase: 'stopped', stopped: 'login', stage: null }));
+  }
+
+  function runBuild(id: number | null, url: string, phase: Build['phase']): Build {
+    const now = admin.deps.now; // deps are called unbound, as the core calls them
+    return { id, url, startedAt: now(), phase, stage: null, stopped: phase === 'stopped' ? 'login' : null, result: null, authFailed: false, site: null };
+  }
+
+  /** pollRun every 20 s while the tab is visible; the idle clock waits meanwhile, the 60-minute cap does not (§4.2). */
+  function track(id: number, url: string): void {
+    // First: pause() ends a session whose deadline has already passed, and that logout empties the box at once.
+    clockRef.current?.pause();
+    stopPoll.current?.(); // one loop at a time: one still running is cancelled before another starts
+    stopPoll.current = null;
+    if (phaseRef.current !== 'in' || admin.box.get() === null) {
+      setBuild(runBuild(id, url, 'stopped')); // the login ended while the dispatch was on its way
       return;
     }
-    setAlert(errorMsg(e));
+    const seq = buildSeq.current;
+    lastJobs.current = [];
+    setBuild(runBuild(id, url, 'tracking'));
+    setWarn((w) => (w?.kind === 'idle' ? null : w));
+    stopPoll.current = pollRun(admin.deps, admin.relay, id, {
+      visible: () => document.visibilityState !== 'hidden',
+      onUpdate: (run, jobs) => latest.current.onRunUpdate(seq, id, run, jobs),
+      onError: (e) => latest.current.onPollError(seq, e),
+      onStop: (reason) => latest.current.onRunStop(seq, id, reason),
+    });
+  }
+
+  function onRunUpdate(seq: number, id: number, raw: unknown, rawJobs: unknown): void {
+    if (seq !== buildSeq.current) return;
+    const run = isRecord(raw) ? raw : {};
+    const jobs = jobsOf(rawJobs);
+    const status = textOf(run.status);
+    const url = verifiedRunUrl(run.htmlUrl, id);
+    lastJobs.current = jobs;
+    if (pollErrors.current.size > 0) {
+      pollErrors.current.clear();
+      setBuildMsg(null);
+    }
+    setBuild((b) =>
+      b === null || b.id !== id || b.phase !== 'tracking' ? b : { ...b, url: url ?? b.url, stage: status === 'completed' ? b.stage : stageOf(status, jobs, b.stage) },
+    );
+  }
+
+  /** A failed poll (polling goes on): its §4.7 text once per code, and §4.8 opens. */
+  function onPollError(seq: number, e: unknown): void {
+    if (seq !== buildSeq.current) return;
+    const msg = errorMsg(e);
+    if (pollErrors.current.has(msg.key)) return;
+    pollErrors.current.add(msg.key);
+    setBuildMsg(msg);
+    setNoLoginOpen(true);
+  }
+
+  /** Spec §4.6: judged by job, not by the run's conclusion (a failed fetch-health fails a run that did deploy). */
+  function onRunStop(seq: number, id: number, reason: 'done' | 'timeout' | 'handle'): void {
+    if (seq !== buildSeq.current) return;
+    stopPoll.current = null;
+    if (reason === 'handle') {
+      setBuild((b) => (b === null ? b : { ...b, phase: 'stopped', stopped: 'login', stage: null }));
+      handleRefused();
+      return;
+    }
+    if (phaseRef.current === 'in') clockRef.current?.resume();
+    if (reason === 'timeout') {
+      setBuild((b) => (b === null ? b : { ...b, phase: 'stopped', stopped: 'timeout', stage: null }));
+      return;
+    }
+    const conclusion = (name: JobName) => lastJobs.current.find((j) => j.name === name)?.conclusion ?? null;
+    const deployed = conclusion('deploy') === 'success';
+    setBuild((b) =>
+      b === null ? b : { ...b, phase: 'done', stage: null, result: deployed ? 'deployed' : 'failed', authFailed: deployed && conclusion('fetch-health') === 'failure' },
+    );
+    if (deployed) void checkSite(seq, id, true);
+  }
+
+  function clearSiteTimer(): void {
+    if (siteTimer.current === null) return;
+    const clear = admin.deps.clearTimeout;
+    clear(siteTimer.current);
+    siteTimer.current = null;
+  }
+
+  /**
+   * Reads this site's player-log page with ?r=<run>, no-store (spec §4.6): its #acct-status tells what the run put on the
+   * site. After a deploy a page from the CDN's cache is read again every 30 s for up to 10 minutes; [결과 확인] reads once.
+   */
+  async function checkSite(seq: number, id: number, retry: boolean): Promise<void> {
+    clearSiteTimer();
+    const { fetch: fetchPage, now, setTimeout: set } = admin.deps;
+    const deadline = now() + SITE_RETRY_CAP_MS;
+    const show = (site: Site) => setBuild((b) => (b === null || b.id !== id ? b : { ...b, site }));
+    show('checking');
+    const read = async (): Promise<Platform[] | null> => {
+      try {
+        const res = await fetchPage(`${routePath(BASE_PATH.playerLog, lang, 'game')}?r=${id}`, { cache: 'no-store' });
+        return res.ok ? platformsOf(await res.text(), id) : null;
+      } catch {
+        return null; // offline or refused: the same as a page without this run
+      }
+    };
+    const attempt = async (): Promise<void> => {
+      // a read still unanswered after 30 s (a stalled CDN or network) counts as no match; its late answer is dropped
+      const timedOut = new Promise<null>((resolve) => {
+        siteTimer.current = set(() => resolve(null), SITE_RETRY_MS);
+      });
+      const platforms = await Promise.race([read(), timedOut]);
+      if (seq !== buildSeq.current) return;
+      clearSiteTimer();
+      if (platforms !== null) return show(platforms);
+      if (retry && now() + SITE_RETRY_MS <= deadline) {
+        siteTimer.current = set(() => void attempt(), SITE_RETRY_MS);
+        return;
+      }
+      show(retry ? 'later' : 'notYet');
+    };
+    await attempt();
+  }
+
+  /** [다시 빌드]: relay('dispatch') with no argument; the relay builds {ref: 'main'} itself (spec §4.5). */
+  async function rebuild(): Promise<void> {
+    if (phaseRef.current !== 'in' || dispatching || build?.phase === 'tracking') return;
+    buildSeq.current += 1;
+    const seq = buildSeq.current;
+    clearSiteTimer();
+    pollErrors.current.clear();
+    setBuildMsg(null);
+    setBuild(null);
+    setDispatching(true);
+    try {
+      const res = await admin.relay.relay('dispatch');
+      if (seq !== buildSeq.current) return; // unmounted, or a newer [다시 빌드]: this answer starts nothing
+      const data = isRecord(res) ? res : {};
+      const id = runIdOf(data.runId);
+      if (id === null) setBuild(runBuild(null, WORKFLOW_URL, 'started'));
+      else track(id, verifiedRunUrl(data.htmlUrl, id) ?? WORKFLOW_URL);
+    } catch (e) {
+      if (seq !== buildSeq.current) return;
+      if (e instanceof RelayError && e.code === 'handle') {
+        handleRefused();
+      } else if (e instanceof RelayError && e.code === 'busy') {
+        // the relay refuses a second run while one is in progress: follow that one (spec §4.5)
+        setBuildMsg({ key: 'busy' });
+        setNoLoginOpen(true);
+        const id = e.extra?.runId ?? null;
+        if (id === null) setBuild(runBuild(null, WORKFLOW_URL, 'busy'));
+        else track(id, verifiedRunUrl(`${RUNS_URL}${id}`, id) ?? WORKFLOW_URL);
+      } else {
+        setBuildMsg(errorMsg(e));
+        setNoLoginOpen(true);
+      }
+    } finally {
+      setDispatching(false);
+    }
+  }
+
+  /** [결과 확인] after the login ended or tracking timed out: the page read needs no login (spec §4.6). */
+  function checkResult(): void {
+    if (build === null || build.id === null || build.site === 'checking') return;
+    void checkSite(buildSeq.current, build.id, false);
   }
 
   /** After session() filled the box: the clock (it reads expiresAt once), then vars.list and workflow.get (spec §4.2). */
@@ -416,8 +698,8 @@ export default function ManagePanel(props: ManagePanelProps): JSX.Element {
     }
   }
 
-  const latest = useRef({ startSession, endSession, dropSession, onTicket, onGhError, verifySteam });
-  latest.current = { startSession, endSession, dropSession, onTicket, onGhError, verifySteam };
+  const latest = useRef({ startSession, endSession, dropSession, onTicket, onGhError, verifySteam, onRunUpdate, onPollError, onRunStop });
+  latest.current = { startSession, endSession, dropSession, onTicket, onGhError, verifySteam, onRunUpdate, onPollError, onRunStop };
 
   function login(): void {
     setAlert(null);
@@ -594,7 +876,13 @@ export default function ManagePanel(props: ManagePanelProps): JSX.Element {
   // mounted after a same-tab return: AccountLinks already turned the ticket into a handle
   useEffect(() => {
     if (admin.box.get() !== null) void latest.current.startSession(false);
-    return () => clockRef.current?.stop();
+    return () => {
+      clockRef.current?.stop();
+      stopPoll.current?.();
+      stopPoll.current = null;
+      buildSeq.current += 1; // a page read still on its way lands nowhere
+      clearSiteTimer();
+    };
     // mount only
   }, []);
 
@@ -619,20 +907,28 @@ export default function ManagePanel(props: ManagePanelProps): JSX.Element {
     [admin],
   );
 
-  // the minutes left in the status line
+  // the minutes left in the status line, and a tracked run's minutes (its line and the chip)
+  const tracking = build?.phase === 'tracking';
   useEffect(() => {
-    if (phase !== 'in') return;
+    if (phase !== 'in' && !tracking) return;
     const { setTimeout: set, clearTimeout: clear } = admin.deps;
     let timer = set(function tick() {
       setTick((n) => n + 1);
       timer = set(tick, STATUS_TICK_MS);
     }, STATUS_TICK_MS);
     return () => clear(timer);
-  }, [phase, admin]);
+  }, [phase, tracking, admin]);
 
   const dirty = store.dirty();
   useEffect(() => {
     onDirtyChange(dirty);
+    // Nothing unsaved (a discard or a save): the unlink ticks, the Riot confirmation and the Steam result belonged to
+    // the edits that are gone, so an emptied ID asks for a fresh unlink tick.
+    if (!dirty) {
+      setUnlink(new Set());
+      setRiotConfirm('');
+      setSteamResult('');
+    }
     // reports changes of `dirty` only
   }, [dirty]);
   useEffect(() => {
@@ -662,6 +958,14 @@ export default function ManagePanel(props: ManagePanelProps): JSX.Element {
   const now = admin.deps.now;
   const expires = admin.box.expiresAt();
   const minutesLeft = expires === null ? 0 : Math.max(0, Math.ceil((expires - now()) / MINUTE));
+  const elapsed = build === null ? 0 : Math.max(0, Math.floor((now() - build.startedAt) / MINUTE));
+  // the chip for AccountLinks' "연동 관리" button: sent when it changes, never before a run is tracked
+  const chip = tracking ? fill(copy['label:chip'], { n: elapsed }) : null;
+  useEffect(() => {
+    if (chip === chipSent.current) return;
+    chipSent.current = chip;
+    onBuildChip?.(chip);
+  }, [chip]);
   const shownOnPage = (tile: AccountTile): boolean => (states?.has(tile.slot) ? states.get(tile.slot) === 'shown' : tile.state === 'shown');
   const formShown = loaded && phase !== 'out';
   // before the form shows, the current tile's state note leads the section (spec §2.2 step 3, §3.5)
@@ -870,8 +1174,90 @@ export default function ManagePanel(props: ManagePanelProps): JSX.Element {
     );
   }
 
+  /**
+   * The run (spec §4.6): failures in a role="alert"; the stage, then the outcome, in a polite role="status" whose text
+   * changes only with them (steps and minutes sit outside it); the verified run link, [결과 확인] and [새로 고침] after.
+   */
+  function renderBuild(): JSX.Element {
+    const b = build;
+    const lines: string[] = [];
+    if (b !== null) {
+      if (b.phase === 'started') lines.push(copy.dispatched);
+      if (b.phase === 'tracking' && b.stage !== null) lines.push(copy[b.stage.key]);
+      if (b.phase === 'stopped') lines.push(copy[b.stopped === 'timeout' ? 'result.timeout' : 'result.loginEnded']);
+      if (b.result === 'failed') lines.push(copy['result.failed']);
+      if (b.site === 'checking' && b.result === 'deployed') lines.push(copy['result.checking']);
+      if (b.site === 'later') lines.push(copy['result.later']);
+      if (b.site === 'notYet') lines.push(copy['result.notYet']);
+      const platforms = Array.isArray(b.site) ? (b.site as readonly Platform[]) : [];
+      // tile order, as the groups above; a platform without a tile here is not shown
+      const results = tiles.flatMap((tile) => platforms.filter((p) => p.slot === tile.slot).map((p) => ({ tile, shown: p.state === 'shown', hidden: p.state === 'hidden' })));
+      for (const r of results) lines.push(fill(copy[r.shown ? 'label:game.shown' : 'label:game.hidden'], { game: r.tile.name }));
+      if (b.authFailed) {
+        lines.push(copy['result.authFailed']);
+        if (results.some((r) => r.tile.key === 'steam' && r.hidden)) lines.push(copy['result.steamHint']);
+      }
+      if (results.some((r) => !r.shown)) lines.push(copy['result.reasons']);
+    }
+    const stage = b?.phase === 'tracking' ? b.stage : null;
+    const steps = stage?.key === 'stage.build' && (stage.total ?? 0) > 0 ? fill(copy['label:steps'], { done: stage.done ?? 0, total: stage.total ?? 0 }) : null;
+    const checkable = b !== null && b.phase === 'stopped' && b.id !== null;
+    const refreshable = b !== null && (b.phase === 'done' || (b.phase === 'stopped' && Array.isArray(b.site)));
+    return (
+      <div className="mp-build" data-mp="build">
+        <p className="mp__alert" role="alert">
+          {renderMsg(buildMsg)}
+        </p>
+        <div className="mp-build__status" role="status">
+          {lines.map((line) => (
+            <p key={line}>{line}</p>
+          ))}
+        </div>
+        {b?.phase === 'tracking' && (
+          <p className="mp-build__meta">
+            {steps !== null && <span>{steps} · </span>}
+            <span>{fill(copy['label:elapsed'], { n: elapsed, eta: ACCOUNT_ADMIN.etaMinutes })}</span>
+          </p>
+        )}
+        {b !== null && (
+          <p className="mp-build__link">
+            <NewTab href={b.url} label={copy[b.url === WORKFLOW_URL ? 'label:webRunLink' : 'label:runLink']} newTab={copy['label:newTab']} />
+          </p>
+        )}
+        {(checkable || refreshable) && (
+          <div className="mp-build__actions">
+            {checkable && (
+              <button type="button" className={btn} aria-disabled={b.site === 'checking' ? 'true' : undefined} onClick={checkResult}>
+                {copy['label:checkResult']}
+              </button>
+            )}
+            {refreshable && (
+              <button type="button" className={btn} onClick={() => admin.deps.location.reload()}>
+                {copy['label:refresh']}
+              </button>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  }
+
   const changes = pendingChanges();
   const commands = ghCommands(changes);
+  const commandText = commands.lines.join('\n');
+  /** §4.8: the command lines to the clipboard; the note says whether it worked, for these lines only. */
+  function copyCommands(): void {
+    const text = commandText;
+    const done = (ok: boolean) => setCopied({ text, ok });
+    try {
+      navigator.clipboard.writeText(text).then(
+        () => done(true),
+        () => done(false),
+      );
+    } catch {
+      done(false); // no Clipboard API here
+    }
+  }
   const skippedOf = (reason: 'invalid' | 'unsafe-shell') => commands.skipped.filter((s) => s.reason === reason).map((s) => s.name);
   const names = (list: readonly string[]) => (
     <ul className="mp-nologin__names">
@@ -971,11 +1357,16 @@ export default function ManagePanel(props: ManagePanelProps): JSX.Element {
                 <button type="button" className="mp-btn btn btn--fill cut" disabled={saving} onClick={() => void save()}>
                   {copy['label:save']}
                 </button>
+                {/* aria-disabled, not disabled: while a run is tracked the button keeps its focus (spec §4.5) */}
+                <button type="button" className={btn} aria-disabled={dispatching || tracking ? 'true' : undefined} onClick={() => void rebuild()}>
+                  {copy['label:rebuild']}
+                </button>
               </div>
             )}
-            <p className="mp__alert" role="alert">
+            <p className="mp__alert" role="alert" data-mp="save-alert">
               {renderMsg(saveMsg)}
             </p>
+            {renderBuild()}
           </div>
         )}
         <details className="mp-nologin" data-mp="no-login" open={noLoginOpen} onToggle={(e) => setNoLoginOpen(e.currentTarget.open)}>
@@ -1003,8 +1394,14 @@ export default function ManagePanel(props: ManagePanelProps): JSX.Element {
           <p className="mp-nologin__ps">{copy['label:psNote']}</p>
           {/* a keyboard-focusable scroller: the long lines scroll sideways (WCAG 2.1.1) */}
           <pre className="mp-nologin__pre" tabIndex={0}>
-            <code>{commands.lines.join('\n')}</code>
+            <code>{commandText}</code>
           </pre>
+          <div className="mp-nologin__copy">
+            <button type="button" className={btn} onClick={copyCommands}>
+              {copy['label:copy']}
+            </button>
+            <span role="status">{copied !== null && copied.text === commandText ? copy[copied.ok ? 'copied' : 'copyFailed'] : ''}</span>
+          </div>
           {skippedOf('unsafe-shell').length > 0 && (
             <>
               <p>{copy.skippedShell}</p>

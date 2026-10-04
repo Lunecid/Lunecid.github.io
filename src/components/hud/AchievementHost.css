@@ -46,7 +46,7 @@
   flex: none;
   margin-top: 2px;
   color: var(--gold);
-  font-size: 15px;
+  font-size: var(--fs-small);
   line-height: 1;
 }
 .ach-toast__body {
@@ -61,7 +61,7 @@
 }
 .ach-toast__text {
   margin-top: 4px;
-  font: 500 14px/1.4 var(--font-sans);
+  font: 500 var(--fs-meta)/1.4 var(--font-sans);
   color: var(--hud-text);
   overflow-wrap: anywhere;
   /* Controller ruling 1: max two lines. */

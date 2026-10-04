@@ -1,9 +1,9 @@
 ---
-import ResumeKo from '../../components/print/ResumeKo.astro';
+import Resume from '../../components/print/Resume.astro';
 import PrintLayout from '../../layouts/PrintLayout.astro';
 import { printModel } from '../../lib/print-inputs';
 const model = await printModel('resume-data-ko');
 ---
 <PrintLayout lang={model.lang} title="백성은 이력서 · 데이터 분석가">
-  <ResumeKo model={model} />
+  <Resume model={model} />
 </PrintLayout>

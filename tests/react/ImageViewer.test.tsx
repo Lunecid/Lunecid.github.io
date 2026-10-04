@@ -37,23 +37,6 @@ const FIG_B = {
 const LABELS = { dialog: '이미지 보기', close: '닫기', previous: '이전 이미지', next: '다음 이미지', counter: '{current} / {total}' };
 
 beforeAll(() => {
-  // jsdom has no working showModal()/close(); emulate the parts the island relies on.
-  Object.defineProperty(HTMLDialogElement.prototype, 'showModal', {
-    configurable: true,
-    writable: true,
-    value(this: HTMLDialogElement) {
-      this.setAttribute('open', '');
-    },
-  });
-  Object.defineProperty(HTMLDialogElement.prototype, 'close', {
-    configurable: true,
-    writable: true,
-    value(this: HTMLDialogElement) {
-      if (!this.hasAttribute('open')) return;
-      this.removeAttribute('open');
-      this.dispatchEvent(new Event('close'));
-    },
-  });
   if (typeof Element.prototype.setPointerCapture !== 'function') {
     Element.prototype.setPointerCapture = function setPointerCapture() {};
     Element.prototype.releasePointerCapture = function releasePointerCapture() {};

@@ -179,7 +179,8 @@ describe('accounts-admin copy (spec §9.5)', () => {
       if (!existsSync(page)) ctx.skip(`no ${PAGES[lang]}`);
       const newest = Math.max(...MANAGEMENT_SOURCES.map((f) => statSync(join(ROOT, f)).mtimeMs));
       if (statSync(page).mtimeMs < newest) ctx.skip(`${PAGES[lang]} predates the management code: rebuild to check`);
-      const html = readFileSync(page, 'utf8');
+      // Every stylesheet is inlined (inlineStylesheets: 'always'), the lazy panel's too: its selectors are not copy.
+      const html = readFileSync(page, 'utf8').replace(/<style\b[^>]*>[\s\S]*?<\/style>/g, '');
       // Visitor strings shared with ui.ts (e.g. 새 탭에서 열림) and short generic labels (저장 is inside 저장소; English
       // single words such as Cancel occur in prose) are not management text; every sentence and longer label is.
       const shared = new Set(Object.values(ui[lang]) as string[]);
@@ -195,4 +196,10 @@ describe('accounts-admin copy (spec §9.5)', () => {
       expect(checked).toBeGreaterThan(50);
     });
   }
+
+  // The copy check above strips every <style>: that hides nothing only while the panel's stylesheet holds no text.
+  it('ManagePanel.css carries no generated text (no content: with a string), so stripping <style> hides no copy', () => {
+    const css = readFileSync(join(ROOT, 'src/islands/account/ManagePanel.css'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+    expect(css).not.toMatch(/\bcontent\s*:[^;}]*["']/);
+  });
 });

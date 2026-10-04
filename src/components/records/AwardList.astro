@@ -91,14 +91,14 @@ const { lang, variant, awards } = Astro.props;
     border-bottom: 1px solid var(--read-line);
   }
   /* A square tier tag: gold for the top awards (gold = achievements and tier badges, spec §4), grey otherwise. */
-  .award__medal { padding: 5px 6px; text-align: center; font-size: 13px; font-weight: 800; line-height: 1.3; }
+  .award__medal { padding: 5px 6px; text-align: center; font-size: var(--fs-label); font-weight: 800; line-height: 1.3; }
   .award__medal--gold { background: var(--gold); color: var(--gold-ink); }
   .award__medal--silver { background: var(--read-card); color: var(--read-muted); border: 1px solid var(--read-line-strong); }
   .award__body { min-width: 0; }
   .award__title { font-size: var(--fs-sub); font-weight: 700; line-height: 1.45; color: var(--read-text); }
-  .award__contest { margin-top: 2px; font-size: 15px; line-height: 1.5; }
+  .award__contest { margin-top: 2px; font-size: var(--fs-small); line-height: 1.5; }
   .award__org,
-  .award__note { margin-top: 2px; font-size: 14px; line-height: 1.5; color: var(--read-muted); }
+  .award__note { margin-top: 2px; font-size: var(--fs-meta); line-height: 1.5; color: var(--read-muted); }
   .award__links { grid-column: 2; }
   @media (min-width: 734px) {
     .award { grid-template-columns: 100px minmax(0, 1fr) auto; align-items: center; column-gap: 24px; padding-block: 20px; }

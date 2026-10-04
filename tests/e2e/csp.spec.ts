@@ -3,7 +3,9 @@
 // This spec is the CSP check; no other spec bypasses the policy (tests/e2e/final-fix2.spec.ts sets its test-only
 // overrides as inline styles, which `style-src-attr 'unsafe-inline'` allows).
 import { PRINT_ROUTES } from '../../src/config';
-import { builtRoutes, collectViolations, expect, legacyPaths, test, watchViolations } from './helpers';
+import { adminCopy } from '../../src/i18n/accounts-admin';
+import { FAKE_TICKET, builtRoutes, collectViolations, expect, legacyPaths, mockRelay, test, watchViolations } from './helpers';
+import { ACCOUNTS_ORIGIN, ORIGIN } from './ports';
 
 test.beforeEach(async ({ page }) => {
   await watchViolations(page);
@@ -61,6 +63,26 @@ test('PL-4: no CSP violation with the evidence viewer open on the Player Log', a
   await expect(page.locator('dialog.image-viewer .image-viewer__img')).toHaveAttribute('data-ready', 'true');
   expect(await collectViolations(page)).toEqual([]);
 });
+
+// Owner mode with the management chunk rendered (spec §8.2): on the real build (no relay: the relay-unset screen) and
+// on the fixture build (the relay mocked: the panel's heading, signed in after the same-tab return).
+for (const [build, origin] of [['dist', ORIGIN], ['fixture', ACCOUNTS_ORIGIN]] as const) {
+  for (const query of ['?manage', `?manage#gh=${FAKE_TICKET}`]) {
+    const shown = query === '?manage' ? query : '?manage#gh=<fake>';
+    test(`no CSP violation in owner mode: ${build} /game/player-log/${shown}`, async ({ context, page }) => {
+      if (origin === ACCOUNTS_ORIGIN) await mockRelay(context);
+      await page.goto(`${origin}/game/player-log/${query}`, { waitUntil: 'load' });
+      if (query === '?manage') await page.locator('button.acct-manage').click();
+      const dialog = page.locator('dialog#acct-dlg');
+      await expect(dialog).toHaveAttribute('data-state', 'open');
+      if (origin === ACCOUNTS_ORIGIN) await expect(dialog.locator('h3.mp__title')).toBeVisible();
+      else await expect(dialog.locator('.mp__unset')).toContainText(adminCopy.ko['relay-unset']);
+      if (query !== '?manage' && origin === ACCOUNTS_ORIGIN) await expect(dialog.locator('.mp__perms')).toBeVisible();
+      await page.waitForTimeout(400);
+      expect(await collectViolations(page)).toEqual([]);
+    });
+  }
+}
 
 test('interactive paths: the image viewer on /game/records/, a showcase tab on /game/player-log/', async ({ page }) => {
   await page.goto('/game/records/');

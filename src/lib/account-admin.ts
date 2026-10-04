@@ -35,6 +35,8 @@ const NONCE_BYTES = 16;
 const MINUTE = 60_000;
 const POLL_MS = 20_000;
 const POLL_CAP_MS = 45 * MINUTE;
+// The longest retryAfter honoured, in seconds: the Worker's own bound (RETRY_MAX), applied again here.
+const RETRY_AFTER_MAX_S = 86_400;
 // Characters no `gh` line may carry in a value (ghCommands).
 const SHELL_UNSAFE = /["\\]/;
 // PowerShell ends a single-quoted string at any of these; each is escaped by doubling (spec §4.8).
@@ -561,15 +563,23 @@ export function varsFromList(list: unknown): Partial<Record<AccountVar, string>>
 // ---- spec §4.6: run tracking -------------------------------------------------------------------------------------------
 
 /**
+ * A retryAfter as the seconds to wait (the polling delay here, the §4.7 time in the panel): at most a day, so a time
+ * can always be written and a delay always ends; anything but a finite number ≥ 0 gives the fallback.
+ */
+export function retryAfterSeconds(value: number | undefined, fallback: number): number {
+  return typeof value === 'number' && Number.isFinite(value) && value >= 0 ? Math.min(value, RETRY_AFTER_MAX_S) : fallback;
+}
+
+/**
  * run.get + run.jobs at once, then every 20 s while the tab is visible; a 'rate' error waits its retryAfter instead.
  * Stops with 'done' once the run is completed, 'timeout' after 45 minutes, 'handle' when the login ended. Other errors
- * keep polling. Returns the cancel function (no onStop then).
+ * go to onError and polling goes on. Returns the cancel function (no onStop then; a callback may call it too).
  */
 export function pollRun(
   deps: AdminDeps,
   api: RelayApi,
   runId: number,
-  o: { visible(): boolean; onUpdate(run: unknown, jobs: unknown): void; onStop(reason: 'done' | 'timeout' | 'handle'): void },
+  o: { visible(): boolean; onUpdate(run: unknown, jobs: unknown): void; onError?(e: unknown): void; onStop(reason: 'done' | 'timeout' | 'handle'): void },
 ): () => void {
   const { now, setTimeout: set, clearTimeout: clear } = deps;
   const deadline = now() + POLL_CAP_MS;
@@ -598,9 +608,14 @@ export function pollRun(
     } catch (e) {
       if (stopped) return;
       if (e instanceof RelayError && e.code === 'handle') return finish('handle');
-      if (e instanceof RelayError && e.extra?.retryAfter !== undefined) wait = Math.max(POLL_MS, e.extra.retryAfter * 1000);
+      if (e instanceof RelayError) wait = Math.max(POLL_MS, retryAfterSeconds(e.extra?.retryAfter, 0) * 1000);
+      try {
+        o.onError?.(e);
+      } catch {
+        // a failing callback must not end the loop: the next poll and the 45-minute stop still come
+      }
     }
-    schedule(wait);
+    if (!stopped) schedule(wait); // onUpdate or onError may have cancelled
   }
   void tick();
   return () => {

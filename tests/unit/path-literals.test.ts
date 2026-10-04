@@ -1,12 +1,11 @@
 // Contract §2.3: after the move, links are built only by src/lib/links.ts. Base-form path literals live only in data and
 // in the route/link/OG modules; prefixed version paths only in the route/link/id modules; localizeHref only in links/utils.
-import { readdirSync, readFileSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { join, relative, sep } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { walk } from '../helpers/fs';
 
 const ROOT = process.cwd();
-const walk = (dir: string): string[] =>
-  readdirSync(dir, { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? walk(join(dir, e.name)) : [join(dir, e.name)]));
 const strip = (s: string) => s.replace(/<!--[\s\S]*?-->/g, '').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|\s)\/\/[^\n]*/g, '$1');
 const files = walk(join(ROOT, 'src'))
   .filter((f) => /\.(ts|tsx|astro|mjs)$/.test(f))

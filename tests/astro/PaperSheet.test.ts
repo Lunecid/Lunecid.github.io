@@ -129,7 +129,7 @@ describe('PaperSheet.astro', () => {
     const src = readSource('src/components/research/PaperSheet.astro');
     const tokens = readSource('src/styles/tokens.css');
     expect(tokens).toMatch(/--font-paper: "Times New Roman", Times, "TeX Gyre Termes", "Nimbus Roman", "Liberation Serif",\s*"Noto Serif KR", "Nanum Myeongjo", "AppleMyungjo", "Batang", serif;/);
-    expect(src).toMatch(/\.paper \{[^}]*font-family: var\(--font-paper\);[^}]*font-size: 17px;[^}]*line-height: 1\.5;/);
+    expect(src).toMatch(/\.paper \{[^}]*font-family: var\(--font-paper\);[^}]*font-size: var\(--fs-body\);[^}]*line-height: 1\.5;/);
     // Fix round 1: ragged right on phones, justified from 640px; hyphens: auto in both.
     expect(src).toMatch(/\n  \.paper__block--en \{ text-align: left; hyphens: auto;/);
     expect(src).toMatch(/@media \(min-width: 640px\) \{\s*\.paper__block--en \{ text-align: justify; text-justify: inter-word; \}/);
