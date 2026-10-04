@@ -329,21 +329,8 @@ function hoverOutsideMedia(file: string, text: string): string[] {
   }
   return out.sort();
 }
-const HOVER_OUTSIDE_BASELINE_MAX = 13;
-const HOVER_OUTSIDE_BASELINE: Record<string, string[]> = {
-  'src/components/home/PatchNotes.astro': ['.pn__item:hover .pn__ptr, .pn__item:focus-within .pn__ptr', '.pn__link:hover'],
-  'src/components/home/ResearchHighlight.astro': ['.paper__title a:hover'],
-  'src/components/hud/Hero.astro': ['.hero__chip:hover .hero__chip-face', '.hero__jobfit:hover'],
-  'src/components/projects/ProjectCartridge.astro': [
-    ':global(:root[data-motion="reduce"]) .cart:hover .cart__body, :global(:root[data-motion="reduce"]) .cart:focus-within .cart__body',
-    ':global(:root[data-motion="reduce"]) .cart:not(.cart--static):hover .cart__shell',
-    ':global(html:not(.js)) .cart:hover .cart__body, :global(html:not(.js)) .cart:focus-within .cart__body',
-    ':global(html:not(.js)) .cart:not(.cart--static):hover .cart__shell',
-  ],
-  'src/components/records/RecordsHead.astro': ['.rnav__link:hover'],
-  'src/components/research/BibtexBlock.astro': ['.bib__copy:hover'],
-  'src/components/research/PublicationItem.astro': ['.pub--ed .pub__title a:hover', '.pub__title a:hover'],
-};
+const HOVER_OUTSIDE_BASELINE_MAX = 0;
+const HOVER_OUTSIDE_BASELINE: Record<string, string[]> = {};
 
 // Durations come from the --dur-* tokens. DURATION_LITERAL_BASELINE lists the literal durations that remain; it only
 // shrinks. Delays are not checked (staggers are local choreography); 0s/0ms is not a duration to tokenise.
@@ -363,13 +350,11 @@ function literalDurations(file: string, text: string): string[] {
   }
   return out.sort();
 }
-const DURATION_LITERAL_BASELINE_MAX = 38;
+// What remains is owned elsewhere: the CRT intro's timeline (frozen), the account dialog and the achievement meter's pop.
+const DURATION_LITERAL_BASELINE_MAX = 15;
 const DURATION_LITERAL_BASELINE: Record<string, string[]> = {
-  'src/components/data/DataNav.astro': [':global(html.js) .data-nav[data-open="true"] .data-nav__panel | 150ms', ':global(html.js) .data-nav[data-open="true"] .data-nav__scrim | 150ms'],
   'src/components/hud/CrtIntro.astro': ['.crt__bar i | .2s', '.crt__bar | .12s', '.crt__caption | .12s', '.crt__flash | .18s', '.crt__screen | .18s', '.crt__start | .12s'],
-  'src/components/hud/HudNav.astro': [':global(html.js) .hud-nav[data-open="true"] .hud-nav__panel | 150ms', ':global(html.js) .hud-nav[data-open="true"] .hud-nav__scrim | 150ms'],
   'src/components/player-log/AchievementMeter.astro': ['.ach-meter__slot[data-unlocked="true"] | 250ms'],
-  'src/components/projects/ProjectCartridge.astro': ['.cart__body | .25s'],
   'src/islands/AccountLinks.css': [
     '.acct-dlg | 150ms',
     '.acct-dlg::backdrop, .acct-dlg[data-state="closing"]::backdrop | 150ms',
@@ -379,25 +364,6 @@ const DURATION_LITERAL_BASELINE: Record<string, string[]> = {
     '.acct-dlg__card[data-anim="switch"] | 180ms',
     ':root[data-motion="reduce"] .acct-dlg | 150ms',
     ':root[data-motion="reduce"] .acct-dlg::backdrop, :root[data-motion="reduce"] .acct-dlg[data-state="closing"]::backdrop | 150ms',
-  ],
-  'src/islands/CharacterStage.css': [':root[data-motion="reduce"] .char-stage[data-phase="exiting"] .char-stage__img | .15s'],
-  'src/islands/FavoriteGames.css': ['.fg__tint | .6s', ':root[data-motion="reduce"] .fg__tint | .2s'],
-  'src/islands/ImageViewer.css': [
-    '.image-viewer | 200ms',
-    '.image-viewer__cap | 200ms',
-    '.image-viewer__cap | 200ms',
-    '.image-viewer__frame | 200ms',
-    '.image-viewer__frame | 200ms',
-    '.image-viewer__img | 180ms',
-    '.image-viewer__slide | 180ms',
-    '.image-viewer__slide | 180ms',
-    '.image-viewer__stage[data-flip="off"] | 150ms',
-    '.image-viewer__stage[data-flip="off"] | 150ms',
-    ':root[data-motion="reduce"] .image-viewer | 150ms',
-    ':root[data-motion="reduce"] .image-viewer[data-state="closing"] | 150ms',
-    ':root[data-motion="reduce"] .image-viewer__cap | 150ms',
-    ':root[data-motion="reduce"] .image-viewer__slide, :root[data-motion="reduce"] .image-viewer__img | 150ms',
-    ':root[data-motion="reduce"] .image-viewer__stage, :root[data-motion="reduce"] .image-viewer__frame | 150ms',
   ],
 };
 

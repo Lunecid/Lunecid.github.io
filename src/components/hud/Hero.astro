@@ -245,7 +245,12 @@ const metaParts = creditParts(meta);
     text-decoration-color: var(--hud-line-strong);
     transition: text-decoration-color var(--dur-hover) linear;
   }
-  .hero__jobfit:hover {
+  @media (hover: hover) {
+    .hero__jobfit:hover {
+      text-decoration-color: var(--accent);
+    }
+  }
+  .hero__jobfit:active {
     text-decoration-color: var(--accent);
   }
   .hero__chip {
@@ -266,7 +271,12 @@ const metaParts = creditParts(meta);
     font: 600 13px/1.4 var(--font-mono);
     letter-spacing: .02em;
   }
-  .hero__chip:hover .hero__chip-face {
+  @media (hover: hover) {
+    .hero__chip:hover .hero__chip-face {
+      --cut-line: var(--accent);
+    }
+  }
+  .hero__chip:active .hero__chip-face {
     --cut-line: var(--accent);
   }
   .hero__icon {

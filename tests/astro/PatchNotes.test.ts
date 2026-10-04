@@ -39,7 +39,9 @@ describe('PatchNotes.astro (P1-9: a dark hud-grid band)', () => {
   it('▶ shows on hover and keyboard focus only; the link underlines on hover', () => {
     const src = readSource('src/components/home/PatchNotes.astro');
     expect(src).toMatch(/\.pn__ptr \{[^}]*opacity: 0/);
-    expect(src).toMatch(/\.pn__item:hover \.pn__ptr,\s*\.pn__item:focus-within \.pn__ptr \{ opacity: 1/);
+    // hover only on hover-capable pointers (a tap leaves no sticky ▶); focus-within shows it everywhere
+    expect(src).toMatch(/@media \(hover: hover\) \{\s*\.pn__item:hover \.pn__ptr \{ opacity: 1/);
+    expect(src).toMatch(/\n  \.pn__item:focus-within \.pn__ptr \{ opacity: 1/);
     expect(src).toMatch(/\.pn__link \{[^}]*text-decoration: none/);
     expect(src).toMatch(/\.pn__link:hover \{[^}]*text-decoration: underline/);
   });

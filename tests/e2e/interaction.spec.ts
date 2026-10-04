@@ -1,3 +1,4 @@
+import { devices } from '@playwright/test';
 import { test, expect, settle } from './helpers';
 
 // Batch 6 (interaction and accessibility polish): e2e coverage for rulings not already pinned by an existing spec
@@ -536,4 +537,45 @@ test.describe('N13: sticky hover cleared on touch; press fill holds', () => {
     const after = await btn.evaluate((el) => getComputedStyle(el).getPropertyValue('--cut-fill').trim());
     expect(after, 'hover changes --cut-fill').not.toBe(before);
   });
+});
+
+test('Z1: on a touch screen a tapped link keeps no hover colour (patch notes, hero chip, BibTeX copy)', async ({ browser, baseURL }) => {
+  const context = await browser.newContext({ ...devices['Pixel 7'], baseURL });
+  const page = await context.newPage();
+  // Taps must not navigate or copy: a capturing listener swallows the click, so only :hover/:active can change colour.
+  await page.addInitScript(() => {
+    window.addEventListener('click', (e) => {
+      if ((e.target as Element | null)?.closest?.('.pn__link, .hero__chip, [data-bib-copy]')) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+      }
+    }, true);
+  });
+  const tapKeepsColour = async (selector: string, read: (el: Element) => string) => {
+    const el = page.locator(selector).first();
+    await el.scrollIntoViewIfNeeded();
+    await expect(el).toBeVisible();
+    const before = await el.evaluate(read);
+    // Right after the tap the element still matches :hover on a touch screen (sticky hover); the colour must not follow.
+    await el.tap();
+    expect(await el.evaluate((node) => node.matches(':hover') || !!node.closest(':hover')), `${selector} keeps :hover after the tap`).toBe(true);
+    await expect.poll(() => el.evaluate(read), { timeout: 2000, message: `${selector} after the tap` }).toBe(before);
+    await page.locator('h1').first().tap();
+    await expect.poll(() => el.evaluate(read), { timeout: 2000, message: `${selector} after tapping away` }).toBe(before);
+  };
+  const colour = (el: Element) => getComputedStyle(el).color;
+  const cutLine = (el: Element) => getComputedStyle(el).getPropertyValue('--cut-line').trim();
+
+  await page.goto('/game/', { waitUntil: 'networkidle' });
+  await settle(page);
+  expect(await page.evaluate(() => matchMedia('(hover: hover)').matches), 'Pixel 7 must not claim hover:hover').toBe(false);
+  await tapKeepsColour('.pn__link', (el) => `${getComputedStyle(el).color} ${getComputedStyle(el).textDecorationLine}`);
+  await tapKeepsColour('.hero__chip .hero__chip-face', cutLine);
+
+  await page.goto('/game/research/', { waitUntil: 'networkidle' });
+  await settle(page);
+  await page.getByRole('button', { name: 'BibTeX' }).first().tap();
+  await tapKeepsColour('#cog-2026-engagement-bibtex [data-bib-copy]', colour);
+  await tapKeepsColour('#cog-2026-engagement-bibtex [data-bib-copy]', (el) => getComputedStyle(el).borderTopColor);
+  await context.close();
 });
