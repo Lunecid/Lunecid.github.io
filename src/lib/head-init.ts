@@ -3,7 +3,8 @@
 // first paint and before any island hydrates. The string is self-contained: no imports, and the storage keys are
 // the literals 'sb:motion' and 'sb:intro' (tests/react/head-init.test.ts checks they equal STORAGE_KEYS).
 // Timeline (ms from first-contentful-paint, N17 / F-016): overlay 0–400 → fade 400–700 → removed at 700 (≤1 s).
-// Any keydown/pointerdown/wheel/touchstart skips: fade, then done 150 ms later. Timers arm on FCP (or crt-on
+// Any keydown/pointerdown/wheel/touchstart skips: data-intro-skip switches the overlay to the short --dur-press
+// fade (CrtIntro.astro), then done 150 ms later removes both attributes. Timers arm on FCP (or crt-on
 // animationstart fallback); a 3 s safety calls done() only.
 // CRT gate (A-19): only the game home plays the intro; this string cannot import VARIANT_MODULES, so tests/react/variant-runtime.test.ts pins the agreement.
 
@@ -44,6 +45,7 @@ export const HEAD_INIT_SCRIPT = `(function () {
     try { if (po) po.disconnect(); } catch (e) {}
     d.removeEventListener('animationstart', onAnim, true);
     d.removeAttribute('data-intro');
+    d.removeAttribute('data-intro-skip');
     window.dispatchEvent(new Event('sb:intro-done'));
   }
   function release() {
@@ -55,6 +57,7 @@ export const HEAD_INIT_SCRIPT = `(function () {
     window.__sbIntroSkipped = true;
     window.clearTimeout(t1);
     window.clearTimeout(t2);
+    d.setAttribute('data-intro-skip', '');
     release();
     t2 = window.setTimeout(done, ${INTRO_TIMING.skipFadeMs});
   }

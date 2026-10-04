@@ -31,6 +31,16 @@ describe('CrtIntro.astro', () => {
     expect(src).toMatch(/^\s*\.crt\s*\{[^}]*pointer-events:\s*none/m);
   });
 
+  it('F1: the skip path fades with --dur-press and --ease-out; the natural path keeps --dur-exit and --ease-in', () => {
+    const src = readSource('src/components/hud/CrtIntro.astro');
+    expect(src).toMatch(
+      /:global\(:root\[data-intro=['"]fading['"]\]\)\s*\.crt\s*\{[^}]*transition:\s*opacity\s+var\(--dur-exit\)\s+var\(--ease-in\b/,
+    );
+    expect(src).toMatch(
+      /:global\(:root\[data-intro=['"]fading['"]\]\[data-intro-skip\]\)\s*\.crt\s*\{\s*transition:\s*opacity\s+var\(--dur-press\)\s+var\(--ease-out\);\s*\}/,
+    );
+  });
+
   it('flashes once and repeats nothing', () => {
     const src = readSource('src/components/hud/CrtIntro.astro');
     expect(src.match(/animation:\s*crt-flash\b/g)).toHaveLength(1);

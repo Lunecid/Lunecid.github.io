@@ -46,7 +46,7 @@ function runHeadScript(page: string): void {
 
 function resetRoot(): void {
   root.className = '';
-  for (const name of ['data-page', 'data-motion', 'data-intro', 'data-intro-played']) root.removeAttribute(name);
+  for (const name of ['data-page', 'data-motion', 'data-intro', 'data-intro-played', 'data-intro-skip']) root.removeAttribute(name);
   delete (window as IntroWindow).__sbIntroSkipped;
 }
 
@@ -144,6 +144,26 @@ describe('HEAD_INIT_SCRIPT', () => {
     window.dispatchEvent(new KeyboardEvent('keydown', { key: 'a' }));
     expect((window as IntroWindow).__sbIntroSkipped).toBeUndefined();
     window.removeEventListener('sb:intro-done', onDone);
+  });
+
+  it('F1: a skip marks data-intro-skip until done removes it', () => {
+    runHeadScript('home');
+    expect(root.hasAttribute('data-intro-skip')).toBe(false);
+    vi.advanceTimersByTime(50);
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Shift' }));
+    expect(root.getAttribute('data-intro')).toBe('fading');
+    expect(root.hasAttribute('data-intro-skip')).toBe(true);
+    vi.advanceTimersByTime(INTRO_TIMING.skipFadeMs);
+    expect(root.hasAttribute('data-intro')).toBe(false);
+    expect(root.hasAttribute('data-intro-skip')).toBe(false);
+
+    // the natural fade never sets it
+    sessionStorage.clear();
+    resetRoot();
+    runHeadScript('home');
+    vi.advanceTimersByTime(INTRO_TIMING.releaseMs);
+    expect(root.getAttribute('data-intro')).toBe('fading');
+    expect(root.hasAttribute('data-intro-skip')).toBe(false);
   });
 
   it.each(['pointerdown', 'wheel', 'touchstart'])('a %s also skips the intro', (type) => {
