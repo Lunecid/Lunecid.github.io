@@ -22,6 +22,7 @@ import {
   manageAllowed,
   nonce,
   pollRun,
+  retryAfterSeconds,
   startGithubLogin,
   startGithubLoginSameTab,
   startSteamLogin,
@@ -30,6 +31,7 @@ import {
   takeReturnFragment,
   varsFromList,
   type AdminDeps,
+  type RelayApi,
   type RelayOp,
 } from '../../src/lib/account-admin';
 import type { AccountVar } from '../../src/lib/account-ids';
@@ -967,6 +969,17 @@ describe('createFormStore / varsFromList', () => {
 
 // ---- spec §4.6: run tracking -----------------------------------------------------------------------------------------
 
+describe('retryAfterSeconds', () => {
+  it('a retryAfter as seconds to wait: at most a day; anything but a finite number ≥ 0 gives the fallback', () => {
+    expect(retryAfterSeconds(120, 60)).toBe(120);
+    expect(retryAfterSeconds(0, 60)).toBe(0);
+    expect(retryAfterSeconds(86_400, 60)).toBe(86_400);
+    expect(retryAfterSeconds(86_401, 60)).toBe(86_400);
+    expect(retryAfterSeconds(1e13, 60)).toBe(86_400);
+    for (const value of [undefined, Number.NaN, Number.POSITIVE_INFINITY, Number.NEGATIVE_INFINITY, -1]) expect(retryAfterSeconds(value, 60), String(value)).toBe(60);
+  });
+});
+
 describe('pollRun', () => {
   function setup(answer: (op: string, poll: number) => Response | ((url: string) => Response)) {
     vi.useFakeTimers();
@@ -984,8 +997,8 @@ describe('pollRun', () => {
     box.set(HANDLE, 3600);
     const api = createRelay(h.deps, box);
     let visible = true;
-    const on = { update: vi.fn(), stop: vi.fn() };
-    const cancel = pollRun(h.deps, api, 4242, { visible: () => visible, onUpdate: on.update, onStop: on.stop });
+    const on = { update: vi.fn(), error: vi.fn(), stop: vi.fn() };
+    const cancel = pollRun(h.deps, api, 4242, { visible: () => visible, onUpdate: on.update, onError: on.error, onStop: on.stop });
     const ops = () => h.calls.filter((c) => c.url === `${RELAY}/gh/api`).map((c) => bodyOf(c));
     return { h, box, on, cancel, ops, setVisible: (v: boolean) => void (visible = v) };
   }
@@ -1043,10 +1056,12 @@ describe('pollRun', () => {
     expect(ops()).toHaveLength(4);
   });
 
-  it('waits retryAfter before the next call', async () => {
-    const { ops, cancel } = setup((op, poll) => (poll === 1 && op === 'run.get' ? (url: string) => reply(url, 429, { error: 'rate', retryAfter: 120 }) : running(op)));
+  it('waits retryAfter before the next call (the failure goes to onError with its retryAfter)', async () => {
+    const { on, ops, cancel } = setup((op, poll) => (poll === 1 && op === 'run.get' ? (url: string) => reply(url, 429, { error: 'rate', retryAfter: 120 }) : running(op)));
     await vi.advanceTimersByTimeAsync(0);
     expect(ops()).toEqual([{ op: 'run.get', runId: 4242 }]);
+    expect(on.error).toHaveBeenCalledTimes(1);
+    expect(on.error.mock.calls[0]?.[0]).toMatchObject({ code: 'rate', status: 429, extra: { retryAfter: 120 } });
     await vi.advanceTimersByTimeAsync(120_000 - 1);
     expect(ops()).toHaveLength(1);
     await vi.advanceTimersByTimeAsync(1);
@@ -1064,16 +1079,70 @@ describe('pollRun', () => {
     await vi.advanceTimersByTimeAsync(5 * MIN);
     expect(ops()).toHaveLength(1);
     expect(on.update).not.toHaveBeenCalled();
+    expect(on.error).not.toHaveBeenCalled();
   });
 
-  it('other failures keep polling at 20 s', async () => {
+  it('other failures go to onError and polling goes on at 20 s', async () => {
     const { on, ops, cancel } = setup((op, poll) => (poll === 1 ? (url: string) => reply(url, 502, { error: 'upstream' }) : running(op)));
     await vi.advanceTimersByTimeAsync(0);
     expect(ops()).toHaveLength(1);
+    expect(on.error.mock.calls.map(([e]) => (e as RelayError).code)).toEqual(['upstream']);
     await vi.advanceTimersByTimeAsync(20_000);
     expect(ops()).toHaveLength(3);
+    expect(on.update).toHaveBeenCalledTimes(1);
+    expect(on.error).toHaveBeenCalledTimes(1);
     expect(on.stop).not.toHaveBeenCalled();
     cancel();
+  });
+
+  it('cancelling from onError stops at once: no timer is left behind', async () => {
+    const { on, ops, cancel } = setup(() => (url: string) => reply(url, 403, { error: 'gh-perm' }));
+    on.error.mockImplementation(() => cancel()); // the first failure arrives after setup returned
+    await vi.advanceTimersByTimeAsync(0);
+    expect(ops()).toHaveLength(1);
+    expect(on.error).toHaveBeenCalledTimes(1);
+    expect(vi.getTimerCount()).toBe(0);
+    await vi.advanceTimersByTimeAsync(5 * MIN);
+    expect(ops()).toHaveLength(1);
+  });
+
+  it('a throwing onError cannot end the loop: the next poll still comes, and the 45-minute stop ends it', async () => {
+    const { on, ops } = setup(() => (url: string) => reply(url, 502, { error: 'upstream' }));
+    on.error.mockImplementation(() => {
+      throw new RangeError('Invalid time value');
+    });
+    await vi.advanceTimersByTimeAsync(0);
+    expect(ops()).toHaveLength(1);
+    await vi.advanceTimersByTimeAsync(20_000);
+    expect(ops()).toHaveLength(2);
+    expect(on.error).toHaveBeenCalledTimes(2);
+    await vi.advanceTimersByTimeAsync(45 * MIN);
+    expect(on.stop.mock.calls).toEqual([['timeout']]);
+    expect(ops()).toHaveLength(135); // run.get alone, every 20 s
+  });
+
+  it('a retryAfter that is not a finite number ≥ 0 waits the usual 20 s', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(1_800_000_000_000);
+    const h = harness();
+    // relayFailure never lets these through, so a stand-in relay throws them
+    for (const retryAfter of [Number.POSITIVE_INFINITY, Number.NaN, -120]) {
+      const ops: string[] = [];
+      const api = {
+        relay: async (op: RelayOp) => {
+          ops.push(op);
+          throw new RelayError('rate', 429, { retryAfter });
+        },
+      } as unknown as RelayApi;
+      const on = { update: vi.fn(), error: vi.fn(), stop: vi.fn() };
+      const cancel = pollRun(h.deps, api, 4242, { visible: () => true, onUpdate: on.update, onError: on.error, onStop: on.stop });
+      await vi.advanceTimersByTimeAsync(20_000 - 1);
+      expect(ops, String(retryAfter)).toEqual(['run.get']);
+      await vi.advanceTimersByTimeAsync(1);
+      expect(ops, String(retryAfter)).toEqual(['run.get', 'run.get']);
+      expect(on.error).toHaveBeenCalledTimes(2);
+      cancel();
+    }
   });
 });
 

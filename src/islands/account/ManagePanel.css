@@ -26,13 +26,25 @@
 .mp__form { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; min-width: 0; }
 .mp__confirm { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; min-width: 0; } /* the two buttons wrap on a narrow phone */
 .mp__confirm > p { flex: 1 0 100%; font-size: var(--fs-small); color: var(--hud-strong); }
-.mp__save { display: flex; gap: 10px; }
+.mp__save { display: flex; flex-wrap: wrap; gap: 10px; }
 
 /* HUD text buttons (global .btn .cut): a mono label on English pages; Korean labels stay in the sans face */
 .mp-btn { font-family: var(--font-mono); letter-spacing: var(--ls-label); }
 .mp-btn:lang(ko) { font-family: var(--font-sans); letter-spacing: 0; }
 .mp-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
 .mp-btn[disabled] { cursor: progress; }
+/* [다시 빌드] while a run is tracked, [결과 확인] while it reads: focusable, but not drawn as clickable (--accent) */
+.mp-btn[aria-disabled="true"] { color: var(--hud-muted); --cut-line: var(--hud-line); --cut-fill: var(--hud-bg); cursor: default; }
+@media (hover: hover) { .mp-btn[aria-disabled="true"]:hover { --cut-fill: var(--hud-bg); } }
+.mp-btn[aria-disabled="true"]:active { --cut-fill: var(--hud-bg); transform: none; }
+
+/* rebuild, progress and results (spec §4.5, §4.6): the status lines are a polite live region; steps and minutes sit apart.
+   Live regions stay displayed while empty: one under display: none is not in the accessibility tree, so filling it is
+   often not announced. */
+.mp-build { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; min-width: 0; }
+.mp-build__status { display: grid; gap: 4px; font: 600 var(--fs-small)/1.55 var(--font-sans); color: var(--hud-strong); overflow-wrap: anywhere; }
+.mp-build__meta { font-size: var(--fs-label); line-height: 1.5; color: var(--hud-muted); }
+.mp-build__actions { display: flex; flex-wrap: wrap; gap: 10px; }
 
 /* one group per variable set (spec §4.3), the current account's group marked by its line */
 .mp-group { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; min-width: 0; margin: 0; padding: 14px 12px 12px; border: 1px solid var(--hud-line); transition: border-color var(--dur-hover) linear; }
@@ -87,8 +99,7 @@
 }
 .mp-steam__btn img { display: block; width: 180px; height: 35px; }
 .mp-steam__btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-.mp-steam__result { font: 600 var(--fs-small)/1.5 var(--font-sans); color: var(--hud-text); overflow-wrap: anywhere; }
-.mp-steam__result:empty { display: none; }
+.mp-steam__result { font: 600 var(--fs-small)/1.5 var(--font-sans); color: var(--hud-text); overflow-wrap: anywhere; } /* a live region: never display: none */
 
 .mp-manual, .mp-nologin { min-width: 0; }
 .mp-manual__sum, .mp-nologin__sum {
@@ -111,6 +122,8 @@
   color: var(--hud-text); font: 500 var(--fs-label)/1.6 var(--font-mono); white-space: pre;
 }
 .mp-nologin__pre:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.mp-nologin__copy { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+.mp-nologin__copy [role="status"] { font-size: var(--fs-label); color: var(--hud-text); }
 .mp-nologin__names { display: flex; flex-wrap: wrap; gap: 4px 12px; margin: 0; padding: 0; list-style: none; }
 .mp-nologin__names code { font: 600 var(--fs-label)/1.5 var(--font-mono); color: var(--hud-text); }
 .mp a { color: var(--accent); text-underline-offset: .2em; transition: color var(--dur-hover) linear; }
