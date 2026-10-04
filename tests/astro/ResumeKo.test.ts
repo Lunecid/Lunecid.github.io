@@ -41,7 +41,7 @@ describe('ResumeKo', () => {
     const order = positions(html, ['학력', '논문·발표', '프로젝트', '수상', '대외활동', '자격', '어학', '교육', '기술']);
     expect(order.every((i) => i >= 0), JSON.stringify(order)).toBe(true);
     expect([...order].sort((a, b) => a - b)).toEqual(order);
-    expect(html).toContain('4.0/4.5');
+    expect(html).toContain('4.1/4.5');
     expect(html).toContain('(졸업 예정)');
     expect(html).toContain('CDS빅데이터 교육');
     expect(html).toContain('부산대학교');

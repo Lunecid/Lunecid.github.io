@@ -143,7 +143,7 @@ describe('records data files', () => {
     expect(data.profile.location).toEqual({ ko: '부산', en: 'Busan, South Korea' });
     const ms = data.education.find((e) => e.id === 'ms-pnu');
     const bs = data.education.find((e) => e.id === 'bs-pnu');
-    expect(ms?.gpa).toEqual({ value: '4.0', scale: '4.5' });
+    expect(ms?.gpa).toEqual({ value: '4.1', scale: '4.5' });
     expect(ms?.expected).toBe(true);
     expect(ms?.end).toBe('2027-02');
     expect(bs?.gpa).toEqual({ value: '3.18', scale: '4.5' });

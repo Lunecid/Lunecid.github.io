@@ -16,7 +16,7 @@ describe('EducationTimeline.astro', () => {
     expect(ko).toMatch(/<section(?=[^>]*\bid="education")[^>]*>/);
     expect(ko).toContain('QUEST LOG');
     expect(ko).toMatch(/<h2[^>]*>학력<\/h2>/);
-    expect(ko).toContain('4.0/4.5');
+    expect(ko).toContain('4.1/4.5');
     expect(ko).toContain('3.18/4.5');
     expect(ko).toContain('2025.03 – 2027.02 (졸업 예정)');
     expect(ko.match(/졸업 예정/g)).toHaveLength(1);
@@ -27,7 +27,7 @@ describe('EducationTimeline.astro', () => {
     const en = await render('en');
     expect(en).toContain('Mar 2025 – Feb 2027 (expected)');
     expect(en).toContain('M.S. in Data Science');
-    expect(en).toMatch(/GPA\s*<span[^>]*>4\.0\/4\.5<\/span>/);
+    expect(en).toMatch(/GPA\s*<span[^>]*>4\.1\/4\.5<\/span>/);
   });
 
   it('shows the lab link and the thesis line only where they exist', async () => {

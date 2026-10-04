@@ -62,7 +62,7 @@ education:
     start: '2025-03'
     end: '2027-02'
     expected: true
-    gpa: { value: '4.0', scale: '4.5' }
+    gpa: { value: '4.1', scale: '4.5' }
     lab:
       ko: 데이터사이언스연구실(DataLab) · 지도교수 권준호
       en: Data Science Lab (DataLab) · Advisor Prof. Joonho Kwon
