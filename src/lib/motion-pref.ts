@@ -48,18 +48,35 @@ export function prefersReducedNow(): boolean {
   return typeof document !== 'undefined' && document.documentElement.getAttribute('data-motion') === 'reduce';
 }
 
-function subscribe(onChange: () => void): () => void {
-  const mq = typeof window.matchMedia === 'function' ? window.matchMedia(REDUCE_QUERY) : null;
-  const onOsChange = () => applyMotionPref(); // re-dispatches MOTION_EVENT
-  mq?.addEventListener?.('change', onOsChange);
+// One `change` listener on the OS query serves every subscriber: it re-applies the preference, which dispatches
+// MOTION_EVENT once however many subscribers (the achievement host, the footer toggles, islands) are listening.
+let osQuery: MediaQueryList | null = null;
+let subscribers = 0;
+const onOsChange = (): void => applyMotionPref();
+
+/**
+ * Calls onChange on every MOTION_EVENT: the footer toggle, an OS setting change (through the shared listener) and
+ * applyMotionPref(). It does not call onChange up front. Returns the unsubscribe; the last one removes the OS listener.
+ */
+export function subscribeMotion(onChange: () => void): () => void {
+  if (subscribers++ === 0 && typeof window.matchMedia === 'function') {
+    osQuery = window.matchMedia(REDUCE_QUERY);
+    osQuery.addEventListener?.('change', onOsChange);
+  }
   window.addEventListener(MOTION_EVENT, onChange);
+  let active = true;
   return () => {
-    mq?.removeEventListener?.('change', onOsChange);
+    if (!active) return; // a second call must not unbalance the count
+    active = false;
     window.removeEventListener(MOTION_EVENT, onChange);
+    if (--subscribers === 0) {
+      osQuery?.removeEventListener?.('change', onOsChange);
+      osQuery = null;
+    }
   };
 }
 
 /** Hydration-safe reduced-motion flag for islands (server snapshot false). */
 export function useReducedMotionPref(): boolean {
-  return useSyncExternalStore(subscribe, prefersReducedNow, () => false);
+  return useSyncExternalStore(subscribeMotion, prefersReducedNow, () => false);
 }

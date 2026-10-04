@@ -7,8 +7,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ENTRANCE_HOLD_MS as HOST_ENTRANCE_HOLD_MS, OUT_MS, TOAST_MS, initAchievementHost } from '../../src/scripts/achievement-host';
 import { STORAGE_KEYS } from '../../src/config';
 import { KONAMI_SEQUENCE } from '../../src/lib/konami';
+import { subscribeMotion } from '../../src/lib/motion-pref';
 import { __resetAchievementMemory, emitTrigger, isUnlocked, unlock, type AchievementDef } from '../../src/lib/achievements';
 import { achievementHostMarkup } from '../helpers/hud-markup';
+import { stubOsMedia } from '../helpers/os-media';
 
 const DEFS: AchievementDef[] = [
   {
@@ -299,6 +301,32 @@ describe('AchievementHost', () => {
     document.documentElement.setAttribute('data-motion', 'reduce');
     window.dispatchEvent(new Event('sb:motion-change'));
     expect(container.querySelector('.ach-toast')).toHaveAttribute('data-state', 'in');
+  });
+
+  it('the OS turning reduced motion on while holding also shows the queued toast at once, and teardown releases the OS listener', () => {
+    const os = stubOsMedia(false);
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    document.documentElement.setAttribute('data-motion', 'full');
+    const { container } = renderHost();
+    act(() => emitTrigger('bgm-on'));
+    expect(container.querySelector('.ach-toast')).toBeNull();
+    expect(os.listeners.size).toBe(1);
+    os.change(true);
+    expect(document.documentElement.getAttribute('data-motion')).toBe('reduce');
+    expect(container.querySelector('.ach-toast')).toHaveAttribute('data-state', 'in');
+    teardowns.pop()?.();
+    expect(os.listeners.size).toBe(0);
+  });
+
+  it('shares the one OS listener with other motion subscribers (footer toggle, islands)', () => {
+    const os = stubOsMedia(false);
+    renderHost();
+    const offOther = subscribeMotion(vi.fn());
+    expect(os.query.addEventListener).toHaveBeenCalledTimes(1);
+    offOther();
+    expect(os.listeners.size).toBe(1); // the host still holds it
+    teardowns.pop()?.();
+    expect(os.listeners.size).toBe(0);
   });
 
   it('reads its language and close label from the host attributes', () => {

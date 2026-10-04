@@ -1,7 +1,7 @@
 // The footer "모션 줄이기" toggle (SiteFooter fix rounds 1–3): the visible label never changes (WCAG 2.5.3); state is
 // aria-pressed plus an aria-hidden ON/OFF chip; the OS-forced note is shown, and referenced by aria-describedby, only
 // while the OS itself forces reduced motion. Shared by SiteFooter and DataFooter (P2-1).
-import { isMotionOffStored, osPrefersReduce, setMotionOff } from '../lib/motion-pref';
+import { isMotionOffStored, osPrefersReduce, setMotionOff, subscribeMotion } from '../lib/motion-pref';
 
 export function initMotionToggles(): void {
   document.querySelectorAll<HTMLButtonElement>('[data-motion-toggle]').forEach((button) => {
@@ -22,8 +22,6 @@ export function initMotionToggles(): void {
       setMotionOff(button.getAttribute('aria-pressed') !== 'true');
       sync();
     });
-    if (typeof window.matchMedia === 'function') {
-      window.matchMedia('(prefers-reduced-motion: reduce)').addEventListener('change', sync);
-    }
+    subscribeMotion(sync); // an OS setting change arrives as MOTION_EVENT, like a click on any toggle
   });
 }

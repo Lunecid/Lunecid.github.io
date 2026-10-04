@@ -19,7 +19,7 @@ import {
   type AchievementDef,
 } from '../lib/achievements';
 import { createKonamiDetector } from '../lib/konami';
-import { MOTION_EVENT, applyMotionPref, prefersReducedNow } from '../lib/motion-pref';
+import { prefersReducedNow, subscribeMotion } from '../lib/motion-pref';
 
 /** The fields the toast needs (the server serialises only these into data-defs). */
 export type ToastDef = Pick<AchievementDef, 'id' | 'trigger' | 'title' | 'description'>;
@@ -243,11 +243,7 @@ export function initAchievementHost(region: HTMLElement): () => void {
   window.addEventListener('keydown', onKonamiKey);
 
   // The reduced-motion flag follows <html data-motion> (MOTION_EVENT) and the OS setting, as useReducedMotionPref did.
-  const onMotion = () => set({ reduce: prefersReducedNow() });
-  const mq = typeof window.matchMedia === 'function' ? window.matchMedia('(prefers-reduced-motion: reduce)') : null;
-  const onOsChange = () => applyMotionPref(); // re-dispatches MOTION_EVENT
-  mq?.addEventListener?.('change', onOsChange);
-  window.addEventListener(MOTION_EVENT, onMotion);
+  const unsubscribeMotion = subscribeMotion(() => set({ reduce: prefersReducedNow() }));
 
   // F-028: keep holding while a dialog is open.
   const syncDialog = () => set({ dialogOpen: document.querySelector('dialog[open]') !== null });
@@ -258,8 +254,7 @@ export function initAchievementHost(region: HTMLElement): () => void {
   return () => {
     window.removeEventListener(TRIGGER_EVENT, processTriggers);
     window.removeEventListener('keydown', onKonamiKey);
-    window.removeEventListener(MOTION_EVENT, onMotion);
-    mq?.removeEventListener?.('change', onOsChange);
+    unsubscribeMotion();
     mo.disconnect();
     for (const { cleanup } of effects.values()) cleanup?.();
     effects.clear();
