@@ -5,9 +5,11 @@
  * as the full list (#site-achievements) and follows unlocks live; the SSR text is the 0-unlocked state.
  */
 import SectionLabel from '../hud/SectionLabel.astro';
+import Medal from './Medal.astro';
 import { ui, type Lang } from '../../i18n/ui';
 import { t } from '../../i18n/utils';
 import type { AchievementDef } from '../../lib/achievements';
+import { medalState } from '../../lib/medals';
 
 interface Props {
   lang: Lang;
@@ -22,7 +24,7 @@ const progressTemplate = ui[lang]['achievement.progress'];
   <p class="ach-meter__count tnum" data-ach-meter-count data-template={progressTemplate}>{t(lang, 'achievement.progress', { n: 0, total: defs.length })}</p>
   <div class="ach-meter__track" aria-hidden="true"><i class="ach-meter__fill"></i></div>
   <ol class="ach-meter__slots" role="list" aria-hidden="true">
-    {defs.map((d) => <li class="ach-meter__slot" data-ach-slot={d.id} data-unlocked="false">★</li>)}
+    {defs.map((d) => <li class="ach-meter__slot" data-ach-slot={d.id} data-unlocked="false"><Medal id={d.id} state={medalState(d, false)} size="meter" /></li>)}
   </ol>
   <p class="ach-meter__note">{t(lang, 'achievement.storageNote')}</p>
   <p><a class="sec-more" href="#site-achievements">{t(lang, 'achievement.viewAll')} <span aria-hidden="true">↓</span></a></p>
@@ -42,7 +44,12 @@ const progressTemplate = ui[lang]['achievement.progress'];
       const n = ids.filter((id) => id in unlocked).length;
       if (count && template) count.textContent = template.replace('{n}', String(n)).replace('{total}', String(ids.length));
       root.style.setProperty('--ach-p', String(ids.length ? n / ids.length : 0));
-      for (const slot of slots) slot.dataset.unlocked = String((slot.dataset.achSlot ?? '') in unlocked);
+      for (const slot of slots) {
+        const on = (slot.dataset.achSlot ?? '') in unlocked;
+        slot.dataset.unlocked = String(on);
+        const medal = slot.querySelector<HTMLElement>('[data-medal]');
+        if (on && medal) medal.dataset.state = 'unlocked';
+      }
     };
     sync();
     window.addEventListener(UNLOCK_EVENT, sync);
@@ -78,7 +85,7 @@ const progressTemplate = ui[lang]['achievement.progress'];
     background: linear-gradient(90deg, var(--accent), var(--accent-light));
     transition: transform var(--dur-enter) var(--ease-out);
   }
-  /* one row at any width: the slots shrink from 34px instead of wrapping a lone star onto a second line */
+  /* one row at any width: the slots shrink from 34px instead of wrapping a lone medal onto a second line */
   .ach-meter__slots {
     display: flex;
     gap: 6px;
@@ -89,22 +96,10 @@ const progressTemplate = ui[lang]['achievement.progress'];
     flex: 0 1 34px;
     min-width: 0;
     aspect-ratio: 1;
-    border: 1px solid var(--hud-line);
-    background: var(--hud-bg);
-    color: var(--hud-muted);
-    font-size: 15px;
   }
-  .ach-meter__slot[data-unlocked="true"] {
-    border-color: var(--gold-line);
-    background: var(--gold);
-    color: var(--gold-ink);
-    /* fix-brief A-02 item 7 (F-025, account-link AL-13): the slot pops once the fill bar (--dur-enter) has arrived */
-    animation: ach-slot-pop 250ms var(--ease-out) var(--dur-enter) backwards;
-  }
-  @keyframes ach-slot-pop {
-    from {
-      transform: scale(.6);
-    }
+  /* The medal is minted once the fill bar (--dur-enter) has arrived (AL-13's single pop; medal-mint is Medal.astro's). */
+  .ach-meter__slot[data-unlocked="true"] :global(.medal) {
+    animation: medal-mint var(--dur-medal) var(--ease-out) var(--dur-enter) backwards;
   }
   .ach-meter__note {
     font-size: 14px;
@@ -114,11 +109,17 @@ const progressTemplate = ui[lang]['achievement.progress'];
   :global(:root[data-motion="reduce"]) .ach-meter__fill {
     transition: none;
   }
-  :global(:root[data-motion="reduce"]) .ach-meter__slot[data-unlocked="true"] {
+  /* Reduced motion: no pop at all (the fill and the gold medal already say it); paper never animates. */
+  :global(:root[data-motion="reduce"]) .ach-meter__slot[data-unlocked="true"] :global(.medal) {
     animation: none;
   }
   @media (prefers-reduced-motion: reduce) {
-    .ach-meter__slot[data-unlocked="true"] {
+    .ach-meter__slot[data-unlocked="true"] :global(.medal) {
+      animation: none;
+    }
+  }
+  @media print {
+    .ach-meter__slot[data-unlocked="true"] :global(.medal) {
       animation: none;
     }
   }

@@ -209,8 +209,8 @@ test.describe('D-1 no-art build', () => {
     expect(meterM.y).toBeGreaterThan(cardM.y + cardM.height - 1);
   });
 
-  // fix-brief A-02 item 7 (F-025, account-link AL-13): the unlocked slot pops once the fill bar has arrived.
-  test('meter: an unlocked slot pops after the fill bar ends (250ms from scale .6), not under either reduce path', async ({ page }) => {
+  // fix-brief A-02 item 7 (F-025, account-link AL-13): the unlocked slot's medal pops once the fill bar has arrived.
+  test('meter: an unlocked slot pops after the fill bar ends (the medal mint, from scale .6), not under either reduce path', async ({ page }) => {
     const unlockNext = (): Promise<string> =>
       page.evaluate(() => {
         const slot = document.querySelector<HTMLElement>('[data-ach-slot][data-unlocked="false"]');
@@ -221,7 +221,7 @@ test.describe('D-1 no-art build', () => {
         return id;
       });
     const popOf = (id: string) =>
-      page.locator(`[data-ach-slot="${id}"]`).evaluate((el) =>
+      page.locator(`[data-ach-slot="${id}"] .medal`).evaluate((el) =>
         el.getAnimations().map((a) => {
           const effect = a.effect as KeyframeEffect;
           const timing = effect.getComputedTiming();
@@ -236,7 +236,7 @@ test.describe('D-1 no-art build', () => {
     const [pop] = await popOf(id);
     expect(pop, 'one pop animation on the new slot').toBeTruthy();
     expect(pop.delay, 'starts when the fill bar ends').toBe(fillMs);
-    expect(pop.duration).toBe(250);
+    expect(pop.duration).toBe(360);
     expect(pop.from).toMatch(/scale\(0?\.6\)/);
     // reduce: the site toggle (data-motion) and, without JS state, the OS setting
     await page.evaluate(() => document.documentElement.setAttribute('data-motion', 'reduce'));

@@ -1,8 +1,10 @@
 ---
 import SectionHead from '../hud/SectionHead.astro';
+import Medal from './Medal.astro';
 import { ui, type Lang } from '../../i18n/ui';
 import { hangulRuns, t } from '../../i18n/utils';
 import type { AchievementDef } from '../../lib/achievements';
+import { medalState } from '../../lib/medals';
 
 interface Props {
   lang: Lang;
@@ -19,11 +21,11 @@ const progressTemplate = ui[lang]['achievement.progress'];
   <div class="container">
     <SectionHead variant="game" id="site-ach-title" caption={t(lang, 'section.siteAchievements')} title={t(lang, 'section.siteAchievements.title')} />
     <p class="site-ach__progress tnum" data-ach-progress data-template={progressTemplate}>{t(lang, 'achievement.progress', { n: 0, total: defs.length })}</p>
-    {/* light HUD rows (P1-9): a square star slot (gold once unlocked), title and text, the state as a square tag */}
+    {/* light HUD rows (P1-9): the achievement's medal (gold once unlocked; a secret one shows ? until then), title and text, the state as a square tag */}
     <ol class="site-ach__list" role="list">
       {defs.map((d) => (
         <li class="site-ach__item" data-ach-id={d.id} data-unlocked="false" data-secret={d.hidden ? '' : undefined}>
-          <span class="site-ach__icon" aria-hidden="true">★</span>
+          <Medal id={d.id} state={medalState(d, false)} size="list" />
           <div class="site-ach__body">
             {/* P-02 (F-087): a hidden title reads as the sr-only sentence, not as a heading named '???'; reveal() replaces both spans. */}
             <h3 class="site-ach__title" data-ach-slot="title">{d.hidden ? <Fragment><span aria-hidden="true">{t(lang, 'achievement.hiddenTitle')}</span><span class="sr-only">{t(lang, 'achievement.hiddenTitleSr')}</span></Fragment> : d.title[lang]}</h3>
@@ -54,8 +56,17 @@ const progressTemplate = ui[lang]['achievement.progress'];
     const template = progress?.dataset.template ?? '';
     const items = Array.from(root.querySelectorAll<HTMLLIElement>('[data-ach-id]'));
 
-    const reveal = (li: HTMLLIElement) => {
+    // pop: only a live unlock on this page mints the medal; a stored unlock found at load turns it gold silently.
+    const reveal = (li: HTMLLIElement, pop: boolean) => {
       li.dataset.unlocked = 'true';
+      const medal = li.querySelector<HTMLElement>('[data-medal]');
+      if (medal) {
+        medal.dataset.state = 'unlocked';
+        if (pop) {
+          medal.addEventListener('animationend', () => medal.removeAttribute('data-pop'), { once: true });
+          medal.dataset.pop = '';
+        }
+      }
       const real = li.querySelector<HTMLTemplateElement>('template[data-ach-real]');
       if (real) {
         const title = real.content.querySelector('[data-ach-title]')?.textContent ?? '';
@@ -71,14 +82,14 @@ const progressTemplate = ui[lang]['achievement.progress'];
     };
 
     // readUnlocked() already tolerates throwing storage (in-memory fallback).
-    const sync = () => {
+    const sync = (live = false) => {
       const unlocked = readUnlocked();
       let n = 0;
       for (const li of items) {
         const id = li.dataset.achId;
         if (!id || !(id in unlocked)) continue;
         n += 1;
-        if (li.dataset.unlocked !== 'true') reveal(li);
+        if (li.dataset.unlocked !== 'true') reveal(li, live);
       }
       if (progress && template) progress.textContent = template.replace('{n}', String(n)).replace('{total}', String(items.length));
     };
@@ -92,7 +103,7 @@ const progressTemplate = ui[lang]['achievement.progress'];
 
     sync();
     showBlocked();
-    window.addEventListener(UNLOCK_EVENT, sync);
+    window.addEventListener(UNLOCK_EVENT, () => sync(true));
     window.addEventListener(STORAGE_BLOCKED_EVENT, showBlocked);
   }
 </script>
@@ -110,11 +121,7 @@ const progressTemplate = ui[lang]['achievement.progress'];
     align-content: start;
     padding-block: 16px; border-bottom: 1px solid var(--read-line);
   }
-  .site-ach__icon {
-    grid-area: icon; width: 32px; height: 32px; display: grid; place-items: center;
-    border: 1px solid var(--read-line-strong); background: var(--read-card); color: var(--read-muted); font-size: 16px;
-  }
-  .site-ach__item[data-unlocked="true"] .site-ach__icon { background: var(--gold); border-color: var(--gold); color: var(--gold-ink); }
+  .site-ach__item > :global(.medal) { grid-area: icon; align-self: start; }
   .site-ach__body { grid-area: body; min-width: 0; }
   .site-ach__title { font-size: var(--fs-sub); font-weight: 700; line-height: 1.4; color: var(--read-text); }
   .site-ach__desc { margin-top: 2px; font-size: 15px; color: var(--read-text); }
