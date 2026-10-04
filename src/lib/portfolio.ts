@@ -99,12 +99,6 @@ export async function getPublications(): Promise<PublicationEntry[]> {
   return sortPublications(await getCollection('publications'));
 }
 
-export async function getPublication(id: string): Promise<PublicationEntry> {
-  const entry = await getEntry('publications', id);
-  if (!entry) throw new Error(`portfolio: no publication ${id}`);
-  return entry;
-}
-
 /** CA-10: publications with a paper page; each page must be the base path /research/<id>/ (the route slug is the id). */
 export function checkPaperPages<T extends { id: string; data: { caseStudy?: string } }>(entries: readonly T[]): T[] {
   const pages = entries.filter((entry) => entry.data.caseStudy !== undefined);
@@ -156,10 +150,6 @@ export async function getAwards(): Promise<AwardData[]> {
   return (await getCollection('awards')).map((entry) => entry.data);
 }
 
-export async function getSkills(): Promise<ResumeData['skills']> {
-  return (await getResume()).skills;
-}
-
 export async function getNews(): Promise<NewsEntry[]> {
   return getCollection('news');
 }
@@ -208,13 +198,13 @@ export function getFactSource(): Promise<FactSource> {
 }
 
 /** Every (version × paper page) pair; paperPathsFor filters it for one version's page module (P2-2a). */
-export async function variantPaperPaths(): Promise<{ params: { variant: VariantId; slug: string }; props: { entry: PublicationEntry } }[]> {
+async function variantPaperPaths(): Promise<{ params: { variant: VariantId; slug: string }; props: { entry: PublicationEntry } }[]> {
   const papers = await getPaperPages();
   return VARIANT_IDS.flatMap((variant) => papers.map((entry) => ({ params: { variant, slug: entry.id }, props: { entry } })));
 }
 
 /** Every (version × project with a page) pair in one language; projectPathsFor filters it for one version (P2-2a). */
-export async function variantProjectPaths(lang: Lang): Promise<{ params: { variant: VariantId; slug: string }; props: { entry: ProjectEntry } }[]> {
+async function variantProjectPaths(lang: Lang): Promise<{ params: { variant: VariantId; slug: string }; props: { entry: ProjectEntry } }[]> {
   const entries = (await getProjects(lang)).filter((entry) => hasProjectPage(entry.data));
   return VARIANT_IDS.flatMap((variant) => entries.map((entry) => ({ params: { variant, slug: projectSlug(entry) }, props: { entry } })));
 }

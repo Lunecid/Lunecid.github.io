@@ -9,7 +9,7 @@ const fromUi = (key: keyof typeof ui.ko): Localized => ({ ko: ui.ko[key], en: ui
 const same = (text: string): Localized => ({ ko: text, en: text });
 
 /** Today's HUD captions (A-30: the data version copies them until P2-4). */
-export const GAME_CAPTIONS: Readonly<Record<CaptionKey, Localized>> = {
+const GAME_CAPTIONS: Readonly<Record<CaptionKey, Localized>> = {
   research: fromUi('section.research'),
   publications: fromUi('section.publications'),
   projects: fromUi('section.projects'),

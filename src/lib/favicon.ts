@@ -13,7 +13,7 @@ import subsetFont from 'subset-font';
 const require = createRequire(import.meta.url);
 
 /** The vector mark, read from the file the pages link as the SVG icon (the build and the tests run in the repo root). */
-export function faviconSvg(): string {
+function faviconSvg(): string {
   return readFileSync(join(process.cwd(), 'public', 'favicon.svg'), 'utf8');
 }
 

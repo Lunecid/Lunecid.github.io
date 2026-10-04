@@ -6,7 +6,6 @@ import { glob } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import sharp from 'sharp';
-import exifr from 'exifr';
 
 const ROOTS = ['src/assets', 'public', 'dist'];
 const PATTERN = '**/*.{jpg,jpeg,png,webp,avif,tif,tiff,heic}';
@@ -25,8 +24,7 @@ async function scan(roots) {
   for (const file of files) {
     const blocks = await metadataBlocks(file);
     if (blocks.length === 0) continue;
-    const gps = await exifr.gps(file).catch(() => undefined);
-    offenders.push(`${file}: ${blocks.join('+')}${gps ? ' (GPS!)' : ''}`);
+    offenders.push(`${file}: ${blocks.join('+')}`);
   }
   return { files, offenders };
 }

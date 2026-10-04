@@ -6,10 +6,10 @@ import { ACHIEVEMENT_TRIGGERS, AWARD_LEVELS, CERTIFICATE_IDS, CHARACTER_IDS, GAM
 import { DOCUMENTS, type DocumentId } from '../config';
 import { TAG_KEYS, TAGS_EN, TAGS_KO } from './tags';
 
-export const isoMonth = z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/, 'YYYY-MM, quoted');
-export const isoDate = z.string().regex(/^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/, 'YYYY-MM-DD, quoted');
+const isoMonth = z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/, 'YYYY-MM, quoted');
+const isoDate = z.string().regex(/^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/, 'YYYY-MM-DD, quoted');
 export const localized = z.object({ ko: z.string().min(1), en: z.string().min(1) });
-export const pdfFlags = z.object({ ko: z.boolean(), en: z.boolean(), academic: z.boolean() });
+const pdfFlags = z.object({ ko: z.boolean(), en: z.boolean(), academic: z.boolean() });
 const DOCUMENT_IDS = Object.keys(DOCUMENTS) as [DocumentId, ...DocumentId[]];
 const hexColor = z.string().regex(/^#[0-9A-Fa-f]{6}$/);
 const slug = z.string().regex(/^[a-z0-9-]+$/);

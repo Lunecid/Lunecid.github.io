@@ -9,7 +9,7 @@
 // each under a length cap, and drops everything else. Duplicates left after the reduction are merged (counts added).
 
 export const MAX_PATH_LENGTH = 100;
-export const MAX_REFERRER_INPUT_LENGTH = 512;
+const MAX_REFERRER_INPUT_LENGTH = 512;
 export const MAX_HOST_LENGTH = 64;
 export const MAX_TITLE_LENGTH = 120;
 export const MAX_ROWS = 10;

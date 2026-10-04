@@ -71,7 +71,7 @@ const SHARED_EYEBROW: Readonly<Record<string, UiKey>> = { '/stats/': 'nav.stats'
  * home shows the B-12 heatmap (the projects artifact); the chooser card shows both versions; shared cards are named by
  * their page.
  */
-export function withTemplate(og: Omit<OgInput, 'template'>, route: string, src: OgSources): OgInput {
+function withTemplate(og: Omit<OgInput, 'template'>, route: string, src: OgSources): OgInput {
   const template = ogTemplateFor(route);
   const info = parseRoute(route)!;
   if (template === 'hud') return { ...og, template };

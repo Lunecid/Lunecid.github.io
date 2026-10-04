@@ -39,7 +39,7 @@ const FORMAT_LABEL: Record<Lang, Record<PublicationFrontmatter['format'], string
  * page since D-15; a status 'published' project page is a case study; a status 'summary' page is a short summary.
  */
 export type PageKind = 'paper' | 'case-study' | 'summary';
-export const PAGE_LINK_LABEL: Record<Lang, Record<PageKind, string>> = {
+const PAGE_LINK_LABEL: Record<Lang, Record<PageKind, string>> = {
   ko: { paper: '논문 페이지', 'case-study': '사례 연구', summary: '프로젝트 요약' },
   en: { paper: 'paper page', 'case-study': 'case study', summary: 'project summary' },
 };

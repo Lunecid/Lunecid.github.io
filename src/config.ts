@@ -6,7 +6,6 @@ export const SITE = {
   githubUrl: 'https://github.com/Lunecid',
   daconUrl: 'https://dacon.io/myprofile/530929/home',
   labUrl: 'https://datalab.pusan.ac.kr/datalab/index.do',
-  repoUrl: 'https://github.com/Lunecid/Lunecid.github.io',
 } as const;
 
 export const DOCUMENTS = {

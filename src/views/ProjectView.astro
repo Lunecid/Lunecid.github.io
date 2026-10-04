@@ -21,7 +21,7 @@ import type { Lang } from '../i18n/ui';
 import { ui } from '../i18n/ui';
 import { t } from '../i18n/utils';
 import { projectPageMeta } from '../data/copy/pages';
-import { getAwards, getFactSource, resolveOrder } from '../lib/portfolio';
+import { getAwards, resolveOrder } from '../lib/portfolio';
 import { hasProjectPage, projectDetailRows, toCartridge } from '../lib/projects';
 import { buildCertificate } from '../lib/certificates';
 import { coverFigureIndex, linkFigureCitations, placeFigures, serifHeadings } from '../lib/figures';
@@ -39,7 +39,6 @@ interface Props {
 const { lang, variant, entry, layout: Layout } = Astro.props;
 const v = getVariant(variant);
 const editorial = v.theme === 'editorial';
-const facts = await getFactSource();
 const { data } = entry;
 const body = entry.rendered?.html;
 if (body === undefined) throw new Error(`ProjectView: ${entry.id} has no rendered body`);
