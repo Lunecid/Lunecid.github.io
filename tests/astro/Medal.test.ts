@@ -61,6 +61,7 @@ describe('Medal.astro', () => {
         // nothing to read or reach: no text, no title, no focus target
         expect(medal?.textContent?.trim(), at).toBe('');
         expect(medal?.querySelector('title, desc, text, a, button, [tabindex]'), at).toBeNull();
+        expect(medal?.hasAttribute('tabindex'), at).toBe(false);
       }
     }
     // every emblem renders under its own id; an unknown id fails the build rather than drawing an empty medal
@@ -83,9 +84,9 @@ describe('Medal.astro', () => {
     expect(paints.length).toBeGreaterThan(8);
     const ALLOWED = ['none', 'currentColor', 'CanvasText', 'var(--gold)', 'var(--gold-deep)', 'var(--gold-ink)', 'var(--read-line-strong)', 'var(--hud-line)'];
     for (const p of paints) expect(ALLOWED, p.at).toContain(p.v);
-    // gold marks an unlocked medal only
-    const gold = paints.filter((p) => p.v.includes('--gold'));
-    expect(gold.length).toBeGreaterThanOrEqual(4);
+    // gold marks an unlocked medal only: every declaration that names a --gold token (fill, stroke, background, shadow, …)
+    const gold = rules.flatMap((r) => [...r.decls].filter(([, v]) => v.includes('--gold')).map(([p, v]) => ({ at: `${r.media ?? ''} ${r.selector} { ${p}: ${v} }`, selector: r.selector })));
+    expect(gold.length).toBeGreaterThanOrEqual(5);
     for (const p of gold) for (const s of splitSelectors(p.selector)) expect(s, p.at).toContain('[data-state="unlocked"]');
     // locked and hidden: outlines in currentColor = --read-line-strong on the light bands (list, records), --hud-line on the dark meter
     expect(decls('.medal path')?.get('fill')).toBe('none');
@@ -96,6 +97,8 @@ describe('Medal.astro', () => {
     const unlocked = (part: string) => decls(`.medal[data-state="unlocked"] .medal__${part}`);
     expect(unlocked('disc')?.get('fill')).toBe('var(--gold)');
     expect(unlocked('rim')?.get('fill')).toBe('var(--gold-deep)');
+    // the rim stays a ring whichever way its inner octagon is wound
+    expect(unlocked('rim')?.get('fill-rule')).toBe('evenodd');
     expect(unlocked('ribbon')?.get('fill')).toBe('var(--gold-deep)');
     expect(unlocked('emblem')?.get('stroke')).toBe('var(--gold-ink)');
     // the rim keeps a gold medal's edge visible on the light band
@@ -103,6 +106,12 @@ describe('Medal.astro', () => {
     // hidden: the "?" and no emblem; every other state the emblem and no "?"
     expect(decls('.medal[data-state="hidden"] .medal__emblem')?.get('display')).toBe('none');
     expect(decls('.medal:not([data-state="hidden"]) .medal__q')?.get('display')).toBe('none');
+  });
+
+  it('sizes: the list medal fits the 32px icon track, a record medal is 48px, the meter medal fills its cell', () => {
+    expect(decls('.medal--list')?.get('width')).toBe('32px');
+    expect(decls('.medal--record')?.get('width')).toBe('48px');
+    expect(decls('.medal--meter')?.get('width')).toBe('100%');
   });
 
   it('the pop runs only under [data-pop]: medal-mint, --dur-medal, --ease-out, transform and opacity only', () => {
