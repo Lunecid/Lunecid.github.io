@@ -56,7 +56,6 @@
 .btn:active { transform: scale(.96); --cut-fill: var(--accent-wash-strong); }
 .btn--fill { color: var(--accent-ink); --cut-fill: var(--accent); }
 .btn--line { color: var(--accent); --cut-line: var(--accent); --cut-fill: var(--accent-wash); }
-.btn--sm { min-height: 36px; padding: 0 14px; font-size: 13px; } /* add .hit when it stands alone */
 /* F-022: under reduce, drop only the scale; the :active fill change above still holds. */
 :root[data-motion="reduce"] .btn:active { transform: none; }
 /* Light areas never use --accent (spec §4): buttons there switch to --accent-deep. */
@@ -110,7 +109,6 @@
 .badge--tier { color: var(--gold); border: 1px solid var(--gold-line); background: var(--gold-wash); }
 /* F-002: Hangul in gold tier badges uses sans so middot/space advances stay narrow; Latin badges keep mono via lang=en. */
 .badge--tier:lang(ko) { font-family: var(--font-sans); letter-spacing: 0; }
-.badge--kw { color: var(--hud-text); border: 1px solid var(--hud-line); }
 
 /* ── Panel (e.g. NOW PLAYING); combine with .bracket.bracket--sm for corners ── */
 .hud-panel { padding: 14px 16px; background: var(--hud-panel); }
@@ -133,7 +131,6 @@
   a.cut { border-color: LinkText; }
   /* 2px border on filled CTAs; shrink padding 1px so the box stays the same size under border-box. */
   .btn--fill.cut { border-width: 2px; padding-inline: 21px; }
-  .btn--fill.btn--sm.cut { padding-inline: 13px; }
   .tag-filter__btn[aria-pressed="true"],
   .char-stage__btn[aria-pressed="true"],
   .fg__tab[aria-selected="true"] {

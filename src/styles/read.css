@@ -13,7 +13,6 @@
    corner marks like [ NOW PLAYING ] (.bracket.bracket--sm turns accent-deep on light bands), a mono index column,
    and hairlines between rows instead of boxes around them. */
 .read-sec { padding-block: var(--section-pad-y); border-top: 1px solid var(--read-line); }
-.read-sec__body { margin-top: 20px; }
 
 /* Rows: a hairline list with a mono index column. <ol class="lh-rows"><li class="lh-row"><span class="lh-idx">01</span> */
 .lh-rows { border-top: 1px solid var(--read-line-strong); }

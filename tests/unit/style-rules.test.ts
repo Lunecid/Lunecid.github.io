@@ -257,7 +257,7 @@ function pxFontSizes(file: string, text: string): string[] {
   return out.sort();
 }
 
-const PX_FONT_BASELINE_MAX = 78;
+const PX_FONT_BASELINE_MAX = 77;
 const PX_FONT_BASELINE: Record<string, string[]> = {
   'src/components/data/DataNav.astro': ['.data-nav__name | 20px'],
   'src/components/home/HelloProfile.astro': ['.hello__title | 32px', '.hello__title | 40px'],
@@ -284,7 +284,6 @@ const PX_FONT_BASELINE: Record<string, string[]> = {
   'src/islands/CharacterStage.css': ['.char-stage__btn | 13px'],
   'src/islands/FavoriteGames.css': ['.fg-acct__badges li | 12px', '.fg-acct__hd | 12px', '.fg-acct__nm | 22px', '.fg-acct__row dd | 18px', '.fg-acct__row | 14px', '.fg-acct__src | 12px', '.fg-acct__sub | 12px', '.fg__tab b | 15px', '.fg__tab small | 12px', '.fg__title | 34px', '.fg__title | 40px', '.fg__title | 46px', '.fg__why | 16px'],
   'src/islands/ImageViewer.css': ['.image-viewer__cap | 14px', '.image-viewer__close | var(--fs-label, 12px)', '.image-viewer__close-x | 18px', '.image-viewer__counter | 13px', '.image-viewer__nav | 18px', '.image-viewer__strip | var(--fs-label, 12px)'],
-  'src/styles/hud.css': ['.btn--sm | 13px'],
   'src/views/LegalView.astro': ['.legal :global(td:first-child) | 16px'],
 };
 

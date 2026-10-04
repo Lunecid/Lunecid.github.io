@@ -241,7 +241,7 @@ describe('design tokens (src/styles/tokens.css)', () => {
 
   it('every §5.16 global class is defined in src/styles', () => {
     const selectors = ['base', 'hud', 'read'].flatMap((f) => parseRules(read(`src/styles/${f}.css`)).map((r) => r.selector)).join('\n');
-    const classes = ['container', 'read', 'sr-only', 'skip-link', 'hit', 'hud-grid', 'cut', 'cut--line', 'bracket', 'bracket--sm', 'btn', 'btn--fill', 'btn--line', 'btn--sm', 'hud-label', 'hud-label__ko', 'hud-label__en', 'badge', 'badge--tier', 'badge--kw', 'hud-panel', 'sec', 'sec-more', 'prose', 'read-card', 'read-section', 'tnum',
+    const classes = ['container', 'read', 'sr-only', 'skip-link', 'hit', 'hud-grid', 'cut', 'cut--line', 'bracket', 'bracket--sm', 'btn', 'btn--fill', 'btn--line', 'hud-label', 'hud-label__ko', 'hud-label__en', 'badge', 'badge--tier', 'hud-panel', 'sec', 'sec-more', 'prose', 'read-card', 'read-section', 'tnum',
       // batch 5: the section head (D-8) and the light HUD set (P1-9)
       'hud-label__mark', 'hud-label__sq', 'sec-head', 'sec-head__title', 'read-sec', 'read-column', 'lh-rows', 'lh-row', 'lh-idx', 'lh-table', 'lh-frame', 'lh-chips', 'lh-chip', 'lh-chip--mono', 'lh-tag'];
     for (const c of classes) expect(selectors, `.${c}`).toMatch(new RegExp(`\\.${c}(?![\\w-])`));
