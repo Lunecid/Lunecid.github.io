@@ -922,6 +922,13 @@ export default function ManagePanel(props: ManagePanelProps): JSX.Element {
   const dirty = store.dirty();
   useEffect(() => {
     onDirtyChange(dirty);
+    // Nothing unsaved (a discard or a save): the unlink ticks, the Riot confirmation and the Steam result belonged to
+    // the edits that are gone, so an emptied ID asks for a fresh unlink tick.
+    if (!dirty) {
+      setUnlink(new Set());
+      setRiotConfirm('');
+      setSteamResult('');
+    }
     // reports changes of `dirty` only
   }, [dirty]);
   useEffect(() => {
