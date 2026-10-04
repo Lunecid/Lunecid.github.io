@@ -2,7 +2,8 @@
 import SectionHead from '../hud/SectionHead.astro';
 import StatsLiveTotal from './StatsLiveTotal.astro';
 import type { Lang } from '../../i18n/ui';
-import { formatDate, formatNumber, t } from '../../i18n/utils';
+import { formatNumber, t } from '../../i18n/utils';
+import { formatAsOfKst } from '../../lib/kst';
 import { pageHref } from '../../lib/links';
 import { BASE_PATH } from '../../variants/ids';
 import { goatcounterDashboardUrl } from '../../lib/analytics';
@@ -20,14 +21,6 @@ const usable = code === null ? undefined : usableStats(stats);
 // P1-11 built the privacy link without a path literal; P2-11 shares it between the two offline panels.
 const privacyHref = pageHref(BASE_PATH.privacy, { lang, variant: null });
 const days = usable?.range ? Math.round((Date.parse(usable.range.end) - Date.parse(usable.range.start)) / 86_400_000) : null;
-
-/** 'YYYY.MM.DD HH:MM KST' (ko) / 'Mon D, YYYY HH:MM KST' (en), in Asia/Seoul. */
-function asOf(iso: string): string {
-  const d = new Date(iso);
-  const day = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Seoul', year: 'numeric', month: '2-digit', day: '2-digit' }).format(d);
-  const time = new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Seoul', hour: '2-digit', minute: '2-digit', hour12: false }).format(d);
-  return `${formatDate(day, lang)} ${time} KST`;
-}
 ---
 <section id="summary" class:list={['stats', variant === 'neutral' ? 'nt-sec' : 'read']} aria-labelledby="stats-summary-title">
   <div class="container">
@@ -55,7 +48,7 @@ function asOf(iso: string): string {
               <span class="stats__total-label">{days !== null ? t(lang, 'stats.range', { n: days }) : t(lang, 'stats.visits')}</span>
               <strong class="stats__total-num tnum">{formatNumber(usable.total ?? 0, lang)}</strong>
             </p>
-            <p class="stats__asof">{t(lang, 'stats.fetchedAt')} <time datetime={usable.fetchedAt}>{asOf(usable.fetchedAt)}</time></p>
+            <p class="stats__asof">{t(lang, 'stats.fetchedAt')} <time datetime={usable.fetchedAt}>{formatAsOfKst(usable.fetchedAt, lang)}</time></p>
           </div>
         ) : null}
         {/* F-014: one reserved live slot; unavailable/starting live only inside it (no paired contradiction). */}

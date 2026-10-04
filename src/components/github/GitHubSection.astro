@@ -13,6 +13,7 @@ import type { Lang } from '../../i18n/ui';
 import { formatDate, formatNumber, t } from '../../i18n/utils';
 import { usableGitHub, type GitHubData, type GitHubDay } from '../../lib/generated';
 import { githubRepoList } from '../../lib/github';
+import { kstIsoDate } from '../../lib/kst';
 import { captionFor, getVariant } from '../../variants';
 import type { VariantId } from '../../variants/ids';
 
@@ -28,7 +29,6 @@ const gh = usableGitHub(data);
 
 const CELL = 12;
 const STEP = 15;
-const KST_OFFSET_MS = 9 * 3_600_000; // Asia/Seoul has no DST
 
 const repos = gh ? githubRepoList(gh, lang) : [];
 const weeks: GitHubDay[][] = gh?.calendar ? gh.calendar.weeks.slice(-53) : [];
@@ -36,7 +36,7 @@ const calWidth = Math.max(weeks.length * STEP - (STEP - CELL), 0);
 const calHeight = 7 * STEP - (STEP - CELL);
 const weekday = (iso: string): number => new Date(`${iso}T00:00:00Z`).getUTCDay();
 const totalLabel = gh?.calendar ? t(lang, 'github.contributionsTotal', { n: formatNumber(gh.calendar.total, lang) }) : '';
-const asOfDay = gh ? new Date(Date.parse(gh.fetchedAt) + KST_OFFSET_MS).toISOString().slice(0, 10) : '';
+const asOfDay = gh ? kstIsoDate(new Date(gh.fetchedAt)) : '';
 /** "Python · 별 3"; a star count of 0 is left out (P1-17). */
 const repoMeta = (language: string | null, stars: number): string =>
   [language, stars > 0 ? t(lang, 'github.stars', { n: formatNumber(stars, lang) }) : null]
