@@ -1,0 +1,80 @@
+---
+/**
+ * A medal for a site achievement or a game record: inline SVG in 32 × 32 user units, decorative (aria-hidden; the
+ * row's text carries the name and the state). An octagonal disc (the site's 45° cut) with a rim, hung from a ribbon,
+ * carries the achievement's emblem; a hidden achievement shows "?" instead until it is unlocked. data-state picks the
+ * paint through classes and tokens; a client script switches it on an unlock and sets data-pop for the mint pop.
+ */
+import { MEDAL_EMBLEMS, MEDAL_QUESTION, type MedalState } from '../../lib/medals';
+
+interface Props {
+  id: string;
+  state: MedalState;
+  size: 'list' | 'meter' | 'record';
+}
+const { id, state, size } = Astro.props;
+const emblem = MEDAL_EMBLEMS[id];
+if (!emblem) throw new Error(`Medal: no emblem for "${id}"`);
+// Two ribbon straps, open at the bottom so an outlined medal draws no second line on the disc's top edge.
+const RIBBON = 'M11.5 7 8.5 0H14L17 7 M15 7 18 0H23.5L20.5 7';
+const DISC = 'M11 7H21L28 14V24L21 31H11L4 24V14Z';
+// The rim is the band between the disc's edge and an inner octagon drawn the other way round (a hole under nonzero).
+const RIM = `${DISC} M11.83 9L6 14.83V23.17L11.83 29H20.17L26 23.17V14.83L20.17 9Z`;
+---
+<span class={`medal medal--${size}`} data-medal={id} data-state={state} aria-hidden="true">
+  <svg viewBox="0 0 32 32" focusable="false">
+    <g class="medal__base">
+      <path class="medal__ribbon" d={RIBBON} />
+      <path class="medal__disc" d={DISC} />
+      <path class="medal__rim" d={RIM} />
+    </g>
+    <path class="medal__emblem" d={emblem} />
+    <path class="medal__q" d={MEDAL_QUESTION} />
+  </svg>
+</span>
+
+<style>
+  /* Locked and hidden medals are outlines in currentColor: --read-line-strong on the light bands (the list, the game
+     records), --hud-line on the dark meter. An unlocked medal is gold: a --gold disc in a --gold-deep rim (5.42:1 on
+     --read-bg, so its edge shows on the light band) hung from a --gold-deep ribbon, the emblem in --gold-ink. */
+  .medal { display: block; aspect-ratio: 1; color: var(--read-line-strong); }
+  .medal--list { width: 40px; }
+  .medal--meter { width: 100%; color: var(--hud-line); }
+  .medal--record { width: 48px; }
+  .medal svg { display: block; width: 100%; height: 100%; overflow: visible; }
+  .medal path { fill: none; stroke: currentColor; stroke-width: 1.2; stroke-linejoin: round; }
+  .medal .medal__disc { stroke: none; } /* outlined, the rim draws the disc's edge */
+  .medal .medal__emblem { stroke-width: 1.25; stroke-linecap: round; }
+  .medal .medal__q { stroke-width: 1.6; stroke-linecap: round; }
+  .medal[data-state="hidden"] .medal__emblem,
+  .medal:not([data-state="hidden"]) .medal__q { display: none; }
+  .medal[data-state="unlocked"] .medal__ribbon { fill: var(--gold-deep); stroke: var(--gold-deep); }
+  .medal[data-state="unlocked"] .medal__disc { fill: var(--gold); }
+  .medal[data-state="unlocked"] .medal__rim { fill: var(--gold-deep); stroke: none; }
+  .medal[data-state="unlocked"] .medal__emblem { stroke: var(--gold-ink); }
+
+  /* The mint pop plays only under [data-pop], which the client sets on a live unlock, never on a page load. */
+  .medal[data-pop] { animation: medal-mint var(--dur-medal) var(--ease-out) both; }
+  @keyframes medal-mint {
+    from { transform: scale(.6) rotate(-12deg); opacity: 0; }
+    60% { transform: scale(1.08); opacity: 1; }
+    to { transform: none; }
+  }
+  /* Reduced motion, through both paths (the site's switch and the OS setting without JS): a fade instead. */
+  @keyframes medal-fade { from { opacity: 0; } }
+  :global(:root[data-motion="reduce"]) .medal[data-pop] { animation: medal-fade var(--dur-fade) var(--ease-out) both; }
+  @media (prefers-reduced-motion: reduce) {
+    .medal[data-pop] { animation: medal-fade var(--dur-fade) var(--ease-out) both; }
+  }
+  /* !important: on paper this must also beat the more specific :root[data-motion="reduce"] rule. */
+  @media print {
+    .medal[data-pop] { animation: none !important; }
+  }
+  /* Forced colours do not repaint SVG paint: every part becomes a CanvasText outline, an unlocked medal too. These
+     selectors are at least as specific as the state rules above and come after them. */
+  @media (forced-colors: active) {
+    .medal[data-state] .medal__base path,
+    .medal[data-state] .medal__emblem,
+    .medal[data-state] .medal__q { fill: none; stroke: CanvasText; }
+  }
+</style>

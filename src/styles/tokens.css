@@ -160,6 +160,8 @@
   /* the achievement toast (values unchanged; src/scripts/achievement-host.ts OUT_MS matches --dur-toast-out) */
   --dur-toast-in: .3s;
   --dur-toast-out: .2s;
+  /* the medal's mint pop on a live unlock (Medal.astro); at most .4s */
+  --dur-medal: .36s;
 
   /* ── layout ── */
   --container: 1180px;   /* includes gutters; the base width of every band's container */
