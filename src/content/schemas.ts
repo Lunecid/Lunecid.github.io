@@ -4,6 +4,8 @@
 import { z } from 'astro/zod';
 import { ACHIEVEMENT_TRIGGERS, AWARD_LEVELS, CERTIFICATE_IDS, CHARACTER_IDS, GAME_IDS, JOBFIT_IDS, JOBFIT_STATUSES, NOTICE_KEYS, type JobfitId } from '../types';
 import { DOCUMENTS, type DocumentId } from '../config';
+import { GAME_RECORD_NOTICES } from '../lib/game-records';
+import { containsTrademark } from '../lib/seo';
 import { TAG_KEYS, TAGS_EN, TAGS_KO } from './tags';
 
 const isoMonth = z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/, 'YYYY-MM, quoted');
@@ -155,6 +157,28 @@ export const favoriteGameSchema = z
   })
   .refine((g) => !g.locked || g.reason !== undefined, { message: 'locked games need a reason' });
 
+// Game records (game-records.yaml): the owner's achievements, each with an evidence screenshot. The id and the image
+// name end up in asset file names and in the viewer's #view-… hash, so neither names a game trademark (A-9). A tier
+// record names its tier; a rank record names its best rank and may name the tier that rank was held in.
+const noTrademark = (name: string): boolean => !containsTrademark(name);
+const gameRecordFields = {
+  id: slug.refine(noTrademark, { message: 'record id names a game trademark (A-9)' }),
+  game: z.enum(GAME_IDS),
+  queue: localized,
+  account: z.string().min(1).max(40), // a public game ID (R-14), never a login e-mail
+  alt: z.boolean(), // the owner's alternate account
+  date: isoDate,
+  // capture: the screenshot's own capture time; saved: when the image was saved, so the record is from that day or before
+  dateSource: z.enum(['capture', 'saved']),
+  image: z.string().regex(/^[a-z0-9-]+\.(webp|png)$/).refine(noTrademark, { message: 'image name names a game trademark (A-9)' }), // src/assets/game-records/<image>
+  imageAlt: z.object({ ko: z.string().min(1).max(200), en: z.string().min(1).max(200) }),
+  notices: z.array(z.enum(GAME_RECORD_NOTICES)),
+};
+export const gameRecordSchema = z.discriminatedUnion('kind', [
+  z.object({ ...gameRecordFields, kind: z.literal('tier'), tier: localized }).strict(),
+  z.object({ ...gameRecordFields, kind: z.literal('rank'), rank: z.number().int().positive(), tier: localized.optional() }).strict(),
+]);
+
 // Skill evidence: project → /projects/<id>/, research → the paper page /research/<id>/, code → the publication's public
 // code link (its `code` URL, e.g. the v1.0-cog2026 tag). The skill must be visible at the link target (D-9).
 const skill = z.object({ name: z.string(), evidence: z.array(z.object({ kind: z.enum(['project', 'research', 'code']), id: slug })).min(1) });
@@ -275,5 +299,6 @@ export type LegalData = z.infer<typeof legalSchema>;
 export type AwardData = z.infer<typeof awardSchema>;
 export type AchievementData = z.infer<typeof achievementSchema>;
 export type FavoriteGameData = z.infer<typeof favoriteGameSchema>;
+export type GameRecordData = z.infer<typeof gameRecordSchema>;
 export type ResumeData = z.infer<typeof resumeSchema>;
 export type JobfitData = z.infer<typeof jobfitSchema>;

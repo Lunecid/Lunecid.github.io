@@ -13,10 +13,17 @@ const STAGING = process.env.ASSET_STAGING ?? 'C:/Users/todtj/PycharmProjects/Por
 const LOL_ROOT = process.env.LOL_ROOT ?? 'C:/Users/todtj/PycharmProjects/LOL_teamfight';
 const SCRIPT = '../../scripts/import-assets.mjs';
 
+/**
+ * The owner's evidence screenshots are byte copies, not outputs of this pipeline (no JOBS entry; original width and ICC
+ * profile kept). tests/unit/game-records.test.ts pins the folder's file list and each file's sha256;
+ * tests/ops/image-metadata.test.mjs still checks them for EXIF, XMP and IPTC.
+ */
+const BYTE_COPIES = 'src/assets/game-records/';
+
 function assetFiles() {
   const dir = join(ROOT, 'src/assets');
   return existsSync(dir)
-    ? readdirSync(dir, { recursive: true }).map(String).filter((f) => /\.(webp|png|jpe?g|avif)$/i.test(f)).map((f) => `src/assets/${f.replace(/\\/g, '/')}`).sort()
+    ? readdirSync(dir, { recursive: true }).map(String).filter((f) => /\.(webp|png|jpe?g|avif)$/i.test(f)).map((f) => `src/assets/${f.replace(/\\/g, '/')}`).filter((f) => !f.startsWith(BYTE_COPIES)).sort()
     : [];
 }
 
