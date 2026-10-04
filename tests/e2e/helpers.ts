@@ -1,6 +1,7 @@
 import { test as base, expect, type Page } from '@playwright/test';
-import { existsSync } from 'node:fs';
-import { join } from 'node:path';
+import { existsSync, readFileSync } from 'node:fs';
+import { createRequire } from 'node:module';
+import { dirname, join } from 'node:path';
 import { DOCUMENTS, NAV_HEIGHT_PX } from '../../src/config';
 import type { Lang } from '../../src/i18n/ui';
 import { allRoutes, anchorsFor, legacyRedirects, parseRoute, routePath, type RouteKind } from '../../src/lib/routes';
@@ -43,6 +44,11 @@ export function builtRoutes(filter: { kind?: RouteKind; variant?: VariantId | nu
       && (filter.variant === undefined || info.variant === filter.variant)
       && (filter.lang === undefined || info.lang === filter.lang);
   });
+}
+/** True when the built page of `route` has an element with this id: a section that renders only with data (see stale-data.spec.ts). */
+export function builtHasId(route: string, id: string): boolean {
+  const file = join(DIST, route, 'index.html');
+  return existsSync(file) && new RegExp(`<[a-z][a-z0-9-]*\\b[^>]*\\bid="${id}"[^>]*>`).test(readFileSync(file, 'utf8'));
 }
 /** The old game URLs that now serve redirect stubs (P1-13). */
 export function legacyPaths(): string[] {
@@ -216,6 +222,39 @@ export async function textBelow12px(page: Page): Promise<string[]> {
     }
     return found;
   });
+}
+
+/**
+ * The two screenshot producers (screenshots.spec.ts and the ghost-art dump) assert nothing. They run where the output is
+ * used: in CI, whose workflow uploads test-results/screenshots, or on request with PW_SHOTS=1.
+ */
+export const SHOTS: boolean = Boolean(process.env.CI || process.env.PW_SHOTS);
+export const SHOTS_SKIP = 'writes screenshots only; runs in CI or with PW_SHOTS=1';
+
+/** Chromium version that the installed Playwright ships with (playwright-core's browsers.json), or null when unreadable. */
+function shippedChromium(): { playwright: string; chromium: string } | null {
+  try {
+    const dir = dirname(createRequire(import.meta.url).resolve('playwright-core/package.json'));
+    const playwright = (JSON.parse(readFileSync(join(dir, 'package.json'), 'utf8')) as { version?: string }).version;
+    const entries = (JSON.parse(readFileSync(join(dir, 'browsers.json'), 'utf8')) as { browsers?: { name: string; browserVersion?: string }[] }).browsers;
+    const chromium = entries?.find((b) => b.name === 'chromium')?.browserVersion;
+    return playwright && chromium ? { playwright, chromium } : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Why a test that is only checked on the Chromium the installed Playwright ships with should be skipped: the running
+ * browser (`browser.version()`) has a different major version, e.g. a container that links an older build for the
+ * revision Playwright asks for. null (run the test) when the majors match, when a version cannot be read, and for an
+ * installed-Chrome channel (PW_CHANNEL), which is not meant to match.
+ */
+export function chromiumMismatch(running: string): string | null {
+  const shipped = process.env.PW_CHANNEL ? null : shippedChromium();
+  if (!shipped || !/^\d+/.test(running)) return null;
+  if (Number.parseInt(running, 10) === Number.parseInt(shipped.chromium, 10)) return null;
+  return `Chromium ${running} is running; Playwright ${shipped.playwright} ships Chromium ${shipped.chromium}`;
 }
 
 /**

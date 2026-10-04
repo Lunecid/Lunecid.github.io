@@ -4,7 +4,7 @@ import AxeBuilder from '@axe-core/playwright';
 import { existsSync, mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 import type { Locator, Page } from '@playwright/test';
-import { test, expect, settle, gamePath } from './helpers';
+import { test, expect, settle, gamePath, builtHasId, SHOTS, SHOTS_SKIP } from './helpers';
 
 const GHOST_ASSET = join(process.cwd(), 'src/assets/ghost/miku-v6.webp');
 const SHOT_DIR = join(process.cwd(), '.superpowers/sdd/2026-09-25-portfolio-site/miku-ghost-shots');
@@ -59,6 +59,8 @@ test.describe('ghost art (Hatsune Miku watermark)', () => {
 
       for (const place of PLACEMENTS) {
         test(`${place.route} ghost is outside text/interactive boxes, opacity ≤ 0.1, side=${place.side}`, async ({ page }) => {
+          // #github renders only with fetched GitHub data; without it the band that hosts this ghost is not in the build.
+          test.skip(place.band === '#github' && !builtHasId(place.route, 'github'), 'the #github section is not in this build (no GitHub data)');
           await open(page, place.route, vp.width, vp.height, vp.dpr);
           const band = page.locator(place.band);
           await expect(band).toBeVisible();
@@ -189,6 +191,7 @@ test.describe('ghost art (Hatsune Miku watermark)', () => {
   });
 
   test('viewport screenshots at 2560x1440 @ 1.5 for the four pages', async ({ browser }) => {
+    test.skip(!SHOTS, SHOTS_SKIP);
     test.setTimeout(120_000);
     mkdirSync(SHOT_DIR, { recursive: true });
     const context = await browser.newContext({
