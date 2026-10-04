@@ -60,19 +60,54 @@ test('importing the module performs no fetch and writes no file', async () => {
 test('ITEMS URLs are https and targets are inside the staging root or public/', async () => {
   const { ITEMS, targetPath } = await import(SCRIPT);
   // Final review fix 1 item 9: the SFX items (a Kenney zip and a downloaded-and-executed ffmpeg binary) are gone.
-  assert.deepEqual(ITEMS.map((i) => i.id), ['character-remielle', 'character-eula', 'character-mona', 'bgm', 'goatcounter-script']);
+  assert.deepEqual(ITEMS.map((i) => i.id), ['character-remielle', 'character-eula', 'character-mona', 'bgm', 'goatcounter-script', 'card-source-ezreal', 'card-source-pengu', 'card-source-innkeeper']);
   for (const item of ITEMS) {
     const url = item.source ?? item.page;
     assert.match(url, /^https:\/\//, item.id);
     assert.ok(!item.target.path.includes('..') && !/^[a-z]:|^\//i.test(item.target.path), `${item.id} target must be relative`);
     assert.ok(['staging', 'repo'].includes(item.target.root), `${item.id}: target root ${item.target.root}`);
-    assert.ok(['png', 'mp3', 'js'].includes(item.kind), `${item.id}: kind ${item.kind}`);
+    assert.ok(['png', 'jpg', 'mp3', 'js'].includes(item.kind), `${item.id}: kind ${item.kind}`);
     assert.equal(item.registry, undefined, item.id);
-    if (item.target.root === 'staging') assert.match(item.target.path, /^characters\/(remielle|eula|mona)\.png$/);
+    if (item.target.root === 'staging') assert.match(item.target.path, /^(characters\/(remielle|eula|mona)\.png|account-cards\/(ezreal-splash\.jpg|pengu\.png|innkeeper-header\.jpg))$/);
     if (item.target.root === 'repo') assert.match(item.target.path, /^public\//);
   }
   const staged = targetPath(ITEMS[0], { staging: '/stage', repoRoot: '/repo' });
   assert.equal(staged.replace(/\\/g, '/'), '/stage/characters/remielle.png');
+});
+
+test('the card sources: two Data Dragon items and the innkeeper header, https, exact URLs, targets in staging', async () => {
+  const { ITEMS, targetPath } = await import(SCRIPT);
+  const cards = ITEMS.filter((i) => i.id.startsWith('card-source-'));
+  assert.deepEqual(
+    cards.map(({ id, kind, source, target }) => ({ id, kind, source, target })),
+    [
+      { id: 'card-source-ezreal', kind: 'jpg', source: 'https://ddragon.leagueoflegends.com/cdn/img/champion/splash/Ezreal_0.jpg', target: { root: 'staging', path: 'account-cards/ezreal-splash.jpg' } },
+      { id: 'card-source-pengu', kind: 'png', source: 'https://ddragon.leagueoflegends.com/cdn/16.19.1/img/tft-tactician/Tooltip_PenguKnight_Classic_Tier1.png', target: { root: 'staging', path: 'account-cards/pengu.png' } },
+      { id: 'card-source-innkeeper', kind: 'jpg', source: 'https://bnetcmsus-a.akamaihd.net/cms/blog_header/r6/R6XIUXOQB0IT1698251687641.jpg', target: { root: 'staging', path: 'account-cards/innkeeper-header.jpg' } },
+    ],
+  );
+  for (const item of cards) {
+    const url = new URL(item.source);
+    assert.equal(url.protocol, 'https:', item.id);
+    assert.equal(item.page, undefined, `${item.id}: a direct file, never resolved from a page`);
+    assert.ok(item.note.length > 20, item.id);
+    assert.equal(targetPath(item, { staging: '/stage', repoRoot: '/repo' }).replace(/\\/g, '/'), `/stage/${item.target.path}`);
+  }
+  // the Riot items come from Data Dragon; the innkeeper is the header image of the Hearthstone news post (credited)
+  assert.deepEqual(cards.map((i) => new URL(i.source).host), ['ddragon.leagueoflegends.com', 'ddragon.leagueoflegends.com', 'bnetcmsus-a.akamaihd.net']);
+  assert.match(cards[2].note, /hearthstone\.blizzard\.com\/en-us\/news\/24008694/);
+});
+
+test('checkBytes accepts a JPEG (FF D8 FF) and a PNG for their kinds and rejects anything else', async () => {
+  const { checkBytes } = await import(SCRIPT);
+  const jpeg = Buffer.from([0xff, 0xd8, 0xff, 0xe0, 0, 0x10, 0x4a, 0x46]);
+  const png = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0]);
+  assert.equal(checkBytes('jpg', jpeg), null);
+  assert.match(checkBytes('jpg', png), /not a JPEG/);
+  assert.match(checkBytes('jpg', Buffer.from('<html>blocked</html>')), /not a JPEG/);
+  assert.match(checkBytes('jpg', Buffer.from([0xff, 0xd8])), /not a JPEG/);
+  assert.equal(checkBytes('png', png), null);
+  assert.match(checkBytes('png', jpeg), /not a PNG/);
 });
 
 test('final review fix 1 item 9: the downloader never downloads and runs a program', () => {

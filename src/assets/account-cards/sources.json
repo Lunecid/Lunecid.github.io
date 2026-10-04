@@ -1,0 +1,107 @@
+[
+  {
+    "file": "card-1.webp",
+    "tile": "genshin",
+    "character": "Eula",
+    "source": {
+      "kind": "repo",
+      "path": "src/assets/characters/eula.png"
+    },
+    "sourceSha256": "af7ea977a6ea4fbf5289c54c5f3c20070848b01718c35c8c8a401510d730fe3c",
+    "crop": {
+      "left": 725,
+      "top": 125,
+      "width": 421,
+      "height": 460
+    },
+    "width": 256,
+    "height": 280,
+    "outputSha256": "a728fc11859503804c0d4f8450a21fc6873f9aa0b01621d777fa56c88e1d3ff6",
+    "retrieved": "2026-10-04"
+  },
+  {
+    "file": "card-2.webp",
+    "tile": "zzz",
+    "character": "Remielle",
+    "source": {
+      "kind": "repo",
+      "path": "src/assets/characters/remielle.png"
+    },
+    "sourceSha256": "4c31179f9217e3f2b156891b018da579c9ea4ce8c7de07eaf77f28d2607843a6",
+    "crop": {
+      "left": 830,
+      "top": 140,
+      "width": 210,
+      "height": 230
+    },
+    "width": 256,
+    "height": 280,
+    "outputSha256": "742b0d71d4ae29467b88dddc3d209e04e03b6b141a3e759c54bdf6f87e2ab515",
+    "retrieved": "2026-10-04"
+  },
+  {
+    "file": "card-3.webp",
+    "tile": "lol",
+    "character": "Ezreal",
+    "source": {
+      "kind": "download",
+      "item": "card-source-ezreal",
+      "url": "https://ddragon.leagueoflegends.com/cdn/img/champion/splash/Ezreal_0.jpg"
+    },
+    "sourceSha256": "447e6acac61e08312324c4c07c59cb9352bfe9637af60807697d62ee6fe9d33c",
+    "crop": {
+      "left": 650,
+      "top": 90,
+      "width": 230,
+      "height": 252
+    },
+    "width": 256,
+    "height": 280,
+    "outputSha256": "43aa911db5ea23e8c50632b2f5a76aedb1d23e94769239e87d37f89837a05af3",
+    "retrieved": "2026-10-04"
+  },
+  {
+    "file": "card-4.webp",
+    "tile": "tft",
+    "character": "Pengu",
+    "source": {
+      "kind": "download",
+      "item": "card-source-pengu",
+      "url": "https://ddragon.leagueoflegends.com/cdn/16.19.1/img/tft-tactician/Tooltip_PenguKnight_Classic_Tier1.png",
+      "ddVersion": "16.19.1"
+    },
+    "sourceSha256": "329add6131ac577d7d3f54105071d6e0bc066d70844f5be2fa2b039a1bbc2145",
+    "crop": {
+      "left": 140,
+      "top": 30,
+      "width": 260,
+      "height": 284
+    },
+    "width": 256,
+    "height": 280,
+    "outputSha256": "51e6edcfecb5d558258360de6da841480e03db5a32cc3700b749e1b26023736a",
+    "retrieved": "2026-10-04"
+  },
+  {
+    "file": "card-5.webp",
+    "tile": "hearthstone",
+    "character": "Harth Stonebrew",
+    "source": {
+      "kind": "download",
+      "item": "card-source-innkeeper",
+      "url": "https://bnetcmsus-a.akamaihd.net/cms/blog_header/r6/R6XIUXOQB0IT1698251687641.jpg",
+      "page": "https://hearthstone.blizzard.com/en-us/news/24008694"
+    },
+    "sourceSha256": "98cff188e88e754504229c5e34a2b620ab24437f07c89638c6f1458490aeee5a",
+    "crop": {
+      "left": 1104,
+      "top": 146,
+      "width": 360,
+      "height": 394
+    },
+    "width": 256,
+    "height": 280,
+    "outputSha256": "62bb53d2e1341ccf8a48c9e8646c65dd9a38f7ce24c3fb394fd48cb9858ef0c1",
+    "retrieved": "2026-10-04"
+  }
+]

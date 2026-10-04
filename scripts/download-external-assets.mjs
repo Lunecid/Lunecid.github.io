@@ -13,7 +13,7 @@ export const DEFAULT_STAGING = 'C:/Users/todtj/PycharmProjects/Portpolio/.superp
 export const REPO_ROOT = fileURLToPath(new URL('..', import.meta.url));
 const UA = 'Mozilla/5.0 (compatible; Lunecid.github.io asset gate; +https://github.com/Lunecid)';
 
-/** @typedef {{ id: string; kind: 'png' | 'mp3' | 'js'; source?: string; page?: string; target: { root: 'staging' | 'repo'; path: string }; note: string }} Item */
+/** @typedef {{ id: string; kind: 'png' | 'jpg' | 'mp3' | 'js'; source?: string; page?: string; target: { root: 'staging' | 'repo'; path: string }; note: string }} Item */
 
 /** @type {Item[]} */
 export const ITEMS = [
@@ -52,6 +52,29 @@ export const ITEMS = [
     target: { root: 'repo', path: 'public/js/count.v5.js' },
     note: 'GoatCounter count.v5.js (self-hosted copy); must hash to GOATCOUNTER.sri in src/config.ts',
   },
+  // Character-card sources, cropped by scripts/assets/account-cards.mjs into src/assets/account-cards/ (dev time only).
+  {
+    id: 'card-source-ezreal',
+    kind: 'jpg',
+    source: 'https://ddragon.leagueoflegends.com/cdn/img/champion/splash/Ezreal_0.jpg',
+    target: { root: 'staging', path: 'account-cards/ezreal-splash.jpg' },
+    note: 'Ezreal (League of Legends) splash art, 1215x717, from Riot Data Dragon; Legal Jibber Jabber, notice required',
+  },
+  {
+    id: 'card-source-pengu',
+    kind: 'png',
+    // 16.19.1: the Data Dragon version read from api/versions.json on the download day (2026-10-04), written literally
+    source: 'https://ddragon.leagueoflegends.com/cdn/16.19.1/img/tft-tactician/Tooltip_PenguKnight_Classic_Tier1.png',
+    target: { root: 'staging', path: 'account-cards/pengu.png' },
+    note: 'Pengu (Teamfight Tactics tactician), 512x344, from Riot Data Dragon 16.19.1; Legal Jibber Jabber, notice required',
+  },
+  {
+    id: 'card-source-innkeeper',
+    kind: 'jpg',
+    source: 'https://bnetcmsus-a.akamaihd.net/cms/blog_header/r6/R6XIUXOQB0IT1698251687641.jpg',
+    target: { root: 'staging', path: 'account-cards/innkeeper-header.jpg' },
+    note: 'the innkeeper Harth Stonebrew (Hearthstone), 1520x540 header image of https://hearthstone.blizzard.com/en-us/news/24008694; official Blizzard art used with a source credit in the Blizzard notice',
+  },
 ];
 
 export function sha256(buf) {
@@ -66,6 +89,11 @@ export function isPng(buf) {
   return buf.length >= 8 && buf.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]));
 }
 
+/** JPEG start of image and the first marker's prefix (FF D8 FF). */
+export function isJpeg(buf) {
+  return buf.length >= 3 && buf[0] === 0xff && buf[1] === 0xd8 && buf[2] === 0xff;
+}
+
 /** ID3v2 tag ("ID3") or an MPEG audio frame sync (11 set bits). */
 export function isMp3(buf) {
   if (buf.length < 3) return false;
@@ -75,6 +103,7 @@ export function isMp3(buf) {
 /** null when the bytes fit the item kind, else the reason. */
 export function checkBytes(kind, buf) {
   if (kind === 'png') return isPng(buf) ? null : 'not a PNG file';
+  if (kind === 'jpg') return isJpeg(buf) ? null : 'not a JPEG file';
   if (kind === 'mp3') return isMp3(buf) ? null : 'not an MP3 file (no ID3 tag or MPEG frame sync)';
   if (kind === 'js') {
     const got = sri384(buf);
