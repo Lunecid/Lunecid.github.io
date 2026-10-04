@@ -257,7 +257,7 @@ function pxFontSizes(file: string, text: string): string[] {
   return out.sort();
 }
 
-const PX_FONT_BASELINE_MAX = 174;
+const PX_FONT_BASELINE_MAX = 173;
 const PX_FONT_BASELINE: Record<string, string[]> = {
   'src/components/common/Figure.astro': ['.figure__cap | 15px'],
   'src/components/common/VariantSwitch.astro': ['.variant-switch | 13px'],
@@ -274,7 +274,6 @@ const PX_FONT_BASELINE: Record<string, string[]> = {
   'src/components/hud/SiteFooter.astro': ['.site-footer__motion-chip | 12px'],
   'src/components/player-log/AchievementMeter.astro': ['.ach-meter__count | clamp(28px, 3vw, 40px)', '.ach-meter__note | 14px'],
   'src/components/player-log/FavoriteTiles.astro': ['.fav-tile__cap strong | 16px', '.fav-tile__cap strong | 20px', '.fav-tile__kicker | 12px'],
-  'src/components/player-log/GameAchievements.astro': ['.game-ach__note | 15px'],
   'src/components/player-log/MembershipCard.astro': ['.mcard__band | 12px', '.mcard__field dd | 15px', '.mcard__field dt | 13px', '.mcard__sticker | 12px', '.mcard__sticker | 13px', '.mcard__title small | 13px'],
   'src/components/player-log/SiteAchievementList.astro': ['.site-ach__desc | 15px', '.site-ach__hint | 14px', '.site-ach__note, .site-ach__nojs | 14px', '.site-ach__progress | 15px'],
   'src/components/projects/ProjectAudience.astro': ['.audience__text | 16px'],

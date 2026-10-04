@@ -521,6 +521,41 @@ test.describe('image viewer', () => {
     await expect(page.locator('.ach-toast')).toHaveCount(1);
   });
 
+  for (const path of ['/game/player-log/', '/en/game/player-log/']) {
+    test(`PL-4 ${path}: an evidence link opens the viewer, ←/→ move among the three, Esc returns focus, the certificate achievement stays locked`, async ({ page }) => {
+      await page.setViewportSize({ width: 1280, height: 900 });
+      await page.goto(path, { waitUntil: 'networkidle' });
+      await settle(page);
+      const triggers = page.locator('#game-achievements a[data-viewer="game-records"]');
+      await expect(triggers).toHaveCount(3);
+      const first = triggers.first();
+      await first.scrollIntoViewIfNeeded();
+      await first.focus();
+      await page.keyboard.press('Enter');
+      const dialog = page.locator('dialog.image-viewer');
+      await expect(dialog).toHaveAttribute('open', '');
+      await waitViewerSettled(dialog);
+      await expect(page).toHaveURL(/#view-gm-2026$/);
+      const counter = dialog.locator('.image-viewer__counter');
+      await expect(counter).toHaveText('1 / 3');
+      await page.keyboard.press('ArrowRight');
+      await expect(counter).toHaveText('2 / 3');
+      await expect(page).toHaveURL(/#view-gm-2025$/);
+      await page.keyboard.press('ArrowRight');
+      await expect(counter).toHaveText('3 / 3');
+      await expect(page).toHaveURL(/#view-rank-2018$/);
+      await page.keyboard.press('ArrowLeft');
+      await expect(counter).toHaveText('2 / 3');
+      await page.keyboard.press('Escape');
+      await expect(dialog).not.toHaveAttribute('open');
+      await expect(triggers.nth(1)).toBeFocused();
+      await expect(page).not.toHaveURL(/#view-/);
+      // no data-cert-id on these triggers: closing fires no achievement
+      await expect(page.locator('.ach-toast')).toHaveCount(0);
+      await expect(page.locator('#site-achievements [data-ach-id="certificate-checked"]')).toHaveAttribute('data-unlocked', 'false');
+    });
+  }
+
   test('Esc removes exactly one history entry; goBack returns to previous document', async ({ page }) => {
     await page.goto('/game/', { waitUntil: 'networkidle' });
     await settle(page);

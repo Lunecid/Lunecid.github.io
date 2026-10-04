@@ -124,7 +124,7 @@ export const ANCHORS: Readonly<Record<string, readonly string[]>> = {
   '/research/cog-2026-engagement/': ['abstract', 'bibtex'],
   '/projects/': ['project-list'],
   '/records/': ['profile', 'education', 'publications', 'projects', 'awards', 'activities', 'certifications', 'languages', 'training', 'skills', 'job-fit', 'documents'],
-  '/player-log/': ['membership', 'favorite-games', 'site-achievements'], // game-achievements only with an account feed (D-13)
+  '/player-log/': ['membership', 'favorite-games', 'game-achievements', 'site-achievements'],
   '/stats/': ['summary'],
 };
 
@@ -133,6 +133,7 @@ export const ANCHOR_MODULES: Readonly<Record<string, ModuleId>> = {
   'main-menu': 'mainMenu',
   membership: 'playerLog',
   'favorite-games': 'playerLog',
+  'game-achievements': 'playerLog',
   'site-achievements': 'playerLog',
   'for-game-teams': 'audienceGame',
 };

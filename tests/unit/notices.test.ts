@@ -17,7 +17,13 @@ describe('noticeLines (P2-1: shared by SiteFooter and DataFooter)', () => {
       { key: 'notice.valve', english: true },
       { key: 'footer.valveDisclaimer', english: false },
     ]);
-    expect(NOTICE_KEYS).toEqual(['cognosphere', 'zzz-fan-guide', 'fan-content', 'riot', 'valve']);
+    // PL-4 (named change): riot-assets and blizzard join the list
+    expect(NOTICE_KEYS).toEqual(['cognosphere', 'zzz-fan-guide', 'fan-content', 'riot', 'valve', 'riot-assets', 'blizzard']);
     expect(noticeLines(['valve', 'cognosphere', 'riot'])).toEqual([...NOTICE_LINES.cognosphere, ...NOTICE_LINES.riot, ...NOTICE_LINES.valve]);
+  });
+  it('PL-4: riot-assets and blizzard are one English line each', () => {
+    expect(NOTICE_LINES['riot-assets']).toEqual([{ key: 'notice.riotAssets', english: true }]);
+    expect(NOTICE_LINES.blizzard).toEqual([{ key: 'notice.blizzard', english: true }]);
+    expect(noticeLines(['blizzard', 'riot-assets', 'cognosphere'])).toEqual([...NOTICE_LINES.cognosphere, ...NOTICE_LINES['riot-assets'], ...NOTICE_LINES.blizzard]);
   });
 });

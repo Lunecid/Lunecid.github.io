@@ -20,7 +20,7 @@ test('§2.2: every page with a data-viewer trigger hydrates ImageViewer, and no 
   const orphaned = withTrigger.filter((f) => !ISLAND.test(readFileSync(f, 'utf8'))).map(rel);
   assert.deepEqual(orphaned, [], `data-viewer= without an ImageViewer island:\n${orphaned.join('\n')}`);
   // Sanity: the invariant is not vacuous (records and research carry triggers on both versions).
-  for (const page of ['game/records/index.html', 'data/records/index.html', 'game/research/index.html', 'data/research/index.html']) {
+  for (const page of ['game/records/index.html', 'data/records/index.html', 'game/research/index.html', 'data/research/index.html', 'game/player-log/index.html']) {
     assert.ok(withTrigger.map(rel).includes(page), `${page} has no data-viewer trigger`);
   }
 });

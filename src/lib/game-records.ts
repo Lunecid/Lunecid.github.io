@@ -3,13 +3,10 @@
 import type { FavoriteGameData, GameRecordData } from '../content/schemas';
 import type { Lang } from '../i18n/ui';
 import { formatDate, formatNumber } from '../i18n/utils';
-import type { GameId } from '../types';
+import type { GameId, NoticeKey } from '../types';
 
-/**
- * The notices a game record may carry: Riot's for the TFT screenshots, Blizzard's for the Hearthstone one. NOTICE_KEYS
- * does not list them until their notice texts exist, so the record schema takes them from here.
- */
-export const GAME_RECORD_NOTICES = ['riot-assets', 'blizzard'] as const;
+/** The notices the records carry today: Riot's for the TFT screenshots, Blizzard's for the Hearthstone one (the schema takes any NoticeKey). */
+export const GAME_RECORD_NOTICES = ['riot-assets', 'blizzard'] as const satisfies readonly NoticeKey[];
 export type GameRecordNotice = (typeof GAME_RECORD_NOTICES)[number];
 
 export interface GameRecordView {
@@ -17,12 +14,18 @@ export interface GameRecordView {
   game: GameId;
   gameName: string;
   title: string;
+  /** The queue, the tier (if the record names one) and the rank (rank records) in `lang`; tierLatin is the English tier. */
+  queue: string;
+  tier: string | undefined;
+  tierLatin: string | undefined;
+  rank: number | undefined;
   account: string;
   alt: boolean;
   dateIso: string;
   dateText: string;
   dateSource: 'capture' | 'saved';
-  notices: GameRecordNotice[];
+  notices: NoticeKey[];
+  imageAlt: string;
 }
 
 const PLACEHOLDER = /\{(\w+)\}/g;
@@ -60,12 +63,17 @@ export function recordViews(
       game: record.game,
       gameName: game.title[lang],
       title: recordTitle(record, lang, templates),
+      queue: record.queue[lang],
+      tier: record.tier?.[lang],
+      tierLatin: record.tier?.en,
+      rank: record.kind === 'rank' ? record.rank : undefined,
       account: record.account,
       alt: record.alt,
       dateIso: record.date,
       dateText: formatDate(record.date, lang),
       dateSource: record.dateSource,
       notices: [...record.notices],
+      imageAlt: record.imageAlt[lang],
     };
   });
 }

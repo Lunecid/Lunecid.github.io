@@ -112,6 +112,47 @@
   --acct-tint-steam: rgba(139, 147, 161, .16);
   --acct-tint-riot: rgba(232, 234, 237, .16);
 
+  /* ── game skins of the "내 게임 업적" showcases (GameAchievements.astro): game-material colours read from the
+        owner's screenshots and the official sites (owner-confirmed design board), not the achievement gold — --gold
+        stays the achievements' and tier badges' colour. Text pairs (≥ 4.5:1): --gm-title, --gm-cream and --gm-amber
+        on --gm-band/--gm-stage ≥ 10.6:1, on --gm-plate ≥ 8.5:1; --gm-grey on --gm-plate 5.71:1; --gm-gold on
+        --gm-plate 7.04:1; --skin-hs-text on --skin-hs-leather 6.96:1 and on the wood ≥ 9.75:1; --skin-hs-wood on
+        --skin-hs-parch-2 10.92:1; --skin-hs-num on --skin-hs-gem-light 9.48:1 (the number sits on the light face). ── */
+  --gm-band: #01050B;           /* title band and evidence band */
+  --gm-stage: #040C15;          /* the smoky stage */
+  --gm-smoke: rgba(30, 36, 49, .85);
+  --gm-smoke-2: rgba(22, 28, 39, .8);
+  --gm-rule: #775A28;           /* the 1px rules and the plate edges */
+  --gm-gold: #C7A96C;           /* the emblem's edge, the main/alt label */
+  --gm-ring: #877549;           /* the plate's initial ring (decorative) */
+  --gm-crimson: #902D2B;
+  --gm-crimson-2: #AA322C;
+  --gm-crimson-deep: #4D1518;
+  --gm-ember: #F78F4E;
+  --gm-amber: #FBAF51;          /* the crown and the Latin tier line */
+  --gm-cream: #D7D1BE;
+  --gm-title: #CAC4BB;
+  --gm-grey: #A09B8C;
+  --gm-plate: #1D2328;
+  --gm-glint: rgba(215, 209, 190, .75);
+  --skin-hs-wood: #2A1D13;
+  --skin-hs-wood-2: #372515;
+  --skin-hs-wood-3: #271A0E;
+  --skin-hs-leather: #772117;
+  --skin-hs-leather-2: #551814;
+  --skin-hs-rim-hi: #F0CE74;
+  --skin-hs-rim-mid: #CBAE6E;
+  --skin-hs-rim-shadow: #78572E;
+  --skin-hs-parch-2: #ECCEAF;   /* the ribbon */
+  --skin-hs-text: #ECCEAF;      /* text on the leather and the wood (the ribbon's parchment) */
+  --skin-hs-gem-2: #CC720C;
+  --skin-hs-gem-3: #914A0F;
+  --skin-hs-gem-mid: #E08A2A;
+  --skin-hs-gem-light: #F0A040;
+  --skin-hs-num: #0A0500;
+  --skin-hs-glint: rgba(255, 232, 197, .9);
+  --skin-clear: transparent;
+
   /* ── typography (spec §4; mobile-first values = "<734") ── */
   /* "SB Sans" is the build-time subset of Pretendard Variable (renamed: "Pretendard" is an OFL Reserved Font
      Name); "JetBrains Mono Variable" is the fontsource latin file of JetBrains Mono. @font-face: src/lib/fonts.ts. */
@@ -120,6 +161,9 @@
   --font-mono: "JetBrains Mono Variable", "JetBrains Mono", "SB Sans", Pretendard,
                ui-monospace, SFMono-Regular, Consolas, monospace;   /* Hangul in mono labels falls back to SB Sans */
   --font-card: var(--font-anton, Impact, "Arial Narrow Bold", sans-serif);  /* membership card only; --font-anton comes from <Font> on Player Log pages */
+  /* the game-achievement showcases' Latin display lines (tier, rank number, English ribbon): the system Times stack,
+     never downloaded; Korean display text stays in --font-sans */
+  --font-skin-serif: var(--font-ed-serif);
 
   /* G-015 (P-11): type sizes in rem, so the browser's default font size scales them (16px default = the px values in
      the comments); layout sizes stay px. */
@@ -162,6 +206,8 @@
   --dur-toast-out: .2s;
   /* the medal's mint pop on a live unlock (Medal.astro); at most .4s */
   --dur-medal: .36s;
+  /* the one-time light sweep over the game-achievement emblems (GameAchievements.astro); at most .6s */
+  --dur-glint: .6s;
 
   /* ── layout ── */
   --container: 1180px;   /* includes gutters; the base width of every band's container */
@@ -218,6 +264,9 @@
     --hud-muted: #333333;
     --accent: #3D5200;
     --grid-line: transparent;
+    /* the game-achievement skins lose their dark grounds on paper, so their text turns dark */
+    --gm-title: #000000; --gm-cream: #000000; --gm-amber: #000000; --gm-grey: #333333; --gm-gold: #333333;
+    --skin-hs-text: #000000;
   }
   /* G-026 (P-12): the origin printed before a site-relative PDF link (base.css); the same value as SITE.url. */
   :root { --print-origin: "https://lunecid.github.io"; }

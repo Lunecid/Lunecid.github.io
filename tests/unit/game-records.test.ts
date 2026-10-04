@@ -83,7 +83,10 @@ describe('game records (src/data/game-records.yaml)', () => {
     expect(ko.map((v) => v.alt)).toEqual([false, true, false]);
     expect(ko[2]).toEqual({
       id: 'rank-2018', game: 'hearthstone', gameName: '하스스톤', title: '정규전 전설 · 최고 293위', account: 'SEK#31221', alt: false,
+      // PL-4 (named change): the view carries the queue, tier and rank for the showcases, and the alt text
+      queue: '정규전', tier: '전설', tierLatin: 'Legend', rank: 293,
       dateIso: '2018-12-11', dateText: '2018.12.11', dateSource: 'saved', notices: ['blizzard'],
+      imageAlt: '하스스톤 정규전 시작 화면. 오른쪽 등급전 표시에 순위 293이 보입니다.',
     });
     const en = recordViews(records, games, 'en', TEMPLATES.en);
     expect(en.map((v) => v.gameName)).toEqual(['Teamfight Tactics', 'Teamfight Tactics', 'Hearthstone']);

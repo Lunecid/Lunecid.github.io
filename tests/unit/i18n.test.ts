@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { defaultLang, languages, ui, type UiKey } from '../../src/i18n/ui';
+import { PLAYER_LOG_COPY_STATUS } from '../../src/data/copy/player-log-status';
 import {
   LOCALES,
   formatDate,
@@ -45,7 +46,8 @@ describe('ui.ts', () => {
 
   it('notice.* strings are identical across locales', () => {
     const noticeKeys = (koKeys as UiKey[]).filter((k) => k.startsWith('notice.'));
-    expect(noticeKeys).toEqual(['notice.cognosphere', 'notice.riot', 'notice.valve', 'notice.zzzCopyright', 'notice.zzzLegalStatement']);
+    // PL-4 (named change): notice.blizzard and notice.riotAssets join the list
+    expect(noticeKeys).toEqual(['notice.blizzard', 'notice.cognosphere', 'notice.riot', 'notice.riotAssets', 'notice.valve', 'notice.zzzCopyright', 'notice.zzzLegalStatement']);
     for (const key of noticeKeys) expect(ui.en[key], key).toBe(ui.ko[key]);
     expect(ui.ko['notice.cognosphere']).toBe('© All rights reserved by COGNOSPHERE. Other properties belong to their respective owners.');
     expect(ui.ko['notice.riot']).toMatch(/^Seongeun Baek's portfolio isn't endorsed by Riot Games /);
@@ -137,7 +139,31 @@ describe('ui.ts', () => {
     expect(ui.ko['stats.notCollecting']).toBe('아직 방문 통계를 모으지 않습니다.');
     expect(ui.en['github.contributionsTotal']).toBe('{n} contributions in the last year');
     expect(ui.ko['news.kind.award']).toBe('수상');
-    expect(ui.en['playerLog.gameAchievementsLocked']).toBe('Game achievements appear here once an account is linked.');
+    // PL-4 (named change): playerLog.gameAchievementsLocked is gone with the account-feed wait; the section title is the owner's
+    expect(ui.ko['playerLog.gameAchievements']).toBe('내 게임 업적');
+  });
+
+  it("PL-4: notice.riotAssets is Riot's Legal Jibber Jabber sentence with the site's project title", () => {
+    expect(ui.ko['notice.riotAssets']).toBe(
+      'Seongeun Baek\'s portfolio was created under Riot Games\' "Legal Jibber Jabber" policy using assets owned by Riot Games. Riot Games does not endorse or sponsor this project.',
+    );
+    expect(ui.en['notice.riotAssets']).toBe(ui.ko['notice.riotAssets']);
+    expect(ui.ko['notice.blizzard']).toMatch(/^Hearthstone and Blizzard Entertainment are trademarks or registered trademarks of Blizzard Entertainment, Inc\./);
+    expect(Object.keys(ui.ko)).not.toContain('playerLog.gameAchievementsLocked');
+  });
+
+  it('PL-4: every registered key exists in ko and en', () => {
+    const keys = Object.keys(PLAYER_LOG_COPY_STATUS) as UiKey[];
+    expect(keys.length).toBeGreaterThanOrEqual(12);
+    for (const key of keys) {
+      expect(ui.ko[key], key).toBeTruthy();
+      expect(ui.en[key], key).toBeTruthy();
+      for (const lang of ['ko', 'en'] as const) expect(['owner', 'placeholder'], key).toContain(PLAYER_LOG_COPY_STATUS[key]?.[lang]);
+    }
+    for (const key of ['gameRecords.tier', 'gameRecords.rank', 'gameRecords.alt', 'gameRecords.dateCapture', 'gameRecords.dateSaved', 'gameRecords.evidence', 'gameRecords.viewerLabel', 'notice.blizzard', 'notice.riotAssets'] as const) {
+      expect(keys, key).toContain(key);
+    }
+    expect(PLAYER_LOG_COPY_STATUS['playerLog.gameAchievements']).toEqual({ ko: 'owner', en: 'placeholder' });
   });
 });
 

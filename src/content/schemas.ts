@@ -4,7 +4,6 @@
 import { z } from 'astro/zod';
 import { ACHIEVEMENT_TRIGGERS, AWARD_LEVELS, CERTIFICATE_IDS, CHARACTER_IDS, GAME_IDS, JOBFIT_IDS, JOBFIT_STATUSES, NOTICE_KEYS, type JobfitId } from '../types';
 import { DOCUMENTS, type DocumentId } from '../config';
-import { GAME_RECORD_NOTICES } from '../lib/game-records';
 import { containsTrademark } from '../lib/seo';
 import { TAG_KEYS, TAGS_EN, TAGS_KO } from './tags';
 
@@ -172,7 +171,7 @@ const gameRecordFields = {
   dateSource: z.enum(['capture', 'saved']),
   image: z.string().regex(/^[a-z0-9-]+\.(webp|png)$/).refine(noTrademark, { message: 'image name names a game trademark (A-9)' }), // src/assets/game-records/<image>
   imageAlt: z.object({ ko: z.string().min(1).max(200), en: z.string().min(1).max(200) }),
-  notices: z.array(z.enum(GAME_RECORD_NOTICES)),
+  notices: z.array(z.enum(NOTICE_KEYS)),
 };
 export const gameRecordSchema = z.discriminatedUnion('kind', [
   z.object({ ...gameRecordFields, kind: z.literal('tier'), tier: localized }).strict(),
