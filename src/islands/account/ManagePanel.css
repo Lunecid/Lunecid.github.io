@@ -1,0 +1,128 @@
+/* The owner management section inside the account dialog (account-link spec §4, §3.7; plan AL-18).
+   Tokens only (colour literals live in tokens.css). The HUD brackets (.bracket) frame the section, never the Steam
+   button; Valve's image gets no opacity, filter or blend: focus and hover show on the button's outline and padding
+   only (R-19). Every control is at least 44×44 (--tap). Transitions: colours only, so no reduce path is needed. */
+
+/* the current tile's state note, above the section until the form shows (spec §2.2 step 3, §3.5) */
+.mp-tile-note { margin: 20px 0 0; font-size: var(--fs-small); line-height: 1.55; color: var(--hud-text); }
+.mp-tile-note + .mp { margin-top: 12px; }
+.mp { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; min-width: 0; margin-top: 20px; padding: 18px 16px; background: var(--hud-bg); color: var(--hud-text); }
+.mp p { margin: 0; }
+.mp__head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 12px; }
+.mp__title { margin: 0; font: 800 var(--fs-body)/1.35 var(--font-sans); color: var(--hud-strong); overflow-wrap: anywhere; }
+.mp__title:focus { outline: none; }
+.mp__title:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
+.mp__owner, .mp__perms, .mp__note, .mp__unset { font-size: var(--fs-small); line-height: 1.55; color: var(--hud-muted); }
+.mp__perms { color: var(--hud-text); }
+
+/* request failures, warnings and the save summary: role="alert" regions rendered empty and filled later (spec §4.7) */
+.mp__alert { font-size: var(--fs-small); line-height: 1.55; color: var(--hud-strong); }
+.mp__alert:not(:empty) { padding: 8px 12px; border-left: 2px solid var(--hud-line-strong); background: var(--hud-panel); }
+.mp__alert:focus { outline: none; }
+.mp__alert:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.mp__warn { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+
+.mp__login { display: grid; gap: 10px; justify-items: start; min-width: 0; }
+.mp__form { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; min-width: 0; }
+.mp__confirm { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; min-width: 0; } /* the two buttons wrap on a narrow phone */
+.mp__confirm > p { flex: 1 0 100%; font-size: var(--fs-small); color: var(--hud-strong); }
+.mp__save { display: flex; gap: 10px; }
+
+/* HUD text buttons (global .btn .cut): a mono label on English pages; Korean labels stay in the sans face */
+.mp-btn { font-family: var(--font-mono); letter-spacing: var(--ls-label); }
+.mp-btn:lang(ko) { font-family: var(--font-sans); letter-spacing: 0; }
+.mp-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.mp-btn[disabled] { cursor: progress; }
+
+/* one group per variable set (spec §4.3), the current account's group marked by its line */
+.mp-group { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; min-width: 0; margin: 0; padding: 14px 12px 12px; border: 1px solid var(--hud-line); transition: border-color var(--dur-hover) linear; }
+.mp-group[data-current] { border-color: var(--hud-line-strong); }
+.mp-group > .mp-btn, .mp-group > .mp-unlink { justify-self: start; }
+.mp-group__name { padding: 0 6px; font: 700 var(--fs-small)/1.4 var(--font-sans); color: var(--hud-strong); }
+.mp-group__state { font: 600 var(--fs-label)/1.5 var(--font-sans); color: var(--hud-text); }
+.mp-group__note { font-size: var(--fs-label); line-height: 1.5; color: var(--hud-muted); }
+
+.mp-field { display: grid; gap: 4px; min-width: 0; }
+.mp-field__label { font: 600 var(--fs-small)/1.4 var(--font-sans); color: var(--hud-text); }
+.mp-field__changed { margin-left: 4px; padding: 0 6px; border: 1px solid var(--hud-line-strong); font: 700 var(--fs-label)/1.5 var(--font-sans); color: var(--hud-strong); }
+.mp-field__input {
+  box-sizing: border-box; width: 100%; min-width: 0; min-height: var(--tap); padding: 8px 10px;
+  border: 1px solid var(--hud-line); background: var(--hud-panel); color: var(--hud-strong);
+  font: 500 var(--fs-body)/1.3 var(--font-sans); transition: border-color var(--dur-hover) linear;
+}
+.mp-field__input:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.mp-field__input[aria-invalid="true"] { border-color: var(--hud-strong); }
+.mp-field__help { font-size: var(--fs-label); line-height: 1.5; color: var(--hud-muted); }
+.mp-field__err { font: 600 var(--fs-label)/1.5 var(--font-sans); color: var(--hud-strong); }
+.mp-field__err:empty { display: none; }
+
+/* the check buttons (spec §3.7): one shape and one 44px target for both states */
+.mp-checks { display: flex; flex-wrap: wrap; gap: 8px; }
+.mp-check {
+  display: inline-flex; align-items: center; gap: 4px; min-height: var(--tap); padding: 0 12px;
+  border: 1px solid var(--hud-line); background: none; color: var(--accent);
+  font: 700 var(--fs-small)/1.3 var(--font-sans); text-decoration: none; cursor: pointer;
+  transition: color var(--dur-hover) linear, border-color var(--dur-hover) linear;
+}
+.mp-check[aria-disabled="true"] { color: var(--hud-muted); cursor: default; }
+.mp-check:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+@media (hover: hover) {
+  .mp-check:not([aria-disabled="true"]):hover { border-color: var(--accent); color: var(--accent-hover); }
+  .mp-manual__sum:hover, .mp-nologin__sum:hover { color: var(--accent); }
+  .mp-steam__btn:hover { border-color: var(--accent); }
+}
+.mp-check:not([aria-disabled="true"]):active { border-color: var(--accent-hover); color: var(--accent-hover); }
+.mp-manual__sum:active, .mp-nologin__sum:active { color: var(--accent-hover); }
+.mp-steam__btn:active { border-color: var(--accent-hover); }
+
+.mp-unlink { display: inline-flex; align-items: center; gap: 8px; min-height: var(--tap); font-size: var(--fs-small); color: var(--hud-text); cursor: pointer; }
+.mp-unlink input { flex: none; width: 20px; height: 20px; margin: 0; accent-color: var(--accent); }
+
+/* Steam (spec §4.3, R-19): Valve's image as is; the 35px image gets padding up to the 44px target */
+.mp-steam { display: grid; gap: 6px; justify-items: start; }
+.mp-steam__btn {
+  display: inline-flex; align-items: center; justify-content: center; min-width: var(--tap); min-height: var(--tap);
+  padding: 4px 0; border: 1px solid transparent; background: none; cursor: pointer; /* no side padding: the 180px image fits a 320px phone */
+  transition: border-color var(--dur-hover) linear;
+}
+.mp-steam__btn img { display: block; width: 180px; height: 35px; }
+.mp-steam__btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.mp-steam__result { font: 600 var(--fs-small)/1.5 var(--font-sans); color: var(--hud-text); overflow-wrap: anywhere; }
+.mp-steam__result:empty { display: none; }
+
+.mp-manual, .mp-nologin { min-width: 0; }
+.mp-manual__sum, .mp-nologin__sum {
+  display: flex; align-items: center; min-height: var(--tap); cursor: pointer;
+  font: 700 var(--fs-small)/1.3 var(--font-sans); color: var(--hud-text); transition: color var(--dur-hover) linear;
+}
+.mp-manual__sum:focus-visible, .mp-nologin__sum:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.mp-manual[open] > .mp-field { margin-top: 6px; }
+
+/* without signing in (spec §4.8) */
+.mp-nologin { padding-top: 10px; border-top: 1px solid var(--hud-line); font-size: var(--fs-small); line-height: 1.55; color: var(--hud-muted); }
+/* block flow inside <details> (a grid <details> is not supported everywhere); the long command lines scroll in the <pre> */
+.mp-nologin > :not(:first-child) { margin-top: 10px; }
+.mp-nologin__steps { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; margin: 0; padding-left: 1.4em; }
+.mp-nologin__steps li { display: grid; gap: 6px; min-width: 0; }
+.mp-nologin__h { margin: 4px 0 0; font: 700 var(--fs-small)/1.4 var(--font-sans); color: var(--hud-text); }
+.mp-nologin__ps { font-size: var(--fs-label); }
+.mp-nologin__pre {
+  box-sizing: border-box; max-width: 100%; margin: 0; padding: 10px 12px; overflow-x: auto; border: 1px solid var(--hud-line); background: var(--hud-panel);
+  color: var(--hud-text); font: 500 var(--fs-label)/1.6 var(--font-mono); white-space: pre;
+}
+.mp-nologin__pre:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.mp-nologin__names { display: flex; flex-wrap: wrap; gap: 4px 12px; margin: 0; padding: 0; list-style: none; }
+.mp-nologin__names code { font: 600 var(--fs-label)/1.5 var(--font-mono); color: var(--hud-text); }
+.mp a { color: var(--accent); text-underline-offset: .2em; transition: color var(--dur-hover) linear; }
+/* outbound links inside sentences still get the 44px target (spec §3.7 lists every outbound link) */
+.mp a:not(.mp-check) { display: inline-flex; align-items: center; gap: 2px; min-height: var(--tap); }
+.mp a.mp-check { text-decoration: none; }
+@media (hover: hover) { .mp a:hover { color: var(--accent-hover); } }
+.mp a:active { color: var(--accent-hover); }
+.mp a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+@media (forced-colors: active) {
+  .mp { border-color: CanvasText; }
+  .mp-group, .mp-check, .mp-field__input, .mp-nologin__pre { border-color: CanvasText; }
+  .mp-steam__btn { border-color: ButtonText; }
+}
