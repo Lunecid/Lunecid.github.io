@@ -95,6 +95,37 @@ test('F1: after a key press the CRT overlay is below 0.5 opacity within 100 ms a
   expect(late.every((x) => x.display === 'none'), log).toBe(true);
 });
 
+test('H1: the hero copy rises on the first game-home view of the session only', async ({ page }) => {
+  // No CRT in this session, so the rise is not suppressed by data-intro-played.
+  await page.addInitScript((key) => sessionStorage.setItem(key, '1'), STORAGE_KEYS.intro);
+  // A fill-mode "both" animation stays in getAnimations() after it ends, so a finished rise still counts as played.
+  const rises = () =>
+    page.locator('.hero__copy > *').evaluateAll((els) => {
+      const all = els.flatMap((el) => el.getAnimations()).filter((a) => (a as CSSAnimation).animationName === 'hero-rise');
+      return { all: all.length, running: all.filter((a) => a.playState === 'running').length };
+    });
+  const html = page.locator('html');
+  const lines = page.locator('.hero__copy > *');
+  await page.goto('/game/', { waitUntil: 'domcontentloaded' });
+  await expect(html).not.toHaveAttribute('data-hero-seen');
+  expect((await rises()).all, 'first view: every copy line rises').toBe(await lines.count());
+  // let the first rise end, so a back/forward-cache restore cannot show it still running
+  await lines.evaluateAll((els) => Promise.all(els.flatMap((el) => el.getAnimations()).map((a) => a.finished)));
+
+  await page.locator('.hud-nav a[href="/game/projects/"]').first().click();
+  await expect(page).toHaveURL(/\/game\/projects\/$/);
+  await page.goBack({ waitUntil: 'domcontentloaded' });
+  await expect(page).toHaveURL(/\/game\/$/);
+  expect((await rises()).running, 'back to the home: no rise').toBe(0);
+
+  await page.locator('.hud-nav a[href="/game/projects/"]').first().click();
+  await expect(page).toHaveURL(/\/game\/projects\/$/);
+  await page.locator('.hud-nav__brand').click();
+  await expect(page).toHaveURL(/\/game\/$/);
+  await expect(html).toHaveAttribute('data-hero-seen', '');
+  expect(await rises(), 'nav click to the home: no rise').toEqual({ all: 0, running: 0 });
+});
+
 test.describe('with the OS reduced-motion setting', () => {
   test.use({ reducedMotion: 'reduce' });
 

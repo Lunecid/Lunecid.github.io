@@ -1,7 +1,7 @@
 ---
 title: Privacy Policy
 lang: en
-updated: '2026-09-30'
+updated: '2026-10-04'
 ---
 
 This site (https://lunecid.github.io) is a static website that Seongeun Baek runs as a personal portfolio. It has no sign-up, login, or comments, and there is nowhere for visitors to enter a name or contact details.
@@ -32,7 +32,7 @@ The following settings are stored only in your browser (localStorage and session
 - Sound on/off and reduced motion
 - Site achievements you have unlocked
 - Which of the four menu sections and which languages you have opened (for achievements)
-- Whether you have already seen the intro screen (CRT intro) during this visit
+- Whether you have already seen the start-screen effect (CRT intro) and the home text entrance in this visit
 - The background-music position so it continues on the next page (sessionStorage; cleared when the tab closes, ignored after 30 minutes)
 - The portfolio version you last chose (game or general)
 
@@ -59,4 +59,4 @@ todtjddms104204@pusan.ac.kr
 
 When this policy changes, the last-updated date on this page is changed as well. You can see what changed in the GitHub repository's history.
 
-Last updated: September 30, 2026
+Last updated: October 4, 2026

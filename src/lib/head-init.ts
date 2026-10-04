@@ -1,7 +1,9 @@
 // src/lib/head-init.ts — inline <head> script: motion preference + CRT intro gate (spec §4, §5; mockup-port §1.5).
 // BaseLayout renders it FIRST in <head> with <script is:inline set:html={HEAD_INIT_SCRIPT} />, so it runs before
 // first paint and before any island hydrates. The string is self-contained: no imports, and the storage keys are
-// the literals 'sb:motion' and 'sb:intro' (tests/react/head-init.test.ts checks they equal STORAGE_KEYS).
+// the literals 'sb:motion', 'sb:intro' and 'sb:hero' (tests/react/head-init.test.ts checks they equal STORAGE_KEYS).
+// Hero copy (H1): the game home's copy rise (or its reduced fade) plays on the first view of the session only;
+// later views, a view-transition entry and unreadable storage get data-hero-seen (Hero.astro stops the animation).
 // Timeline (ms from first-contentful-paint, N17 / F-016): overlay 0–400 → fade 400–700 → removed at 700 (≤1 s).
 // Any keydown/pointerdown/wheel/touchstart skips: data-intro-skip switches the overlay to the short --dur-press
 // fade (CrtIntro.astro), then done 150 ms later removes both attributes. Timers arm on FCP (or crt-on
@@ -19,6 +21,18 @@ export const HEAD_INIT_SCRIPT = `(function () {
   try { os = typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) { os = false; }
   var reduce = off || os;
   d.setAttribute('data-motion', reduce ? 'reduce' : 'full');
+  var gameHome = d.getAttribute('data-variant') === 'game' && d.getAttribute('data-page') === 'home';
+  if (gameHome) {
+    var heroSeen = true;
+    try {
+      heroSeen = window.sessionStorage.getItem('sb:hero') === '1';
+      if (!heroSeen) window.sessionStorage.setItem('sb:hero', '1');
+    } catch (e) { heroSeen = true; }
+    if (heroSeen) d.setAttribute('data-hero-seen', '');
+    window.addEventListener('pagereveal', function (ev) {
+      if (ev.viewTransition) d.setAttribute('data-hero-seen', '');
+    });
+  }
   if (reduce || d.getAttribute('data-variant') !== 'game' || d.getAttribute('data-page') !== 'home') return;
   var seen = true;
   try {

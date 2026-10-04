@@ -372,6 +372,10 @@ const metaParts = creditParts(meta);
   :global(:root[data-intro-played]) .hero__copy:not(.is-replayed) > * {
     animation: none;
   }
+  /* Once per session (head-init sets data-hero-seen): also stops the reduced fade, which has one :not() less. */
+  :global(:root[data-hero-seen]) .hero__copy:not(.is-replayed) > * {
+    animation: none;
+  }
   .hero__copy.is-reset > * {
     animation: none !important;
   }

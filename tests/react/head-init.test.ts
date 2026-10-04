@@ -46,7 +46,7 @@ function runHeadScript(page: string): void {
 
 function resetRoot(): void {
   root.className = '';
-  for (const name of ['data-page', 'data-motion', 'data-intro', 'data-intro-played', 'data-intro-skip']) root.removeAttribute(name);
+  for (const name of ['data-page', 'data-motion', 'data-intro', 'data-intro-played', 'data-intro-skip', 'data-hero-seen']) root.removeAttribute(name);
   delete (window as IntroWindow).__sbIntroSkipped;
 }
 
@@ -185,6 +185,7 @@ describe('HEAD_INIT_SCRIPT', () => {
     expect(root.classList.contains('js')).toBe(true);
     expect(root.getAttribute('data-motion')).toBe('full');
     expect(root.hasAttribute('data-intro')).toBe(false);
+    expect(root.hasAttribute('data-hero-seen'), 'unknown session: the hero copy stays static').toBe(true);
   });
 
   it('works when window.matchMedia is missing', () => {
@@ -207,6 +208,8 @@ describe('HEAD_INIT_SCRIPT', () => {
   it('script uses the STORAGE_KEYS literals', () => {
     expect(HEAD_INIT_SCRIPT).toContain(`'${STORAGE_KEYS.motion}'`);
     expect(HEAD_INIT_SCRIPT).toContain(`'${STORAGE_KEYS.intro}'`);
+    expect(STORAGE_KEYS.hero).toBe('sb:hero');
+    expect(HEAD_INIT_SCRIPT).toContain(`'${STORAGE_KEYS.hero}'`);
     expect(HEAD_INIT_SCRIPT).not.toMatch(/\b(import|export|require)\b/);
     expect(HEAD_INIT_SCRIPT.trim().startsWith('(function')).toBe(true);
   });
@@ -223,5 +226,54 @@ describe('HEAD_INIT_SCRIPT', () => {
     sessionStorage.clear();
     runHeadScript('home');
     expect(root.getAttribute('data-intro')).toBe('playing');
+  });
+  it('H1: the hero copy rises on the first game-home view of the session only', () => {
+    runHeadScript('home');
+    expect(root.hasAttribute('data-hero-seen')).toBe(false);
+    expect(sessionStorage.getItem(STORAGE_KEYS.hero)).toBe('1');
+    resetRoot();
+    runHeadScript('home');
+    expect(root.hasAttribute('data-hero-seen')).toBe(true);
+
+    // other pages and other versions neither read nor record it
+    sessionStorage.clear();
+    resetRoot();
+    runHeadScript('projects');
+    expect(root.hasAttribute('data-hero-seen')).toBe(false);
+    expect(sessionStorage.getItem(STORAGE_KEYS.hero)).toBeNull();
+    for (const variant of ['data', 'neutral']) {
+      resetRoot();
+      root.setAttribute('data-variant', variant);
+      runHeadScript('home');
+      expect(root.hasAttribute('data-hero-seen'), variant).toBe(false);
+      expect(sessionStorage.getItem(STORAGE_KEYS.hero), variant).toBeNull();
+    }
+  });
+
+  it('H1: under reduced motion the session is still recorded (the fade also plays once)', () => {
+    localStorage.setItem(STORAGE_KEYS.motion, 'off');
+    runHeadScript('home');
+    expect(root.getAttribute('data-motion')).toBe('reduce');
+    expect(root.hasAttribute('data-hero-seen')).toBe(false);
+    expect(sessionStorage.getItem(STORAGE_KEYS.hero)).toBe('1');
+    expect(sessionStorage.getItem(STORAGE_KEYS.intro), 'the CRT gate is still skipped').toBeNull();
+    resetRoot();
+    runHeadScript('home');
+    expect(root.getAttribute('data-motion')).toBe('reduce');
+    expect(root.hasAttribute('data-hero-seen')).toBe(true);
+  });
+
+  it('H1: a view-transition entry (pagereveal with viewTransition) marks the hero as seen', () => {
+    const reveal = (viewTransition: object | null): void => {
+      const event = new Event('pagereveal');
+      Object.defineProperty(event, 'viewTransition', { value: viewTransition });
+      window.dispatchEvent(event);
+    };
+    runHeadScript('home');
+    expect(root.hasAttribute('data-hero-seen')).toBe(false);
+    reveal(null);
+    expect(root.hasAttribute('data-hero-seen'), 'an ordinary load keeps the rise').toBe(false);
+    reveal({});
+    expect(root.hasAttribute('data-hero-seen')).toBe(true);
   });
 });
