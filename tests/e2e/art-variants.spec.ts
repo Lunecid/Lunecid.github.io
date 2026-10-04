@@ -1,30 +1,12 @@
 // D-1 (batch 4): every art slot has a finished no-art layout, and with art the art shows.
 // The no-art pages come from dist-no-art/ (built with the test-only SB_NO_ART=1 switch, served at NO_ART_ORIGIN by
 // playwright.config.ts); the with-art pages come from the normal dist/ at the default baseURL.
-import AxeBuilder from '@axe-core/playwright';
-import type { Locator, Page } from '@playwright/test';
-import { test, expect, NO_ART_ORIGIN, horizontalOverflow, settle, textBelow12px } from './helpers';
+import type { Page } from '@playwright/test';
+import { test, expect, NO_ART_ORIGIN, box, expectNoAxeViolations, horizontalOverflow, openAt, settle, textBelow12px } from './helpers';
 import { overallAuc } from '../../src/data/research/cog-2026';
 
-const AXE_TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'];
 const noArt = (route: string): string => `${NO_ART_ORIGIN}${route}`;
 
-interface Box {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-}
-async function box(locator: Locator): Promise<Box> {
-  const b = await locator.boundingBox();
-  expect(b, 'element has a layout box').toBeTruthy();
-  return b as Box;
-}
-async function open(page: Page, url: string, width: number, height = 900): Promise<void> {
-  await page.setViewportSize({ width, height });
-  await page.goto(url, { waitUntil: 'networkidle' });
-  await settle(page);
-}
 /** Scrolls through the page so client:visible islands hydrate, then back to the top. */
 async function hydrateAll(page: Page): Promise<void> {
   const total = await page.evaluate(() => document.documentElement.scrollHeight);
@@ -34,11 +16,11 @@ async function hydrateAll(page: Page): Promise<void> {
 
 test.describe('D-1 no-art build', () => {
   test('the no-art build has no character art anywhere, and its variants are the ones rendered', async ({ page }) => {
-    await open(page, noArt('/game/'), 1440);
+    await openAt(page, noArt('/game/'), 1440);
     await expect(page.locator('.char-stage')).toHaveCount(0);
     await expect(page.locator('section.hero.hero--no-art')).toHaveCount(1);
     await expect(page.locator('#main-menu.mm-sec--no-art')).toHaveCount(1);
-    await open(page, noArt('/game/player-log/'), 1440);
+    await openAt(page, noArt('/game/player-log/'), 1440);
     await hydrateAll(page);
     await expect(page.locator('.fav-tile')).toHaveCount(0);
     await expect(page.locator('#membership.pl-intro--meter [data-ach-meter]')).toBeVisible();
@@ -100,10 +82,9 @@ test.describe('D-1 no-art build', () => {
 
   for (const route of ['/game/', '/en/game/', '/game/player-log/', '/en/game/player-log/']) {
     test(`axe clean (${route})`, async ({ page }) => {
-      await open(page, noArt(route), 1280, 720);
+      await openAt(page, noArt(route), 1280, 720);
       await hydrateAll(page);
-      const axe = await new AxeBuilder({ page }).withTags(AXE_TAGS).analyze();
-      expect(axe.violations.map((v) => `${v.id}: ${v.nodes.slice(0, 3).map((n) => n.target.join(' ')).join(' | ')}`)).toEqual([]);
+      await expectNoAxeViolations(page, 'axe violations');
     });
   }
 
@@ -133,7 +114,7 @@ test.describe('D-1 no-art build', () => {
   }
 
   test('tablet (768px): one column — the copy, then the chart frame, then the player card', async ({ page }) => {
-    await open(page, noArt('/game/'), 768, 1024);
+    await openAt(page, noArt('/game/'), 768, 1024);
     const copy = await box(page.locator('.hero__copy'));
     const artifact = await box(page.locator('.hero__artifact'));
     const pcard = await box(page.locator('.hero__pcard'));
@@ -146,7 +127,7 @@ test.describe('D-1 no-art build', () => {
   });
 
   test('MAIN MENU at 1440px: rows span the full container, captions on the right of the same line', async ({ page }) => {
-    await open(page, noArt('/game/'), 1440);
+    await openAt(page, noArt('/game/'), 1440);
     const inner = await box(page.locator('.mm-sec__inner'));
     const menu = await box(page.locator('.mm'));
     expect(menu.width).toBeGreaterThan(inner.width - 2 * 56 - 2);
@@ -161,7 +142,7 @@ test.describe('D-1 no-art build', () => {
 
   test('showcase: tint on without art; no fixed 760px/600px stage; tabs on top below 1068px, list column from 1068px', async ({ page }) => {
     for (const width of [375, 768, 1440]) {
-      await open(page, noArt('/game/player-log/'), width);
+      await openAt(page, noArt('/game/player-log/'), width);
       const fg = page.locator('section.fg');
       await fg.scrollIntoViewIfNeeded();
       await expect(page.locator('.fg__scene')).toBeVisible();
@@ -194,7 +175,7 @@ test.describe('D-1 no-art build', () => {
   });
 
   test('Player Log first row: the membership card pairs with the achievement progress (1440px), stacked on phones', async ({ page }) => {
-    await open(page, noArt('/game/player-log/'), 1440);
+    await openAt(page, noArt('/game/player-log/'), 1440);
     const card = await box(page.locator('.mcard'));
     const meter = await box(page.locator('[data-ach-meter]'));
     const grid = await box(page.locator('.pl-intro__grid'));
@@ -203,7 +184,7 @@ test.describe('D-1 no-art build', () => {
     expect(meter.y + meter.height).toBeGreaterThan(card.y);
     expect(meter.x + meter.width, 'the panel fills the row to the right edge').toBeGreaterThan(grid.x + grid.width - 56 - 2);
     await expect(page.locator('[data-ach-meter-count]')).toHaveText(/^0 \/ \d 달성$/);
-    await open(page, noArt('/game/player-log/'), 375);
+    await openAt(page, noArt('/game/player-log/'), 375);
     const cardM = await box(page.locator('.mcard'));
     const meterM = await box(page.locator('[data-ach-meter]'));
     expect(meterM.y).toBeGreaterThan(cardM.y + cardM.height - 1);
@@ -228,7 +209,7 @@ test.describe('D-1 no-art build', () => {
           return { name: (a as CSSAnimation).animationName, delay: timing.delay, duration: timing.duration, from: String(effect.getKeyframes()[0]?.transform ?? '') };
         }),
       );
-    await open(page, noArt('/game/player-log/'), 1440);
+    await openAt(page, noArt('/game/player-log/'), 1440);
     const fillMs = await page.locator('.ach-meter__fill').evaluate((el) => parseFloat(getComputedStyle(el).transitionDuration) * 1000);
     expect(fillMs).toBeGreaterThan(0);
     const id = await unlockNext();
@@ -252,7 +233,7 @@ test.describe('D-1 no-art build', () => {
 test.describe('with art (dist): the art shows and replaces the no-art layouts', () => {
   test('hero: the character stage is shown, not the chart; the art stays clear of the copy column', async ({ page }) => {
     for (const width of [1068, 1440, 1600, 1920]) {
-      await open(page, '/en/game/', width);
+      await openAt(page, '/en/game/', width);
       await expect(page.locator('section.hero.hero--art')).toHaveCount(1);
       await expect(page.locator('.hero__artifact')).toHaveCount(0);
       await expect(page.locator('.char-stage--hero .char-stage__img')).toBeVisible();
@@ -268,7 +249,7 @@ test.describe('with art (dist): the art shows and replaces the no-art layouts', 
   });
 
   test('tablet (768px): copy and art in two columns; the title card spans the whole row', async ({ page }) => {
-    await open(page, '/game/', 768, 1024);
+    await openAt(page, '/game/', 768, 1024);
     const copy = await box(page.locator('.hero__copy'));
     expect(copy.width).toBeLessThan(768 * 0.6);
     await expect(page.locator('.char-stage--hero .char-stage__img')).toBeVisible();
@@ -277,7 +258,7 @@ test.describe('with art (dist): the art shows and replaces the no-art layouts', 
 
   test('MAIN MENU: the side art sits next to the menu inside the HUD container, also at 1920px', async ({ page }) => {
     for (const width of [1440, 1920]) {
-      await open(page, '/game/', width);
+      await openAt(page, '/game/', width);
       await expect(page.locator('#main-menu.mm-sec--art')).toHaveCount(1);
       await page.locator('#main-menu').scrollIntoViewIfNeeded();
       const frame = await box(page.locator('.char-stage--side .char-stage__frame'));
@@ -288,7 +269,7 @@ test.describe('with art (dist): the art shows and replaces the no-art layouts', 
   });
 
   test('Player Log: tiles and the showcase art show; the showcase keeps its fixed art stage (520px with two or three games, 600px with four or more)', async ({ page }) => {
-    await open(page, '/game/player-log/', 1440);
+    await openAt(page, '/game/player-log/', 1440);
     await hydrateAll(page);
     await expect(page.locator('.fav-tile')).toHaveCount(3);
     await expect(page.locator('[data-ach-meter]')).toHaveCount(0);
@@ -298,7 +279,7 @@ test.describe('with art (dist): the art shows and replaces the no-art layouts', 
     // take the tab column beside a 600px stage
     const tabCount = await page.locator('.fg__tab').count();
     expect((await box(page.locator('section.fg'))).height).toBeCloseTo(tabCount <= 3 ? 520 : 600, 0);
-    await open(page, '/game/player-log/', 1920);
+    await openAt(page, '/game/player-log/', 1920);
     for (const tile of await page.locator('.fav-tile').all()) {
       const b = await box(tile);
       expect(b.width).toBeGreaterThan(176);

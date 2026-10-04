@@ -1,14 +1,12 @@
 // Ghost watermark in the side margins of light bands on wide screens (≥1600px).
 // Below that breakpoint the CSS background is not applied, so the image must never be requested.
-import AxeBuilder from '@axe-core/playwright';
 import { existsSync, mkdirSync } from 'node:fs';
 import { join } from 'node:path';
-import type { Locator, Page } from '@playwright/test';
-import { test, expect, settle, gamePath, builtHasId, SHOTS, SHOTS_SKIP } from './helpers';
+import type { Locator } from '@playwright/test';
+import { test, expect, settle, gamePath, builtHasId, expectNoAxeViolations, openAt, SHOTS, SHOTS_SKIP, type Box } from './helpers';
 
 const GHOST_ASSET = join(process.cwd(), 'src/assets/ghost/miku-v6.webp');
 const SHOT_DIR = join(process.cwd(), '.superpowers/sdd/2026-09-25-portfolio-site/miku-ghost-shots');
-const AXE_TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'];
 
 /** One ghost per page: selector of the host band and expected side. */
 const PLACEMENTS = [
@@ -31,23 +29,8 @@ const NARROW = [
   { width: 375, height: 812, dpr: 1 },
 ] as const;
 
-interface Box {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-}
-
 async function boxOf(locator: Locator): Promise<Box | null> {
   return locator.boundingBox();
-}
-
-async function open(page: Page, route: string, width: number, height: number, dpr: number): Promise<void> {
-  await page.setViewportSize({ width, height });
-  // deviceScaleFactor is set via browser context in the describe loops below when needed
-  void dpr;
-  await page.goto(route, { waitUntil: 'networkidle' });
-  await settle(page);
 }
 
 test.describe('ghost art (Hatsune Miku watermark)', () => {
@@ -61,7 +44,8 @@ test.describe('ghost art (Hatsune Miku watermark)', () => {
         test(`${place.route} ghost is outside text/interactive boxes, opacity ≤ 0.1, side=${place.side}`, async ({ page }) => {
           // #github renders only with fetched GitHub data; without it the band that hosts this ghost is not in the build.
           test.skip(place.band === '#github' && !builtHasId(place.route, 'github'), 'the #github section is not in this build (no GitHub data)');
-          await open(page, place.route, vp.width, vp.height, vp.dpr);
+          // the device scale factor comes from test.use() above
+          await openAt(page, place.route, vp.width, vp.height);
           const band = page.locator(place.band);
           await expect(band).toBeVisible();
           const ghost = band.locator(`[data-ghost-art="${place.side}"]`);
@@ -184,8 +168,7 @@ test.describe('ghost art (Hatsune Miku watermark)', () => {
     for (const place of PLACEMENTS) {
       await page.goto(place.route, { waitUntil: 'networkidle' });
       await settle(page);
-      const results = await new AxeBuilder({ page }).withTags(AXE_TAGS).analyze();
-      expect(results.violations, place.route).toEqual([]);
+      await expectNoAxeViolations(page, place.route);
     }
     await context.close();
   });

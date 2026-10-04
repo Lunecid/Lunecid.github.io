@@ -1,15 +1,12 @@
 // B-8 / contract §1.4: views, components, layouts and page files read facts only through src/lib/portfolio.ts.
-import { readdirSync, readFileSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { join, relative, sep } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { walk } from '../helpers/fs';
 
 const ROOT = process.cwd();
 const FACT_COLLECTIONS = ['projects', 'publications', 'news', 'resume', 'awards', 'jobfit'];
 const ALLOWED = new Set(['src/lib/portfolio.ts', 'src/content.config.ts']);
-
-function walk(dir: string): string[] {
-  return readdirSync(dir, { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? walk(join(dir, e.name)) : [join(dir, e.name)]));
-}
 
 describe('portfolio boundary', () => {
   it('fact collections are read only in src/lib/portfolio.ts', () => {

@@ -1,11 +1,4 @@
-import type { Page } from '@playwright/test';
-import { test, expect, chromiumMismatch } from './helpers';
-
-/** Waits for the CRT intro (home only) to finish and for web fonts. */
-async function settle(page: Page): Promise<void> {
-  await page.waitForFunction(() => !document.documentElement.hasAttribute('data-intro'));
-  await page.evaluate(() => document.fonts.ready.then(() => true));
-}
+import { test, expect, chromiumMismatch, settle } from './helpers';
 
 test('MAIN MENU arrow keys move focus and Enter follows', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== 'desktop', 'keyboard check runs on desktop');

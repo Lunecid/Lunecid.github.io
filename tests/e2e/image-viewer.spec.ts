@@ -1,8 +1,5 @@
-import AxeBuilder from '@axe-core/playwright';
-import { test, expect, settle } from './helpers';
+import { test, expect, expectNoAxeViolations, settle } from './helpers';
 import type { Locator, Page } from '@playwright/test';
-
-const AXE_TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'];
 
 const VIEWPORTS = [
   { name: 'phone', width: 375, height: 812 },
@@ -54,11 +51,7 @@ test.describe('image viewer', () => {
         await expect(img).toHaveAttribute('src', href!);
         const scrollWidth = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
         expect(scrollWidth).toBeLessThanOrEqual(1);
-        const axe = await new AxeBuilder({ page }).withTags(AXE_TAGS).analyze();
-        expect(
-          axe.violations.map((v) => `${v.id}: ${v.nodes.slice(0, 3).map((n) => n.target.join(' ')).join(' | ')}`),
-          'axe violations',
-        ).toEqual([]);
+        await expectNoAxeViolations(page);
         await page.keyboard.press('Escape');
         await expect(dialog).not.toHaveAttribute('open');
         await expect(trigger).toBeFocused();

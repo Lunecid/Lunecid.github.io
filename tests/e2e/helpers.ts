@@ -1,4 +1,5 @@
-import { test as base, expect, type Page } from '@playwright/test';
+import AxeBuilder from '@axe-core/playwright';
+import { test as base, expect, type Locator, type Page } from '@playwright/test';
 import { existsSync, readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { dirname, join } from 'node:path';
@@ -168,6 +169,38 @@ export { NO_ART_ORIGIN } from './ports';
 export async function settle(page: Page): Promise<void> {
   await page.waitForFunction(() => !document.documentElement.hasAttribute('data-intro'));
   await page.evaluate(() => document.fonts.ready.then(() => true));
+}
+
+/**
+ * Opens `route` at a viewport (height 900 unless given) and settles. The viewport is set before the load, as pages do not
+ * expect it to change after; `reducedMotion` emulates the OS setting, also before the load.
+ */
+export async function openAt(page: Page, route: string, width: number, height = 900, opts: { reducedMotion?: boolean } = {}): Promise<void> {
+  if (opts.reducedMotion) await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.setViewportSize({ width, height });
+  await page.goto(route, { waitUntil: 'networkidle' });
+  await settle(page);
+}
+
+export interface Box {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+/** The layout box of `locator`; the test fails when it has none. */
+export async function box(locator: Locator): Promise<Box> {
+  const b = await locator.boundingBox();
+  expect(b, 'element has a layout box').toBeTruthy();
+  return b as Box;
+}
+
+/** The WCAG 2.0 to 2.2 level A and AA rule tags every axe check of the suite uses. */
+export const AXE_TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'];
+/** Runs axe on the page as it is now and fails with one line per violation: the rule id and its first three targets. */
+export async function expectNoAxeViolations(page: Page, label = 'axe violations'): Promise<void> {
+  const axe = await new AxeBuilder({ page }).withTags(AXE_TAGS).analyze();
+  expect(axe.violations.map((v) => `${v.id}: ${v.nodes.slice(0, 3).map((n) => n.target.join(' ')).join(' | ')}`), label).toEqual([]);
 }
 
 /** Document scroll width vs. viewport width, and up to five elements that stick out and are not inside a scroller. */

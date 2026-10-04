@@ -1,11 +1,4 @@
-import type { Page } from '@playwright/test';
-import { test, expect } from './helpers';
-
-/** Waits for the CRT intro (home only) to finish and for web fonts, so layout and font fallback are final. */
-async function settle(page: Page): Promise<void> {
-  await page.waitForFunction(() => !document.documentElement.hasAttribute('data-intro'));
-  await page.evaluate(() => document.fonts.ready.then(() => true));
-}
+import { test, expect, settle } from './helpers';
 
 interface Rect {
   left: number;

@@ -16,6 +16,7 @@ import { gameVariant } from '../../src/variants/game';
 import { resolveIdentity } from '../../src/variants';
 import type { Variant } from '../../src/variants/types';
 import { loadFactSource } from '../helpers/fact-source';
+import { walk } from '../helpers/fs';
 
 const ROOT = process.cwd();
 const facts = loadFactSource();
@@ -78,10 +79,6 @@ function scanned(): Leaf[] {
 
 function stripComments(source: string): string {
   return source.replace(/<!--[\s\S]*?-->/g, '').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|\s)\/\/[^\n]*/g, '$1');
-}
-
-function walk(dir: string): string[] {
-  return readdirSync(dir, { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? walk(join(dir, e.name)) : [join(dir, e.name)]));
 }
 
 describe('fact lint (R-4)', () => {
