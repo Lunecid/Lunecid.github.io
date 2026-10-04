@@ -102,7 +102,7 @@ describe('JobFitTable.astro', () => {
     expect(src).toMatch(/@media \(min-width: 1068px\) \{[\s\S]*?\.jobfit__col-req \{ width: 18%; \}[\s\S]*?\.jobfit__col-freq \{ width: 9%; \}/);
     // Fix round 1 item 2: from 734px the target is a real 44px flex row (no negative margin cancelling the
     // padding out again — that let neighbouring evidence links' hit boxes overlap).
-    expect(src).toMatch(/\.jobfit__ev \{ display: flex; align-items: center; min-height: var\(--tap\); white-space: nowrap; font-size: 13px; \}/);
+    expect(src).toMatch(/\.jobfit__ev \{ display: flex; align-items: center; min-height: var\(--tap\); white-space: nowrap; font-size: var\(--fs-caption\); \}/);
     expect(src).not.toMatch(/margin-block:\s*-/); // no negative margin anywhere in this component
   });
 

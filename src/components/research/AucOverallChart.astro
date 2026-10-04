@@ -286,10 +286,10 @@ const columns = lang === 'ko' ? ['모델', '입력 표현', 'AUC'] : ['Model', '
   .chart__svg { display: block; width: 100%; min-width: 560px; max-width: none; height: auto; }
   .chart__svg--compact,
   .chart__svg--narrow { min-width: 0; }
-  .chart__label { fill: var(--read-text); font: 600 13px var(--font-sans); }
+  .chart__label { fill: var(--read-text); font: 600 var(--fs-label) var(--font-sans); }
   .chart__value,
   .chart__tick,
-  .chart__chance-label { font: 500 13px var(--font-mono); font-variant-numeric: tabular-nums; }
+  .chart__chance-label { font: 500 var(--fs-label) var(--font-mono); font-variant-numeric: tabular-nums; }
   .chart__chance-label:lang(ko) { font-family: var(--font-sans); } /* Hangul in a mono label: sans (P1-10) */
   .chart__value { fill: var(--read-text); }
   .chart__tick,
@@ -309,9 +309,9 @@ const columns = lang === 'ko' ? ['모델', '입력 표현', 'AUC'] : ['Model', '
   .chart__group,
   .chart__axis-title { font: 600 var(--fs-label) var(--font-mono); letter-spacing: .06em; fill: var(--read-muted); }
   .chart__caption { margin-top: 10px; }
-  .chart__caption-text { font-size: 14px; line-height: 1.6; color: var(--read-muted); max-width: var(--measure); }
+  .chart__caption-text { font-size: var(--fs-meta); line-height: 1.6; color: var(--read-muted); max-width: var(--measure); }
   /* final review fix 1 item 16: where the numbers come from (the paper), under the caption */
-  .chart__source { margin-top: 2px; font-size: 13px; line-height: 1.5; color: var(--read-muted); }
+  .chart__source { margin-top: 2px; font-size: var(--fs-caption); line-height: 1.5; color: var(--read-muted); }
   .chart__table { margin-top: 8px; }
   .chart__summary {
     display: inline-flex;
@@ -319,7 +319,7 @@ const columns = lang === 'ko' ? ['모델', '입력 표현', 'AUC'] : ['Model', '
     min-height: var(--tap);
     padding: 0 12px;
     border: 1px solid var(--read-line-strong);
-    font: 600 13px/1 var(--font-mono);
+    font: 600 var(--fs-caption)/1 var(--font-mono);
     color: var(--read-text);
     list-style: none;
     cursor: pointer;
@@ -331,10 +331,10 @@ const columns = lang === 'ko' ? ['모델', '입력 표현', 'AUC'] : ['Model', '
      wrap only at word boundaries, model names and AUC values never wrap, and if the columns are still wider than the
      box the table scrolls inside its own region instead. */
   .chart__table-scroll { margin-top: 8px; max-width: 100%; overflow-x: auto; }
-  .chart__table table { width: 100%; border-collapse: collapse; font-size: 14px; line-height: 1.5; }
+  .chart__table table { width: 100%; border-collapse: collapse; font-size: var(--fs-meta); line-height: 1.5; }
   .chart__table th,
   .chart__table td { padding: 6px 8px; text-align: left; border-bottom: 1px solid var(--read-line); overflow-wrap: normal; }
-  .chart__table thead th { font-size: 13px; font-weight: 600; color: var(--read-muted); }
+  .chart__table thead th { font-size: var(--fs-label); font-weight: 600; color: var(--read-muted); }
   .chart__table tbody th,
   .chart__table td:last-child { white-space: nowrap; }
   .chart__table td:last-child { text-align: right; font-family: var(--font-mono); font-variant-numeric: tabular-nums; }

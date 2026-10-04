@@ -106,11 +106,11 @@ const title = t(lang, 'jobfit.title');
 <style>
   .jobfit__intro { margin-top: 16px; font-size: 16px; line-height: 1.7; max-width: var(--measure); }
   .jobfit__intro:lang(en) { line-height: 1.5; }
-  .jobfit__asof { margin-top: 8px; font-size: 14px; color: var(--read-muted); }
+  .jobfit__asof { margin-top: 8px; font-size: var(--fs-meta); color: var(--read-muted); }
   .jobfit__asof time { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
-  .jobfit__table { margin-top: 24px; width: 100%; border-collapse: collapse; font-size: 14px; line-height: 1.55; }
+  .jobfit__table { margin-top: 24px; width: 100%; border-collapse: collapse; font-size: var(--fs-meta); line-height: 1.55; }
   .jobfit__req { font-weight: 700; color: var(--read-text); text-align: start; }
-  .jobfit__freq-value { font-family: var(--font-mono); font-size: 13px; font-variant-numeric: tabular-nums; word-break: keep-all; overflow-wrap: normal; }
+  .jobfit__freq-value { font-family: var(--font-mono); font-size: var(--fs-caption); font-variant-numeric: tabular-nums; word-break: keep-all; overflow-wrap: normal; }
   .jobfit__evidence { display: grid; }
   .jobfit__ev { overflow-wrap: normal; word-break: keep-all; }
   /* Fix round 2 item 4: this used to be a literal space text node between the label and the ↗ mark, which read
@@ -129,12 +129,12 @@ const title = t(lang, 'jobfit.title');
     font-family: var(--font-mono); font-size: var(--fs-caption); line-height: 1.4; color: var(--read-muted); white-space: nowrap;
   }
   .jobfit__ev-note:lang(ko) { font-family: var(--font-sans); letter-spacing: 0; }
-  .jobfit__label { font-size: 13px; font-weight: 700; color: var(--read-muted); }
+  .jobfit__label { font-size: var(--fs-label); font-weight: 700; color: var(--read-muted); }
 
   /* Status badges (P2-18): square tags, one look per state; AA text contrast on each fill. */
   .jobfit__status {
     display: inline-block; padding: 2px 6px; border: 1px solid transparent;
-    font-size: 13px; font-weight: 800; line-height: 1.5; white-space: nowrap;
+    font-size: var(--fs-label); font-weight: 800; line-height: 1.5; white-space: nowrap;
   }
   .jobfit__status--met { background: var(--accent-deep); border-color: var(--accent-deep); color: var(--read-card); }
   .jobfit__status--partial { background: var(--read-card); border-color: var(--accent-deep); color: var(--accent-deep); }
@@ -142,7 +142,7 @@ const title = t(lang, 'jobfit.title');
   .jobfit__status--later,
   .jobfit__status--n-a { background: transparent; border-color: var(--read-line-strong); color: var(--read-muted); font-weight: 700; }
 
-  .jobfit__note { margin-top: 16px; font-size: 14px; line-height: 1.6; color: var(--read-muted); max-width: var(--measure); }
+  .jobfit__note { margin-top: 16px; font-size: var(--fs-meta); line-height: 1.6; color: var(--read-muted); max-width: var(--measure); }
   .jobfit__sources-title { font-weight: 700; color: var(--read-text); }
   .jobfit__pending { margin-top: 16px; font-size: 16px; line-height: 1.7; max-width: var(--measure); color: var(--read-muted); }
 
@@ -157,7 +157,7 @@ const title = t(lang, 'jobfit.title');
       gap: 8px 12px; align-items: start; margin-top: 12px; padding: 14px 16px 12px; background: var(--read-card); border: 1px solid var(--read-line);
     }
     .jobfit__row > * { display: block; padding: 0; }
-    .jobfit__req { grid-area: req; font-size: 17px; line-height: 1.4; }
+    .jobfit__req { grid-area: req; font-size: var(--fs-body); line-height: 1.4; }
     .jobfit__status-cell { grid-area: status; }
     .jobfit__freq { grid-area: freq; }
     .jobfit__freq .jobfit__label { margin-right: 8px; }
@@ -185,7 +185,7 @@ const title = t(lang, 'jobfit.title');
     .jobfit__table th, .jobfit__table td { padding: 12px 10px 12px 0; text-align: start; vertical-align: top; border-bottom: 1px solid var(--read-line); }
     .jobfit__table td:last-child { padding-right: 0; }
     .jobfit__head th {
-      padding-block: 8px; font-size: 13px; font-weight: 700; color: var(--read-muted); white-space: nowrap;
+      padding-block: 8px; font-size: var(--fs-label); font-weight: 700; color: var(--read-muted); white-space: nowrap;
       border-bottom: 1px solid var(--read-line-strong);
     }
     .jobfit__label { display: none; }
@@ -203,7 +203,7 @@ const title = t(lang, 'jobfit.title');
        P2-24: a real 44px target (flex + min-height), not padding cancelled out by a negative margin — that
        shrunk the row's own flow height without shrinking the rendered (hit-tested) box, so neighbouring links'
        enlarged boxes overlapped and a tap could land on the wrong one. The evidence column is simply taller now. */
-    .jobfit__ev { display: flex; align-items: center; min-height: var(--tap); white-space: nowrap; font-size: 13px; }
+    .jobfit__ev { display: flex; align-items: center; min-height: var(--tap); white-space: nowrap; font-size: var(--fs-caption); }
     .jobfit__ev-full { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
   }
   @media (min-width: 1068px) {

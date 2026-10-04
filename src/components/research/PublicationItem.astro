@@ -79,9 +79,9 @@ const gloss = lang === 'ko' ? paper.titleGloss : null;
   /* General version: the hover stays in the one editorial accent (no accent-deep on general pages; this scoped rule
      would otherwise outrank editorial.css by source order). */
   .pub--ed .pub__title a:hover { color: var(--ed-accent); }
-  .pub__gloss { margin-top: 4px; font-size: 14px; line-height: 1.5; color: var(--read-muted); }
+  .pub__gloss { margin-top: 4px; font-size: var(--fs-meta); line-height: 1.5; color: var(--read-muted); }
   .pub__gloss-mark { white-space: nowrap; }
-  .pub__authors { margin-top: 6px; font-size: 14px; line-height: 1.5; color: var(--read-muted); }
+  .pub__authors { margin-top: 6px; font-size: var(--fs-meta); line-height: 1.5; color: var(--read-muted); }
   .pub__authors strong { font-weight: 700; color: var(--read-text); }
   .pub__venue {
     margin-top: 2px;
@@ -89,7 +89,7 @@ const gloss = lang === 'ko' ? paper.titleGloss : null;
     flex-wrap: wrap;
     align-items: center;
     gap: 8px;
-    font-size: 14px;
+    font-size: var(--fs-meta);
     line-height: 1.5;
     color: var(--read-muted);
   }
@@ -99,7 +99,7 @@ const gloss = lang === 'ko' ? paper.titleGloss : null;
     border: 1px solid var(--gold-line);
     background: var(--gold-wash);
     color: var(--gold-ink);
-    font: 800 13px/1.4 var(--font-mono);
+    font: 800 var(--fs-label)/1.4 var(--font-mono);
     letter-spacing: .04em;
   }
   .pub__tldr { margin-top: 10px; font-size: 16px; line-height: 1.7; max-width: var(--measure); }

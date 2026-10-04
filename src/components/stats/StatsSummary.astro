@@ -83,23 +83,23 @@ function asOf(iso: string): string {
   .stats__note { margin-top: 12px; font-size: var(--fs-body); color: var(--read-text); }
   .stats__offline { margin-top: 16px; max-width: var(--measure); padding: 16px 18px; background: var(--read-card); }
   .stats__offline .stats__note { margin-top: 6px; }
-  .stats__offline-tag { font: 700 13px/1.4 var(--font-mono); letter-spacing: .08em; color: var(--read-muted); }
+  .stats__offline-tag { font: 700 var(--fs-label)/1.4 var(--font-mono); letter-spacing: .08em; color: var(--read-muted); }
   .stats__numbers { margin-top: 16px; display: grid; gap: 6px; }
   .stats__total { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 14px; }
-  .stats__total-label { font: 600 14px/1.4 var(--font-mono); color: var(--read-muted); }
+  .stats__total-label { font: 600 var(--fs-meta)/1.4 var(--font-mono); color: var(--read-muted); }
   .stats__total-label:lang(ko) { font-family: var(--font-sans); letter-spacing: 0; }
   .stats__total-num { font: 800 var(--fs-display)/1.1 var(--font-mono); color: var(--read-text); }
-  .stats__asof { font-size: 14px; color: var(--read-muted); }
+  .stats__asof { font-size: var(--fs-meta); color: var(--read-muted); }
   .stats :global(.stats__live-slot) { margin-top: 14px; min-height: 44px; }
   .stats :global(.stats__live) { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; min-height: 44px; }
   .stats :global(.stats__live--pending) { margin: 0; }
   .stats :global(.stats__live-note) { margin-top: 0; min-height: 44px; display: flex; align-items: center; }
-  .stats :global(.stats__live-label) { font: 600 14px/1.4 var(--font-mono); color: var(--read-muted); }
+  .stats :global(.stats__live-label) { font: 600 var(--fs-meta)/1.4 var(--font-mono); color: var(--read-muted); }
   .stats :global(.stats__live-label:lang(ko)) { font-family: var(--font-sans); letter-spacing: 0; }
   .stats :global(.stats__live-num) { font: 800 var(--fs-sub)/1.2 var(--font-mono); color: var(--read-text); }
   .stats__links { margin-top: 14px; }
   .stats__links a { display: inline-flex; align-items: center; min-height: var(--tap); }
-  .stats__source { margin-top: 4px; font-size: 13px; color: var(--read-muted); }
+  .stats__source { margin-top: 4px; font-size: var(--fs-caption); color: var(--read-muted); }
   /* P2-11: neutral pages (section.stats.nt-sec): the offline panel is a plain block under the panel's heavy rule, and
      the numbers are set in ink (the live branch's markup is unchanged). */
   .stats.nt-sec .stats__offline { background: transparent; padding-inline: 0; }

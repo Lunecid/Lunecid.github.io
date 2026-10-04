@@ -257,21 +257,15 @@ function pxFontSizes(file: string, text: string): string[] {
   return out.sort();
 }
 
-const PX_FONT_BASELINE_MAX = 174;
+const PX_FONT_BASELINE_MAX = 78;
 const PX_FONT_BASELINE: Record<string, string[]> = {
-  'src/components/common/Figure.astro': ['.figure__cap | 15px'],
-  'src/components/common/VariantSwitch.astro': ['.variant-switch | 13px'],
   'src/components/data/DataNav.astro': ['.data-nav__name | 20px'],
-  'src/components/github/GitHubSection.astro': ['.gh__asof | 13px', '.gh__desc | 15px', '.gh__meta | 13px', '.gh__name | 15px', '.gh__total | 15px'],
-  'src/components/home/HelloProfile.astro': ['.hello__chips li | 13px', '.hello__contact | 15px', '.hello__h | 13px', '.hello__list | 15px', '.hello__loc | 14px', '.hello__status | 15px', '.hello__title | 32px', '.hello__title | 40px'],
-  'src/components/home/PatchNotes.astro': ['.pn__ptr | 12px', '.pn__title | 17px'],
-  'src/components/home/ResearchHighlight.astro': ['.now__text | 15px', '.paper__authors | 14px', '.paper__gloss | 15px', '.paper__oral | 13px', '.paper__venue | 14px'],
-  'src/components/hud/AchievementHost.css': ['.ach-toast__close | 18px', '.ach-toast__mark | 15px', '.ach-toast__text | 14px'],
+  'src/components/home/HelloProfile.astro': ['.hello__title | 32px', '.hello__title | 40px'],
+  'src/components/hud/AchievementHost.css': ['.ach-toast__close | 18px'],
   'src/components/hud/CrtIntro.astro': ['.crt__caption | clamp(28px, 5.2vw, 56px)', '.crt__start | clamp(14px, 2.3vw, 22px)'],
   'src/components/hud/Hero.astro': ['.hero__chip-face | 13px', '.hero__jobfit | 15px'],
   'src/components/hud/HudNav.astro': ['.hud-nav__bar | 13px', '.hud-nav__list a | 16px', '.hud-nav__toggle | 13px'],
   'src/components/hud/MainMenu.astro': ['.mm__cap | 14px', '.mm__link | 18px', '.mm__link | 20px'],
-  'src/components/hud/SiteFooter.astro': ['.site-footer__motion-chip | 12px'],
   'src/components/player-log/AchievementMeter.astro': ['.ach-meter__count | clamp(28px, 3vw, 40px)', '.ach-meter__note | 14px', '.ach-meter__slot | 15px'],
   'src/components/player-log/FavoriteTiles.astro': ['.fav-tile__cap strong | 16px', '.fav-tile__cap strong | 20px', '.fav-tile__kicker | 12px'],
   'src/components/player-log/GameAchievements.astro': ['.game-ach__note | 15px'],
@@ -279,33 +273,19 @@ const PX_FONT_BASELINE: Record<string, string[]> = {
   'src/components/player-log/SiteAchievementList.astro': ['.site-ach__desc | 15px', '.site-ach__hint | 14px', '.site-ach__icon | 16px', '.site-ach__note, .site-ach__nojs | 14px', '.site-ach__progress | 15px'],
   'src/components/projects/ProjectAudience.astro': ['.audience__text | 16px'],
   'src/components/projects/ProjectCartridge.astro': ['.cart__label--text .cart__title | 16px', '.cart__label--text .cart__title | 18px', '.cart__plate-id | 13px', '.cart__plate-id | 16px', '.cart__plate-period | 13px', '.cart__plate-tag | 13px', '.cart__sticker | 12px', '.cart__summary | 13px', '.cart__title | 14px', '.cart__title | 16px'],
-  'src/components/projects/ProjectDetails.astro': ['.pd__figcap | 13px', '.pd__figcap-text | 14px', '.pd__table th | 14px', '.pd__table | 15px'],
-  'src/components/projects/ProjectLinks.astro': ['.plinks__private | 14px'],
-  'src/components/projects/TagFilter.astro': ['.tag-filter__btn | 13px'],
-  'src/components/records/AwardList.astro': ['.award__contest | 15px', '.award__medal | 13px', '.award__org, .award__note | 14px'],
-  'src/components/records/CredentialList.astro': ['.creds__ev | 13px', '.creds__meta | 13px', '.creds__primary | 16px', '.creds__secondary | 14px'],
-  'src/components/records/EducationTimeline.astro': ['.timeline__degree | 16px', '.timeline__gpa, .timeline__lab, .timeline__thesis | 14px'],
-  'src/components/records/JobFitTable.astro': ['.jobfit__asof | 14px', '.jobfit__ev | 13px', '.jobfit__freq-value | 13px', '.jobfit__head th | 13px', '.jobfit__intro | 16px', '.jobfit__label | 13px', '.jobfit__note | 14px', '.jobfit__pending | 16px', '.jobfit__req | 17px', '.jobfit__status | 13px', '.jobfit__table | 14px'],
-  'src/components/records/ProjectSummaryList.astro': ['.psum__meta | 14px', '.psum__period | 13px', '.psum__summary | 16px'],
-  'src/components/records/RecordsHead.astro': ['.rhead__contact | 15px', '.rhead__hello | 28px', '.rhead__hello | 34px', '.rhead__hello | 40px', '.rhead__hello | min(34px, 9svh)', '.rhead__hello | min(40px, 9svh)', '.rhead__role | 15px', '.rhead__status | 14px', '.rnav__link | 14px'],
-  'src/components/records/SkillList.astro': ['.skills__name | 14px', '.skills__name | 15px'],
-  'src/components/research/AucOverallChart.astro': ['.chart__caption-text | 14px', '.chart__label | 13px', '.chart__source | 13px', '.chart__summary | 13px', '.chart__table table | 14px', '.chart__table thead th | 13px', '.chart__value, .chart__tick, .chart__chance-label | 13px'],
-  'src/components/research/BibtexBlock.astro': ['.bib__code | 13px', '.bib__copy | 13px', '.bib__title | 15px'],
+  'src/components/records/CredentialList.astro': ['.creds__primary | 16px'],
+  'src/components/records/EducationTimeline.astro': ['.timeline__degree | 16px'],
+  'src/components/records/JobFitTable.astro': ['.jobfit__intro | 16px', '.jobfit__pending | 16px'],
+  'src/components/records/ProjectSummaryList.astro': ['.psum__summary | 16px'],
+  'src/components/records/RecordsHead.astro': ['.rhead__hello | 28px', '.rhead__hello | 34px', '.rhead__hello | 40px', '.rhead__hello | min(34px, 9svh)', '.rhead__hello | min(40px, 9svh)'],
   'src/components/research/InProgressList.astro': ['.progress-list__body | 16px'],
-  'src/components/research/PaperLinks.astro': ['.pub__abstract | 15px', '.pub__btn, .pub__pending | 13px', '.pub__panel-label | 13px'],
-  'src/components/research/PaperSheet.astro': ['.paper | 17px', '.paper__affil | 14px', '.paper__author-name | 15px', '.paper__link | 13px', '.paper__note, .paper__links | 15px', '.paper__running | 14px', '.paper__title | 24px', '.paper__title-ko | 17px', '.paper__title-ko-mark | 14px'],
-  'src/components/research/PublicationItem.astro': ['.pub__authors | 14px', '.pub__gloss | 14px', '.pub__oral | 13px', '.pub__tldr | 16px', '.pub__venue | 14px'],
-  'src/components/stats/DailyChart.astro': ['.stats__axis | 13px', '.stats__chart-max | 12px', '.stats__table | 15px'],
-  'src/components/stats/RankTable.astro': ['.stats__table | 15px'],
-  'src/components/stats/StatsSummary.astro': ['.stats :global(.stats__live-label) | 14px', '.stats__asof | 14px', '.stats__offline-tag | 13px', '.stats__source | 13px', '.stats__total-label | 14px'],
+  'src/components/research/PaperSheet.astro': ['.paper__title | 24px'],
+  'src/components/research/PublicationItem.astro': ['.pub__tldr | 16px'],
   'src/islands/CharacterStage.css': ['.char-stage__btn | 13px'],
   'src/islands/FavoriteGames.css': ['.fg-acct__badges li | 12px', '.fg-acct__hd | 12px', '.fg-acct__nm | 22px', '.fg-acct__row dd | 18px', '.fg-acct__row | 14px', '.fg-acct__src | 12px', '.fg-acct__sub | 12px', '.fg__tab b | 15px', '.fg__tab small | 12px', '.fg__title | 34px', '.fg__title | 40px', '.fg__title | 46px', '.fg__why | 16px'],
   'src/islands/ImageViewer.css': ['.image-viewer__cap | 14px', '.image-viewer__close | var(--fs-label, 12px)', '.image-viewer__close-x | 18px', '.image-viewer__counter | 13px', '.image-viewer__nav | 18px', '.image-viewer__strip | var(--fs-label, 12px)'],
-  'src/styles/editorial.css': [':root[data-variant="data"] article.ed-prose pre | 14px'],
-  'src/styles/hud.css': ['.btn | 14px', '.btn--sm | 13px', '.sec-more | 15px'],
-  'src/styles/read.css': ['.lh-chip | 14px', '.lh-chip--mono | 13px', '.prose pre | 14px'],
-  'src/views/LegalView.astro': ['.legal :global(table) | 14px', '.legal :global(td:first-child) | 16px', '.legal :global(td:last-child) | 13px'],
-  'src/views/ResearchView.astro': ['.for-labs__body | 17px'],
+  'src/styles/hud.css': ['.btn--sm | 13px'],
+  'src/views/LegalView.astro': ['.legal :global(td:first-child) | 16px'],
 };
 
 describe('style rules over src/**', () => {
@@ -344,8 +324,8 @@ describe('style rules over src/**', () => {
     }
     const total = Object.values(PX_FONT_BASELINE).reduce((n, list) => n + list.length, 0);
     expect(total, 'PX_FONT_BASELINE_MAX only goes down').toBeLessThanOrEqual(PX_FONT_BASELINE_MAX);
-    // The px literals P2 left are listed by name (plan Appendix C Task 14): the editorial <pre> (Task 1) and DataNav's name (Task 2).
-    expect(PX_FONT_BASELINE['src/styles/editorial.css']).toContain(':root[data-variant="data"] article.ed-prose pre | 14px');
+    // DataNav's name keeps its px size (no type token is 20px); the editorial <pre> takes --fs-meta, the 14px token.
+    expect(stripComments(read('src/styles/editorial.css'))).toMatch(/article\.ed-prose pre \{[^}]*font-size: var\(--fs-meta\)/);
     expect(PX_FONT_BASELINE['src/components/data/DataNav.astro']).toContain('.data-nav__name | 20px');
     // Exemptions: tokens.css is never listed; the Anton card title keeps its px sizes without an entry.
     expect(Object.keys(PX_FONT_BASELINE)).not.toContain('src/styles/tokens.css');

@@ -43,7 +43,7 @@ const meta = PAGE_META[doc][lang];
 <style>
   /* Notice tables never scroll (Review Focus 1): a scroller would need tabindex/role/label
      (axe scrollable-region-focusable). Fixed column widths tuned for the three notice columns. */
-  .legal :global(table) { display: table; width: 100%; overflow: visible; table-layout: fixed; font-size: 14px; }
+  .legal :global(table) { display: table; width: 100%; overflow: visible; table-layout: fixed; font-size: var(--fs-meta); }
   .legal :global(th:nth-child(1)) { width: 32%; }
   .legal :global(th:nth-child(2)) { width: 45%; } /* the long notice / author column; the last column takes the rest */
   .legal :global(th), .legal :global(td) { padding-inline: 6px; overflow-wrap: anywhere; }
@@ -78,7 +78,7 @@ const meta = PAGE_META[doc][lang];
     .legal :global(td),
     :global(:root[data-variant="neutral"]) .legal :global(td) { display: block; padding: 3px 0; border-bottom: 0; overflow-wrap: anywhere; }
     .legal :global(td:first-child) { font-weight: 700; font-size: 16px; color: var(--read-text); }
-    .legal :global(td:last-child) { margin-top: 4px; font: 600 13px/1.5 var(--font-mono); letter-spacing: .04em; color: var(--read-muted); }
+    .legal :global(td:last-child) { margin-top: 4px; font: 600 var(--fs-caption)/1.5 var(--font-mono); letter-spacing: .04em; color: var(--read-muted); }
     /* P1-10: Hangul set in a mono element reads badly with tracking added for a fixed-width alphabet that Hangul
        does not have (fix round 1 minor) — a Korean page's status tag drops to the sans face, no letter-spacing. */
     .legal :global(td:last-child:lang(ko)) { font-family: var(--font-sans); letter-spacing: 0; }

@@ -217,9 +217,9 @@ const backNum = String(getVariant(variant).nav.findIndex((item) => item.key === 
   .pd__back:active { color: var(--hud-text); }
   .pd__title { margin-top: 8px; font-size: var(--fs-h2); font-weight: 900; line-height: var(--lh-h2); color: var(--hud-strong); }
   .pd__lead { margin-top: 12px; display: grid; gap: 8px; max-width: var(--measure); font-size: var(--fs-body); line-height: var(--lh-body); color: var(--hud-text); }
-  .pd__table { grid-area: table; width: 100%; border-collapse: collapse; font-size: 15px; }
+  .pd__table { grid-area: table; width: 100%; border-collapse: collapse; font-size: var(--fs-small); }
   .pd__table th, .pd__table td { padding: 10px 0; border-bottom: 1px dashed var(--hud-line-dash); vertical-align: top; text-align: left; }
-  .pd__table th { width: 92px; padding-right: 12px; font-size: 14px; font-weight: 500; color: var(--hud-muted); }
+  .pd__table th { width: 92px; padding-right: 12px; font-size: var(--fs-meta); font-weight: 500; color: var(--hud-muted); }
   .pd__award { grid-area: award; display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
   /* F-065 (P-06): a cited cover (#figure-N) lands with its top below the sticky nav. */
   .pd__fig { grid-area: fig; margin: 0; scroll-margin-top: calc(var(--nav-h) + 16px); }
@@ -232,11 +232,11 @@ const backNum = String(getVariant(variant).nav.findIndex((item) => item.key === 
   }
   .pd__figcap {
     padding: 8px 12px; border-top: 1px solid var(--hud-line); background: var(--hud-panel);
-    font: 600 13px/1.5 var(--font-mono); letter-spacing: .14em; color: var(--hud-label);
+    font: 600 var(--fs-caption)/1.5 var(--font-mono); letter-spacing: .14em; color: var(--hud-label);
   }
   .pd__figcap-tag { color: var(--hud-text); }
   .pd__figcap-strip { display: block; }
-  .pd__figcap-text { display: block; margin-top: 6px; font: 400 14px/1.55 var(--font-sans); letter-spacing: 0; color: var(--hud-muted); }
+  .pd__figcap-text { display: block; margin-top: 6px; font: 400 var(--fs-meta)/1.55 var(--font-sans); letter-spacing: 0; color: var(--hud-muted); }
   .pd__figcap-text b { margin-right: .4em; font-weight: 700; color: var(--hud-text); }
   @media (min-width: 1068px) {
     .pd {

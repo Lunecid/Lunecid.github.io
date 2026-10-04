@@ -102,14 +102,14 @@ const [figTag, ...figRest] = figureLabel.split(' · ');
   /* minmax(0, 1fr) + .paper__body { min-width: 0 }: an opened BibTeX box wraps inside the panel instead of widening the page (Review Focus 1) */
   .paper { margin-top: 24px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 20px; }
   .paper__body { min-width: 0; }
-  .paper__venue { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: 14px; color: var(--read-muted); }
-  .paper__oral { padding: 1px 7px; font: 800 13px/1.4 var(--font-mono); color: var(--gold-ink); background: var(--gold-wash); border: 1px solid var(--gold-line); }
+  .paper__venue { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: var(--fs-meta); color: var(--read-muted); }
+  .paper__oral { padding: 1px 7px; font: 800 var(--fs-label)/1.4 var(--font-mono); color: var(--gold-ink); background: var(--gold-wash); border: 1px solid var(--gold-line); }
   .paper__title { margin-top: 6px; font-size: var(--fs-sub); font-weight: 700; line-height: var(--lh-sub); }
   .paper__title a { color: var(--read-text); text-decoration: none; transition: color var(--dur-hover) linear; }
   .paper__title a:hover { color: var(--accent-deep); text-decoration: underline; }
-  .paper__gloss { margin-top: 6px; font-size: 15px; color: var(--read-muted); }
+  .paper__gloss { margin-top: 6px; font-size: var(--fs-small); color: var(--read-muted); }
   .paper__gloss-mark { white-space: nowrap; }
-  .paper__authors { margin-top: 6px; font-size: 14px; color: var(--read-muted); }
+  .paper__authors { margin-top: 6px; font-size: var(--fs-meta); color: var(--read-muted); }
   .paper__authors strong { color: var(--read-text); }
   .paper__tldr { margin-top: 12px; max-width: var(--measure); }
   /* The paper's own result (the no-art hero uses the same chart in the HUD tone): the chart picks its layout by its
@@ -124,7 +124,7 @@ const [figTag, ...figRest] = figureLabel.split(' · ');
     .paper__fig { margin-inline: -16px; }
     .paper__strip, .paper__fig :global(.chart__caption), .paper__fig :global(.chart__table) { padding-inline: 16px; }
   }
-  .now__text { margin-top: 6px; font-size: 15px; }
+  .now__text { margin-top: 6px; font-size: var(--fs-small); }
   @media (min-width: 1068px) {
     .paper { grid-template-columns: minmax(0, 1fr) minmax(0, 420px); column-gap: 28px; }
     .paper__fig { padding-top: 0; padding-left: 28px; border-top: 0; border-left: 1px solid var(--read-line); }
