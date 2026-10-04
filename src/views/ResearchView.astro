@@ -7,13 +7,12 @@ import SectionHead from '../components/hud/SectionHead.astro';
 import InterestCards from '../components/research/InterestCards.astro';
 import InProgressList from '../components/research/InProgressList.astro';
 import PublicationItem from '../components/research/PublicationItem.astro';
-import ImageViewer from '../islands/ImageViewer';
+import ViewerMount from '../components/common/ViewerMount.astro';
 import { researchPage } from '../data/research-page';
 import { resolveFacts, resolveLocalizedDeep } from '../lib/facts';
 import { getFactSource, getPerson, getPublications } from '../lib/portfolio';
 import { toPaperCard } from '../lib/publications';
 import type { Lang } from '../i18n/ui';
-import { ui } from '../i18n/ui';
 import { t } from '../i18n/utils';
 import { DOCUMENTS, SITE } from '../config';
 import type { VariantId } from '../variants/ids';
@@ -95,16 +94,7 @@ const academicCv = DOCUMENTS[v.documents.academic];
     </div>
   </section>
   )}
-  <ImageViewer
-    client:idle
-    labels={{
-      dialog: t(lang, 'modal.viewer'),
-      close: t(lang, 'action.close'),
-      previous: t(lang, 'viewer.previous'),
-      next: t(lang, 'viewer.next'),
-      counter: ui[lang]['viewer.counter'],
-    }}
-  />
+  <ViewerMount lang={lang} />
 </Layout>
 
 <style>

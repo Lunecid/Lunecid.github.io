@@ -13,7 +13,7 @@ import CredentialList from '../components/records/CredentialList.astro';
 import SkillList from '../components/records/SkillList.astro';
 import JobFitTable from '../components/records/JobFitTable.astro';
 import DocumentList from '../components/records/DocumentList.astro';
-import ImageViewer from '../islands/ImageViewer';
+import ViewerMount from '../components/common/ViewerMount.astro';
 import { buildCertificate } from '../lib/certificates';
 import type { Certificate } from '../lib/certificates';
 import { getAwards, getDocuments, getFactSource, getJobfit, getProjects, getPublications, getResume } from '../lib/portfolio';
@@ -22,7 +22,6 @@ import { toPaperCard } from '../lib/publications';
 import { awardItems, credentialItems, projectSummaryItems, skillGroups, todayIso, type AwardCertMeta } from '../lib/records';
 import { SITE } from '../config';
 import type { Lang } from '../i18n/ui';
-import { ui } from '../i18n/ui';
 import { t } from '../i18n/utils';
 import type { CertificateId } from '../types';
 import type { VariantId } from '../variants/ids';
@@ -132,16 +131,7 @@ const meta = pageMetaFor('records', lang, variant, facts);
     <JobFitTable lang={lang} variant={variant} data={jobfit} facts={facts} />
     <DocumentList lang={lang} variant={variant} documents={documents} />
   </div>
-  <ImageViewer
-    client:idle
-    labels={{
-      dialog: t(lang, 'modal.viewer'),
-      close: t(lang, 'action.close'),
-      previous: t(lang, 'viewer.previous'),
-      next: t(lang, 'viewer.next'),
-      counter: ui[lang]['viewer.counter'],
-    }}
-  />
+  <ViewerMount lang={lang} />
 </Layout>
 
 <style>
