@@ -190,6 +190,26 @@ describe('design tokens (src/styles/tokens.css)', () => {
     expect(d.get('--dur-toast-out')).toBe('.2s');
   });
 
+  it('MO-1 (audit Z1, V1, V3, R1): motion tokens for transitions, morph, reflow, menu, lift and reduced exits', () => {
+    const d = rootDecls(BASE);
+    const s = (name: string) => parseFloat(d.get(name)!);
+    expect(d.get('--dur-nav-out')).toBe('.09s');
+    expect(d.get('--dur-nav-in')).toBe('.16s');
+    expect(d.get('--dur-morph')).toBe('.4s');
+    expect(d.get('--dur-reflow')).toBe('.3s');
+    expect(d.get('--dur-menu')).toBe('.15s');
+    expect(d.get('--dur-lift')).toBe('.25s');
+    expect(d.get('--dur-fade-out')).toBe('.15s');
+    // Fade-through: the whole page transition is .25s and the old page leaves in about the first third of it.
+    expect(s('--dur-nav-out') + s('--dur-nav-in')).toBeCloseTo(0.25, 10);
+    expect(s('--dur-nav-out') / 0.25).toBeGreaterThanOrEqual(0.33);
+    expect(s('--dur-nav-out') / 0.25).toBeLessThanOrEqual(0.37);
+    expect(s('--dur-morph')).toBeLessThanOrEqual(0.4);
+    expect(s('--dur-fade-out')).toBeLessThan(s('--dur-fade'));
+    expect(d.get('--dur-menu')).toBe(d.get('--dur-press'));
+    expect(d.get('--dur-lift')).toBe(d.get('--dur-exit'));
+  });
+
   it('F-067 (P-11): the cartridge shell colours are tokens', () => {
     const d = rootDecls(BASE);
     expect(['--cart-shell', '--cart-shell-hover', '--cart-shell-shade', '--cart-shell-grip'].map((n) => d.get(n))).toEqual(['#C9CED6', '#D5D9E0', '#AEB4BE', '#8E949E']);

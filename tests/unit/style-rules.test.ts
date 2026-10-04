@@ -287,6 +287,141 @@ const PX_FONT_BASELINE: Record<string, string[]> = {
   'src/views/LegalView.astro': ['.legal :global(td:first-child) | 16px'],
 };
 
+type NestedRule = { selector: string; body: string; at: string[] };
+/** Every style rule with the preludes of the at-rules around it (@media, @supports, …); @keyframes bodies are skipped. */
+function nestedRules(css: string): NestedRule[] {
+  const out: NestedRule[] = [];
+  const visit = (text: string, at: string[]) => {
+    let i = 0;
+    while (i < text.length) {
+      const open = text.indexOf('{', i);
+      if (open < 0) break;
+      const prelude = text.slice(i, open).split(';').pop()!.trim().replace(/\s+/g, ' ');
+      let depth = 1;
+      let j = open + 1;
+      for (; j < text.length && depth > 0; j++) {
+        if (text[j] === '{') depth++;
+        if (text[j] === '}') depth--;
+      }
+      const body = text.slice(open + 1, j - 1);
+      if (/^@(-[a-z]+-)?keyframes\b/.test(prelude)) {
+        // frames are not rules
+      } else if (prelude.startsWith('@') && body.includes('{')) visit(body, [...at, prelude]);
+      else out.push({ selector: prelude, body, at });
+      i = j;
+    }
+  };
+  visit(css, []);
+  return out;
+}
+
+// Hover styles belong to hover-capable pointers: on a touch screen a :hover rule outside @media (hover: hover) sticks
+// after a tap. HOVER_OUTSIDE_BASELINE lists the rules that still sit outside; it only shrinks.
+const HOVER_PROPS = new Set(['color', 'background', 'background-color', 'border', 'border-color', 'outline-color', 'text-decoration', 'text-decoration-color', 'transform']);
+const HOVER_MEDIA = /\(\s*hover\s*:\s*hover\s*\)/;
+/** Selectors of the :hover rules of a file that change colour, border, transform or a custom property outside (hover: hover). */
+function hoverOutsideMedia(file: string, text: string): string[] {
+  const out: string[] = [];
+  for (const r of nestedRules(scannedCss(file, text))) {
+    if (!r.selector.includes(':hover')) continue;
+    if (r.at.some((a) => a.startsWith('@media') && HOVER_MEDIA.test(a))) continue;
+    if (declarations(`{${r.body}}`).some((d) => HOVER_PROPS.has(d.prop) || d.prop.startsWith('--'))) out.push(r.selector);
+  }
+  return out.sort();
+}
+const HOVER_OUTSIDE_BASELINE_MAX = 13;
+const HOVER_OUTSIDE_BASELINE: Record<string, string[]> = {
+  'src/components/home/PatchNotes.astro': ['.pn__item:hover .pn__ptr, .pn__item:focus-within .pn__ptr', '.pn__link:hover'],
+  'src/components/home/ResearchHighlight.astro': ['.paper__title a:hover'],
+  'src/components/hud/Hero.astro': ['.hero__chip:hover .hero__chip-face', '.hero__jobfit:hover'],
+  'src/components/projects/ProjectCartridge.astro': [
+    ':global(:root[data-motion="reduce"]) .cart:hover .cart__body, :global(:root[data-motion="reduce"]) .cart:focus-within .cart__body',
+    ':global(:root[data-motion="reduce"]) .cart:not(.cart--static):hover .cart__shell',
+    ':global(html:not(.js)) .cart:hover .cart__body, :global(html:not(.js)) .cart:focus-within .cart__body',
+    ':global(html:not(.js)) .cart:not(.cart--static):hover .cart__shell',
+  ],
+  'src/components/records/RecordsHead.astro': ['.rnav__link:hover'],
+  'src/components/research/BibtexBlock.astro': ['.bib__copy:hover'],
+  'src/components/research/PublicationItem.astro': ['.pub--ed .pub__title a:hover', '.pub__title a:hover'],
+};
+
+// Durations come from the --dur-* tokens. DURATION_LITERAL_BASELINE lists the literal durations that remain; it only
+// shrinks. Delays are not checked (staggers are local choreography); 0s/0ms is not a duration to tokenise.
+const DURATION_PROPS = new Set(['transition', 'transition-duration', 'animation', 'animation-duration']);
+/** "<selector> | <literal>" for each comma item whose duration is a time literal other than 0. */
+function literalDurations(file: string, text: string): string[] {
+  const out: string[] = [];
+  for (const r of nestedRules(scannedCss(file, text))) {
+    for (const { prop, value } of declarations(`{${r.body}}`)) {
+      if (!DURATION_PROPS.has(prop)) continue;
+      for (const item of splitTop(value, ',')) {
+        const words = splitTop(item, ' ');
+        const dur = prop.endsWith('-duration') ? item : words.find((w) => TIME.test(w) || (/^(var|calc)\(/.test(w) && !/^var\(\s*--ease/.test(w)));
+        if (dur && TIME.test(dur) && !/^-?0+(\.0+)?m?s$/.test(dur)) out.push(`${r.selector} | ${dur}`);
+      }
+    }
+  }
+  return out.sort();
+}
+const DURATION_LITERAL_BASELINE_MAX = 38;
+const DURATION_LITERAL_BASELINE: Record<string, string[]> = {
+  'src/components/data/DataNav.astro': [':global(html.js) .data-nav[data-open="true"] .data-nav__panel | 150ms', ':global(html.js) .data-nav[data-open="true"] .data-nav__scrim | 150ms'],
+  'src/components/hud/CrtIntro.astro': ['.crt__bar i | .2s', '.crt__bar | .12s', '.crt__caption | .12s', '.crt__flash | .18s', '.crt__screen | .18s', '.crt__start | .12s'],
+  'src/components/hud/HudNav.astro': [':global(html.js) .hud-nav[data-open="true"] .hud-nav__panel | 150ms', ':global(html.js) .hud-nav[data-open="true"] .hud-nav__scrim | 150ms'],
+  'src/components/player-log/AchievementMeter.astro': ['.ach-meter__slot[data-unlocked="true"] | 250ms'],
+  'src/components/projects/ProjectCartridge.astro': ['.cart__body | .25s'],
+  'src/islands/AccountLinks.css': [
+    '.acct-dlg | 150ms',
+    '.acct-dlg::backdrop, .acct-dlg[data-state="closing"]::backdrop | 150ms',
+    '.acct-dlg[data-state="closing"] .acct-dlg__panel | 80ms',
+    '.acct-dlg[data-state="open"] .acct-dlg__panel | 120ms',
+    '.acct-dlg__card--out | 180ms',
+    '.acct-dlg__card[data-anim="switch"] | 180ms',
+    ':root[data-motion="reduce"] .acct-dlg | 150ms',
+    ':root[data-motion="reduce"] .acct-dlg::backdrop, :root[data-motion="reduce"] .acct-dlg[data-state="closing"]::backdrop | 150ms',
+  ],
+  'src/islands/CharacterStage.css': [':root[data-motion="reduce"] .char-stage[data-phase="exiting"] .char-stage__img | .15s'],
+  'src/islands/FavoriteGames.css': ['.fg__tint | .6s', ':root[data-motion="reduce"] .fg__tint | .2s'],
+  'src/islands/ImageViewer.css': [
+    '.image-viewer | 200ms',
+    '.image-viewer__cap | 200ms',
+    '.image-viewer__cap | 200ms',
+    '.image-viewer__frame | 200ms',
+    '.image-viewer__frame | 200ms',
+    '.image-viewer__img | 180ms',
+    '.image-viewer__slide | 180ms',
+    '.image-viewer__slide | 180ms',
+    '.image-viewer__stage[data-flip="off"] | 150ms',
+    '.image-viewer__stage[data-flip="off"] | 150ms',
+    ':root[data-motion="reduce"] .image-viewer | 150ms',
+    ':root[data-motion="reduce"] .image-viewer[data-state="closing"] | 150ms',
+    ':root[data-motion="reduce"] .image-viewer__cap | 150ms',
+    ':root[data-motion="reduce"] .image-viewer__slide, :root[data-motion="reduce"] .image-viewer__img | 150ms',
+    ':root[data-motion="reduce"] .image-viewer__stage, :root[data-motion="reduce"] .image-viewer__frame | 150ms',
+  ],
+};
+
+/** The PX_FONT_BASELINE check for another per-file baseline: no new entry, no entry gone without being deleted. */
+function expectShrinkingBaseline(name: string, actual: Record<string, string[]>, baseline: Record<string, string[]>, max: number, hint: string) {
+  for (const file of new Set([...Object.keys(actual), ...Object.keys(baseline)])) {
+    const got = actual[file] ?? [];
+    const allowed = [...(baseline[file] ?? [])].sort();
+    const count = (list: string[], x: string) => list.filter((y) => y === x).length;
+    const extra = got.filter((x, i) => got.indexOf(x) === i && count(got, x) > count(allowed, x));
+    const gone = allowed.filter((x, i) => allowed.indexOf(x) === i && count(allowed, x) > count(got, x));
+    expect(extra, `${file}: ${hint}`).toEqual([]);
+    expect(gone, `${file}: entries gone; delete them from ${name} (it only shrinks)`).toEqual([]);
+  }
+  const total = Object.values(baseline).reduce((n, list) => n + list.length, 0);
+  expect(total, `${name}_MAX only goes down`).toBeLessThanOrEqual(max);
+}
+
+function scanAll(fn: (file: string, text: string) => string[]): Record<string, string[]> {
+  const files = walk(join(ROOT, 'src')).filter((f) => /\.(css|astro)$/.test(f));
+  expect(files).toEqual(expect.arrayContaining(GLOBAL_STYLES));
+  return Object.fromEntries(files.map((f) => [f, fn(f, read(f))] as const).filter(([, list]) => list.length > 0));
+}
+
 describe('style rules over src/**', () => {
   it('no transition: all', () => {
     expect(violationsOf('transition-all')).toEqual([]);
@@ -330,6 +465,18 @@ describe('style rules over src/**', () => {
     expect(Object.keys(PX_FONT_BASELINE)).not.toContain('src/styles/tokens.css');
     expect(stripComments(read('src/components/player-log/MembershipCard.astro'))).toMatch(/\.mcard__title\s*\{[^}]*font-size:\s*\d+px/);
     expect((PX_FONT_BASELINE['src/components/player-log/MembershipCard.astro'] ?? []).some((x) => x.startsWith('.mcard__title |'))).toBe(false);
+  });
+
+  it('Z1: hover colour, border and transform rules sit inside @media (hover: hover) (shrinking baseline)', () => {
+    const actual = scanAll(hoverOutsideMedia);
+    if (process.env.PRINT_HOVER_BASELINE) console.log(JSON.stringify(actual, null, 2));
+    expectShrinkingBaseline('HOVER_OUTSIDE_BASELINE', actual, HOVER_OUTSIDE_BASELINE, HOVER_OUTSIDE_BASELINE_MAX, 'new :hover rules outside @media (hover: hover); move them inside and add an :active press state');
+  });
+
+  it('Z1: transition and animation durations are var(--dur-*) or 0 (shrinking baseline)', () => {
+    const actual = scanAll(literalDurations);
+    if (process.env.PRINT_DURATION_BASELINE) console.log(JSON.stringify(actual, null, 2));
+    expectShrinkingBaseline('DURATION_LITERAL_BASELINE', actual, DURATION_LITERAL_BASELINE, DURATION_LITERAL_BASELINE_MAX, 'new literal durations; use a --dur-* token');
   });
 
   it('F-030: item titles are set in --fs-sub', () => {
@@ -448,6 +595,22 @@ describe('style scanner fixtures', () => {
     expect(pxFontSizes('src/styles/tokens.css', ':root { --x: 1px; } .a { font-size: 14px; }')).toEqual([]);
     const card = '<style>.mcard__title { font-size: 31px; } .mcard__title small { font-size: 13px; }</style>';
     expect(pxFontSizes('src/components/player-log/MembershipCard.astro', card)).toEqual(['.mcard__title small | 13px']);
+  });
+
+  it('Z1 scanner fixtures: hover outside/inside the media, :focus-within beside :hover, 150ms vs var(--dur-menu) vs 0s, delays ignored', () => {
+    expect(hoverOutsideMedia('fixture.css', '.a:hover{color:red}')).toEqual(['.a:hover']);
+    expect(hoverOutsideMedia('fixture.css', '@media (hover: hover){.a:hover{color:red}}')).toEqual([]);
+    expect(hoverOutsideMedia('fixture.css', '@media (hover:hover) and (prefers-reduced-motion: reduce){.a:hover{transform:none}}')).toEqual([]);
+    expect(hoverOutsideMedia('fixture.css', '.a:hover{cursor:pointer}')).toEqual([]);
+    expect(hoverOutsideMedia('fixture.css', '.a:hover{--cut-line:red}')).toEqual(['.a:hover']);
+    expect(hoverOutsideMedia('fixture.css', '@media (min-width: 734px){.a:hover .p, .a:focus-within .p{border-color:red}}')).toEqual(['.a:hover .p, .a:focus-within .p']);
+    expect(hoverOutsideMedia('fixture.css', '.a:focus-within .p{color:red} @media (hover: hover){.a:hover .p{color:red}}')).toEqual([]);
+    expect(hoverOutsideMedia('src/components/Fixture.astro', '---\nconst x = 1;\n---\n<a>x</a>\n<style>a:hover { color: red; }</style>')).toEqual(['a:hover']);
+    expect(literalDurations('fixture.css', '.a{transition:opacity 150ms linear}')).toEqual(['.a | 150ms']);
+    expect(literalDurations('fixture.css', '.a{transition:opacity var(--dur-menu) linear, transform 0s}')).toEqual([]);
+    expect(literalDurations('fixture.css', '.a{animation:k var(--dur-enter) var(--ease-out) .2s both}')).toEqual([]);
+    expect(literalDurations('fixture.css', '.a{transition-duration:.2s, 0ms} @media (prefers-reduced-motion: reduce){.b{animation:k .15s ease-in both}}')).toEqual(['.a | .2s', '.b | .15s']);
+    expect(literalDurations('fixture.css', '@keyframes k { from { opacity: 0; } to { opacity: 1; } } .a{animation-delay:.3s}')).toEqual([]);
   });
 
   it('10.5pt passes, 8pt fails', () => {

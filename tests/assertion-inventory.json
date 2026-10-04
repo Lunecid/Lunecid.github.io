@@ -218,8 +218,8 @@
   "tests/unit/routes.test.ts": 110,
   "tests/unit/seo.test.ts": 30,
   "tests/unit/stats-hygiene.test.ts": 27,
-  "tests/unit/style-rules.test.ts": 47,
-  "tests/unit/tokens.test.ts": 111,
+  "tests/unit/style-rules.test.ts": 64,
+  "tests/unit/tokens.test.ts": 125,
   "tests/unit/toolchain.test.ts": 107,
   "tests/unit/variants.test.ts": 74,
   "tests/unit/yaml-loader.test.ts": 33
