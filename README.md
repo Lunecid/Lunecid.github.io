@@ -60,7 +60,7 @@ Lighthouse budgets (performance ≥ 0.90, accessibility ≥ 0.95, mobile and des
 - Fetched JSON goes to `src/data/generated/` and is never committed; missing, failed or stale data hides its section instead of breaking the build, and the browser hides sections whose data passed its maximum age.
 - Repository secrets (Settings → Secrets and variables → Actions): `GOATCOUNTER_TOKEN` (GoatCounter API key with "Read statistics" only), optional `GH_PROFILE_TOKEN` (fine-grained token, public repositories read-only) and optional `PII_DENYLIST` (literal values the dist scan must never find, separated by `|`). The GoatCounter site code is public and lives in `src/config.ts` (`null` = statistics off).
 - A 401/403 during the build-time fetch turns the run red in the `fetch-health` job after the deploy.
-- gitleaks scans the full history on every run.
+- gitleaks scans the pushed commits on every push and the full history on the daily and manual runs.
 - Game account cards (Player Log): the `fetch-accounts` job runs before the build with Node built-ins only (no `npm ci`) in the `account-fetch` environment, whose environment secret `STEAM_API_KEY` is the only secret it reads. The account values come from repository variables (`ACCOUNT_*`); variable values are printed in the public run logs, so they are public by design. With no `ACCOUNT_*` variable set the job makes no request. Setup: see "연동 켜기" below.
 
 ## 연동 켜기
@@ -114,7 +114,7 @@ Lighthouse budgets (performance ≥ 0.90, accessibility ≥ 0.95, mobile and des
 
 ### Worker 코드를 고치면 다시 배포
 
-`workers/account-relay/` 아래를 고친 뒤에는 7단계의 1–6을 다시 하고 `npx wrangler logout`을 해 주세요. Worker 비밀은 그대로 남습니다. 가끔 앱 설정의 **Private keys** 목록이 비어 있는지도 확인해 주세요(아래 7).
+`workers/account-relay/` 아래나 Worker가 함께 묶어 배포하는 `src/lib/account-ids.ts`를 고친 뒤에는 7단계의 1–6을 다시 하고 `npx wrangler logout`을 해 주세요. Worker 비밀은 그대로 남습니다. 가끔 앱 설정의 **Private keys** 목록이 비어 있는지도 확인해 주세요(아래 7).
 
 ### 비상 절차(범위가 좁은 것부터)
 

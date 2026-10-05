@@ -71,6 +71,21 @@ describe('README "연동 켜기"', () => {
     }
   });
 
+  it('the Worker redeploy rule names the Worker folder and the rule file it bundles (AL-22 S2)', () => {
+    const start = text.indexOf('### Worker 코드를 고치면 다시 배포');
+    expect(start).toBeGreaterThanOrEqual(0);
+    const rule = text.slice(start, text.indexOf('\n### ', start + 1));
+    expect(rule).toContain('`workers/account-relay/`');
+    expect(rule).toContain('`src/lib/account-ids.ts`');
+    expect(readFileSync(join(process.cwd(), 'workers/account-relay/src/index.mjs'), 'utf8')).toContain('src/lib/account-ids.ts');
+  });
+
+  it('build-time section states the gitleaks scan ranges as the workflow runs them (AL-22 N9)', () => {
+    const build = README.slice(README.indexOf('## Build-time data, secrets and deploy'), README.indexOf(`\n${HEADING}\n`));
+    expect(build).not.toContain('full history on every run');
+    expect(build).toContain('gitleaks scans the pushed commits on every push and the full history on the daily and manual runs');
+  });
+
   it('no command chains with && in code spans or blocks', () => {
     const blocks = README.match(/```[\s\S]*?```/g) ?? [];
     const spans = README.replace(/```[\s\S]*?```/g, '').match(/`[^`\n]+`/g) ?? [];
