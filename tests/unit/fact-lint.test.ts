@@ -129,8 +129,8 @@ describe('fact lint (R-4)', () => {
       }
     };
     for (const [file, exports] of Object.entries(modules)) for (const [name, value] of Object.entries(exports)) visit(value, `${file.replace(/^(\.\.\/)+/, '')} ${name}`, null);
-    // not vacuous: the chooser's file number and both covers' serials in both languages
-    expect(found).toEqual(expect.arrayContaining(['src/data/copy/chooser.ts chooserCopy.ko.game.num', 'src/data/copy/chooser-covers.ts coverCopy.ko.game.serial', 'src/data/copy/chooser-covers.ts coverCopy.en.data.serial']));
+    // not vacuous: the chooser's file number, both covers' serials, the rail serial and the opening's node and percentage
+    expect(found).toEqual(expect.arrayContaining(['src/data/copy/chooser.ts chooserCopy.ko.game.num', 'src/data/copy/chooser-covers.ts coverCopy.ko.game.serial', 'src/data/copy/chooser-covers.ts coverCopy.en.data.serial', 'src/data/copy/chooser-covers.ts coverCopy.ko.game.rail.serial', 'src/data/copy/chooser-covers.ts coverCopy.en.opening.node.num', 'src/data/copy/chooser-covers.ts coverCopy.ko.opening.pct.num']));
     expect('[ MODE 01 ]').not.toMatch(LABEL_NUMBER);
   });
 

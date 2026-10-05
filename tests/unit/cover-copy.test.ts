@@ -90,6 +90,18 @@ describe('coverCopy (chooser covers, v6.2)', () => {
     expect(containsTrademark('GAME_ANALYST.DOC · Steam')).toBe(true);
   });
 
+  it('the digit-bearing labels keep the prototype values verbatim, each in a num/serial key', () => {
+    for (const lang of LANGS) {
+      expect(coverCopy[lang].game.rail, lang).toEqual({ serial: 'SN PDL-26/01-G' });
+      expect(coverCopy[lang].opening.node, lang).toEqual({ num: 'NODE 02' });
+      expect(coverCopy[lang].opening.pct, lang).toEqual({ num: '100%' });
+    }
+    const keys = entries('ko').map(([k]) => k);
+    expect(keys).toEqual(expect.arrayContaining(['game.rail.serial', 'opening.node.num', 'opening.pct.num']));
+    expect(keys).not.toEqual(expect.arrayContaining(['game.rail']));
+    expect(Object.keys(COVER_COPY_STATUS)).not.toContain('opening.pct');
+  });
+
   it('game.stamp is owner-written; everything else is a placeholder until MO-30', () => {
     expect(coverCopy.ko.game.stamp).toBe('기밀 해제');
     expect(COVER_COPY_STATUS['game.stamp']).toBe('owner');
