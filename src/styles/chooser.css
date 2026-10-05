@@ -35,7 +35,34 @@
 
 /* the archive caption: "[ ■ ] LABEL" (the square drawn, yellow as the HUD's decoration); above the desk layer (the
    mat's surround), its ink lifted for the felt (5.4:1 or more against the lightest desk pixel under it) */
-.chooser__mast { position: relative; z-index: 1; display: grid; gap: 6px; padding-bottom: 18px; }
+.chooser__mast { position: relative; z-index: 1; display: grid; gap: 6px; padding: 0 6.75rem 18px 0; }
+/* the page-turn sound's mute button (MO-40), beside the caption at its right: shown by the script; pressed = sound on.
+   It sits over the caption row's reserved right end (absolute), so showing it moves nothing */
+.chooser__sound {
+  position: absolute;
+  right: 0;
+  top: calc((1.5em - var(--tap)) / 2);
+  display: inline-flex;
+  align-items: center;
+  gap: .5em;
+  min-width: var(--tap);
+  min-height: var(--tap);
+  padding: 0 12px;
+  font: 600 var(--fs-label)/1 var(--font-sans);
+  color: var(--ch-cap, var(--hud-label));
+  background: transparent;
+  border: 1px solid color-mix(in srgb, var(--ch-cap, var(--hud-label)) 45%, transparent);
+  border-radius: 2px;
+  cursor: pointer;
+  transition: border-color var(--dur-hover) linear;
+}
+.chooser__sound[hidden] { display: none; }
+.chooser__sound-s { font-weight: 800; }
+.chooser__sound[aria-pressed="false"] .chooser__sound-s { text-decoration: line-through; }
+.chooser__sound:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+@media (hover: hover) { .chooser__sound:hover { border-color: var(--ch-cap, var(--hud-label)); } }
+.chooser__sound:active { border-color: var(--ch-cap, var(--hud-label)); }
+@media print { .chooser__sound { display: none; } }
 .chooser__cap { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 14px; font: 600 var(--fs-min)/1.5 var(--font-mono-cover); letter-spacing: var(--ls-label); color: var(--ch-cap, var(--hud-label)); }
 .chooser__mark { white-space: nowrap; }
 .chooser__sq { display: inline-block; width: .6em; height: .6em; margin-inline: .45em; vertical-align: .04em; background: var(--accent); }

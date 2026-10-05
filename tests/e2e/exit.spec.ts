@@ -267,3 +267,70 @@ test.describe('MO-39: the data exit (the page turn)', () => {
     expect(Math.abs(back.height - rest.height)).toBeLessThan(1);
   });
 });
+
+test.describe('MO-40: the page-turn sound and its mute button', () => {
+  /** Counts AudioContext constructions in the page (installed before any script runs). */
+  const spyAudio = (page: Page) =>
+    page.addInitScript(() => {
+      const Real = window.AudioContext;
+      (window as unknown as { __ac: number }).__ac = 0;
+      window.AudioContext = class extends Real {
+        constructor(...args: ConstructorParameters<typeof AudioContext>) {
+          super(...args);
+          (window as unknown as { __ac: number }).__ac += 1;
+        }
+      };
+    });
+  const made = (page: Page) => page.evaluate(() => (window as unknown as { __ac: number }).__ac);
+
+  test('sound: a page with an AudioContext spy — none created before the click; one after the data click; none with reduced motion or sb:sound=off', async ({ page }) => {
+    await spyAudio(page);
+    await openAt(page, '/?choose', 1280, 800);
+    await page.mouse.move(700, 400);
+    await page.keyboard.press('Tab');
+    await page.mouse.wheel(0, 200);
+    expect(await made(page)).toBe(0);
+    await startHeld(page, DATA);
+    expect(await made(page)).toBe(1);
+    await openAt(page, '/?choose', 1280, 800, { reducedMotion: true });
+    await startHeld(page, DATA);
+    expect(await made(page)).toBe(0);
+    await openAt(page, '/?choose', 1280, 800);
+    await page.evaluate(() => localStorage.setItem('sb:sound', 'off'));
+    await page.reload();
+    await startHeld(page, DATA);
+    expect(await made(page)).toBe(0);
+  });
+
+  test('mute button: ≥ 44×44 px, keyboard-operable, focus ring ≥ 3:1, label in ko and en', async ({ page }) => {
+    for (const [route, label] of [['/?choose', '효과음'], ['/en/?choose', 'Sound']] as const) {
+      await openAt(page, route, 1280, 800);
+      const b = page.locator('[data-sound-toggle]');
+      await expect(b).toBeVisible();
+      await expect(b).toContainText(label);
+      const r = await b.evaluate((el) => el.getBoundingClientRect().toJSON() as DOMRect);
+      expect(r.width).toBeGreaterThanOrEqual(44);
+      expect(r.height).toBeGreaterThanOrEqual(44);
+      await expect(b).toHaveAttribute('aria-pressed', 'true');
+      // beside the caption, never over its words
+      const over = await page.evaluate(() => {
+        const bb = document.querySelector('[data-sound-toggle]')!.getBoundingClientRect();
+        return [...document.querySelectorAll('.chooser__cap > span')].some((s) => { const r = s.getBoundingClientRect(); return r.right > bb.left && r.left < bb.right && r.bottom > bb.top && r.top < bb.bottom; });
+      });
+      expect(over).toBe(false);
+      await b.focus();
+      await page.keyboard.press('Shift+Tab');
+      await page.keyboard.press('Tab');
+      await expect(b).toBeFocused();
+      const ring = await b.evaluate((el) => [getComputedStyle(el).outlineStyle, getComputedStyle(el).outlineColor, getComputedStyle(el).outlineWidth]);
+      expect(ring).toEqual(['solid', 'rgb(255, 230, 0)', '2px']); // yellow on the felt: ≥ 3:1 (tokens test)
+      await page.keyboard.press('Enter');
+      await expect(b).toHaveAttribute('aria-pressed', 'false');
+      expect(await page.evaluate(() => localStorage.getItem('sb:sound'))).toBe('off');
+      await page.keyboard.press('Space');
+      await expect(b).toHaveAttribute('aria-pressed', 'true');
+      expect(await page.evaluate(() => localStorage.getItem('sb:sound'))).toBe('on');
+      await page.evaluate(() => localStorage.removeItem('sb:sound'));
+    }
+  });
+});

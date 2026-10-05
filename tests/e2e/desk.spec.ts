@@ -53,9 +53,12 @@ test.describe('MO-23: the static desk', () => {
     expect(await fileAt(page, d2.left + d2.width / 2, d2.top + 140)).toBe('data');
   });
 
+  // MO-40 (named change): the mute button beside the caption comes between the language switch and the desk
   test('Tab order: data link, then game link', async ({ page }) => {
     await openAt(page, '/?choose', 1280, 800);
     await page.locator('header a[hreflang]').focus();
+    await page.keyboard.press('Tab');
+    await expect(page.locator('[data-sound-toggle]')).toBeFocused();
     await page.keyboard.press('Tab');
     await expect(page.locator(DATA)).toBeFocused();
     await page.keyboard.press('Tab');
@@ -242,7 +245,7 @@ test.describe('MO-24: the reveal', () => {
   test('keyboard: focus on the game link reveals; Enter navigates to /game/ in one activation; Shift+Tab returns the sheet', async ({ page }) => {
     await openAt(page, '/?choose', 1280, 800);
     const rest = await sheetState(page);
-    await page.locator('header a[hreflang]').focus();
+    await page.locator('[data-sound-toggle]').focus(); // MO-40 (named): the mute button precedes the desk
     await page.keyboard.press('Tab');
     await page.keyboard.press('Tab');
     await expect(page.locator(GAME)).toBeFocused();

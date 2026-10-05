@@ -22,6 +22,16 @@ export function soundOn(): boolean {
   }
 }
 
+/** localStorage['sb:sound'] === 'off': the visitor muted sound. False when unset, 'on', or on error (the chooser's
+ *  page-turn sound plays unless muted, MO-40; the game pages' sound stays off unless turned on, soundOn). */
+export function soundMuted(): boolean {
+  try {
+    return localStorage.getItem(STORAGE_KEYS.sound) === 'off';
+  } catch {
+    return false;
+  }
+}
+
 /** Stores 'on' | 'off' (errors ignored) and dispatches SOUND_EVENT with the new value. */
 export function setSoundOn(on: boolean): void {
   try {

@@ -103,5 +103,21 @@ describe('ChooserView.astro (MO-23: the v6.4 desk; P2-10 header)', () => {
     expect(html).toMatch(/<div class="props" aria-hidden="true"[^>]*>\s*<i class="mat"[^>]*><\/i>/);
     expect(html).not.toMatch(/<img\b|<picture\b/);
   });
+
+  it('MO-40: the mute button is a <button type=button> with aria-pressed, hidden in the server HTML', async () => {
+    const html = await renderAstro(ChooserView, { props: { lang: 'ko' }, url: '/' });
+    const b = /<button\b[^>]*data-sound-toggle[^>]*>[\s\S]*?<\/button>/.exec(html)?.[0] ?? '';
+    expect(b).toMatch(/type="button"/);
+    expect(b).toMatch(/aria-pressed="true"/);
+    expect(b).toMatch(/\shidden(?=[\s>])/);
+    expect(b).toContain(coverCopy.ko.sound.label);
+    expect(b).toContain(coverCopy.ko.sound.on);
+    expect(b).toMatch(new RegExp(`data-off="${coverCopy.ko.sound.off}"`));
+    // beside the archive caption, inside the mast row
+    expect(html.indexOf('chooser__cap')).toBeLessThan(html.indexOf('data-sound-toggle'));
+    expect(html.indexOf('data-sound-toggle')).toBeLessThan(html.indexOf('class="desk"'));
+    const en = await renderAstro(ChooserView, { props: { lang: 'en' }, url: '/en/' });
+    expect(/<button\b[^>]*data-sound-toggle[^>]*>[\s\S]*?<\/button>/.exec(en)?.[0]).toContain('Sound');
+  });
 });
 

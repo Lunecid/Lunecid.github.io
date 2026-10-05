@@ -7,6 +7,8 @@
 // file inks and strikes its "기밀 해제" stamp (MO-25), then plays its exit, the waveform (MO-38); entering the general
 // file turns its page (MO-39); then the link is followed.
 import exitSheet from '../styles/chooser-exit.css?url';
+import { noiseBuffer, paperSound } from '../lib/paper-sound';
+import { SOUND_EVENT, audioContext, setSoundOn, soundMuted } from '../lib/sound';
 import { rememberVariant } from '../lib/variant-pref';
 import { isVariantId } from '../variants/ids';
 
@@ -82,6 +84,36 @@ function lineGeometry(desk: HTMLElement, layer: HTMLElement | null): void {
   layer.style.setProperty('--xl-k', ((2 * Math.max(cx, vw - cx)) / w + 0.05).toFixed(3));
 }
 
+/**
+ * The page turn's paper sound (MO-40): only inside the data link's trusted click (a user gesture), never under either
+ * reduced-motion path (the caller passes the fade there), when the visitor muted sound (sb:sound = 'off', shared with
+ * the site), in a hidden tab, or without Web Audio. Errors are swallowed: the exit never waits for the sound.
+ */
+function rustle(): void {
+  if (soundMuted() || document.hidden || typeof window.AudioContext !== 'function') return;
+  try {
+    const ctx = audioContext();
+    paperSound(ctx, noiseBuffer(ctx), ctx.currentTime + 0.005);
+  } catch {
+    /* sound is decoration */
+  }
+}
+
+/** The mute button beside the archive caption (MO-40): shown when this script runs; pressed = sound on; a press writes
+ *  the shared sb:sound and the button follows changes made elsewhere. */
+export function initSoundToggle(button: HTMLButtonElement | null): void {
+  if (!button) return;
+  const state = button.querySelector<HTMLElement>('.chooser__sound-s');
+  const show = (on: boolean) => {
+    button.setAttribute('aria-pressed', String(on));
+    if (state) state.textContent = (on ? button.dataset.on : button.dataset.off) ?? '';
+  };
+  show(!soundMuted());
+  button.hidden = false;
+  button.addEventListener('click', () => setSoundOn(button.getAttribute('aria-pressed') !== 'true'));
+  window.addEventListener(SOUND_EVENT, (e) => show((e as CustomEvent<boolean>).detail));
+}
+
 /** The page turn folds the sheet's own layout box: its size, written once at the click (MO-39). */
 function foldGeometry(link: HTMLAnchorElement): void {
   const file = link.closest<HTMLElement>('.file');
@@ -134,7 +166,10 @@ export function initExit(desk: HTMLElement, link: HTMLAnchorElement, kind: ExitK
     const fade = reduced() || matches('(forced-colors: active)');
     if (!stamp?.classList.contains('is-declassified')) strike();
     // measure first: the exit's own rules change the layout they would read
-    if (!fade && kind === 'data') foldGeometry(link);
+    if (!fade && kind === 'data') {
+      foldGeometry(link);
+      rustle();
+    }
     if (!fade && kind === 'game') lineGeometry(desk, layer);
     desk.dataset.exitTo = kind;
     desk.dataset.exit = fade ? 'fade' : kind;
@@ -282,6 +317,7 @@ export function initChooser(root: ParentNode = document, opts: { navigate?: (hre
     if (container.hasAttribute('data-exit') && event.target instanceof Element && event.target.closest('a')) event.preventDefault();
   }, { capture: true });
   attachExitSheet();
+  initSoundToggle(document.querySelector<HTMLButtonElement>('[data-sound-toggle]'));
   const gameLink = links.find((l) => l.dataset.chooseVariant === 'game');
   if (gameLink) initExit(container, gameLink, 'game', { stamp: gameLink.closest('.file')?.querySelector<HTMLElement>('.stamp'), navigate: opts.navigate });
   const dataLink = links.find((l) => l.dataset.chooseVariant === 'data');

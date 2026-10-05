@@ -450,6 +450,135 @@ describe('the data exit (MO-39)', () => {
   });
 });
 
+describe('the page-turn sound and the mute button (MO-40)', () => {
+  class P { value = 0; setValueAtTime() { return this; } linearRampToValueAtTime() { return this; } exponentialRampToValueAtTime() { return this; } }
+  class N { connect(n: unknown) { return n; } }
+  class Ctx {
+    static made = 0;
+    static sources = 0;
+    sampleRate = 8000;
+    currentTime = 0;
+    state = 'running';
+    destination = new N();
+    constructor() { Ctx.made += 1; }
+    resume() { return Promise.resolve(); }
+    createGain() { return Object.assign(new N(), { gain: new P() }); }
+    createBiquadFilter() { return Object.assign(new N(), { type: '', Q: new P(), frequency: new P() }); }
+    createBufferSource() { Ctx.sources += 1; return Object.assign(new N(), { buffer: null, start() {}, stop() {} }); }
+    createBuffer(_c: number, length: number) { const d = new Float32Array(length); return { getChannelData: () => d }; }
+  }
+  let reduce = false;
+  let hidden = false;
+  type Mod = typeof import('../../src/scripts/chooser');
+  let mod: Mod;
+  let m: ReturnType<typeof mount>;
+  const button = () => document.querySelector<HTMLButtonElement>('[data-sound-toggle]')!;
+  beforeEach(async () => {
+    Ctx.made = 0;
+    Ctx.sources = 0;
+    reduce = false;
+    hidden = false;
+    navigations = [];
+    localStorage.clear();
+    vi.stubGlobal('AudioContext', Ctx);
+    Object.defineProperty(document, 'hidden', { configurable: true, get: () => hidden });
+    window.matchMedia = vi.fn().mockImplementation((q: string) => ({ matches: reduce && /reduced-motion: reduce/.test(q), media: q, addEventListener() {}, removeEventListener() {} })) as unknown as typeof window.matchMedia;
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    vi.resetModules(); // a fresh AudioContext singleton per test
+    mod = await import('../../src/scripts/chooser');
+    m = mount();
+    document.body.insertAdjacentHTML('afterbegin', '<button type="button" class="chooser__sound" data-sound-toggle aria-pressed="true" data-on="ON" data-off="OFF" hidden><span>S</span> <span class="chooser__sound-s">ON</span></button>');
+    mod.initChooser(document, { navigate: (href) => navigations.push(href) });
+  });
+  afterEach(() => {
+    mod.initDesk(m.desk, m.hint)();
+    vi.useRealTimers();
+    vi.unstubAllGlobals();
+    Reflect.deleteProperty(document, 'hidden');
+    document.documentElement.dataset.motion = 'full';
+  });
+  const back = () => {
+    vi.advanceTimersByTime(EXIT_MS.data + 10);
+    const ev = new Event('pageshow') as Event & { persisted: boolean };
+    Object.defineProperty(ev, 'persisted', { value: true });
+    window.dispatchEvent(ev);
+  };
+
+  it('MO-40: no AudioContext on load, hover, focus, Tab, scroll, or a touch first tap', () => {
+    m.data.dispatchEvent(new MouseEvent('mouseover', { bubbles: true }));
+    m.data.focus();
+    key(m.data, 'Tab');
+    window.dispatchEvent(new Event('scroll'));
+    pointerdown(m.gameFile, 'touch');
+    click(m.game);
+    expect(m.desk.classList.contains('is-aside')).toBe(true);
+    expect(Ctx.made).toBe(0);
+  });
+
+  it('MO-40: one AudioContext on the first data activation (click or Enter); reused on the next', () => {
+    click(m.data);
+    expect(Ctx.made).toBe(1);
+    expect(Ctx.sources).toBe(3);
+    back();
+    click(m.data, 0);
+    expect(Ctx.made).toBe(1);
+    expect(Ctx.sources).toBe(6);
+  });
+
+  it('MO-40: no sound under prefers-reduced-motion, under data-motion=reduce, when sb:sound=off, when document.hidden, or without AudioContext; navigation unaffected', () => {
+    const cases: [string, () => void, () => void][] = [
+      ['os reduce', () => { reduce = true; }, () => { reduce = false; }],
+      ['site reduce', () => { document.documentElement.dataset.motion = 'reduce'; }, () => { document.documentElement.dataset.motion = 'full'; }],
+      ['muted', () => localStorage.setItem('sb:sound', 'off'), () => localStorage.removeItem('sb:sound')],
+      ['hidden', () => { hidden = true; }, () => { hidden = false; }],
+      ['no AudioContext', () => vi.stubGlobal('AudioContext', undefined), () => vi.stubGlobal('AudioContext', Ctx)],
+    ];
+    let n = 0;
+    for (const [name, on, off] of cases) {
+      on();
+      click(m.data);
+      expect(Ctx.made, name).toBe(0);
+      back();
+      off();
+      n += 1;
+      expect(navigations, name).toHaveLength(n);
+    }
+  });
+
+  it('MO-40: the game exit plays no sound', () => {
+    click(m.game);
+    vi.advanceTimersByTime(EXIT_MS.game);
+    expect(navigations).toEqual(['/game/']);
+    expect(Ctx.made).toBe(0);
+  });
+
+  it('MO-40: the mute button shows when JS runs, aria-pressed mirrors sb:sound, a press writes it and dispatches sb:sound-change', () => {
+    expect(button().hidden).toBe(false);
+    expect(button().getAttribute('aria-pressed')).toBe('true'); // plays unless muted
+    expect(button().querySelector('.chooser__sound-s')!.textContent).toBe('ON');
+    const seen: boolean[] = [];
+    window.addEventListener('sb:sound-change', (e) => seen.push((e as CustomEvent<boolean>).detail));
+    button().click();
+    expect(localStorage.getItem('sb:sound')).toBe('off');
+    expect(button().getAttribute('aria-pressed')).toBe('false');
+    expect(button().querySelector('.chooser__sound-s')!.textContent).toBe('OFF');
+    button().click();
+    expect(localStorage.getItem('sb:sound')).toBe('on');
+    expect(seen).toEqual([false, true]);
+    // a change made elsewhere (another tab's toggle) is mirrored
+    window.dispatchEvent(new CustomEvent('sb:sound-change', { detail: false }));
+    expect(button().getAttribute('aria-pressed')).toBe('false');
+  });
+
+  it('MO-40: a throwing AudioContext never blocks the exit', () => {
+    vi.stubGlobal('AudioContext', class { constructor() { throw new Error('no audio'); } });
+    click(m.data);
+    expect(m.desk.dataset.exit).toBe('data');
+    vi.advanceTimersByTime(EXIT_MS.data);
+    expect(navigations).toEqual(['/data/']);
+  });
+});
+
 describe('the exit sheet (MO-38)', () => {
   it('MO-38: the exit sheet is attached once, only after the page has loaded', () => {
     document.head.querySelectorAll('link[data-chooser-exit]').forEach((l) => l.remove());

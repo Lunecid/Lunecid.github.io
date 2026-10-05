@@ -12,6 +12,7 @@ export interface CoverCopy {
   foot: string;
   touch: { rest: string; aside: string };
   opening: { terminal: string; node: { num: string }; request: string; decrypt: string; pct: { num: string }; granted: string };
+  sound: { label: string; on: string; off: string };
 }
 
 export const coverCopy: Localized<CoverCopy> = {
@@ -22,6 +23,7 @@ export const coverCopy: Localized<CoverCopy> = {
     foot: '{year} · PORTFOLIO · {host}',
     touch: { rest: '뒤의 게임 파일을 누르면 앞으로 꺼냅니다', aside: '한 번 더 누르면 게임 버전으로 이동합니다' },
     opening: { terminal: 'SECURE DOCUMENT TERMINAL', node: { num: 'NODE 02' }, request: '> 열람 요청 · 포트폴리오 문서 {count}건', decrypt: 'DECRYPT', pct: { num: '100%' }, granted: 'ACCESS GRANTED' },
+    sound: { label: '효과음', on: '켜짐', off: '꺼짐' },
   },
   // Until the owner gives English wording the Latin labels repeat the Korean page's; the Korean-only values get a
   // neutral English stand-in.
@@ -32,6 +34,7 @@ export const coverCopy: Localized<CoverCopy> = {
     foot: '{year} · PORTFOLIO · {host}',
     touch: { rest: 'Tap the game file behind to bring it forward', aside: 'Tap it again to open the game version' },
     opening: { terminal: 'SECURE DOCUMENT TERMINAL', node: { num: 'NODE 02' }, request: '> ACCESS REQUEST · {count} FILES', decrypt: 'DECRYPT', pct: { num: '100%' }, granted: 'ACCESS GRANTED' },
+    sound: { label: 'Sound', on: 'On', off: 'Off' },
   },
 };
 
@@ -62,6 +65,9 @@ export const COVER_COPY_STATUS: Readonly<Record<string, 'placeholder' | 'owner'>
   'opening.decrypt': 'placeholder',
   'opening.pct.num': 'placeholder',
   'opening.granted': 'placeholder',
+  'sound.label': 'placeholder',
+  'sound.on': 'placeholder',
+  'sound.off': 'placeholder',
 };
 
 /** Longest value per key in graphemes, measured after the code fills `{n}`/`{year}`/`{host}`/`{count}`; for the array
@@ -92,4 +98,7 @@ export const COVER_LIMITS: Readonly<Record<string, number>> = {
   'opening.decrypt': 12,
   'opening.pct.num': 4,
   'opening.granted': 16,
+  'sound.label': 10,
+  'sound.on': 6,
+  'sound.off': 6,
 };
