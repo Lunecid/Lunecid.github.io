@@ -310,3 +310,33 @@ test('mobile menu: Escape closes even when focus has landed on <body> (fix round
   await expect(toggle).toHaveAttribute('aria-expanded', 'false');
   await expect(toggle).toBeFocused();
 });
+
+// GP-2 (named change: the light reading bands used the dark-olive text form of the accent): on the game palette every
+// focus ring is the 2px yellow fill colour, in the HUD bands and in the dark reading bands alike.
+for (const route of ['/game/', '/game/records/']) {
+  test(`GP-2 ${route}: the focus ring is 2px rgb(255, 230, 0) in dark bands`, async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== 'desktop', 'computed focus style, one width');
+    await page.goto(route, { waitUntil: 'load' });
+    await settle(page);
+    await page.keyboard.press('Tab'); // keyboard modality, so programmatic focus matches :focus-visible
+    const rings = await page.evaluate(() => {
+      const panels = '.rh .paper, .rec__pubs, .psum, .creds__table, .skills__table, .jobfit__table, .pub__list, .paper-view__sheet';
+      const pick = (scope: string) =>
+        Array.from(document.querySelectorAll<HTMLElement>(`${scope} a[href], ${scope} button`)).find((el) => {
+          const r = el.getBoundingClientRect();
+          return r.width > 0 && r.height > 0 && !el.closest(panels) && getComputedStyle(el).visibility !== 'hidden';
+        });
+      const out: Record<string, string> = {};
+      for (const [band, scope] of [['hud', '.hud-nav'], ['read', '.read-section, .read']] as const) {
+        const el = pick(scope.split(', ')[0]!) ?? pick(scope.split(', ')[1] ?? scope);
+        if (!el) continue;
+        el.focus();
+        const s = getComputedStyle(el);
+        out[band] = `${s.outlineStyle} ${s.outlineWidth} ${s.outlineColor}`;
+      }
+      return out;
+    });
+    expect(Object.keys(rings).sort(), 'a control in the HUD and one in a dark reading band').toEqual(['hud', 'read']);
+    for (const [band, ring] of Object.entries(rings)) expect(ring, band).toBe('solid 2px rgb(255, 230, 0)');
+  });
+}

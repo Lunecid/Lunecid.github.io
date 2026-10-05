@@ -1,0 +1,96 @@
+/* src/styles/game.css — the game version's palette v4 rules (owner-approved 2026-10-05; owner-assets/game-palette/v4).
+   One external, content-hashed sheet that only BaseLayout links, so data and neutral pages never load it. Every
+   selector starts with :root[data-variant="game"]: that prefix keeps the rules off every other page and lets them beat a
+   component's scoped rule of the same shape. Colours come from tokens.css only (the --gp-* palette and the role
+   tokens). Decoration drawn here (hazard tab, barcodes, ticks) is pseudo-elements with pointer-events: none and no
+   motion. Blocks: GLOBAL · WHITE PANELS · ACHIEVEMENTS · COMPONENTS · EDGE · MEDIA TILT · FORCED COLOURS · PRINT. */
+
+/* ═══ GLOBAL ═══════════════════════════════════════════════════════════════════════════════════════════════════ */
+
+/* The reading bands are dark too (one step lighter than the page): native controls and scrollbars follow. */
+:root[data-variant="game"] .read, :root[data-variant="game"] .read-section { color-scheme: dark; }
+/* reading comfort for off-white text on dark: a slightly looser line height, the same measure */
+:root[data-variant="game"] .read p, :root[data-variant="game"] .read-section p { line-height: 1.75; }
+
+/* Clickable = yellow plus a second cue (WCAG 1.4.1): plain text links in the content are underlined. */
+:root[data-variant="game"] main a:not([class]),
+:root[data-variant="game"] .hero__jobfit,
+:root[data-variant="game"] .jobfit__ev,
+:root[data-variant="game"] .creds__ev {
+  text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: .22em;
+}
+:root[data-variant="game"] .read a:not([class]), :root[data-variant="game"] .read-section a:not([class]),
+:root[data-variant="game"] .jobfit__ev, :root[data-variant="game"] .creds__ev { color: var(--accent-deep); }
+/* hover: a thicker underline, a cyan wash and a soft cyan glow; the same while pressed on touch */
+@media (hover: hover) {
+  :root[data-variant="game"] main a:not([class]):hover,
+  :root[data-variant="game"] .hero__jobfit:hover,
+  :root[data-variant="game"] .jobfit__ev:hover,
+  :root[data-variant="game"] .creds__ev:hover {
+    text-decoration-thickness: 2px; background-color: var(--gp-cy-wash); text-shadow: 0 0 10px var(--gp-cy-glow);
+  }
+}
+:root[data-variant="game"] main a:not([class]):active,
+:root[data-variant="game"] .hero__jobfit:active,
+:root[data-variant="game"] .jobfit__ev:active,
+:root[data-variant="game"] .creds__ev:active {
+  text-decoration-thickness: 2px; background-color: var(--gp-cy-wash); text-shadow: 0 0 10px var(--gp-cy-glow);
+}
+:root[data-variant="game"] .sec-more { text-decoration: underline; text-underline-offset: .22em; }
+/* footer links stay quiet (neutral, underlined): yellow is kept for the content */
+:root[data-variant="game"] .site-footer a:not([class]) {
+  color: var(--hud-muted); text-decoration: underline; text-underline-offset: .22em;
+}
+
+/* Focus: the 2 px ring is yellow on every dark band (base.css draws it; the reading bands used the text form). */
+:root[data-variant="game"] .read :focus-visible, :root[data-variant="game"] .read-section :focus-visible { outline-color: var(--accent); }
+
+/* Section kicker squares are yellow marks; reading-band corner brackets are cyan line-art. */
+:root[data-variant="game"] .read .hud-label__sq, :root[data-variant="game"] .read-section .hud-label__sq { background: var(--accent); }
+:root[data-variant="game"] .read .bracket, :root[data-variant="game"] .read-section .bracket { --bracket-color: var(--hl2); }
+
+/* ── line-art (original shapes) ── */
+:root[data-variant="game"] .hud-nav { border-bottom-color: var(--hud-frame); }
+/* a short yellow hazard tab under the brand, on the container's left edge */
+:root[data-variant="game"] .hud-nav::after {
+  content: ""; position: absolute; bottom: -6px; width: 56px; height: 5px; pointer-events: none;
+  left: max(var(--gutter), calc((100% - var(--container-hud)) / 2 + var(--gutter)));
+  background: var(--gp-haz);
+}
+/* section kickers end in a grey barcode tail */
+:root[data-variant="game"] .hud-label::after {
+  content: ""; display: inline-block; vertical-align: middle; width: 64px; height: 8px; margin-left: 12px;
+  pointer-events: none; background: var(--gp-bars-g) 0 0 / 120px 8px no-repeat;
+}
+/* each reading band and the footer start with a thin neutral rule; a band adds a short cyan tick at the container edge */
+:root[data-variant="game"] .read-section, :root[data-variant="game"] .site-footer {
+  position: relative; border-top: 1px solid var(--hud-frame);
+}
+:root[data-variant="game"] .read-section::before {
+  content: ""; position: absolute; top: -1px; height: 2px; width: 48px; background: var(--hl2); pointer-events: none;
+  left: max(var(--gutter), calc((100% - var(--container-hud)) / 2 + var(--gutter)));
+}
+/* page heads: a cyan barcode with a square tick (top right), a small chamfered hazard block (bottom right) and a yellow
+   corner tick on the title */
+:root[data-variant="game"] .page-head { position: relative; border-bottom-color: var(--hud-frame); }
+:root[data-variant="game"] .page-head::before,
+:root[data-variant="game"] .page-head::after {
+  content: ""; position: absolute; pointer-events: none;
+  right: max(var(--gutter), calc((100% - var(--container-hud)) / 2 + var(--gutter)));
+}
+:root[data-variant="game"] .page-head::before {
+  top: 18px; width: 132px; height: 10px; opacity: .8;
+  background: linear-gradient(var(--hl2), var(--hl2)) right 0 top 0 / 10px 10px no-repeat, var(--gp-bars-c) 0 0 / 120px 10px no-repeat;
+}
+:root[data-variant="game"] .page-head::after {
+  bottom: 12px; width: 84px; height: 8px; background: var(--gp-haz);
+  clip-path: polygon(8px 0, 100% 0, 100% 100%, 0 100%, 0 8px);
+}
+:root[data-variant="game"] .page-head__title { position: relative; padding-left: 18px; }
+:root[data-variant="game"] .page-head__title::before {
+  content: ""; position: absolute; left: 0; top: .12em; width: 10px; height: 10px; pointer-events: none;
+  border-left: 2px solid var(--accent); border-top: 2px solid var(--accent);
+}
+@media (max-width: 733px) {
+  :root[data-variant="game"] .page-head::before { width: 72px; background-size: 10px 10px, 120px 10px; }
+}

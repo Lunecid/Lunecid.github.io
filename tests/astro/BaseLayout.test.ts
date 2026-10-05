@@ -73,6 +73,17 @@ describe('BaseLayout.astro', () => {
     expect(head).toMatch(/<link rel="preload"[^>]*as="font"[^>]*type="font\/woff2"/);
   });
 
+  it('GP-2: links the game stylesheet in <head>, after the fonts and the page meta (the build hashes it)', async () => {
+    const html = await render();
+    const head = html.match(/<head[^>]*>([\s\S]*?)<\/head>/)?.[1] ?? '';
+    const sheets = [...head.matchAll(/<link rel="stylesheet" href(?:="([^"]*)")?[^>]*>/g)];
+    expect(sheets).toHaveLength(1);
+    expect(sheets[0]![1] ?? '').toMatch(/game\.css|^$/); // vitest resolves the ?url import to an empty href; the build hashes it
+    expect(sheets[0]!.index).toBeGreaterThan(head.lastIndexOf('<link rel="preload"'));
+    expect(sheets[0]!.index).toBeGreaterThan(head.indexOf('<meta property="og:image"'));
+    expect(html.slice(html.indexOf('</head>'))).not.toMatch(/<link rel="stylesheet"/);
+  });
+
   it('D-7: the nav CV button opens the Academic CV on research pages and the résumé in the page language elsewhere', async () => {
     const cvTag = (html: string) => firstTag(html, /<a [^>]*class="hud-nav__cv"[^>]*>/);
     const projects = await render();

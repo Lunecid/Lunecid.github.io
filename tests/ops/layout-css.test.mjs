@@ -90,15 +90,37 @@ test('the data CSS is one external, content-hashed stylesheet that every data pa
 // The chooser's own sheet (MO-23) is the one exception: only the two chooser pages link it (pinned below).
 const CHOOSER_PAGES = ['index.html', 'en/index.html'];
 const isChooserSheet = (href) => /^\/_astro\/chooser\.[\w-]+\.css$/.test(href);
-/** The stylesheets a game or neutral page links besides the chooser's own sheet on the chooser pages. */
-const otherLinks = (p) => p.links.filter((href) => !(CHOOSER_PAGES.includes(p.path) && isChooserSheet(href)));
+const isGameSheet = (href) => /^\/_astro\/game\.[\w-]{6,}\.css$/.test(href);
+/** The stylesheets a game or neutral page links besides the chooser's own sheet on the chooser pages and the game sheet
+    on game pages. */
+const otherLinks = (p) =>
+  p.links.filter((href) => !(CHOOSER_PAGES.includes(p.path) && isChooserSheet(href)) && !(p.variant === 'game' && isGameSheet(href)));
 
-test('game and neutral pages link no stylesheet (the chooser pages: only the chooser sheet) and never name the data sheet', () => {
+// Named change (GP-2): game pages now link the game palette sheet (tested below); nothing else changes.
+test('game and neutral pages link no other stylesheet (the chooser pages: only the chooser sheet) and never name the data sheet', () => {
   const others = [...ofVariant('game'), ...ofVariant('neutral')];
   assert.ok(others.length > 0, 'no game or neutral page in dist');
   for (const p of others) {
     assert.deepEqual(otherLinks(p), [], `${p.path}: links a stylesheet`);
     assert.ok(!/_astro\/data-site\./.test(p.html), `${p.path}: names the data sheet`);
+  }
+});
+
+test('GP-2: game pages link exactly one /_astro/game.*.css; data and neutral pages never do', () => {
+  const game = ofVariant('game');
+  assert.ok(game.length >= 18, 'the game pages');
+  const hrefs = new Set(game.flatMap((p) => p.links.filter(isGameSheet)));
+  assert.equal(hrefs.size, 1, `game pages link ${[...hrefs].join(', ') || 'no game sheet'}`);
+  const [href] = hrefs;
+  const sheet = readFileSync(join('dist', ...href.split('/').filter(Boolean)), 'utf8');
+  assert.match(sheet, /:root\[data-variant=(")?game\1?\]/, 'the sheet holds the game rules');
+  for (const p of game) {
+    assert.deepEqual(p.links.filter(isGameSheet), [href], `${p.path}: one game sheet link`);
+    const head = /<head[^>]*>([\s\S]*?)<\/head>/.exec(p.html)?.[1] ?? '';
+    assert.ok(head.includes(`href="${href}"`), `${p.path}: the link sits in <head>`);
+  }
+  for (const p of [...ofVariant('data'), ...ofVariant('neutral')]) {
+    assert.ok(!/_astro\/game\.[\w-]+\.css/.test(p.html), `${p.path}: names the game sheet`);
   }
 });
 

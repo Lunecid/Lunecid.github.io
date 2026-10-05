@@ -55,9 +55,11 @@ describe('DataLayout.astro (P2-1)', () => {
     expect(metaTags(headOf(data))).toEqual(metaTags(headOf(base)));
   });
 
-  it('links its one shared data stylesheet in <head>; BaseLayout links none', async () => {
+  // Named change (GP-2): BaseLayout links its own game palette sheet, never the data sheet.
+  it('links its one shared data stylesheet in <head>; BaseLayout links only the game sheet', async () => {
     const [data, base] = await Promise.all([render(DataLayout), render(BaseLayout)]);
     expect(headOf(data).match(/<link rel="stylesheet"[^>]*>/g)).toHaveLength(1);
-    expect(headOf(base)).not.toMatch(/<link rel="stylesheet"/);
+    expect(headOf(base).match(/<link rel="stylesheet"[^>]*>/g)).toHaveLength(1);
+    expect(headOf(base)).not.toMatch(/data-site/);
   });
 });

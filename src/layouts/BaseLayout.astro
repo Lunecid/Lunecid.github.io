@@ -3,6 +3,9 @@ import '../styles/tokens.css';
 import '../styles/base.css';
 import '../styles/hud.css';
 import '../styles/read.css';
+// The game palette's rules (palette v4): one external, content-hashed sheet only game pages link (the data sheet's
+// precedent); its selectors carry the :root[data-variant="game"] prefix, so they win over the inlined component styles.
+import gameCss from '../styles/game.css?url';
 import { getCollection } from 'astro:content';
 import { DOCUMENTS } from '../config';
 import type { NavSection, NoticeKey, PageId } from '../types';
@@ -87,6 +90,7 @@ const achievementLabels = {
         <link rel="preload" href={FONT_URL.sans} as="font" type="font/woff2" crossorigin />
       </Fragment>
     </HeadMeta>
+    <link rel="stylesheet" href={gameCss} />
     <slot name="head" />
   </head>
   <body>

@@ -126,6 +126,32 @@ for (const route of routes) {
     expect(small).toEqual([]);
   });
 
+  // GP-2: the game palette's yellow (fill and text form) and cyan never reach a general page; the lime, gold and olive
+  // of the earlier game palette stay forbidden there too.
+  test(`${route}: no game palette colour (yellow, yellow text, cyan, lime, gold, olive) in any computed colour`, async ({ page }) => {
+    await page.goto(route, { waitUntil: 'networkidle' });
+    const hits = await page.evaluate((forbidden) => {
+      const props = ['color', 'background-color', 'border-top-color', 'border-right-color', 'border-bottom-color', 'border-left-color',
+        'outline-color', 'text-decoration-color', 'fill', 'stroke', 'caret-color'];
+      const out: string[] = [];
+      for (const el of [document.documentElement, ...Array.from(document.body.querySelectorAll('*'))]) {
+        for (const pseudo of [null, '::before', '::after']) {
+          const s = getComputedStyle(el, pseudo);
+          for (const prop of props) {
+            const v = s.getPropertyValue(prop);
+            if (forbidden.includes(v)) out.push(`${el.tagName.toLowerCase()}.${el.getAttribute('class') ?? ''}${pseudo ?? ''} ${prop} ${v}`);
+          }
+          for (const prop of ['background-image', 'box-shadow']) {
+            const v = s.getPropertyValue(prop);
+            for (const f of forbidden) if (v.includes(f)) out.push(`${el.tagName.toLowerCase()}.${el.getAttribute('class') ?? ''}${pseudo ?? ''} ${prop} ${f}`);
+          }
+        }
+      }
+      return out.slice(0, 10);
+    }, ['rgb(255, 230, 0)', 'rgb(255, 225, 74)', 'rgb(0, 229, 255)', 'rgb(200, 240, 60)', 'rgb(245, 179, 1)', 'rgb(79, 107, 0)']);
+    expect(hits).toEqual([]);
+  });
+
   test(`${route}: no HUD class, a light scheme, links in ink (never navy), focus rings in ink`, async ({ page }) => {
     await page.goto(route, { waitUntil: 'networkidle' });
     const classes = await page.evaluate((hud) => {
