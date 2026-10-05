@@ -57,6 +57,8 @@ const accountTiles = await buildAccountView(games, accountFeeds, riotLinks, gene
 const anyAccountEnabled = games.some((g) => g.integration.enabled && Object.hasOwn(TILE_SOURCES, g.id));
 const acctStatus = accountStatusJson(accountStatus(games, accountFeeds, riotLinks));
 const steamShown = accountTiles.some((tile) => tile.key === 'steam' && tile.state === 'shown');
+// a shown LoL or TFT card shows Riot's character art (Ezreal, Pengu): Riot's Legal Jibber Jabber notice
+const riotCardShown = accountTiles.some((tile) => (tile.key === 'lol' || tile.key === 'tft') && tile.state === 'shown' && tile.art !== undefined);
 const siteAchievements = availableAchievements(defs, soundAvailability());
 // 내 게임 업적: the owner's records with their evidence screenshots (game-records.yaml order), each opening in the
 // ImageViewer; their notices (riot-assets, blizzard) join the footer's.
@@ -69,7 +71,7 @@ const records = await Promise.all(
     evidence: await evidence.build(recordData[i]),
   })),
 );
-const shownNotices = new Set([...characters.notices(['remielle', 'eula', 'mona']), ...(steamShown ? (['valve'] as const) : []), ...records.flatMap((r) => r.notices)]);
+const shownNotices = new Set([...characters.notices(['remielle', 'eula', 'mona']), ...(steamShown ? (['valve'] as const) : []), ...(riotCardShown ? (['riot-assets'] as const) : []), ...records.flatMap((r) => r.notices)]);
 const notices = NOTICE_KEYS.filter((key) => shownNotices.has(key));
 const credit = characterCredit(['remielle', 'eula', 'mona'], lang);
 const labels = {

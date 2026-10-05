@@ -34,6 +34,7 @@ import {
 import { ACCOUNT_HEADS } from '../../src/lib/favorites';
 import type { AccountCard, AccountFeed, RiotLinks } from '../../src/lib/generated';
 import { islandImage } from '../../src/lib/island-image.server';
+import { createCardArtLookup } from '../../src/lib/account-cards';
 
 const yamlGames = parseYamlList(readFileSync(join(process.cwd(), 'src/data/favorites.yaml'), 'utf8'), 'games').map((g) =>
   favoriteGameSchema.parse(g),
@@ -186,8 +187,9 @@ describe('buildAccountView', () => {
     expect(tiles.lol?.card?.title).toBe('Hide on bush#KR1');
     expect(tiles.lol?.card?.fetchedAt).toBeUndefined();
     expect(tiles.lol?.card?.fetchedAtText).toBeUndefined();
-    expect(tiles.lol?.card?.notices).toEqual([]);
-    expect(tiles.tft?.card?.notices).toEqual([]);
+    // PL-6 (named change): the Riot cards show Riot's character art, so each carries the riot-assets notice (was none)
+    expect(tiles.lol?.card?.notices).toEqual(['riot-assets']);
+    expect(tiles.tft?.card?.notices).toEqual(['riot-assets']);
     expect(tiles.lol?.head).toBe('PROFILE LINK');
     expect(tiles.lol?.name).toBe('리그 오브 레전드');
     expect(tiles.tft?.name).toBe('전략적 팀 전투');
@@ -380,5 +382,51 @@ describe('formatAsOfKst (StatsSummary format; OQ-6)', () => {
     expect(formatAsOfKst('2026-09-29T18:31:02Z', 'en')).toBe('Sep 30, 2026 03:31 KST');
     expect(formatAsOfKst('2026-01-05T14:59:00Z', 'en')).toBe('Jan 5, 2026 23:59 KST');
     expect(formatAsOfKst('2026-01-05T15:00:00Z', 'ko')).toBe('2026.01.06 00:00 KST');
+  });
+});
+
+describe('PL-6: character-card art on the tiles', () => {
+  const cardMeta = (name: string): ImageMetadata => ({ src: `/_astro/${name}`, width: 256, height: 280, format: 'webp' }) as ImageMetadata;
+  const ART = createCardArtLookup(
+    Object.fromEntries(['card-1', 'card-2', 'card-3', 'card-4'].map((stem) => [`../assets/account-cards/${stem}.webp`, cardMeta(`${stem}.webp`)])),
+    undefined,
+  );
+  const steamWithAvatar: Record<string, AccountFeed> = {
+    ...FEEDS,
+    steam: feed('steam', [{ ...FEEDS.steam!.cards[0]!, image: 'aaaaaaaaaaa1.png' }]),
+  };
+
+  it('PL-6: shown tiles carry their character art; steam carries its feed avatar; no art without a file', async () => {
+    const tiles = byKey(await buildAccountView(TILE_ON, steamWithAvatar, LINKS, IMAGES, 'ko', NOW, ART));
+    expect(tiles.genshin?.art?.src).toBe('/_astro/card-1.webp?w=256');
+    expect(tiles.zzz?.art?.src).toBe('/_astro/card-2.webp?w=256');
+    expect(tiles.lol?.art?.src).toBe('/_astro/card-3.webp?w=256');
+    expect(tiles.tft?.art?.srcSet).toBe('/_astro/card-4.webp?w=128 128w, /_astro/card-4.webp?w=256 256w');
+    expect(tiles.tft?.art?.sizes).toBe('(max-width: 480px) 30vw, 128px');
+    expect([tiles.tft?.art?.width, tiles.tft?.art?.height]).toEqual([256, 280]);
+    // Steam: the owner's own avatar from the feed, at the card's widths (never a store or Valve image)
+    expect(tiles.steam?.art?.srcSet).toBe('/_astro/aaaaaaaaaaa1.png?w=128 128w, /_astro/aaaaaaaaaaa1.png?w=256 256w');
+    // no avatar in the feed, no file, or SB_NO_ART → no art (the glyph stays the face)
+    const plain = byKey(await buildAccountView(TILE_ON, FEEDS, LINKS, IMAGES, 'ko', NOW, ART));
+    expect(plain.steam?.art).toBeUndefined();
+    const none = byKey(await buildAccountView(TILE_ON, steamWithAvatar, LINKS, {}, 'ko', NOW, createCardArtLookup({}, undefined)));
+    for (const key of ['genshin', 'zzz', 'lol', 'tft', 'steam']) expect(none[key]?.art, key).toBeUndefined();
+    const noArt = byKey(await buildAccountView(TILE_ON, FEEDS, LINKS, IMAGES, 'ko', NOW, createCardArtLookup({ '../assets/account-cards/card-3.webp': cardMeta('card-3.webp') }, '1')));
+    expect(noArt.lol?.art).toBeUndefined();
+    // a tile that is not shown carries no art, even with a file
+    const stale = byKey(await buildAccountView(TILE_ON, { ...FEEDS, 'enka-zzz': { ...FEEDS['enka-zzz']!, fetchedAt: OLD } }, LINKS, IMAGES, 'ko', NOW, ART));
+    expect(stale.zzz?.state).not.toBe('shown');
+    expect(stale.zzz?.art).toBeUndefined();
+    expect(stale.genshin?.art).toBeDefined();
+  });
+
+  it('PL-6: the LoL and TFT cards carry the riot-assets notice', async () => {
+    for (const lang of ['ko', 'en'] as const) {
+      const tiles = byKey(await buildAccountView(TILE_ON, FEEDS, LINKS, IMAGES, lang, NOW, ART));
+      expect(tiles.lol?.card?.notices, lang).toEqual(['riot-assets']);
+      expect(tiles.tft?.card?.notices, lang).toEqual(['riot-assets']);
+      // never the Riot API disclaimer: no Riot API is used
+      expect(tiles.lol?.card?.notices).not.toContain('riot');
+    }
   });
 });
