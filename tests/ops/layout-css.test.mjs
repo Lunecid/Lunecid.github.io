@@ -87,11 +87,17 @@ test('the data CSS is one external, content-hashed stylesheet that every data pa
   }
 });
 
-test('game and neutral pages link no stylesheet and never name the data sheet', () => {
+// The chooser's own sheet (MO-23) is the one exception: only the two chooser pages link it (pinned below).
+const CHOOSER_PAGES = ['index.html', 'en/index.html'];
+const isChooserSheet = (href) => /^\/_astro\/chooser\.[\w-]+\.css$/.test(href);
+/** The stylesheets a game or neutral page links besides the chooser's own sheet on the chooser pages. */
+const otherLinks = (p) => p.links.filter((href) => !(CHOOSER_PAGES.includes(p.path) && isChooserSheet(href)));
+
+test('game and neutral pages link no stylesheet (the chooser pages: only the chooser sheet) and never name the data sheet', () => {
   const others = [...ofVariant('game'), ...ofVariant('neutral')];
   assert.ok(others.length > 0, 'no game or neutral page in dist');
   for (const p of others) {
-    assert.deepEqual(p.links, [], `${p.path}: links a stylesheet`);
+    assert.deepEqual(otherLinks(p), [], `${p.path}: links a stylesheet`);
     assert.ok(!/_astro\/data-site\./.test(p.html), `${p.path}: names the data sheet`);
   }
 });
@@ -118,8 +124,12 @@ test('DS-2: data pages load paint.css; game and neutral pages never contain --te
     }
     assert.ok(!/--tex-|--ragbox/.test(p.inline), `${p.path}: paint.css is inlined again`);
   }
+  // The chooser sheet paints its printout with brush tokens of its own (same names, live SVG); paint.css's own
+  // marks (--ed-paint-*, the /_astro/paint-* tiles) never reach it, and nothing else on these pages carries any.
   for (const p of [...ofVariant('game'), ...ofVariant('neutral')]) {
-    assert.ok(!/--tex-|--ragbox|--ed-paint-/.test(p.css), `${p.path}: paint.css leaked`);
+    const css = `${p.inline}\n${otherLinks(p).map((href) => readFileSync(join('dist', ...href.split('/').filter(Boolean)), 'utf8')).join('\n')}`;
+    assert.ok(!/--tex-|--ragbox|--ed-paint-/.test(css), `${p.path}: paint.css leaked`);
+    assert.ok(!/--ed-paint-|\/_astro\/paint-/.test(p.css), `${p.path}: paint.css leaked into the chooser sheet`);
   }
 });
 

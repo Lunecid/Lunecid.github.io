@@ -16,7 +16,8 @@ import { dirname, join, relative, sep } from 'node:path';
 import { JSDOM } from 'jsdom';
 import { PRINTABLE_ASCII, isHangul } from '../../scripts/fonts/glyphs.mjs';
 import { cmapCodePoints, parseName, woff2Tables } from '../../scripts/fonts/sfnt.mjs';
-import { COVER_DISPLAY_FAMILY, COVER_MONO_FAMILY, DISPLAY_FAMILY, SANS_FAMILY, SERIF_KO_FAMILY, SERIF_KO_HEAD_FAMILY } from '../../src/lib/fonts.ts';
+import { COVER_DISPLAY_FAMILY, COVER_MONO_FAMILY, DISPLAY_FAMILY, SANS_FAMILY, SERIF_KO_FAMILY, SERIF_KO_HEAD_FAMILY, fontFaceRule } from '../../src/lib/fonts.ts';
+import { subsetSerifKo } from '../../scripts/fonts/build.mjs';
 
 const DIST = process.env.DIST_DIR ?? 'dist';
 
@@ -258,10 +259,19 @@ test('no page declares the Korean heading face (data pages dropped it in DS-1, t
   assert.deepEqual(wrong, []);
 });
 
-test('the Korean heading face ships as one static file (no fvar), weight 700, with its license records', () => {
+// No page declares the heading face any more (previous test), so dist ships no file of it; the instance the font build
+// makes for a page that declares it (the same subsetSerifKo call, wght 700) is still checked here.
+/** The heading instance the build would write for these headings. */
+const headInstance = async (/** @type {string} */ text) => {
+  const { data } = await subsetSerifKo(text, { wght: 700 });
+  assert.ok(data, 'a heading instance');
+  return /** @type {Buffer} */ (data);
+};
+
+test('no page ships the Korean heading face; its build instance is one static file (no fvar), weight 700, with its license records', async () => {
   const files = walk(join(DIST, '_astro')).filter((f) => /[\\/]sb-serif-kr-head\.[\w-]+\.woff2$/.test(f));
-  assert.equal(files.length, 1);
-  const tables = woff2Tables(readFileSync(files[0]));
+  assert.equal(files.length, 0);
+  const tables = woff2Tables(await headInstance('백성은의 연구 기록'));
   assert.equal(tables.has('fvar'), false);
   const os2 = tables.get('OS/2');
   assert.ok(os2, 'OS/2 table');
@@ -274,8 +284,13 @@ test('the Korean heading face ships as one static file (no fvar), weight 700, wi
   assert.match(records.find((r) => r.nameID === 14)?.value ?? '', /openfontlicense\.org|scripts\.sil\.org/i, 'license URL');
 });
 
-test('self-test: the heading face fails on a [data-serif] Hangul it lacks, and only there', () => {
-  const html = readFileSync(join(DIST, 'index.html'), 'utf8'); // the chooser: the one page that declares the face since DS-1
+test('self-test: the heading face fails on a [data-serif] Hangul it lacks, and only there', async () => {
+  // No built page declares the face: the chooser declares it here, served by a build instance of the face
+  const instance = woff2Tables(await headInstance('백성은의 연구 기록')).get('cmap');
+  assert.ok(instance);
+  const url = '/_astro/sb-serif-kr-head.selftest.woff2';
+  cmapCache.set(url, cmapCodePoints(instance));
+  const html = readFileSync(join(DIST, 'index.html'), 'utf8').replace('</head>', `<style>${fontFaceRule('serifKoHead', url)}</style></head>`);
   const cmapOf = (/** @type {RegExp} */ re) => {
     const file = walk(join(DIST, '_astro')).find((f) => re.test(f));
     assert.ok(file, String(re));
@@ -284,7 +299,7 @@ test('self-test: the heading face fails on a [data-serif] Hangul it lacks, and o
     return cmapCodePoints(cmap);
   };
   const sansKo = cmapOf(/[\\/]sb-sans-ko\.[\w-]+\.woff2$/);
-  const head = cmapOf(/[\\/]sb-serif-kr-head\.[\w-]+\.woff2$/);
+  const head = cmapCodePoints(instance);
   // A syllable the sans subset draws (so only the heading check can fail) that the heading subset lacks.
   const cp = [...sansKo].filter((c) => c >= 0xac00 && c <= 0xd7a3 && !head.has(c) && SOURCE[SERIF_KO_HEAD_FAMILY]().has(c)).sort((a, b) => a - b)[0];
   assert.ok(cp !== undefined, 'a probe syllable');
