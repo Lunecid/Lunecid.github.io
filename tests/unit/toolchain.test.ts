@@ -21,7 +21,7 @@ describe('toolchain', () => {
     // Batch 2: font-subsets subsets the page fonts after the build (scripts/fonts/build.mjs).
     // P1-13 (A-6): legacy-redirects runs last, after the sitemap and the font subsetting.
     // AL-1 (C0): csp-finalize re-hashes every inline block after the font rewrite, before the stubs (own CSP meta).
-    expect((config.integrations ?? []).map((i) => (i && 'name' in i ? i.name : ''))).toEqual(['@astrojs/react', '@astrojs/sitemap', 'font-subsets', 'csp-finalize', 'legacy-redirects']);
+    expect((config.integrations ?? []).map((i) => (i && 'name' in i ? i.name : ''))).toEqual(['@astrojs/react', '@astrojs/sitemap', 'card-originals', 'font-subsets', 'csp-finalize', 'legacy-redirects']);
     expect(config.security?.csp).toMatchObject({ algorithm: 'SHA-256' });
   });
 

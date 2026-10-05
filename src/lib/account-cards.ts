@@ -42,5 +42,15 @@ export function cardArt(meta: ImageMetadata): Promise<IslandImage> {
   return islandImage(meta, CARD_ART_WIDTHS, CARD_ART_SIZES);
 }
 
-/** Default instance over the committed crops. */
-export const cardArtLookup = createCardArtLookup(import.meta.glob<ImageMetadata>('../assets/account-cards/*.webp', { eager: true, import: 'default' }));
+/**
+ * Default instance over the crops CARD_ART maps, listed by name (tests/unit/account-cards.test.ts keeps the two in
+ * step). A build publishes every image it imports, used or not, so card-5 (the innkeeper) stays out of the glob until
+ * a tile maps it (PL-8); the originals of the mapped cards are pruned after the build when no page shows them
+ * (scripts/assets/prune-card-originals.mjs).
+ */
+export const cardArtLookup = createCardArtLookup(
+  import.meta.glob<ImageMetadata>(
+    ['../assets/account-cards/card-1.webp', '../assets/account-cards/card-2.webp', '../assets/account-cards/card-3.webp', '../assets/account-cards/card-4.webp'],
+    { eager: true, import: 'default' },
+  ),
+);

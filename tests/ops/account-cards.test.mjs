@@ -4,10 +4,12 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
-import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import sharp from 'sharp';
+import { pruneCardOriginals } from '../../scripts/assets/prune-card-originals.mjs';
 
 const ROOT = fileURLToPath(new URL('../../', import.meta.url));
 const STAGING = process.env.ASSET_STAGING ?? 'C:/Users/todtj/PycharmProjects/Portpolio/.superpowers/assets';
@@ -162,10 +164,37 @@ test('the credits cite the innkeeper news page only as a link (Markdown autolink
   }
 });
 
+/**
+ * Whether source text loads the card script: an import/export … from, a bare or dynamic import(), a require() of a
+ * specifier ending in account-cards.mjs, or an import.meta.glob over scripts/assets. A comment that names the file is
+ * not a load.
+ */
+function importsCardScript(text) {
+  const specifier = String.raw`\s*['"\x60][^'"\x60]*account-cards\.mjs['"\x60]`;
+  return (
+    new RegExp(String.raw`\bfrom${specifier}|\bimport\s*\(?${specifier}|\brequire\s*\(${specifier}`).test(text) ||
+    /\bimport\.meta\.glob(?:<[^>]*>)?\s*\([^)]*scripts\/assets\//.test(text)
+  );
+}
+
 test('the card script is dev-time only: no fetch, never imported by the site, importing it writes nothing', async () => {
   const src = readFileSync(join(ROOT, 'scripts/assets/account-cards.mjs'), 'utf8');
   assert.doesNotMatch(src, /\bfetch\s*\(|node:https?\b|node:child_process/);
-  const importers = [...walk('src', /\.(ts|tsx|astro|mjs|js)$/), 'astro.config.mjs'].filter((f) => readFileSync(join(ROOT, f), 'utf8').includes('account-cards.mjs'));
+  // the detector finds every import form and ignores a comment that names the script (src/lib/account-cards.ts does)
+  for (const real of [
+    "import { CARDS } from '../../scripts/assets/account-cards.mjs';",
+    "import '../scripts/assets/account-cards.mjs'",
+    "const m = await import(\n  '../../scripts/assets/account-cards.mjs');",
+    'const m = require("../scripts/assets/account-cards.mjs");',
+    "export { CARDS } from '../../scripts/assets/account-cards.mjs';",
+    "import.meta.glob('../../scripts/assets/*.mjs')",
+  ]) {
+    assert.equal(importsCardScript(real), true, real);
+  }
+  for (const comment of ['// made at dev time by scripts/assets/account-cards.mjs', '/* see scripts/assets/account-cards.mjs */', ' * scripts/assets/account-cards.mjs runs at dev time']) {
+    assert.equal(importsCardScript(comment), false, comment);
+  }
+  const importers = [...walk('src', /\.(ts|tsx|astro|mjs|js)$/), 'astro.config.mjs'].filter((f) => importsCardScript(readFileSync(join(ROOT, f), 'utf8')));
   assert.deepEqual(importers, []);
   const before = readdirSync(join(ROOT, DIR)).map((f) => `${f}:${sha256(readFileSync(join(ROOT, DIR, f)))}`);
   const realFetch = globalThis.fetch;
@@ -208,4 +237,37 @@ test('the downloaded crops re-derive byte for byte when the staged sources are p
   assert.deepEqual(result.mismatches, []);
   assert.deepEqual(result.checked, FILES);
   assert.deepEqual(result.skipped, []);
+});
+
+test('the build prunes card files no page names and keeps the ones a page uses', () => {
+  const dist = mkdtempSync(join(tmpdir(), 'card-originals-'));
+  try {
+    mkdirSync(join(dist, '_astro'));
+    mkdirSync(join(dist, 'player-log'));
+    for (const f of ['card-1.AbCd-12_.webp', 'card-1.AbCd-12__Z1x2.webp', 'card-3.Xy_9zzzz.webp', 'card-5.CEMSqRXN.webp', 'eula.Qq1.webp']) {
+      writeFileSync(join(dist, '_astro', f), 'x');
+    }
+    writeFileSync(join(dist, 'player-log/index.html'), '<img srcset="/_astro/card-1.AbCd-12__Z1x2.webp 128w"><img src="/_astro/card-3.Xy_9zzzz.webp">');
+    assert.deepEqual(pruneCardOriginals(dist).sort(), ['card-1.AbCd-12_.webp', 'card-5.CEMSqRXN.webp']);
+    // the resized copy and the original a page links stay; a non-card image is not this step's business
+    assert.deepEqual(readdirSync(join(dist, '_astro')).sort(), ['card-1.AbCd-12__Z1x2.webp', 'card-3.Xy_9zzzz.webp', 'eula.Qq1.webp']);
+    assert.deepEqual(pruneCardOriginals(join(dist, 'missing')), []);
+  } finally {
+    rmSync(dist, { recursive: true, force: true });
+  }
+});
+
+test('dist ships no card file a page does not name, and nothing of card-5 (the innkeeper waits for PL-8)', (t) => {
+  if (!existsSync(join(ROOT, 'dist/_astro'))) {
+    t.skip('no build in dist/');
+    return;
+  }
+  const files = walk('dist', /./);
+  const text = files.filter((f) => /\.(html|js|mjs|css|json|xml|txt|webmanifest|svg)$/i.test(f)).map((f) => readFileSync(join(ROOT, f), 'utf8')).join('\n');
+  const cards = files.filter((f) => /^dist\/_astro\/card-\d+\./.test(f));
+  assert.deepEqual(cards.filter((f) => !text.includes(f.split('/').pop())), []);
+  assert.deepEqual(cards.filter((f) => f.startsWith('dist/_astro/card-5.')), []);
+  // by content too: the innkeeper crop under no name at all
+  const innkeeper = sha256(readFileSync(join(ROOT, DIR, 'card-5.webp')));
+  assert.deepEqual(files.filter((f) => /\.webp$/.test(f) && sha256(readFileSync(join(ROOT, f))) === innkeeper), []);
 });

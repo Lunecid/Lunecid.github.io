@@ -59,4 +59,14 @@ describe('PL-6: card art lookup', () => {
     const image = await cardArt(meta('card-3.webp'));
     expect(image).toMatchObject({ srcSet: '/_astro/card-3.webp?w=128 128w, /_astro/card-3.webp?w=256 256w', sizes: CARD_ART_SIZES, width: 256, height: 280 });
   });
+
+  it('the build imports exactly the cards CARD_ART maps (an imported image ships even unused; card-5 waits for PL-8)', () => {
+    const source = readFileSync(join(process.cwd(), 'src/lib/account-cards.ts'), 'utf8');
+    const globs = [...source.matchAll(/import\.meta\.glob<ImageMetadata>\(\s*\[([^\]]*)\]/g)];
+    expect(globs).toHaveLength(1);
+    const listed = [...(globs[0]?.[1] ?? '').matchAll(/'\.\.\/assets\/account-cards\/([^'*]+)\.webp'/g)].map((m) => m[1]);
+    expect(listed).toEqual(Object.values(CARD_ART));
+    expect(listed).not.toContain('card-5');
+    expect(source.match(/import\.meta\.glob\s*[<(]/g)).toHaveLength(1);
+  });
 });
