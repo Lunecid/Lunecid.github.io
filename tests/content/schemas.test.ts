@@ -142,6 +142,21 @@ describe('projectSchema', () => {
     expect(project.safeParse({ ...validProject, period: { start: '2025-5', end: '2025-07' } }).success).toBe(false);
   });
 
+  it('keyFigures: value/label/unit strings, bar keys must be facts; metrics rows reference facts', () => {
+    const facts = { a: L('1,000', '1,000'), b: L('250', '250'), r: L('0.8', '0.8') };
+    const keyFigures = [{ value: '{fact.a}', unit: '개', label: '중 {fact.b}개', bar: ['b', 'a'] }, { label: '라벨', value: '{fact.b}', labelFirst: true }];
+    const metrics = { title: '검증', label: '재현율은 0.8이었습니다.', rows: [{ key: '재현율', fact: 'r', highlight: true }] };
+    const ok = project.safeParse({ ...validProject, facts, keyFigures, metrics });
+    expect(ok.success).toBe(true);
+    expect(project.safeParse({ ...validProject, facts, keyFigures: [{ value: '{fact.zzz}', label: 'x' }] }).success).toBe(false); // unknown fact
+    expect(project.safeParse({ ...validProject, facts, keyFigures: [{ value: '{fact.a}', label: '중 {fact.nope}개' }] }).success).toBe(false);
+    expect(project.safeParse({ ...validProject, facts, keyFigures: [{ value: '{fact.a}', label: 'x', bar: ['b', 'nope'] }] }).success).toBe(false);
+    expect(project.safeParse({ ...validProject, facts, keyFigures: [{ value: 3, label: 'x' }] }).success).toBe(false); // strings only
+    expect(project.safeParse({ ...validProject, facts, metrics: { ...metrics, rows: [{ key: 'F1', fact: 'f1' }] } }).success).toBe(false);
+    expect(project.safeParse({ ...validProject, keyFigures: [{ value: '{fact.a}', label: 'x' }] }).success).toBe(false); // no facts at all
+    expect(project.parse(validProject)).not.toHaveProperty('keyFigures');
+  });
+
   it('P-06 F-007 step 2 (contract §1.9): a figure may carry a table whose column headers are localized; cells are strings', () => {
     const figure = { src: '../../../assets/projects/x/y.webp', alt: '그림', caption: '캡션.' };
     const table = { columns: [L('열 가', 'Column A'), L('열 나', 'Column B')], rows: [['행 1', '0.5']] }; // synthetic fixture

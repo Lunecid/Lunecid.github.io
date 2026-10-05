@@ -10,10 +10,15 @@
 // versions. P-07: a back link to the project list above the section caption (SectionLabel) (F-005: '← 02 프로젝트' in the game, '← 프로젝트' in the general version); the game
 // strip reads "FIG · <label>" without a number (owner decision 10 (b)), and an uncited cover shows its own caption
 // sentence (F-042, cover.caption) under the strip.
+// DS-6 (v5): the general version's head is PageHeadData (the back link in the label block, slug + period as the job
+// line, the English title as the display words, the h1 pd-title, the summary as the lead), the cover is the map spread
+// (as the home's, with one red painted square at the frame corner), the key-figures band (slot "band") follows, then
+// the overview table — its 내 역할 row's head on yellow paint — with the award badge (real text) in the rail.
 import type { ImageMetadata } from 'astro';
 import { Picture } from 'astro:assets';
 import FigureTable from '../common/FigureTable.astro';
 import SectionLabel from '../hud/SectionLabel.astro';
+import PageHeadData from '../data/PageHeadData.astro';
 import type { Lang } from '../../i18n/ui';
 import { t, type Localized } from '../../i18n/utils';
 import { editorialFigureLabel } from '../../lib/figures';
@@ -32,6 +37,10 @@ interface Props {
    * uncited cover's own caption sentence (P-07 F-042, cover.caption).
    */
   figure?: { src: ImageMetadata; alt: string; label?: string; number?: number; caption?: string; table?: { columns: Localized[]; rows: string[][] } };
+  /** General version (DS-6): the Latin display words of the head (the project's English title). */
+  display?: string;
+  /** General version (DS-6): the head's job line (slug and period). */
+  job?: string[];
   award?: {
     name: string;
     certificateId?: CertificateId;
@@ -45,7 +54,15 @@ interface Props {
   };
 }
 
-const { lang, variant, title, rows, figure, award } = Astro.props;
+const { lang, variant, title, rows, figure, award, display, job } = Astro.props;
+// DS-6: the badge shows the award's name with its parenthesised part on a small second line (one string, split).
+const awardMatch = award ? /^(.*?)\s*(\(.*\))$/.exec(award.name) : null;
+const awardMain = awardMatch ? awardMatch[1] : award?.name;
+const awardSmall = awardMatch ? awardMatch[2] : undefined;
+// DS-6: the 내 역할 / My role row is marked for the yellow painted head cell.
+const roleLabel = t(lang, 'project.role');
+/** DS-6: the cover spread spans the page width (as the home's map spread). */
+const CASE_SPREAD_SIZES = '(min-width: 1248px) 984px, (min-width: 734px) calc(82vw - 70px), calc(100vw - 66px)';
 const shownRows = rows.slice(0, 6);
 const figWidths = figure ? fitWidths([560, 840, 1120], sourceSize(figure.src).width) : [];
 const label = figure?.label?.trim() ?? '';
@@ -138,53 +155,23 @@ const backNum = String(getVariant(variant).nav.findIndex((item) => item.key === 
     </div>
   </section>
 ) : (
-  <section id="details" class="pd-ed ed-sec" aria-labelledby="pd-title">
-    <div class="container pd-ed__grid">
-      <div class="pd-ed__head">
-        <a class="ed-link" href={backHref}><span aria-hidden="true">←</span> {t(lang, 'nav.projects')}</a>
-        <SectionLabel variant={variant} en={captionFor(getVariant(variant), 'projectDetails', lang)} />
-        <h1 id="pd-title" class="pd-ed__title" data-serif>{title}</h1>
-        {hasLead && <div class="pd-ed__lead"><slot /></div>}
-      </div>
-      <table class="ed-table pd-ed__table">
-        <caption class="sr-only">{`${title} · ${t(lang, 'section.projectDetails.title')}`}</caption>
-        <tbody>
-          {shownRows.map((row) => (
-            <tr>
-              <th scope="row">{row.label}</th>
-              <td>{row.value}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-      {award && (
-        <div class="pd-ed__award">
-          <p class="pd-ed__award-name">{award.name}</p>
-          {award.certificateId && award.certificateHref && (
-            <a
-              class="ed-link"
-              href={award.certificateHref}
-              data-cert-id={award.certificateId}
-              data-viewer="certificates"
-              data-viewer-w={award.certificateWidth}
-              data-viewer-h={award.certificateHeight}
-              data-viewer-srcset={award.certificateSrcSet}
-              data-viewer-sizes={award.certificateSizes}
-              data-viewer-label={t(lang, 'modal.certificate')}
-              data-viewer-caption={award.certificateCaption}
-              data-viewer-alt={award.certificateAlt}
-              aria-haspopup="dialog"
-            >{t(lang, 'action.viewCertificate')}<span class="sr-only"> · {award.name}</span></a>
-          )}
-        </div>
-      )}
+  <section id="details" class="pd-ed ed-sec ed-case" aria-labelledby="pd-title">
+    <div class="container">
+      <PageHeadData lang={lang} caption={captionFor(getVariant(variant), 'projectDetails', lang)} title={title} display={display ?? title} titleId="pd-title" job={job}>
+        <a slot="rail" class="ed-link pd-ed__back" href={backHref}><span aria-hidden="true">←</span> {t(lang, 'nav.projects')}</a>
+        {hasLead && <div class="ed-phead__lead pd-ed__lead"><slot /></div>}
+      </PageHeadData>
       {figure && (
-        <figure id={figureId} class="ed-figure pd-ed__fig">
-          <Picture class="pd-ed__img" src={figure.src} alt={figure.alt} formats={['avif', 'webp']} fallbackFormat="webp" widths={figWidths} sizes={DETAIL_FIGURE_SIZES} priority />
+        <figure id={figureId} class="ed-figure ed-spread pd-ed__fig">
+          <i class="ed-spread__y" aria-hidden="true"></i>
+          <div class="ed-spread__img">
+            <Picture class="pd-ed__img" src={figure.src} alt={figure.alt} formats={['avif', 'webp']} fallbackFormat="webp" widths={figWidths} sizes={CASE_SPREAD_SIZES} priority />
+            <i class="ed-spread__sq" aria-hidden="true"></i>
+          </div>
           {figure.number !== undefined && figure.caption ? (
-            <figcaption class="ed-figcap"><span class="ed-figcap__num">{editorialFigureLabel(lang, figure.number)}</span> {figure.caption}</figcaption>
+            <figcaption class="ed-figcap ed-spread__cap"><span class="ed-figcap__num">{editorialFigureLabel(lang, figure.number)}</span> {figure.caption}</figcaption>
           ) : figure.caption && (
-            <figcaption class="ed-figcap">{figure.caption}</figcaption>
+            <figcaption class="ed-figcap ed-spread__cap">{figure.caption}</figcaption>
           )}
           {/* P-06 F-007 step 2 (P2-5 review): the same data table as the game cover, in the editorial tone. */}
           {figure.table && figure.number !== undefined && (
@@ -192,6 +179,47 @@ const backNum = String(getVariant(variant).nav.findIndex((item) => item.key === 
           )}
         </figure>
       )}
+    </div>
+    <slot name="band" />
+    <div class="container ed-g pd-ed__ovw">
+      <div class="pd-ed__rail">
+        {award && (
+          <div class="pd-ed__award">
+            <p class="ed-stamp"><span class="ed-stamp__ink" data-paint-text>{awardMain}{awardSmall && <span class="ed-stamp__small">{awardSmall}</span>}</span></p>
+            {award.certificateId && award.certificateHref && (
+              <a
+                class="ed-link"
+                href={award.certificateHref}
+                data-cert-id={award.certificateId}
+                data-viewer="certificates"
+                data-viewer-w={award.certificateWidth}
+                data-viewer-h={award.certificateHeight}
+                data-viewer-srcset={award.certificateSrcSet}
+                data-viewer-sizes={award.certificateSizes}
+                data-viewer-label={t(lang, 'modal.certificate')}
+                data-viewer-caption={award.certificateCaption}
+                data-viewer-alt={award.certificateAlt}
+                aria-haspopup="dialog"
+              >{t(lang, 'action.viewCertificate')}<span class="sr-only"> · {award.name}</span></a>
+            )}
+          </div>
+        )}
+      </div>
+      <table class="ed-table pd-ed__table">
+        <caption class="sr-only">{`${title} · ${t(lang, 'section.projectDetails.title')}`}</caption>
+        <tbody>
+          {shownRows.map((row) => (
+            row.label === roleLabel ? (
+              <tr class="pd-ed__hl"><th scope="row" data-paint-text>{row.label}</th><td>{row.value}</td></tr>
+            ) : (
+              <tr>
+                <th scope="row">{row.label}</th>
+                <td>{row.value}</td>
+              </tr>
+            )
+          ))}
+        </tbody>
+      </table>
     </div>
   </section>
 )}

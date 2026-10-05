@@ -48,6 +48,28 @@ audience:
   game: 'In a game, the same structure applies to churn prediction: players who look likely to leave but are still here can be read as a list to act on first, not as model error.'
   research: 'I built 32 features at two radii (300 m and 50 m) for about 240,000 points placed every 30 m along Busan''s roads, and evaluated XGBoost with spatial cross-validation over 10 geographic blocks. Points predicted as high-risk without a recorded accident were not discarded as errors but split by school-zone status, and those outside a school zone became policy blind-spot candidates.'
 status: 'published'
+facts:
+  points: { ko: '240,064', en: '240,064' }
+  positives: { ko: '61,848', en: '61,848' }
+  sources: { ko: '16', en: '16' }
+  features: { ko: '32', en: '32' }
+  blocks: { ko: '10', en: '10' }
+  recall: { ko: '0.87', en: '0.87' }
+  precision: { ko: '0.62', en: '0.62' }
+  f1: { ko: '0.72', en: '0.72' }
+# DS-6: the general case study's key-figures band (every number a fact above; labels are fragments of this body).
+keyFigures:
+  - { value: '{fact.points}', unit: 'points', label: '{fact.positives} carried an accident label', bar: [positives, points] }
+  - { value: '{fact.sources}', label: 'public datasets' }
+  - { value: '{fact.features}', label: 'features' }
+  - { value: '{fact.blocks}', label: 'geographic blocks' }
+metrics:
+  title: 'Spatial block cross-validation'
+  label: 'The model found most of the areas where accidents actually happened: under spatial block cross-validation, recall on accident areas was 0.87, with precision 0.62 and F1 0.72.'
+  rows:
+    - { key: 'Recall', fact: recall }
+    - { key: 'Precision', fact: precision }
+    - { key: 'F1', fact: f1, highlight: true }
 ---
 
 ## Question

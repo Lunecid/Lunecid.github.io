@@ -2,7 +2,8 @@
 // Links at the end of a case study (spec §3: every case study ends with its GitHub link): repository, report and slides in
 // the same tab, as cut-corner outline buttons in the centred reading column shared with the body (P1-7).
 // No links → a short "저장소 비공개 / Private repository" note without the #links id (contract §5.4).
-// P2-6: the general version draws them as underlined text links with ↗ in the editorial reading column (.ed-prose).
+// P2-6: the general version draws them as underlined text links with ↗; DS-6 (v5): a section with its rail (number +
+// chip), the links as rows over an ink rule in the main column.
 import SectionHead from '../hud/SectionHead.astro';
 import type { Lang } from '../../i18n/ui';
 import { t } from '../../i18n/utils';
@@ -36,13 +37,15 @@ const items = [
         </ul>
       </section>
     ) : (
-      <section id="links" class="ed-prose" aria-labelledby="links-title">
-        <SectionHead variant={variant} id="links-title" caption={captionFor(getVariant(variant), 'links', lang)} title={t(lang, 'project.links')} />
-        <ul class="ed-links plinks__list" role="list">
-          {items.map((item) => (
-            <li><a class="ed-link" href={item.href}>{item.label} <span aria-hidden="true">↗</span></a></li>
-          ))}
-        </ul>
+      <section id="links" class="ed-sec plinks-ed" aria-labelledby="links-title">
+        <div class="container">
+          <SectionHead variant={variant} id="links-title" caption={captionFor(getVariant(variant), 'links', lang)} title={t(lang, 'project.links')} />
+          <ul class="ed-links plinks__list" role="list">
+            {items.map((item) => (
+              <li><a class="ed-link" href={item.href}>{item.label} <span aria-hidden="true">↗</span></a></li>
+            ))}
+          </ul>
+        </div>
       </section>
     )
   ) : variant === 'game' ? (

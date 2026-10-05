@@ -1,0 +1,34 @@
+---
+/**
+ * The case-study key-figures band (v5, DS-6): a full-width neutral band (--ed-n-100) with the project's stat tiles (the
+ * first with its proportion bar) and the metric bars (the highlighted row black with a red bar). Data from the
+ * project's frontmatter only (src/lib/key-figures.ts). The metric block is one image to assistive technology: its
+ * aria-label is the body's own result sentence; its title and rows are aria-hidden. No scoped <style>: editorial.css.
+ */
+import type { ResolvedKeyFigures } from '../../lib/key-figures';
+import StatTiles from './StatTiles.astro';
+
+interface Props {
+  figures: ResolvedKeyFigures | null;
+}
+const { figures } = Astro.props;
+const pct = (share: number): string => `${(share * 100).toFixed(2).replace(/\.?0+$/, '')}%`;
+---
+{figures && (
+  <div class="ed-band">
+    <div class="container ed-g ed-band__grid">
+      <div class="ed-band__rail" aria-hidden="true"></div>
+      <StatTiles items={figures.tiles} tone="band" />
+      {figures.metrics && (
+        <div class="ed-metric" role="img" aria-label={figures.metrics.label}>
+          <p class="ed-metric__title" aria-hidden="true">{figures.metrics.title}</p>
+          <ol aria-hidden="true">
+            {figures.metrics.rows.map((row) => (
+              <li class:list={['ed-metric__row', { 'ed-metric__row--hl': row.highlight }]}><span class="ed-metric__k">{row.key}</span><span class="ed-metric__bar"><i style={`--ed-p: ${pct(row.share)}`}></i></span><span class="ed-metric__v">{row.value}</span></li>
+            ))}
+          </ol>
+        </div>
+      )}
+    </div>
+  </div>
+)}

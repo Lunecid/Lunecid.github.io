@@ -550,3 +550,86 @@
   :root[data-variant="data"] .ed-card--lead .ed-card__img::before,
   :root[data-variant="data"] .ed-card--lead .ed-card__img::after { display: none !important; }
 }
+
+/* ══ v5 case study (DS-6): the head and the map spread, the key-figures band with the metric bars, the overview table with
+   the 내 역할 row on yellow paint and the award badge in the rail, the body with hanging section numbers ══ */
+:root[data-variant="data"] .ed-case { padding-block: 40px 0; }
+:root[data-variant="data"] .ed-case .ed-display { font-size: var(--fs-ed-h1); }
+:root[data-variant="data"] .pd-ed__back { margin: -12px 0 2px; }
+:root[data-variant="data"] .ed-case .pd-ed__lead p { margin: 0; }
+:root[data-variant="data"] .ed-case .ed-spread { margin-top: 32px; }
+/* the one red painted square at the frame corner, half outside so the map stays readable */
+:root[data-variant="data"] .ed-spread__sq { position: absolute; left: -14px; bottom: 28px; width: 32px; height: 32px; background: var(--ed-paint-rh); -webkit-mask-box-image: var(--ed-rag); pointer-events: none; }
+/* the band: a full-width neutral band; the tiles (white) and the metric bars beside them */
+:root[data-variant="data"] .ed-band { margin-top: var(--section-pad-y); background: var(--ed-n-100); }
+:root[data-variant="data"] .ed-band__grid { padding-block: 40px; row-gap: 24px; }
+:root[data-variant="data"] .ed-band .ed-stats { margin-top: 0; }
+:root[data-variant="data"] .ed-stat__bar { position: relative; display: block; height: 8px; margin-top: 8px; background: var(--ed-line); }
+:root[data-variant="data"] .ed-stat__bar i { position: absolute; left: 0; top: 0; bottom: 0; width: var(--ed-p); background: var(--ed-black); }
+:root[data-variant="data"] .ed-metric { padding: 16px 18px 14px; background: var(--ed-bg); border: 1px solid var(--ed-line); }
+:root[data-variant="data"] .ed-metric__title { font-size: var(--fs-label); font-weight: 600; line-height: 1.5; color: var(--ed-ink); }
+:root[data-variant="data"] .ed-metric ol { margin-top: 10px; }
+:root[data-variant="data"] .ed-metric__row { display: grid; grid-template-columns: 4.6em minmax(0, 1fr) 3em; align-items: center; gap: 0 10px; min-height: 34px; padding-inline: 8px; }
+:root[data-variant="data"] .ed-metric__k { font-size: var(--fs-label); font-weight: 700; line-height: 1; color: var(--ed-ink); }
+:root[data-variant="data"] .ed-metric__v { text-align: right; font-family: var(--font-ed-display); font-size: var(--fs-body); font-weight: 900; line-height: 1; color: var(--ed-ink); font-variant-numeric: tabular-nums; }
+:root[data-variant="data"] .ed-metric__bar { position: relative; height: 12px; background: var(--ed-n-100); }
+:root[data-variant="data"] .ed-metric__bar i { position: absolute; left: 0; top: 0; bottom: 0; width: var(--ed-p); background: var(--ed-ink-2); }
+:root[data-variant="data"] .ed-metric__row--hl { background: var(--ed-black); }
+:root[data-variant="data"] .ed-metric__row--hl :is(.ed-metric__k, .ed-metric__v) { color: var(--ed-on-color); }
+:root[data-variant="data"] .ed-metric__row--hl .ed-metric__bar { background: var(--ed-ink-2); }
+:root[data-variant="data"] .ed-metric__row--hl .ed-metric__bar i { background: var(--ed-red); }
+/* the overview: the award badge in the rail; the table over an ink rule; 내 역할: a yellow painted head cell */
+:root[data-variant="data"] .pd-ed__ovw { padding-top: var(--section-pad-y); row-gap: 20px; }
+/* ProjectDetails' own scoped rules (P2-6 layout: grid areas, a capped tablet figure) are neutralised here */
+:root[data-variant="data"] .pd-ed__ovw > :is(.pd-ed__rail, .pd-ed__table) { grid-area: auto; }
+:root[data-variant="data"] .ed-case .pd-ed__fig { grid-area: auto; max-width: none; margin-inline: 0; }
+:root[data-variant="data"] .ed-case .pd-ed__fig img { max-height: none; object-fit: fill; }
+:root[data-variant="data"] .pd-ed__award { display: flex; flex-direction: column; align-items: flex-start; gap: 14px; }
+:root[data-variant="data"] .pd-ed__award .ed-stamp__ink { font-size: var(--fs-sub); }
+:root[data-variant="data"] .ed-stamp__small { display: block; font-size: var(--fs-small); font-weight: 700; }
+:root[data-variant="data"] .pd-ed__table { border-top: 2px solid var(--ed-ink); }
+:root[data-variant="data"] .pd-ed__table th,
+:root[data-variant="data"] .pd-ed__table td { padding: 10px 12px; }
+:root[data-variant="data"] .pd-ed__table tbody th[scope="row"] { width: 7em; font-size: var(--fs-label); font-weight: 700; line-height: 1.7; color: var(--ed-ink); white-space: nowrap; }
+:root[data-variant="data"] .pd-ed__table td { font-size: var(--fs-small); line-height: 1.6; }
+:root[data-variant="data"] .pd-ed__hl th[scope="row"] { background: var(--ed-paint-yh); -webkit-mask-box-image: var(--ed-rag); }
+/* the body: the reading column in the main column; each h2 carries the next section number (a page-wide counter, as
+   the section rails after it), hanging in the rail from 734 px; list markers in ink; inline figures framed */
+:root[data-variant="data"] .ed-case__body { padding-top: 40px; }
+:root[data-variant="data"] article.ed-prose--case { max-width: var(--measure); padding: 8px 0 var(--section-pad-y); background: none; }
+:root[data-variant="data"] article.ed-prose--case h2 { position: relative; margin-top: 64px; font-size: var(--fs-ed-h2); font-weight: 800; line-height: 1.2; }
+:root[data-variant="data"] article.ed-prose--case > h2:first-child { margin-top: 0; }
+:root[data-variant="data"] article.ed-prose--case h2::before { counter-increment: ed-sec; content: counter(ed-sec, decimal-leading-zero) / ""; display: block; margin-bottom: 8px; white-space: nowrap; font-family: var(--font-ed-display); font-stretch: 112%; font-size: var(--fs-sub); font-weight: 900; line-height: 1; color: var(--ed-ink); font-variant-numeric: tabular-nums; }
+:root[data-variant="data"] article.ed-prose--case ul,
+:root[data-variant="data"] article.ed-prose--case ol { padding-left: 0; list-style: none; }
+:root[data-variant="data"] article.ed-prose--case li { position: relative; padding-left: 1.6em; }
+:root[data-variant="data"] article.ed-prose--case li + li { margin-top: 10px; }
+:root[data-variant="data"] article.ed-prose--case ul > li::before { content: "" / ""; position: absolute; left: .2em; top: .78em; width: .5em; height: 2px; background: var(--ed-black); }
+:root[data-variant="data"] article.ed-prose--case ol { counter-reset: ed-li; }
+:root[data-variant="data"] article.ed-prose--case ol > li { counter-increment: ed-li; padding-left: 2.4em; }
+:root[data-variant="data"] article.ed-prose--case ol > li::before { content: counter(ed-li, decimal-leading-zero) / ""; position: absolute; left: 0; top: .2em; min-width: 1.9em; text-align: center; font-family: var(--font-ed-display); font-size: var(--fs-label); font-weight: 800; line-height: 1.65; color: var(--ed-on-color); background: var(--ed-black); font-variant-numeric: tabular-nums; }
+:root[data-variant="data"] article.ed-prose--case .ed-figure { margin-block: 36px; padding-top: 0; border-top: 0; }
+:root[data-variant="data"] article.ed-prose--case .ed-figure img { padding: 8px; border: 1px solid var(--ed-line); background: var(--ed-bg); }
+/* contribution, links, next: section rails like every section; the links over an ink rule */
+:root[data-variant="data"] .plinks-ed .plinks__list { display: block; max-width: var(--measure); margin-top: 18px; border-top: 2px solid var(--ed-ink); }
+:root[data-variant="data"] .plinks-ed .plinks__list li { display: flex; align-items: center; min-height: 52px; border-bottom: 1px solid var(--ed-line); }
+:root[data-variant="data"] .ed-pnext { padding-block: 24px var(--section-pad-y); }
+:root[data-variant="data"] .ed-pnext__p { display: flex; justify-content: flex-end; max-width: var(--measure); }
+
+@media (min-width: 734px) {
+  :root[data-variant="data"] .pd-ed__ovw > .pd-ed__rail { grid-column: 1 / 4; }
+  :root[data-variant="data"] .pd-ed__ovw > .pd-ed__table { grid-column: 4 / -1; }
+  :root[data-variant="data"] .ed-band__grid > .ed-band__rail { grid-column: 1 / 4; grid-row: 1 / span 2; }
+  :root[data-variant="data"] .ed-band__grid > :not(.ed-band__rail) { grid-column: 4 / -1; }
+  :root[data-variant="data"] .ed-case__body > article.ed-prose--case { grid-column: 4 / -1; }
+  :root[data-variant="data"] article.ed-prose--case h2::before { position: absolute; right: calc(100% + 48px); top: .1em; margin: 0; font-size: var(--fs-ed-h2); }
+  :root[data-variant="data"] .ed-pnext > .ed-pnext__p { grid-column: 4 / -1; }
+}
+@media (min-width: 1068px) {
+  :root[data-variant="data"] .ed-band__grid > .ed-stats { grid-column: 4 / 10; }
+  :root[data-variant="data"] .ed-band__grid > .ed-metric { grid-column: 10 / -1; align-self: stretch; }
+  :root[data-variant="data"] article.ed-prose--case h2::before { right: calc(100% + 64px); }
+}
+@media print {
+  :root[data-variant="data"] .ed-spread__sq { display: none !important; }
+}

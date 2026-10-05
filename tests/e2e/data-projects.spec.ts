@@ -64,7 +64,7 @@ test.describe('general projects page (P2-6)', () => {
 
   test('a general case study: editorial head, no game-team block, the certificate viewer on white, Back-safe', async ({ page }) => {
     await page.goto(dataPath('/projects/school-zone-blindspots/'), { waitUntil: 'networkidle' });
-    await expect(page.locator('#details.pd-ed h1[data-serif]')).toHaveCount(1);
+    await expect(page.locator('#details.pd-ed h1#pd-title:not([data-serif])')).toHaveCount(1); // DS-6 (named): SB Sans, no data-serif
     await expect(page.locator('#for-game-teams')).toHaveCount(0);
     // ImageViewer (0b2d199): only an a[data-viewer] is intercepted; the dialog is dialog.image-viewer, with #view-<id> history.
     await page.locator('#details [data-viewer="certificates"]').click();
@@ -76,5 +76,43 @@ test.describe('general projects page (P2-6)', () => {
     expect(await dialog.locator('.image-viewer__cap').evaluate((el) => getComputedStyle(el).color)).toBe('rgb(20, 20, 20)');
     await page.keyboard.press('Escape');
     await expect(page).not.toHaveURL(/#view-/);
+  });
+
+  test('DS-6: school-zone at 375/1280 — band, metric, badge, hanging numbers; no overflow; the certificate viewer opens and returns focus', async ({ page }) => {
+    for (const width of [375, 1280]) {
+      await page.setViewportSize({ width, height: 900 });
+      await page.goto(dataPath('/projects/school-zone-blindspots/'), { waitUntil: 'networkidle' });
+      await expect(page.locator('#details .ed-band .ed-stat')).toHaveCount(4);
+      await expect(page.locator('#details .ed-band .ed-stat__bar')).toHaveCount(1);
+      await expect(page.locator('#details .ed-metric[role="img"]')).toHaveAttribute('aria-label', /재현율은 0\.87, 정밀도는 0\.62, F1은 0\.72/);
+      await expect(page.locator('#details .ed-metric__row--hl .ed-metric__k')).toHaveText('F1');
+      await expect(page.locator('#details .ed-stamp__ink')).toContainText('최우수상');
+      await expect(page.locator('#details tr.pd-ed__hl th')).toHaveText('내 역할');
+      // the band sits between the spread and the overview table
+      const order = await page.evaluate(() => ['.ed-spread', '.ed-band', '.pd-ed__table'].map((sel) => document.querySelector(sel)!.getBoundingClientRect().top));
+      expect(order[0]).toBeLessThan(order[1]!);
+      expect(order[1]).toBeLessThan(order[2]!);
+      // the body's section numbers: one per h2, in the rail from 734 px (left of the column), above the title on phones
+      const hn = await page.locator('article.ed-prose--case h2').evaluateAll((hs) =>
+        hs.map((h) => { const r = h.getBoundingClientRect(); const b = getComputedStyle(h, '::before'); return { pos: b.position, display: b.display, left: r.left, content: b.content }; }),
+      );
+      expect(hn.length).toBe(7);
+      for (const h of hn) {
+        expect(h.content).toMatch(/counter\(ed-sec/);
+        if (width === 1280) expect(h.pos).toBe('absolute');
+        else expect(h.pos).toBe('static');
+      }
+      // the sections after the body continue the count (08, 09 in the prototype): two more openers
+      await expect(page.locator('#research-contribution .ed-rail__n, #links .ed-rail__n')).toHaveCount(2);
+      expect(await page.evaluate(() => document.documentElement.scrollWidth), `${width}: no horizontal scroll`).toBeLessThanOrEqual(width);
+    }
+    const trigger = page.locator('#details [data-viewer="certificates"]');
+    await trigger.focus();
+    await page.keyboard.press('Enter');
+    const dialog = page.locator('dialog.image-viewer[open]');
+    await expect(dialog).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(dialog).toHaveCount(0);
+    await expect(trigger).toBeFocused();
   });
 });

@@ -9,7 +9,8 @@
 import type { StatDef } from '../../data/copy/data/home';
 
 interface Props {
-  items: StatDef[];
+  /** bar (DS-6): a share 0–1 drawn as an aria-hidden proportion bar under the tile (computed from facts, never typed). */
+  items: (StatDef & { bar?: number })[];
   tone: 'plain' | 'figure' | 'band';
   class?: string;
 }
@@ -20,7 +21,7 @@ const { items, tone, class: className } = Astro.props;
     const value = <span class="ed-stat__v">{item.prefix && <small>{item.prefix}</small>}{item.value}{item.unit && <small>{item.unit}</small>}</span>;
     const label = <span class="ed-stat__k">{item.label}</span>;
     return (
-      <li class="ed-stat" data-paint-text={tone === 'figure' && i === 0 ? '' : undefined}>{item.labelFirst ? <Fragment>{label}{value}</Fragment> : <Fragment>{value}{label}</Fragment>}</li>
+      <li class="ed-stat" data-paint-text={tone === 'figure' && i === 0 ? '' : undefined}>{item.labelFirst ? <Fragment>{label}{value}</Fragment> : <Fragment>{value}{label}</Fragment>}{item.bar !== undefined && <span class="ed-stat__bar" aria-hidden="true"><i style={`--ed-p: ${(item.bar * 100).toFixed(2)}%`}></i></span>}</li>
     );
   })}
 </ul>
