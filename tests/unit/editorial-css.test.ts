@@ -78,9 +78,15 @@ describe('src/styles/editorial.css (P2-1, spec §8)', () => {
 
   it('is imported by DataLayout only, and DataLayout imports neither hud.css nor read.css', () => {
     const data = read('src/layouts/DataLayout.astro');
-    expect(data).toMatch(/import '\.\.\/styles\/editorial\.css';/);
+    // Named change (data CSS external): DataLayout links data-site.css (?url), which bundles editorial.css + paint.css.
+    expect(data).toMatch(/import dataSiteCss from '\.\.\/styles\/data-site\.css\?url';/);
+    expect(data).toMatch(/<link rel="stylesheet" href=\{dataSiteCss\} \/>/);
+    expect(read('src/styles/data-site.css')).toMatch(/@import '\.\/editorial\.css';/);
     expect(data).not.toMatch(/styles\/(hud|read)\.css/);
-    for (const f of ['BaseLayout', 'NeutralLayout']) expect(read(`src/layouts/${f}.astro`), f).not.toContain('editorial.css');
+    for (const f of ['BaseLayout', 'NeutralLayout']) {
+      expect(read(`src/layouts/${f}.astro`), f).not.toContain('editorial.css');
+      expect(read(`src/layouts/${f}.astro`), f).not.toContain('data-site.css');
+    }
   });
 
   it('re-colours the plain research components on general pages (P2-5)', () => {

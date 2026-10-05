@@ -78,7 +78,9 @@ describe('brush paint (scripts/paint/paint.mjs → src/styles/paint.css, DS-2)',
     expect(splitSelectors(rules[0]!.selector)).toEqual([SCOPE]);
     expect([...rules[0]!.decls.keys()].filter((name) => !name.startsWith('--'))).toEqual([]);
     expect(rules[0]!.decls.size).toBe(6 + 1 + 2 + 6);
-    expect(read('src/layouts/DataLayout.astro')).toMatch(/import '\.\.\/styles\/paint\.css';/);
+    // Named change (data CSS external): paint.css reaches data pages through data-site.css, which DataLayout links.
+    expect(read('src/styles/data-site.css')).toMatch(/@import '\.\/paint\.css';/);
+    expect(read('src/layouts/DataLayout.astro')).toMatch(/data-site\.css\?url/);
     for (const f of ['BaseLayout', 'NeutralLayout']) expect(read(`src/layouts/${f}.astro`), f).not.toContain('paint.css');
   });
 });

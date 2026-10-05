@@ -1,6 +1,6 @@
-/* src/styles/editorial.css — the general version's editorial layer (spec §8, contract §4.2). Imported only by
-   DataLayout, which only the data page modules import (Task 2a); every selector is still scoped, as defence in depth,
-   to :root[data-variant="data"] (tests/unit/editorial-css.test.ts). Colours only through tokens.css (--ed-*). Editorial
+/* src/styles/editorial.css — the general version's editorial layer (spec §8, contract §4.2). Bundled with paint.css
+   into data-site.css, the one external stylesheet DataLayout links (only the data page modules import it, Task 2a);
+   every selector is still scoped, as defence in depth, to :root[data-variant="data"] (tests/unit/editorial-css.test.ts). Colours only through tokens.css (--ed-*). Editorial
    markup uses these ed-* blocks and never a HUD (hud.css) or light-HUD (read.css) class. */
 
 /* ── page ── */

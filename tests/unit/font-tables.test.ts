@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 import { buildCmap4, buildName, cmapCodePoints, cmapGlyphs, parseName, sfntTables, woff2Tables } from '../../scripts/fonts/sfnt.mjs';
 import { SOURCES, buildFonts, renameSansRecord, subsetDisplay, subsetSans, subsetSerifKo } from '../../scripts/fonts/build.mjs';
 import { FONT_URL, fontFaceCss } from '../../src/lib/fonts';
-import { ALWAYS_SYMBOLS, DISPLAY_CHARACTERS, PRINTABLE_ASCII, htmlText, isIgnorable, paperSheetHtml, serifHeadHtml, shownText } from '../../scripts/fonts/glyphs.mjs';
+import { ALWAYS_SYMBOLS, DISPLAY_CHARACTERS, PRINTABLE_ASCII, htmlText, isIgnorable, paperSheetHtml, sansCharacters, serifHeadHtml, shownText } from '../../scripts/fonts/glyphs.mjs';
 
 type NameRecord = { platformID: number; encodingID: number; languageID: number; nameID: number; value: string };
 const table = (buf: Buffer, tag: string): Buffer => woff2Tables(buf).get(tag)!;
@@ -238,6 +238,19 @@ describe('glyph collection', () => {
     expect(shown).toContain('본문');
     expect(shown).not.toContain('토스트');
     expect(shown).not.toContain('툴팁');
+  });
+
+  it('the sans set also reads the strings of the linked stylesheets (dist/_astro/*.css: the data pages\' shared sheet)', () => {
+    const dist = mkdtempSync(join(tmpdir(), 'font-glyphs-'));
+    try {
+      mkdirSync(join(dist, '_astro'));
+      writeFileSync(join(dist, 'index.html'), '<html><head><link rel="stylesheet" href="/_astro/data-site.x.css"></head><body>본문</body></html>');
+      writeFileSync(join(dist, '_astro', 'data-site.x.css'), '.a::before{content:"\\2605 똠"}');
+      const set: Set<string> = sansCharacters(dist);
+      for (const ch of ['본', '★', '똠']) expect(set.has(ch)).toBe(true);
+    } finally {
+      rmSync(dist, { recursive: true, force: true });
+    }
   });
 
   it('finds the paper sheet and leaves emoji and invisible characters to other fonts', () => {

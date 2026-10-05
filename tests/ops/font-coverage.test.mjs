@@ -171,6 +171,14 @@ function clientScriptText() {
     .join('');
 }
 
+/** Text of the stylesheets a page links (the data pages' shared data-site sheet), CSS escapes decoded. @param {string} html */
+function linkedStyleText(html) {
+  return [...html.matchAll(/<link\b[^>]*rel="stylesheet"[^>]*href="(\/_astro\/[^"]+\.css)"/g)]
+    .map((m) => readFileSync(join(DIST, ...m[1].split('/').filter(Boolean)), 'utf8'))
+    .join('')
+    .replace(/\\([0-9a-fA-F]{1,6})\s?/g, (_, hex) => String.fromCodePoint(parseInt(hex, 16)));
+}
+
 /**
  * Checks one page's HTML: the sans face must draw every renderable character (plus the client bundles'), the
  * Korean serif (where declared) every Hangul syllable of the paper sheet — each as far as its source font can.
@@ -223,7 +231,8 @@ test('every character a built page can render is in the subset font file that pa
   /** @type {string[]} */
   const failures = [];
   for (const p of builtPages()) {
-    const { problems, warnings } = checkPage(readFileSync(p.file, 'utf8'), scripts);
+    const html = readFileSync(p.file, 'utf8');
+    const { problems, warnings } = checkPage(html, scripts + linkedStyleText(html));
     failures.push(...problems.map((msg) => `${p.route}: ${msg}`));
     for (const msg of warnings) console.warn(`warning: ${p.route}: ${msg}`);
   }

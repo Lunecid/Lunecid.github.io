@@ -1,0 +1,5 @@
+/* The general version's own sheet: the editorial layer and the generated brush-paint textures, bundled into one
+   content-hashed file that DataLayout links (import '…?url'), so every data page shares one cached request instead of
+   inlining ~30 KB of CSS, and game and neutral pages never load it. */
+@import './editorial.css';
+@import './paint.css';

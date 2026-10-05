@@ -16,6 +16,7 @@ const metaTags = (head: string): string[] =>
     .replace(/<style[\s\S]*?<\/style>/g, '')
     .replace(/<script[\s\S]*?<\/script>/g, '')
     .replace(/<link rel="preload"[^>]*>/g, '')
+    .replace(/<link rel="stylesheet"[^>]*>/g, '') // DataLayout's own data sheet (tested below)
     .match(/<title>[^<]*<\/title>|<(?:meta|link)\b[^>]*>/g) ?? [];
 
 describe('DataLayout.astro (P2-1)', () => {
@@ -52,5 +53,11 @@ describe('DataLayout.astro (P2-1)', () => {
   it('has the same meta, title, canonical, hreflang, Open Graph and icon tags as BaseLayout for the same page', async () => {
     const [data, base] = await Promise.all([render(DataLayout), render(BaseLayout)]);
     expect(metaTags(headOf(data))).toEqual(metaTags(headOf(base)));
+  });
+
+  it('links its one shared data stylesheet in <head>; BaseLayout links none', async () => {
+    const [data, base] = await Promise.all([render(DataLayout), render(BaseLayout)]);
+    expect(headOf(data).match(/<link rel="stylesheet"[^>]*>/g)).toHaveLength(1);
+    expect(headOf(base)).not.toMatch(/<link rel="stylesheet"/);
   });
 });
