@@ -162,7 +162,9 @@ test.describe('T1: in-page arrival cue', () => {
       // the number keeps its own (ink) colour; the cue is the square marker in that colour, never a link colour
       expect(await num.evaluate((el) => getComputedStyle(el).color), c.variant).toBe(idle);
       const ink = await resolved(page, 'figure-2', c.variant === 'game' ? 'var(--read-text)' : 'var(--ed-ink)');
-      const link = await resolved(page, 'figure-2', c.variant === 'game' ? 'var(--accent-deep)' : 'var(--ed-accent)');
+      // Named change (GP-3): the case-study prose is a white panel where links are ink with a yellow strip, so the link
+      // colour the cue must not take is the yellow
+      const link = await resolved(page, 'figure-2', c.variant === 'game' ? 'var(--accent)' : 'var(--ed-accent)');
       const m = await marker();
       expect(m.width, `${c.variant}: marker box`).toBeGreaterThan(0);
       expect(m.bg, c.variant).toBe(ink);

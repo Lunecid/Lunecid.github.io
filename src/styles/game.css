@@ -136,6 +136,11 @@
 }
 :root[data-variant="game"] .rh .paper { border-right: 0; border-bottom: 0; border-left: 0; padding: 22px 24px; }
 :root[data-variant="game"] .paper-view__sheet { background-color: var(--gp-w-card); }
+/* the case-study prose band draws its yellow edge inside its box, so the story starts where it did */
+:root[data-variant="game"] article.prose.read { border-top: 0; box-shadow: inset 0 3px 0 var(--accent); }
+/* the details table sits above the story: its edge is drawn inside and its rows keep their own vertical padding, so
+   the panel adds no height and the first heading stays where it was (the repeated class outranks the panel list) */
+:root[data-variant="game"] table.pd__table.pd__table.pd__table { padding: 0 12px; border-top: 0; box-shadow: inset 0 3px 0 var(--accent); }
 /* tables need separate borders for the panel padding to apply */
 :root[data-variant="game"] :is(.creds__table, .skills__table, .jobfit__table, .pd__table) { border-collapse: separate; border-spacing: 0; }
 @media (max-width: 733px) {
@@ -245,6 +250,7 @@
   :root[data-variant="game"] :is(.rh .paper, .rec__pubs, .psum, .creds__table, .skills__table, .jobfit__table, .pub__list, .paper-view__sheet, article.prose.read, .pd__table) {
     border: 1px solid CanvasText;
   }
+  :root[data-variant="game"] table.pd__table.pd__table.pd__table { border-top: 1px solid CanvasText; }
   :root[data-variant="game"] .hud-nav::after, :root[data-variant="game"] .hud-label::after,
   :root[data-variant="game"] .read-section::before, :root[data-variant="game"] .page-head::before,
   :root[data-variant="game"] .page-head::after, :root[data-variant="game"] .page-head__title::before {
@@ -265,7 +271,7 @@
     --hud-text: var(--gp-print-ink); --hud-strong: var(--gp-print-ink); --hud-muted: var(--gp-print-muted); --hud-label: var(--gp-print-muted);
     --paper-bg: var(--gp-print-paper); --paper-ink: var(--gp-print-ink); --paper-muted: var(--gp-print-ink);
     color: var(--gp-print-ink); background-color: var(--gp-print-paper);
-    border-top: 0; clip-path: none;
+    border-top: 0; clip-path: none; box-shadow: none;
   }
   :root[data-variant="game"] :is(.rh .paper, .rec__pubs, .psum, .creds__table, .skills__table, .jobfit__table, .pub__list, .paper-view__sheet, article.prose.read, .pd__table) :is(a:not([class]), .jobfit__ev, .creds__ev) {
     background: none; color: var(--gp-print-ink);

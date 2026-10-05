@@ -507,7 +507,11 @@ test.describe('item 1, straight-cut guard: art is faded at the visible right bou
       };
     }, edge);
     if (tip.width < 1 || tip.height < 1) return 0;
+    // Named change (GP-6): the game palette's edge frame is a fixed overlay in the viewport gutters, not the art; it is
+    // hidden while the art's own edge is measured.
+    await page.evaluate(() => document.querySelector<HTMLElement>('.edge')?.style.setProperty('visibility', 'hidden'));
     const png = await page.screenshot({ clip: tip, scale: 'css' });
+    await page.evaluate(() => document.querySelector<HTMLElement>('.edge')?.style.removeProperty('visibility'));
     const { data, info } = await sharp(png).removeAlpha().raw().toBuffer({ resolveWithObject: true });
     let max = 0;
     for (let y = 0; y < info.height; y += 1) {

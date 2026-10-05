@@ -61,7 +61,9 @@ test.describe('GP-3: white panels', () => {
         el.appendChild(probe);
         const mutedRgb = getComputedStyle(probe).color;
         probe.remove();
-        return { bg: s.backgroundColor, color: s.color, top: `${s.borderTopWidth} ${s.borderTopStyle} ${s.borderTopColor}`, muted: mutedRgb };
+        // the prose band and the details table draw their edge inside the box (inset shadow), so the story keeps its place
+        const top = el.matches('article.prose.read, .pd__table') ? (s.boxShadow.startsWith('rgb(255, 230, 0) 0px 3px 0px 0px inset') ? '3px solid rgb(255, 230, 0)' : s.boxShadow) : `${s.borderTopWidth} ${s.borderTopStyle} ${s.borderTopColor}`;
+        return { bg: s.backgroundColor, color: s.color, top, muted: mutedRgb };
       });
       const label = `${route} ${sel}`;
       expect([WHITE, CARD], label).toContain(look.bg);
