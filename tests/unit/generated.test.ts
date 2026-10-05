@@ -265,11 +265,12 @@ describe('the committed fixture feeds (tests/fixtures/generated, SB_E2E_ACCOUNTS
   const images = Object.fromEntries(imgNames.map((n) => [`/tests/fixtures/generated/accounts/img/${n}`, IMG(n)]));
   const loader = createGeneratedLoader(files, images);
 
-  it('has the four feed files, six e2efixture images and nothing else', () => {
+  // e2efixture07 is named by no feed: the fixture build checks that a left-over picture never ships (accounts.spec.ts)
+  it('has the four feed files, seven e2efixture images and nothing else', () => {
     expect(readdirSync(dir).sort()).toEqual(['accounts', 'links']);
     expect(readdirSync(`${dir}/accounts`).sort()).toEqual(['enka-genshin.json', 'enka-zzz.json', 'img', 'steam.json']);
     expect(readdirSync(`${dir}/links`)).toEqual(['riot.json']);
-    expect(imgNames).toEqual(['e2efixture01.png', 'e2efixture02.png', 'e2efixture03.png', 'e2efixture04.png', 'e2efixture05.png', 'e2efixture06.png']);
+    expect(imgNames).toEqual(['e2efixture01.png', 'e2efixture02.png', 'e2efixture03.png', 'e2efixture04.png', 'e2efixture05.png', 'e2efixture06.png', 'e2efixture07.png']);
   });
 
   it('every feed is accepted, ok, with a ko and an en card named E2E Fixture …, and an old fixed fetchedAt', () => {

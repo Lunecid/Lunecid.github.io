@@ -3,10 +3,12 @@
 // Run after `npm run build`: npm run test:ops.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { existsSync, readdirSync, readFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { basename, join, relative, sep } from 'node:path';
 import sharp from 'sharp';
 import { allRoutes } from '../../src/lib/routes.ts';
+import { pruneFeedImages } from '../../scripts/assets/prune-feed-images.mjs';
 
 const DIST = process.env.DIST_DIR ?? 'dist';
 const IMAGE = /\.(png|jpe?g|webp|avif|gif|svg|ico)$/i;
@@ -27,6 +29,35 @@ test('item 14: every published image is referenced by a page, script, style shee
   const unreferenced = all.filter((f) => IMAGE.test(f) && !text.includes(basename(f))).map(rel);
   // The full-size source PNGs of the character art (about 2.7 MB) were published although nothing linked them.
   assert.deepEqual(unreferenced, [], unreferenced.join('\n'));
+});
+
+test('item 14: the build drops account feed images no page names and keeps the ones a page uses', () => {
+  const root = mkdtempSync(join(tmpdir(), 'feed-images-'));
+  try {
+    const img = join(root, 'generated/accounts/img');
+    const dist = join(root, 'dist');
+    mkdirSync(img, { recursive: true });
+    mkdirSync(join(dist, '_astro'), { recursive: true });
+    mkdirSync(join(dist, 'game/player-log'), { recursive: true });
+    for (const f of ['0a1b2c3d4e5f.png', '1234567890ab.jpg', 'ffffeeeedddd.webp']) writeFileSync(join(img, f), 'x');
+    const astro = [
+      '0a1b2c3d4e5f.Ab_9-xYz.png', // original of a shown row: resized copies only are linked
+      '0a1b2c3d4e5f.Ab_9-xYz_Z1x2.webp', // resized copy a page links
+      '1234567890ab.Qq1-2w3e.jpg', // original of a row no page shows (stale feed, a fifth row)
+      'ffffeeeedddd.R4t5y6u7_Z9.avif', // linked from a script
+      'card-1.Ab12Cd34.webp', // not a feed image: not this step's business
+    ];
+    for (const f of astro) writeFileSync(join(dist, '_astro', f), 'x');
+    writeFileSync(join(dist, 'game/player-log/index.html'), '<img srcset="/_astro/0a1b2c3d4e5f.Ab_9-xYz_Z1x2.webp 96w">');
+    writeFileSync(join(dist, '_astro', 'island.Zz.js'), 'const a="/_astro/ffffeeeedddd.R4t5y6u7_Z9.avif";');
+    assert.deepEqual(pruneFeedImages(dist, img).sort(), ['0a1b2c3d4e5f.Ab_9-xYz.png', '1234567890ab.Qq1-2w3e.jpg']);
+    assert.deepEqual(readdirSync(join(dist, '_astro')).sort(), ['0a1b2c3d4e5f.Ab_9-xYz_Z1x2.webp', 'card-1.Ab12Cd34.webp', 'ffffeeeedddd.R4t5y6u7_Z9.avif', 'island.Zz.js']);
+    // no feed (the dark release) or no build: nothing to do
+    assert.deepEqual(pruneFeedImages(dist, join(root, 'missing')), []);
+    assert.deepEqual(pruneFeedImages(join(root, 'missing'), img), []);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
 });
 
 test('item 21: favicon.ico holds the 16 and 32 px mark; apple-touch-icon.png is an opaque 180 px square', async () => {

@@ -5,11 +5,13 @@ import sitemap from '@astrojs/sitemap';
 import { fontSubsets } from './scripts/fonts/build.mjs';
 import { legacyRedirectStubs } from './scripts/redirects/build.mjs';
 import { cspFinalize } from './scripts/csp/finalize.mjs';
+import { feedImages } from './scripts/assets/prune-feed-images.mjs';
 import { cspDirectives, relayOrigin, scriptResources, STYLE_RESOURCES } from './src/lib/csp.ts';
 import { goatcounterSelfHosted } from './src/lib/public-assets.ts';
 import { satteri } from '@astrojs/markdown-satteri';
 import { baseLinksHastPlugin } from './scripts/markdown/rehype-base-links.mjs';
 import { fileURLToPath } from 'node:url';
+import { join } from 'node:path';
 
 /**
  * AL-8 (plan DV-32): where src/lib/generated.ts reads build-time data (its globs all start with `@generated/`).
@@ -63,6 +65,7 @@ export default defineConfig({
   integrations: [
     react(),
     sitemap({ filter: sitemapFilter, serialize: sitemapSerialize, i18n: { defaultLocale: 'ko', locales: { ko: 'ko', en: 'en' } } }),
+    feedImages(join(GENERATED_DIR, 'accounts/img')), // after the build: drop the feed images no page shows (the glob imports all)
     fontSubsets(), // after the build: subset the page fonts to the characters of the built pages (batch 2)
     cspFinalize(), // AL-1 (C0): re-hash every inline block after the font rewrite; the CSP meta right after <meta charset>
     legacyRedirectStubs(), // P1-13 (A-6): LAST — after the sitemap and the font subsetting, so stubs are in neither

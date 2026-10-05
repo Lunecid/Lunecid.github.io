@@ -69,6 +69,17 @@ test.describe('LINKED ACCOUNTS row — fixture build (SB_E2E_ACCOUNTS=1)', () =>
     expect(shown).toBe(5);
   });
 
+  test('the fixture build publishes only feed images a page names; the picture no feed names (e2efixture07) not at all', () => {
+    const dist = join(process.cwd(), 'dist-e2e-accounts');
+    const walk = (dir: string): string[] => readdirSync(dir, { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? walk(join(dir, e.name)) : [join(dir, e.name)]));
+    const files = walk(dist);
+    const text = files.filter((f) => /\.(html|js|mjs|css|json|xml|txt|webmanifest|svg)$/i.test(f)).map((f) => readFileSync(f, 'utf8')).join('\n');
+    const feedImages = readdirSync(join(dist, '_astro')).filter((f) => f.startsWith('e2efixture'));
+    expect(feedImages.length).toBeGreaterThan(0);
+    expect(feedImages.filter((f) => !text.includes(f))).toEqual([]);
+    expect(feedImages.filter((f) => f.startsWith('e2efixture07.'))).toEqual([]);
+  });
+
   for (const route of ROUTES) {
     test(`${route}: details.acct-tile count = the view model's shown tiles; #acct-status matches it`, async ({ page }) => {
       await page.goto(`${ACCOUNTS_ORIGIN}${route}`, { waitUntil: 'load' });
