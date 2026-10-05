@@ -1,10 +1,10 @@
+// @vitest-environment jsdom
 // The props sprite (MO-36): one same-origin SVG asset holding the six props as symbols. Colours: the role colours
 // (the yellow marks, the cyan glow) are the page's tokens, inherited through <use>; the neutral shading is the asset's
 // own (an image's pixels, not a stylesheet: AGENTS.md's colour-literal rule covers CSS), so the inline global sheet
 // stays small on every page.
 import { readFileSync } from 'node:fs';
 import { gzipSync } from 'node:zlib';
-import { JSDOM } from 'jsdom';
 import { describe, expect, it } from 'vitest';
 
 const SPRITE = readFileSync('src/assets/chooser/props.svg', 'utf8');
@@ -14,8 +14,10 @@ export const PROPS_SPRITE_MAX_GZ = 4600;
 describe('the props sprite (MO-36)', () => {
   it('is well-formed XML (a malformed sprite draws nothing): comments without "--", one root, balanced tags', () => {
     for (const m of SPRITE.matchAll(/<!--([\s\S]*?)-->/g)) expect(m[1]).not.toContain('--');
-    const doc = new JSDOM(SPRITE, { contentType: 'image/svg+xml' }).window.document; // throws on malformed XML
+    const doc = new DOMParser().parseFromString(SPRITE, 'image/svg+xml'); // malformed XML → a <parsererror> document
+    expect(doc.getElementsByTagName('parsererror')).toHaveLength(0);
     expect(doc.documentElement.nodeName).toBe('svg');
+    expect(new DOMParser().parseFromString('<svg><!-- a -- b --></svg>', 'image/svg+xml').getElementsByTagName('parsererror').length, 'the check catches the MO-36 bug').toBeGreaterThan(0);
   });
 
   it('six symbols with unique prefixed ids; no text, image, foreignObject, filter or reference to another file', () => {
