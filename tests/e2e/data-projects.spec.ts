@@ -48,9 +48,12 @@ test.describe('general projects page (P2-6)', () => {
     await page.setViewportSize({ width: 1280, height: 900 });
     await page.goto(dataPath('/projects/'), { waitUntil: 'networkidle' });
     await page.locator('[data-tag-filter] [data-tag="ml"]').click();
+    // A click swaps the cards inside a view transition (the reflow), so wait for the grid to show the ml cards only
+    const count = await page.locator('#project-grid > li[data-tags~="ml"]').count();
+    expect(count).toBeGreaterThan(1);
     const visible = page.locator('#project-grid > li:not([hidden])');
+    await expect(visible).toHaveCount(count);
     await expect(visible.first()).toHaveClass(/ed-card--lead/); // school-zone carries ml: the lead stays first
-    const count = await visible.count();
     await expect(page.locator('[data-tag-filter-status]')).toContainText(String(count));
     await expect(page.locator('[data-tag="ml"]')).toHaveText(/머신러닝/);
     expect(await page.locator('[data-tag="ml"]').evaluate((el) => getComputedStyle(el, '::before').content)).toContain('[x]');
