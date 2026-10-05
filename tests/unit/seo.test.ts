@@ -75,6 +75,7 @@ describe('seo helpers', () => {
         '리그 오브 레전드', 'League of Legends', 'LoL', 'Riot', '배틀그라운드', 'PUBG', 'Steam',
         'HoYoverse', '이터널 리턴', 'Eternal Return', 'Nimble Neuron', '님블뉴런',
         'TFT', 'Teamfight Tactics', '전략적 팀 전투', '하스스톤', 'Hearthstone', 'Blizzard', 'Valve',
+        '블리자드', 'Battle.net', 'BattleTag', '배틀태그',
         'Hatsune Miku', '하츠네 미쿠', '初音ミク',
       ]),
     );
@@ -86,5 +87,25 @@ describe('seo helpers', () => {
     expect(containsTrademark('IEEE CoG 2026')).toBe(false);
     expect(containsTrademark('Player Log · Seongeun Baek')).toBe(false);
     expect(containsTrademark('Engagement Outcome Prediction Case Study · Seongeun Baek')).toBe(false);
+  });
+
+  it('PL-7: a term with a separator matches in a URL or a hash (battle.net, #battle-net)', () => {
+    for (const text of ['battle.net', 'https://example.org/battle.net/', '#battle-net', '/game/battle_net/', 'Battle.net 프로필', 'BATTLE.NET PROFILE']) {
+      expect(containsTrademark(text), text).toBe(true);
+    }
+    expect(containsTrademark('#view-battletag')).toBe(true);
+    expect(containsTrademark('배틀태그 기록')).toBe(true);
+    expect(containsTrademark('블리자드 고지')).toBe(true);
+    expect(containsTrademark('battlement.png')).toBe(false);
+    expect(containsTrademark('battlenet')).toBe(false);
+  });
+
+  it('PL-7: existing results are unchanged ("Player Log" is not LoL; "eula" and "remielle" are not terms)', () => {
+    for (const text of ['Player Log', '/game/player-log/', 'eula', 'remielle', 'card-1.webp', 'gm-2026.webp', 'rank-2018.webp', '#view-gm-2025', 'IEEE CoG 2026', 'steamy.png']) {
+      expect(containsTrademark(text), text).toBe(false);
+    }
+    for (const text of ['/projects/lol/', 'tft-icon.B3a.png', 'x.Steam.png', 'riot api', '원신.png']) {
+      expect(containsTrademark(text), text).toBe(true);
+    }
   });
 });

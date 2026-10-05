@@ -37,6 +37,12 @@ const GHOST_CREDIT = {
   en: 'This site features an adaptation of Hatsune Miku, © Crypton Future Media, Inc. 2007, licensed under a CC BY-NC: https://creativecommons.org/licenses/by-nc/3.0/',
 } as const;
 
+/** Riot row status while the notice is not on the pages: outbound links, no API, assets credited in the paragraph above. */
+const RIOT_STATUS = {
+  ko: "외부 링크만 사용(API 미사용, 에셋은 위 '라이엇 게임즈 에셋')",
+  en: 'Outbound links only (no API; assets: see Riot Games assets)',
+} as const;
+
 function listEn(items: string[]): string {
   return items.length <= 2 ? items.join(' and ') : `${items.slice(0, -1).join(', ')}, and ${items[items.length - 1]}`;
 }
@@ -158,8 +164,9 @@ describe('legal content', () => {
     const on = RIOT_NOTICE_ON_PAGES;
     const ko = raw('ko', 'credits').split('\n').find((l) => l.startsWith('| 라이엇 게임즈 |'));
     const en = raw('en', 'credits').split('\n').find((l) => l.startsWith('| Riot Games |'));
-    expect(ko).toBe(`| 라이엇 게임즈 | <span lang="en">${ui.ko['notice.riot']}</span> | ${on ? 'CoG 논문 페이지에 표시' : '외부 링크만 사용(API·에셋 미사용)'} |`);
-    expect(en).toBe(`| Riot Games | ${ui.en['notice.riot']} | ${on ? 'Shown on the CoG paper page' : 'Outbound links only (no API or assets)'} |`);
+    // The off-page status names the card assets (the cards use Riot assets, so "no assets" no longer holds).
+    expect(ko).toBe(`| 라이엇 게임즈 | <span lang="en">${ui.ko['notice.riot']}</span> | ${on ? 'CoG 논문 페이지에 표시' : RIOT_STATUS.ko} |`);
+    expect(en).toBe(`| Riot Games | ${ui.en['notice.riot']} | ${on ? 'Shown on the CoG paper page' : RIOT_STATUS.en} |`);
     // The research-data paragraph always names the Riot Games API source.
     expect(raw('ko', 'credits')).toContain('Riot Games API</span>로 모은 공개 경기 데이터');
     expect(raw('en', 'credits')).toContain('public match data collected through the Riot Games API');
@@ -425,5 +432,87 @@ describe('account cards and the owner-only relay in privacy and credits', () => 
     }
     expect(body('ko', 'credits')).toContain('플레이 로그의 계정 카드는 아래 출처에서 받은 데이터로 만듭니다. 아래 고지는 이 페이지와 플레이 로그에 함께 표시합니다.');
     expect(body('en', 'credits')).toContain('The account cards on the Player Log are built from the sources below. The notices below are shown on this page and on the Player Log.');
+  });
+});
+
+/** Committed card crops (src/assets/account-cards/, provenance in sources.json); the credits follow file presence. */
+const cardFile = (n: number) => existsSync(join(root, `src/assets/account-cards/card-${n}.webp`));
+const gameRecordImages = readFileSync(join(root, 'src/data/game-records.yaml'), 'utf8').match(/^\s+image: /gm) ?? [];
+
+describe('character cards, Riot assets and game screenshots in credits', () => {
+  it('PL-7: credits name the card art, the Riot assets with the Legal Jibber Jabber notice, and the screenshots with the Blizzard line (ko, en)', () => {
+    const ko = raw('ko', 'credits');
+    const en = raw('en', 'credits');
+    const kob = body('ko', 'credits');
+    const enb = body('en', 'credits');
+    // one H2 for the game art and screenshots; its id carries no trademark (the Riot words stay in the paragraph label)
+    expect(ko).toContain('\n## 게임 그림·스크린샷\n');
+    expect(en).toContain('\n## Game art and screenshots\n');
+    // HoYoverse crops: the cards reuse the credited illustrations
+    if (cardFile(1) && cardFile(2) && has('eula') && has('remielle')) {
+      expect(kob).toContain('플레이 로그 연동 계정 카드의 유라·레미엘 그림은 위 일러스트를 잘라 쓴 것입니다.');
+      expect(enb).toContain("The Eula and Remielle pictures on the Player Log's linked-account cards are crops of the illustrations above.");
+    }
+    // Riot assets: the paragraph, the policy link, then the notice verbatim (lang="en" on the Korean page)
+    expect(cardFile(3) && cardFile(4)).toBe(true);
+    expect(kob).toContain(
+      '**라이엇 게임즈 에셋.** 플레이 로그 연동 계정 카드의 이즈리얼(리그 오브 레전드)과 펭구(전략적 팀 전투) 그림은 라이엇 게임즈가 <span lang="en">Data Dragon</span>으로 공개한 라이엇 게임즈 에셋을 잘라 쓴 것입니다. 라이엇 게임즈의 “Legal Jibber Jabber” 정책에 따라 무료로, 광고 없이 씁니다.',
+    );
+    expect(enb).toContain(
+      "**Riot Games assets.** The Ezreal (League of Legends) and Pengu (Teamfight Tactics) pictures on the Player Log's linked-account cards are crops of Riot Games assets published through Riot's Data Dragon. They are used free of charge and without ads under Riot Games' “Legal Jibber Jabber” policy.",
+    );
+    expect(ko).toContain('[“Legal Jibber Jabber” 정책](https://www.riotgames.com/en/legal)');
+    expect(en).toContain('[“Legal Jibber Jabber” policy](https://www.riotgames.com/en/legal)');
+    expect(ko).toContain(`\n<span lang="en">${ui.ko['notice.riotAssets']}</span>\n`);
+    expect(en).toContain(`\n${ui.en['notice.riotAssets']}\n`);
+    expect(ui.en['notice.riotAssets']).toMatch(/ was created under Riot Games' "Legal Jibber Jabber" policy using assets owned by Riot Games\. Riot Games does not endorse or sponsor this project\.$/);
+    // Hearthstone card art: the official news header it is cropped from
+    expect(cardFile(5)).toBe(true);
+    expect(kob).toContain(
+      '**하스스톤 그림.** 연동 계정 카드의 하스스톤 그림은 블리자드 엔터테인먼트의 하스스톤 공식 소식 글(<https://hearthstone.blizzard.com/en-us/news/24008694>) 머리 이미지에서 여관주인 부분을 잘라 쓴 것입니다.',
+    );
+    expect(enb).toContain(
+      "**Hearthstone art.** The Hearthstone picture on the linked-account cards is a crop of the Innkeeper from the header image of Blizzard Entertainment's official Hearthstone news post (<https://hearthstone.blizzard.com/en-us/news/24008694>).",
+    );
+    // Screenshots: the owner's own captures, as evidence; then the Blizzard line
+    expect(gameRecordImages.length).toBe(3);
+    expect(kob).toContain(
+      "**게임 기록 스크린샷.** '내 게임 업적'의 스크린샷 세 장은 본인이 직접 찍은 전략적 팀 전투(라이엇 게임즈)와 하스스톤(블리자드 엔터테인먼트) 게임 화면으로, 기록의 증거로 보여 줍니다.",
+    );
+    expect(enb).toContain(
+      "**Game record screenshots.** The three screenshots in “My game achievements” are my own captures of Teamfight Tactics (Riot Games) and Hearthstone (Blizzard Entertainment), shown as evidence of the records.",
+    );
+    expect(ko).toContain(`\n<span lang="en">${ui.ko['notice.blizzard']}</span>\n`);
+    expect(en).toContain(`\n${ui.en['notice.blizzard']}\n`);
+    // the Steam card art is the owner's own avatar
+    const valveKo = ko.split('\n').find((l) => l.startsWith('| Valve(Steam) |')) ?? '';
+    const valveEn = en.split('\n').find((l) => l.startsWith('| Valve (Steam) |')) ?? '';
+    expect(valveKo).toContain('Steam 카드에는 본인의 Steam 아바타를 보여 줍니다.');
+    expect(valveEn).toContain('The Steam card shows my own Steam avatar.');
+    // no logo is credited, because none is used
+    for (const t of [kob, enb]) expect(t).not.toMatch(/(라이엇|블리자드|하스스톤|Riot|Blizzard|Hearthstone)[^.\n]{0,40}(로고|logo)/i);
+  });
+
+  it('PL-7: the Riot status no longer says that no assets are used', () => {
+    for (const lang of LANGS) {
+      const row = raw(lang, 'credits').split('\n').find((l) => l.startsWith(lang === 'ko' ? '| 라이엇 게임즈 |' : '| Riot Games |')) ?? '';
+      expect(row, lang).not.toContain(lang === 'ko' ? '에셋 미사용' : 'no API or assets');
+      if (!RIOT_NOTICE_ON_PAGES) expect(row.endsWith(`| ${RIOT_STATUS[lang]} |`), lang).toBe(true);
+    }
+    // the paragraph the status points to sits above the table
+    for (const lang of LANGS) {
+      const text = raw(lang, 'credits');
+      const label = lang === 'ko' ? '**라이엇 게임즈 에셋.**' : '**Riot Games assets.**';
+      const table = lang === 'ko' ? '| 라이엇 게임즈 |' : '| Riot Games |';
+      expect(text.indexOf(label), lang).toBeGreaterThan(-1);
+      expect(text.indexOf(label), lang).toBeLessThan(text.indexOf(table));
+    }
+  });
+
+  it('PL-7: credits were updated with the card and screenshot text (frontmatter date on or after it)', () => {
+    for (const lang of LANGS) {
+      const updated = (readFrontmatter(file(lang, 'credits')) as { updated: string }).updated;
+      expect(updated >= '2026-10-05', lang).toBe(true);
+    }
   });
 });

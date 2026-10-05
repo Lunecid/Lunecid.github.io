@@ -1141,7 +1141,7 @@ function trademarkTerms() {
 function containsTrademark(text, terms) {
   const haystack = text.toLowerCase().replace(/[-_./#]+/g, ' ');
   return terms.some((term) => {
-    const needle = term.toLowerCase();
+    const needle = term.toLowerCase().replace(/[-_./#]+/g, ' ');
     if (!/^[\x20-\x7e]+$/.test(term)) return haystack.includes(needle);
     return new RegExp(`(^|[^a-z0-9])${needle.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}([^a-z0-9]|$)`).test(haystack);
   });

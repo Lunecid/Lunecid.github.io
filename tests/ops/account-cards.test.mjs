@@ -38,7 +38,7 @@ function trademarkTerms() {
 function containsTrademark(text, terms) {
   const haystack = text.toLowerCase().replace(/[-_./#]+/g, ' ');
   return terms.some((term) => {
-    const needle = term.toLowerCase();
+    const needle = term.toLowerCase().replace(/[-_./#]+/g, ' ');
     if (!/^[\x20-\x7e]+$/.test(term)) return haystack.includes(needle);
     return new RegExp(`(^|[^a-z0-9])${needle.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}([^a-z0-9]|$)`).test(haystack);
   });
@@ -48,11 +48,12 @@ function containsTrademark(text, terms) {
  * needles appear only in the allowed files: in src only in the manifest, in scripts only in the two asset scripts, and
  * never in src/**\/*.{ts,tsx,astro}, astro.config.mjs or dist/** (dist is checked when a build is present).
  */
-function assertConfined(needles) {
+function assertConfined(needles, links = []) {
   const ALLOWED = ['scripts/download-external-assets.mjs', 'scripts/assets/account-cards.mjs', 'src/assets/account-cards/sources.json'];
   const hit = (file) => {
-    const buf = readFileSync(join(ROOT, file));
-    return needles.some((n) => buf.includes(n));
+    // an outbound link the credits cite is text, not a fetch: it is taken out before the needles are looked for
+    const text = links.reduce((t, url) => t.split(url).join(''), readFileSync(join(ROOT, file), 'latin1'));
+    return needles.some((n) => text.includes(n));
   };
   const scanned = [...walk('src', /./), ...walk('scripts', /./), 'astro.config.mjs', ...walk('dist', /./)];
   assert.ok(scanned.some((f) => f.endsWith('.astro')) && scanned.includes('astro.config.mjs'));
@@ -143,7 +144,22 @@ test('nothing fetches Data Dragon at build or run time', () => {
 });
 
 test('nothing fetches a Blizzard host at build or run time', () => {
-  assertConfined(['akamaihd', 'blizzard.com']);
+  assertConfined(['akamaihd', 'blizzard.com'], [PAGE]);
+});
+
+test('the credits cite the innkeeper news page only as a link (Markdown autolink; in dist an <a href> and its text)', () => {
+  for (const lang of ['ko', 'en']) {
+    const md = readFileSync(join(ROOT, `src/content/legal/${lang}/credits.md`), 'utf8');
+    assert.equal(md.split(PAGE).length - 1, 1, lang);
+    assert.ok(md.includes(`(<${PAGE}>)`), lang);
+  }
+  for (const page of ['dist/credits/index.html', 'dist/en/credits/index.html']) {
+    if (!existsSync(join(ROOT, page))) continue;
+    const html = readFileSync(join(ROOT, page), 'utf8');
+    const rest = html.split(`href="${PAGE}"`).join('').split(`>${PAGE}</a>`).join('');
+    assert.equal(rest.includes(PAGE), false, page);
+    assert.doesNotMatch(html, /<img[^>]+blizzard\.com/, page);
+  }
 });
 
 test('the card script is dev-time only: no fetch, never imported by the site, importing it writes nothing', async () => {

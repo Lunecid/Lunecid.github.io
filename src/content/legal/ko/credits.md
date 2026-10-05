@@ -1,14 +1,14 @@
 ---
 title: 출처·고지
 lang: ko
-updated: '2026-10-04'
+updated: '2026-10-05'
 ---
 
 이 사이트에 쓴 이미지, 데이터, 음악, 글꼴의 출처와 권리 고지입니다. 게임 관련 이미지는 팬 콘텐츠로 사용하며, 각 게임사와 공식 제휴 관계가 없습니다.
 
 ## 캐릭터 이미지
 
-레미엘(젠레스 존 제로), 유라·모나(원신)의 공식 일러스트는 HoYoverse 공식 홈페이지에 공개된 원본을 비상업적 개인 용도로 이 사이트에 직접 올려 쓰고 있습니다. 이미지의 권리는 권리자에게 있습니다.
+레미엘(젠레스 존 제로), 유라·모나(원신)의 공식 일러스트는 HoYoverse 공식 홈페이지에 공개된 원본을 비상업적 개인 용도로 이 사이트에 직접 올려 쓰고 있습니다. 이미지의 권리는 권리자에게 있습니다. 플레이 로그 연동 계정 카드의 유라·레미엘 그림은 위 일러스트를 잘라 쓴 것입니다.
 
 이 사이트는 하츠네 미쿠의 변형물(흑백·투명도 처리)을 포함합니다. <span lang="en">Hatsune Miku, © Crypton Future Media, Inc. 2007, licensed under a CC BY-NC: https://creativecommons.org/licenses/by-nc/3.0/</span>
 
@@ -33,6 +33,18 @@ updated: '2026-10-04'
 - 원신 법률 FAQ: https://www.hoyolab.com/article/143107
 - 젠레스 존 제로 2차 창작 가이드: https://www.hoyolab.com/article/30075725
 
+## 게임 그림·스크린샷
+
+**라이엇 게임즈 에셋.** 플레이 로그 연동 계정 카드의 이즈리얼(리그 오브 레전드)과 펭구(전략적 팀 전투) 그림은 라이엇 게임즈가 <span lang="en">Data Dragon</span>으로 공개한 라이엇 게임즈 에셋을 잘라 쓴 것입니다. 라이엇 게임즈의 [“Legal Jibber Jabber” 정책](https://www.riotgames.com/en/legal)에 따라 무료로, 광고 없이 씁니다.
+
+<span lang="en">Seongeun Baek's portfolio was created under Riot Games' "Legal Jibber Jabber" policy using assets owned by Riot Games. Riot Games does not endorse or sponsor this project.</span>
+
+**하스스톤 그림.** 연동 계정 카드의 하스스톤 그림은 블리자드 엔터테인먼트의 하스스톤 공식 소식 글(<https://hearthstone.blizzard.com/en-us/news/24008694>) 머리 이미지에서 여관주인 부분을 잘라 쓴 것입니다.
+
+**게임 기록 스크린샷.** '내 게임 업적'의 스크린샷 세 장은 본인이 직접 찍은 전략적 팀 전투(라이엇 게임즈)와 하스스톤(블리자드 엔터테인먼트) 게임 화면으로, 기록의 증거로 보여 줍니다.
+
+<span lang="en">Hearthstone and Blizzard Entertainment are trademarks or registered trademarks of Blizzard Entertainment, Inc. in the U.S. and/or other countries.</span>
+
 ## 게임 데이터
 
 플레이 로그의 계정 카드는 아래 출처에서 받은 데이터로 만듭니다. 아래 고지는 이 페이지와 플레이 로그에 함께 표시합니다.
@@ -40,8 +52,8 @@ updated: '2026-10-04'
 | 플랫폼 | 고지 | 상태 |
 |---|---|---|
 | 네오플 | 네오플 오픈 API 서비스를 이용한 데이터입니다. | 연동 시 표시 |
-| 라이엇 게임즈 | <span lang="en">Seongeun Baek's portfolio isn't endorsed by Riot Games and doesn't reflect the views or opinions of Riot Games or anyone officially involved in producing or managing Riot Games properties. Riot Games, and all associated properties are trademarks or registered trademarks of Riot Games, Inc.</span> | 외부 링크만 사용(API·에셋 미사용) |
-| Valve(Steam) | <span lang="en">Powered by Steam.</span> Steam 데이터는 Steam Web API에서 받아 있는 그대로(<span lang="en">as is</span>) 보여 주며 정확성을 보증하지 않습니다. 이 사이트는 Valve와 제휴하거나 Valve의 보증을 받지 않았습니다. <span lang="en">Valve, Steam, the Valve logo and the Steam logo are registered trademarks of Valve Corporation.</span> 주인 연동 관리 화면의 <span lang="en">“Sign in through Steam”</span> 버튼 이미지는 Valve의 것입니다. | 플레이 로그 계정 카드 |
+| 라이엇 게임즈 | <span lang="en">Seongeun Baek's portfolio isn't endorsed by Riot Games and doesn't reflect the views or opinions of Riot Games or anyone officially involved in producing or managing Riot Games properties. Riot Games, and all associated properties are trademarks or registered trademarks of Riot Games, Inc.</span> | 외부 링크만 사용(API 미사용, 에셋은 위 '라이엇 게임즈 에셋') |
+| Valve(Steam) | <span lang="en">Powered by Steam.</span> Steam 데이터는 Steam Web API에서 받아 있는 그대로(<span lang="en">as is</span>) 보여 주며 정확성을 보증하지 않습니다. 이 사이트는 Valve와 제휴하거나 Valve의 보증을 받지 않았습니다. <span lang="en">Valve, Steam, the Valve logo and the Steam logo are registered trademarks of Valve Corporation.</span> 주인 연동 관리 화면의 <span lang="en">“Sign in through Steam”</span> 버튼 이미지는 Valve의 것입니다. Steam 카드에는 본인의 Steam 아바타를 보여 줍니다. | 플레이 로그 계정 카드 |
 | Enka.Network | 원신·젠레스 존 제로 계정 정보는 Enka.Network(<https://enka.network>)에서 받습니다. | 플레이 로그 계정 카드 |
 
 ## 연구 데이터
@@ -83,4 +95,4 @@ CC0 자료는 출처 표기 의무가 없지만 만든 분을 밝혀 둡니다.
 
 권리 관련 문의: todtjddms104204@pusan.ac.kr
 
-최종 수정일: 2026년 10월 4일
+최종 수정일: 2026년 10월 5일

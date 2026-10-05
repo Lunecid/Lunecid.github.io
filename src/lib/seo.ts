@@ -64,17 +64,21 @@ export const TRADEMARK_TERMS: readonly string[] = [
   '리그 오브 레전드', 'League of Legends', 'LoL', 'Riot', '배틀그라운드', 'PUBG', 'Steam',
   'HoYoverse', '이터널 리턴', 'Eternal Return', 'Nimble Neuron', '님블뉴런',
   'TFT', 'Teamfight Tactics', '전략적 팀 전투', '하스스톤', 'Hearthstone', 'Blizzard', 'Valve',
+  '블리자드', 'Battle.net', 'BattleTag', '배틀태그',
   'Hatsune Miku', '하츠네 미쿠', '初音ミク',
 ];
 
 const ASCII = /^[\x20-\x7e]+$/;
 const escapeRegExp = (value: string): string => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
-/** Case-insensitive; URL separators (- _ . / #) count as spaces; Latin terms must stand alone ('Player Log' is not 'LoL'). */
+/**
+ * Case-insensitive; URL separators (- _ . / #) count as spaces in the text and in the term (so 'Battle.net' matches
+ * 'battle-net'); Latin terms must stand alone ('Player Log' is not 'LoL').
+ */
 export function containsTrademark(text: string): boolean {
   const haystack = text.toLowerCase().replace(/[-_./#]+/g, ' ');
   return TRADEMARK_TERMS.some((term) => {
-    const needle = term.toLowerCase();
+    const needle = term.toLowerCase().replace(/[-_./#]+/g, ' ');
     if (!ASCII.test(term)) return haystack.includes(needle);
     return new RegExp(`(^|[^a-z0-9])${escapeRegExp(needle)}([^a-z0-9]|$)`).test(haystack);
   });
