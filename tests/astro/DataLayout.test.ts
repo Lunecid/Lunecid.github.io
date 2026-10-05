@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import BaseLayout from '../../src/layouts/BaseLayout.astro';
 import DataLayout from '../../src/layouts/DataLayout.astro';
-import { DISPLAY_FAMILY, FONT_URL, MONO_FAMILY, SANS_FAMILY, SERIF_KO_HEAD_FAMILY } from '../../src/lib/fonts';
+import { DISPLAY_FAMILY, FONT_URL, MONO_FAMILY, SANS_FAMILY } from '../../src/lib/fonts';
 import { HEAD_INIT_SCRIPT } from '../../src/lib/head-init';
 import { VIEWER_QUEUE_SCRIPT } from '../../src/lib/viewer-queue';
 import { renderAstro, type AstroComponent } from './helpers';
@@ -44,8 +44,8 @@ describe('DataLayout.astro (P2-1)', () => {
     const head = headOf(await render(DataLayout));
     expect(head).toContain(`font-family:"${SANS_FAMILY}"`);
     expect(head).toContain(`@font-face{font-family:"${DISPLAY_FAMILY}";font-style:normal;font-weight:700 900;font-stretch:112%;font-display:swap;src:url(${FONT_URL.display}) format("woff2")}`);
-    expect(head).not.toContain(SERIF_KO_HEAD_FAMILY);
-    expect(head).not.toContain(FONT_URL.serifKoHead);
+    expect(head).not.toContain('SB Serif KR Head');
+    expect(head).not.toContain('sb-serif-kr-head');
     expect(head).not.toContain(MONO_FAMILY);
     expect([...head.matchAll(/<link rel="preload" href="([^"]+)" as="font" type="font\/woff2" crossorigin>/g)].map((m) => m[1])).toEqual([FONT_URL.sans, FONT_URL.display]);
   });

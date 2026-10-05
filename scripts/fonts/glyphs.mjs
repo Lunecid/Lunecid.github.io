@@ -198,38 +198,3 @@ export function paperHangul(files) {
 /** Sorted string of a character set. @param {Set<string>} set */
 export const setText = (set) => [...set].sort((a, b) => /** @type {number} */ (a.codePointAt(0)) - /** @type {number} */ (b.codePointAt(0))).join('');
 
-/**
- * The HTML inside every element that carries a `data-serif` attribute: the general version's headings, set in
- * "SB Serif KR Head" (P2-3). The element ends at the closing tag that balances its own opening tag, so an element
- * of the same name nested inside it (e.g. a span in a span) does not cut it short (P2-3 review).
- * @param {string} html
- */
-export function serifHeadHtml(html) {
-  let out = '';
-  for (const m of html.matchAll(/<([a-zA-Z][a-zA-Z0-9]*)\b[^>]*\sdata-serif(?=[\s=>/])[^>]*>/g)) {
-    const from = (m.index ?? 0) + m[0].length;
-    const tag = new RegExp(`<(/?)${m[1]}\\b[^>]*>`, 'gi');
-    tag.lastIndex = from;
-    let depth = 1;
-    let to = html.length;
-    for (let t = tag.exec(html); t; t = tag.exec(html)) {
-      if (t[0].endsWith('/>')) continue;
-      depth += t[1] ? -1 : 1;
-      if (depth === 0) {
-        to = t.index;
-        break;
-      }
-    }
-    out += `${html.slice(from, to)} `;
-  }
-  return out;
-}
-
-/**
- * Hangul inside [data-serif] on the given pages: what the heading face must cover.
- * @param {string[]} files
- */
-export function serifHeadHangul(files) {
-  const set = charSet(files.map((f) => htmlText(serifHeadHtml(readFileSync(f, 'utf8')))));
-  return new Set([...set].filter((ch) => isHangul(/** @type {number} */ (ch.codePointAt(0)))));
-}

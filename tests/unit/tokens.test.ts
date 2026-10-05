@@ -340,7 +340,7 @@ describe('editorial palette, neutral aliases and role tokens (P2-1, spec §8, co
       '--ed-rule-w': '1px',
       '--ed-rule-w-strong': '2px',
       '--font-ed-serif': '"Times New Roman", Times, "TeX Gyre Termes", "Nimbus Roman", "Liberation Serif", serif',
-      '--font-ed-head': '"Times New Roman", Times, "TeX Gyre Termes", "Nimbus Roman", "Liberation Serif", "SB Serif KR Head", serif',
+      '--font-ed-head': '"Times New Roman", Times, "TeX Gyre Termes", "Nimbus Roman", "Liberation Serif", serif', // MO-29 (named): the unused heading face left the stack
     };
     for (const [name, value] of Object.entries(expected)) expect(d.get(name), name).toBe(value);
   });

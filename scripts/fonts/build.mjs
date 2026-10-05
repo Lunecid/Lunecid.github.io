@@ -10,8 +10,6 @@
 //   serifKo Noto Serif KR (fontsource ships it in ~120 unicode-range slices) → the Hangul inside the paper sheet
 //           of the pages that load it (the Korean paper page). The needed slices are subset and merged into one
 //           file. OFL 1.1 without a Reserved Font Name (fontsource LICENSE: "Google Inc."; name ID 0: Adobe).
-//   serifKoHead  Noto Serif KR, static wght 700 → the Hangul inside [data-serif] of the pages that declare it (since
-//           DS-1 the chooser only).
 //   display Archivo (fontsource latin wdth file) → "SB Display": printable ASCII + ALWAYS_SYMBOLS, width pinned at
 //           112 %, weight 700–900, for the general version's Latin display words and numerals (DS-1). OFL 1.1 without
 //           a Reserved Font Name, so the name table is kept as is (copyright 0 and license URL 14; the source has no 13).
@@ -34,8 +32,6 @@ import {
   DISPLAY_CHARACTERS,
   sansCharacters,
   scriptText,
-  serifHeadHangul,
-  serifHeadHtml,
   setText,
   shownText,
   sitePages,
@@ -357,19 +353,6 @@ export async function buildFonts(distDir, { warn = (message) => console.warn(mes
     }
   }
 
-  // ── Korean heading serif (general version, P2-3): one static wght-700 file for the Hangul inside [data-serif] of the
-  //    pages that declare it; never preloaded (font-display: swap). English pages declare it but never download it. ──
-  const headPages = pages.filter((p) => p.html.includes(FONT_URL.serifKoHead));
-  if (headPages.length > 0) {
-    const head = await step('collecting the Hangul of the [data-serif] headings', () => serifHeadHangul(headPages.map((p) => p.file)));
-    const { data, missing } = await step(`building the Noto Serif KR heading instance (${head.size} characters)`, () => subsetSerifKo(setText(head), { wght: 700 }));
-    if (missing.length > 0) {
-      warnLacking('Noto Serif KR', new Set(missing), headPages.map((p) => ({ label: p.route, text: htmlText(serifHeadHtml(p.html)) })));
-    }
-    if (data) replace.set(FONT_URL.serifKoHead, write('serifKoHead', 'sb-serif-kr-head', data, head.size - missing.length));
-    else replace.set(fontFaceRule('serifKoHead'), ''); // no Hangul heading at all: the Times stack and the system serif draw them
-  }
-
   // ── Latin display face (general version, DS-1): one fixed subset, written only when some page declares it; its
   //    preload is rewritten with the URL below. ──
   if (pages.some((p) => p.html.includes(FONT_URL.display))) {
@@ -400,8 +383,6 @@ export async function buildFonts(distDir, { warn = (message) => console.warn(mes
 
 /** @type {Promise<Buffer | null> | null} */
 let devSerif = null;
-/** @type {Promise<Buffer | null> | null} */
-let devSerifHead = null;
 
 /** Every Hangul syllable in src/ (a superset of what the paper page shows), for the dev-server serif. */
 function sourceHangul() {
@@ -423,7 +404,6 @@ export async function devFont(url) {
   if (url === FONT_URL.mono || url === FONT_URL.coverMono) return readFileSync(SOURCES.mono);
   if (url === FONT_URL.coverDisplay) return readFileSync(SOURCES.coverDisplay);
   if (url === FONT_URL.serifKo) return (devSerif ??= subsetSerifKo(sourceHangul()).then((r) => r.data));
-  if (url === FONT_URL.serifKoHead) return (devSerifHead ??= subsetSerifKo(sourceHangul(), { wght: 700 }).then((r) => r.data));
   if (url === FONT_URL.display) return subsetDisplay();
   return null;
 }

@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 import { buildCmap4, buildName, cmapCodePoints, cmapGlyphs, parseName, sfntTables, woff2Tables } from '../../scripts/fonts/sfnt.mjs';
 import { SOURCES, buildFonts, renameSansRecord, subsetDisplay, subsetSans, subsetSerifKo } from '../../scripts/fonts/build.mjs';
 import { FONT_URL, fontFaceCss } from '../../src/lib/fonts';
-import { ALWAYS_SYMBOLS, DISPLAY_CHARACTERS, PRINTABLE_ASCII, htmlText, isIgnorable, paperSheetHtml, sansCharacters, serifHeadHtml, shownText } from '../../scripts/fonts/glyphs.mjs';
+import { ALWAYS_SYMBOLS, DISPLAY_CHARACTERS, PRINTABLE_ASCII, htmlText, isIgnorable, paperSheetHtml, sansCharacters, shownText } from '../../scripts/fonts/glyphs.mjs';
 
 type NameRecord = { platformID: number; encodingID: number; languageID: number; nameID: number; value: string };
 const table = (buf: Buffer, tag: string): Buffer => woff2Tables(buf).get(tag)!;
@@ -172,31 +172,6 @@ describe('buildFonts on a built page with characters the source fonts lack', () 
     }
   });
 
-  it('builds the heading face from the Hangul inside [data-serif] of the pages that declare it, and never preloads it', async () => {
-    const dist = mkdtempSync(join(tmpdir(), 'font-subsets-'));
-    mkdirSync(join(dist, '_astro'));
-    mkdirSync(join(dist, 'data'), { recursive: true });
-    const sansHead = `<style>${fontFaceCss(['sans'])}</style><link rel="preload" href="${FONT_URL.sans}" as="font" type="font/woff2" crossorigin>`;
-    writeFileSync(join(dist, 'index.html'), `<html lang="ko"><head>${sansHead}</head><body><p>선택 화면</p></body></html>`);
-    writeFileSync(
-      join(dist, 'data', 'index.html'),
-      `<html lang="ko"><head>${sansHead}<style>${fontFaceCss(['serifKoHead'])}</style></head><body><h1 id="hero-name" data-serif>백성은</h1><h2 class="t" data-serif="">연구</h2><p>본문 뷁</p></body></html>`,
-    );
-    try {
-      const results = await buildFonts(dist, { warn: () => {} });
-      expect(results.find((r: { face: string }) => r.face === 'serifKoHead')?.chars).toBe(5);
-      const page = readFileSync(join(dist, 'data', 'index.html'), 'utf8');
-      const url = /src:url\((\/_astro\/sb-serif-kr-head\.[\w-]+\.woff2)\)/.exec(page)?.[1];
-      expect(url).toBeDefined();
-      expect(page).not.toMatch(/<link rel="preload"[^>]*sb-serif-kr-head/);
-      const cps = cmapCodePoints(woff2Tables(readFileSync(join(dist, ...url!.split('/').filter(Boolean)))).get('cmap')!);
-      for (const ch of '백성은연구') expect(cps.has(cp(ch))).toBe(true);
-      expect(cps.has(cp('뷁'))).toBe(false);
-      expect(readFileSync(join(dist, 'index.html'), 'utf8')).not.toContain('sb-serif-kr-head');
-    } finally {
-      rmSync(dist, { recursive: true, force: true });
-    }
-  });
 });
 
 describe('buildFonts: the general paper page preloads its Korean serif with font-display: optional', () => {
@@ -289,10 +264,4 @@ describe('glyph collection', () => {
     expect(isIgnorable('★')).toBe(false);
   });
 
-  it('serifHeadHtml: the content of every element that carries data-serif, nothing else', () => {
-    const html = '<h1 id="a" data-serif>제목</h1><p>본문</p><h2 class="x" data-serif="">연구 <span>관심</span></h2><span data-serifx>아님</span>';
-    const out = serifHeadHtml(html);
-    for (const text of ['제목', '연구', '관심']) expect(out).toContain(text);
-    for (const text of ['본문', '아님']) expect(out).not.toContain(text);
-  });
 });

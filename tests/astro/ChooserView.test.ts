@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it, vi } from 'vitest';
 import ChooserView from '../../src/views/ChooserView.astro';
-import { COVER_DISPLAY_FAMILY, COVER_MONO_FAMILY, DISPLAY_FAMILY, MONO_FAMILY, SERIF_KO_HEAD_FAMILY } from '../../src/lib/fonts';
+import { COVER_DISPLAY_FAMILY, COVER_MONO_FAMILY, DISPLAY_FAMILY, MONO_FAMILY } from '../../src/lib/fonts';
 import { coverCopy } from '../../src/data/copy/chooser-covers';
 import { readSource } from './helpers';
 import { renderAstro } from './helpers';
@@ -48,7 +48,7 @@ describe('ChooserView.astro (MO-23: the v6.4 desk; P2-10 header)', () => {
     expect(html).toMatch(/<link rel="stylesheet" href/); // vitest resolves the ?url import to an empty href; the build hashes it
     expect(readSource('src/views/ChooserView.astro')).toContain("from '../styles/chooser.css?url'");
     expect(html).not.toMatch(/<style[^>]*>[^<]*(\.file--data|--tex-rh|\.desk)/);
-    expect(html).not.toContain(SERIF_KO_HEAD_FAMILY);
+    expect(html).not.toContain('SB Serif KR Head');
     // MO-29: the printout's banner takes the general version's display face, declared with swap and never preloaded
     expect(html).toMatch(new RegExp(`font-family:"${DISPLAY_FAMILY}";[^}]*font-display:swap`));
     expect(html).not.toContain('data-serif');
