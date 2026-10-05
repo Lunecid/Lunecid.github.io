@@ -1105,7 +1105,7 @@ test('api vars.set: only ACCOUNT_VARS names (403), values through validateVar an
     [{ op: 'vars.set', value: 'x' }, 403, 'forbidden'],
     [{ op: 'vars.set', name: 'ACCOUNT_RIOT_ID', value: 'Hide on bush' }, 400, 'invalid'],
     [{ op: 'vars.set', name: 'ACCOUNT_RIOT_ID', value: 'Hide/on#KR1' }, 400, 'invalid'],
-    [{ op: 'vars.set', name: 'ACCOUNT_GENSHIN_NAME', value: '0123456789abcdef0123456789ABCDEF' }, 400, 'invalid'],
+    [{ op: 'vars.set', name: 'ACCOUNT_GENSHIN_NAME', value: '0123456789abcdef' + '0123456789ABCDEF' }, 400, 'invalid'],
     [{ op: 'vars.set', name: 'ACCOUNT_STEAM_NAME', value: 'ghp' + '_' + 'Z'.repeat(36) }, 400, 'invalid'],
     [{ op: 'vars.set', name: 'ACCOUNT_STEAM_NAME', value: 'Bearer ' + 'ghp' + '_' + 'Z'.repeat(36) }, 400, 'invalid'],
     [{ op: 'vars.set', name: 'ACCOUNT_GENSHIN_NAME', value: ('key=' + '0123456789abcdef'.repeat(2)).padStart(64, 'n') }, 400, 'invalid'],

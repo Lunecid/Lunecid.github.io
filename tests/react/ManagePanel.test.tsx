@@ -676,7 +676,7 @@ describe('the form', () => {
     expect(screen.getByText(C.secret)).toBeInTheDocument();
     const uid = field(C['label:field.ACCOUNT_ZZZ_UID']);
     await t.user.click(uid);
-    await t.user.paste('0123456789abcdef0123456789ABCDEF');
+    await t.user.paste('0123456789abcdef' + '0123456789ABCDEF');
     expect(uid.value).toBe('');
     expect(screen.getAllByText(C.secret)).toHaveLength(2);
   });

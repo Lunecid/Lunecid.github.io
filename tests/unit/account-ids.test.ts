@@ -51,7 +51,7 @@ describe('links', () => {
 describe('secrets and variables', () => {
   it('looksLikeSecret', () => {
     const fake = (p: string) => p + '_' + 'A'.repeat(36); // built at run time (gitleaks)
-    for (const s of ['0123456789abcdef0123456789ABCDEF', 'github' + '_pat_' + 'x'.repeat(30), fake('ghp'), fake('gho'), fake('ghu'), fake('ghs'), fake('ghr')]) expect(ids.looksLikeSecret(s)).toBe(true);
+    for (const s of ['0123456789abcdef' + '0123456789ABCDEF', 'github' + '_pat_' + 'x'.repeat(30), fake('ghp'), fake('gho'), fake('ghu'), fake('ghs'), fake('ghr')]) expect(ids.looksLikeSecret(s)).toBe(true);
     for (const s of ['618285856', 'Hide on bush#KR1', '닉네임', '76561197960435530']) expect(ids.looksLikeSecret(s)).toBe(false);
   });
   it('looksLikeSecret: secret-looking text anywhere in the value counts, not only the whole value', () => {
@@ -71,7 +71,7 @@ describe('secrets and variables', () => {
     expect(ids.validateVar('ACCOUNT_OTHER', '1')).toEqual({ ok: false, reason: 'name' });
     expect(ids.validateVar('ACCOUNT_GENSHIN_UID', '618285856')).toEqual({ ok: true, value: '618285856' });
     expect(ids.validateVar('ACCOUNT_STEAM_ID64', 'https://steamcommunity.com/profiles/76561197960435530')).toEqual({ ok: true, value: '76561197960435530' });
-    expect(ids.validateVar('ACCOUNT_GENSHIN_NAME', '0123456789abcdef0123456789abcdef')).toEqual({ ok: false, reason: 'secret' });
+    expect(ids.validateVar('ACCOUNT_GENSHIN_NAME', '0123456789abcdef'.repeat(2))).toEqual({ ok: false, reason: 'secret' });
     expect(ids.validateVar('ACCOUNT_RIOT_ID', 'bad')).toEqual({ ok: false, reason: 'format' });
     expect(ids.validateVar('ACCOUNT_ZZZ_NAME', '   ')).toEqual({ ok: false, reason: 'format' });
   });
