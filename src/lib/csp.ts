@@ -3,7 +3,7 @@
 // re-hashes the inline blocks of the built pages under these directives.
 import { ACCOUNT_ADMIN, GOATCOUNTER } from '../config.ts';
 
-const RELAY_ORIGIN_RE =/^https:\/\/account-relay\.[a-z0-9-]+\.workers\.dev$/;
+export const RELAY_ORIGIN_RE = /^https:\/\/account-relay\.[a-z0-9-]+\.workers\.dev$/;
 /** Test builds only (SB_E2E_ACCOUNTS=1 → dist-e2e-accounts, never deployed). */
 export const E2E_RELAY_ORIGIN = 'https://account-relay.e2e-fixture.workers.dev';
 export const GOATCOUNTER_ORIGIN: string | null = GOATCOUNTER.code === null ? null : `https://${GOATCOUNTER.code}.goatcounter.com`;
