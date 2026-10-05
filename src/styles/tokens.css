@@ -187,6 +187,15 @@
   --ch-coat: rgba(255, 255, 255, .03);        /* one soft reflection from the top left */
   --ch-coat-2: rgba(255, 255, 255, .012);
   --ch-cap: #EEF1F5;                          /* the caption on the felt: 5.4:1 on --ch-desk-lit */
+  /* ── the printout's attachments (MO-37, v6.8/v6.12): a navy card folder under the sheet (L* about 19, deeper than
+     the felt) and a steel gem clip; the index flag is the printout's yellow (--pr-yellow, ink on it 11.4:1) ── */
+  --ch-folder-1: #2A3666;
+  --ch-folder-2: #1F2A55;
+  --ch-folder-3: #1A2349;
+  --ch-clip-dark: #3E444E;                    /* the clip's inner leg */
+  --ch-clip-edge: #4A515C;                    /* its dark outline */
+  --ch-clip-steel: #A3ABB6;                   /* the wire */
+  --ch-clip-hi: #F4F6F8;                      /* the wire's highlight */
   /* the printout: white cotton-rag art paper (finish B "판화지") with painted fields; text pairs on the paper:
      ink 17.6:1, ink-2 8.6:1, stamp 8.6:1; white on the red field 5.4:1 flat; ink on the yellow 11.4:1 */
   --pr-paper: #FBFAF6;

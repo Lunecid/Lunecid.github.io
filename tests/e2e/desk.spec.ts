@@ -761,3 +761,71 @@ test.describe('MO-35: the desk in real centimetres', () => {
     expect(hit).toBe(false);
   });
 });
+
+const intersects = (a: DOMRect, b: DOMRect) => a.left < b.right - 0.5 && b.left < a.right - 0.5 && a.top < b.bottom - 0.5 && b.top < a.bottom - 0.5;
+
+test.describe('MO-37: the printout\'s folder, clip and flag', () => {
+  for (const [w, h] of [[375, 812], [768, 1024], [1280, 800]] as const) {
+    test(`MO-37: clip and flag never cover the job header, the h2, the stamp, the tagline, the contents or the link (${w})`, async ({ page }) => {
+      await openAt(page, '/?choose', w, h);
+      for (const sel of ['.clip', '.tab']) {
+        const a = await rectOf(page, `.file--data ${sel}`);
+        for (const t of ['.pr__hdr', '.pr__h2', '.rstamp__ink', '.pr__intro', '.pr__toc', '.cta__face']) {
+          const b = await rectOf(page, `.file--data ${t}`);
+          expect(intersects(a, b), `${sel} × ${t} @${w}`).toBe(false);
+        }
+      }
+    });
+  }
+
+  test('MO-37: the folder moves with the sheet when it slides aside (same transform) and never overlaps the device screen', async ({ page }) => {
+    for (const [w, h] of [[1280, 800], [768, 1024]] as const) {
+      await openAt(page, '/?choose', w, h);
+      const f0 = await rectOf(page, '.file--data .folder');
+      const s0 = await rectOf(page, '.file--data .feed');
+      await page.locator('.desk').evaluate((el) => el.classList.add('is-aside'));
+      await page.waitForTimeout(700);
+      const f1 = await rectOf(page, '.file--data .folder');
+      const s1 = await rectOf(page, '.file--data .feed');
+      expect(Math.abs(f1.left - f0.left - (s1.left - s0.left)), `@${w}`).toBeLessThan(6);
+      expect(Math.abs(f1.top - f0.top - (s1.top - s0.top)), `@${w}`).toBeLessThan(6);
+      const scr = await rectOf(page, '.file--game .dev__screen');
+      expect(intersects(f1, scr), `@${w} aside`).toBe(false);
+    }
+  });
+
+  test('MO-37: flag text ink on yellow ≥ 4.5:1 (pixels); flag tip inside the viewport at 320', async ({ page }) => {
+    await openAt(page, '/?choose', 1280, 800);
+    const tip = await rectOf(page, '.file--data .tab__t');
+    const png = (await page.screenshot({ clip: { x: tip.left, y: tip.top, width: tip.width, height: tip.height } })).toString('base64');
+    const ratio = await page.evaluate(async (b64) => {
+      const img = new Image();
+      img.src = `data:image/png;base64,${b64}`;
+      await img.decode();
+      const c = document.createElement('canvas');
+      c.width = img.width;
+      c.height = img.height;
+      const ctx = c.getContext('2d')!;
+      ctx.drawImage(img, 0, 0);
+      const d = ctx.getImageData(0, 0, c.width, c.height).data;
+      const lum = (r: number, g: number, b: number) => [r, g, b].map((v) => v / 255).map((v) => (v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4)).reduce((s, v, i) => s + v * [0.2126, 0.7152, 0.0722][i]!, 0);
+      let lo = 1;
+      let hi = 0;
+      for (let i = 0; i < d.length; i += 4) { const l = lum(d[i]!, d[i + 1]!, d[i + 2]!); lo = Math.min(lo, l); hi = Math.max(hi, l); }
+      return (hi + 0.05) / (lo + 0.05);
+    }, png);
+    expect(ratio).toBeGreaterThanOrEqual(4.5);
+    expect(await page.locator('.file--data .tab__t').evaluate((el) => getComputedStyle(el).color)).toBe('rgb(20, 20, 20)');
+    await openAt(page, '/?choose', 320, 640);
+    const t = await rectOf(page, '.file--data .tab__t');
+    expect(t.right).toBeLessThanOrEqual(320);
+  });
+
+  test('MO-37: print and forced colours hide folder, clip and flag', async ({ page }) => {
+    await openAt(page, '/?choose', 1280, 800);
+    await page.emulateMedia({ media: 'print' });
+    for (const sel of ['.folder', '.clip', '.tab']) expect(await page.locator(`.file--data ${sel}`).evaluate((el) => getComputedStyle(el).display), `print ${sel}`).toBe('none');
+    await page.emulateMedia({ media: 'screen', forcedColors: 'active' });
+    for (const sel of ['.folder', '.clip', '.tab']) expect(await page.locator(`.file--data ${sel}`).evaluate((el) => getComputedStyle(el).display), `forced ${sel}`).toBe('none');
+  });
+});

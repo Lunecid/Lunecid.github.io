@@ -659,6 +659,90 @@
   transform: rotate(4deg) translate(-10px, -2px);
   box-shadow: -12px 16px 26px -4px color-mix(in srgb, var(--cover-shadow) 80%, transparent);
 }
+/* the folder (v6.12): a navy card folder under the sheet, part of the file (tossed in with it, slides aside with it);
+   it peeks out about a centimetre on the right and along the bottom (turned 1.5° against the sheet), never on the left
+   or top, where the sheet lies on the tablet; a faint crease, a lit top-left edge, the sheet's shadow on it */
+.file--data .folder {
+  position: absolute;
+  left: 3%;
+  top: 4%;
+  right: -5.5%;
+  bottom: -3.2%;
+  z-index: -2;
+  pointer-events: none;
+  border-radius: 3px;
+  transform: rotate(1.5deg);
+  background:
+    linear-gradient(90deg, transparent calc(100% - 9px), color-mix(in srgb, var(--cover-shadow) 18%, transparent) calc(100% - 9px) calc(100% - 8px), color-mix(in srgb, var(--pr-on-color) 5%, transparent) calc(100% - 8px) calc(100% - 7px), transparent calc(100% - 7px)),
+    linear-gradient(135deg, var(--ch-folder-1) 0%, var(--ch-folder-2) 45%, var(--ch-folder-3) 100%);
+  box-shadow: inset 1px 1px 0 color-mix(in srgb, var(--pr-on-color) 10%, transparent), 1px 2px 2px color-mix(in srgb, var(--cover-shadow) 45%, transparent), 6px 11px 18px -6px color-mix(in srgb, var(--cover-shadow) 55%, transparent);
+}
+/* the clip and the flag (v6.8): decoration on the sheet, above the print, no pointer. A steel gem clip over the top edge
+   near the top-right corner, centred in the side margin (18/70 of it above the edge, its back leg behind the sheet,
+   its shadow two offset copies); an index flag on the right edge: a translucent film on the paper and an opaque tip
+   beyond the edge carrying the file number (ink on yellow); below 440px a short plain tip */
+.file--data .clip, .file--data .tab { position: absolute; z-index: 3; display: block; pointer-events: none; }
+.file--data .clip {
+  --clip-w: 17px;
+  width: var(--clip-w);
+  height: calc(var(--clip-w) * 70 / 22);
+  top: calc(var(--clip-w) * -18 / 22);
+  right: calc((var(--strip) + var(--pr-pad-x) - var(--clip-w)) / 2);
+  overflow: visible;
+}
+@container (min-width: 440px) { .file--data .clip { --clip-w: 24px; } }
+.file--data .clip path { fill: none; stroke-linecap: round; }
+.file--data .clip__sh path, .file--data .clip__seat { stroke: var(--cover-shadow); }
+.file--data .clip__leg { stroke: var(--ch-clip-dark); }
+.file--data .clip__edge { stroke: var(--ch-clip-edge); }
+.file--data .clip__steel { stroke: var(--ch-clip-steel); }
+.file--data .clip__hi { stroke: var(--ch-clip-hi); }
+.file--data .tab {
+  --tab-out: 8px;
+  --tab-in: 12px;
+  right: calc(-1 * var(--tab-out));
+  top: 31%;
+  width: calc(var(--tab-out) + var(--tab-in));
+  height: 40px;
+}
+.file--data .tab::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: calc(var(--tab-in) + 1px);
+  background: color-mix(in srgb, var(--pr-yellow) 42%, transparent);
+  box-shadow: inset 1px 0 0 color-mix(in srgb, var(--pr-yellow) 70%, transparent);
+}
+.file--data .tab__t {
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: var(--tab-out);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border-radius: 0 3px 3px 0;
+  background: var(--pr-yellow);
+  box-shadow: 2px 3px 4px -1px color-mix(in srgb, var(--cover-shadow) 40%, transparent);
+  color: transparent;
+  writing-mode: vertical-rl;
+  font: 800 var(--fs-min)/1 var(--pr-font-banner);
+  font-stretch: 112%;
+  letter-spacing: .06em;
+  white-space: nowrap;
+}
+@container (min-width: 440px) {
+  .file--data .tab { --tab-out: 20px; --tab-in: 14px; height: 74px; }
+  .file--data .tab__t { color: var(--pr-ink); }
+}
+@media (forced-colors: active) {
+  .file--data .folder, .file--data .clip, .file--data .tab { display: none; }
+}
+
 /* the bend: a square turned 45° about the sheet's top-left corner, inside the paper (the paper's mask clips it). The
    corner beyond its far edge is the lifted flap: lit a little, a soft shade inside the bend, its shadow on the paper */
 .file--data .curl {
@@ -838,6 +922,6 @@
 @media print {
   .file--data.file--data { width: 100%; margin: 0; aspect-ratio: auto; break-inside: avoid; }
   .file--data.file--data > .face { transform: none; transition: none; border: 1px solid var(--pr-ink); }
-  .file--data.file--data::before, .file--data .lift, .file--data .curl, .file--data .paper, .file--data .rstamp { display: none; }
+  .file--data.file--data::before, .file--data .lift, .file--data .curl, .file--data .paper, .file--data .rstamp, .file--data .folder, .file--data .clip, .file--data .tab { display: none; }
   .file--data .feed::before { box-shadow: none; }
 }

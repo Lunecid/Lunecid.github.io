@@ -423,7 +423,7 @@ test('MO-29: the chooser printout\'s banner face draws every banner and contents
     if (banner.length !== 1) wrong.push(`${p.route}: ${banner.length} banner faces`);
     if (/<link rel="preload"[^>]*sb-cover-banner/.test(html)) wrong.push(`${p.route}: preloads the banner face`);
     // the banner is uppercased by CSS: check the uppercase forms of the banner and the printout's contents numbers
-    const text = [...doc.querySelectorAll('.file--data .pr__disp, .file--data .toc__n')].map((el) => (el.textContent ?? '').toUpperCase()).join('');
+    const text = [...doc.querySelectorAll('.file--data .pr__disp, .file--data .toc__n, .file--data .tab__t')].map((el) => (el.textContent ?? '').toUpperCase()).join('');
     if (text.trim() === '') wrong.push(`${p.route}: no banner text`);
     const missing = uncoveredBy(text, faces, COVER_BANNER_FAMILY);
     if (missing.length > 0) wrong.push(`${p.route}: "${COVER_BANNER_FAMILY}" lacks ${describe(missing)}`);

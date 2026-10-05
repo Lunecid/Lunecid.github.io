@@ -90,4 +90,21 @@ describe('PrintoutCover.astro (MO-23)', () => {
     expect(css).toMatch(/@media \(prefers-reduced-motion: reduce\)\s*\{[^@]*\.cta--pr \.cta__hov\s*\{\s*transition:\s*none/);
     expect(css).toMatch(/:root\[data-motion="reduce"\] (\.file--data )?\.cta--pr \.cta__hov\s*\{\s*transition:\s*none/);
   });
+
+  it('MO-37: folder, clip and flag inside the face, aria-hidden; the flag reads coverCopy.data.num; one link', async () => {
+    const html = await render('ko');
+    const face = /<div class="face"[^>]*>([\s\S]*)<\/div>\s*<\/article>/.exec(html)?.[1] ?? '';
+    expect(face).toMatch(/<i class="folder" aria-hidden="true"[^>]*><\/i>/);
+    const clip = /<svg class="clip"[\s\S]*?<\/svg>/.exec(face)?.[0] ?? '';
+    expect(clip).toMatch(/aria-hidden="true"/);
+    expect(clip).toMatch(/focusable="false"/);
+    expect(clip).not.toMatch(/#[0-9a-f]{3,6}\b|rgba?\(|<text|href=/i);
+    expect(face).toMatch(/<span class="tab" aria-hidden="true"[^>]*><span class="tab__t" lang="en"[^>]*>NO\. 02<\/span><\/span>/);
+    expect(html.match(/<a\b/g)).toHaveLength(1);
+    // the folder lies under the sheet (inside the face, before the paper); the clip and the flag ride on the sheet
+    expect(face.indexOf('class="folder"')).toBeLessThan(face.indexOf('class="feed"'));
+    expect(face.indexOf('class="clip"')).toBeGreaterThan(face.indexOf('class="pr"'));
+    expect(await render('en')).toMatch(/<span class="tab__t" lang="en"[^>]*>NO\. 02<\/span>/);
+  });
 });
+
