@@ -82,10 +82,10 @@ describe('Medal.astro', () => {
     expect(css.match(/#[0-9a-fA-F]{3,8}\b|\brgba?\(|\bhsla?\(/g) ?? []).toEqual([]);
     const paints = rules.flatMap((r) => [...r.decls].filter(([p]) => ['fill', 'stroke', 'color'].includes(p)).map(([p, v]) => ({ at: `${r.media ?? ''} ${r.selector} { ${p}: ${v} }`, selector: r.selector, v })));
     expect(paints.length).toBeGreaterThan(8);
-    const ALLOWED = ['none', 'currentColor', 'CanvasText', 'var(--gold)', 'var(--gold-deep)', 'var(--gold-ink)', 'var(--read-line-strong)', 'var(--hud-line)'];
+    const ALLOWED = ['none', 'currentColor', 'CanvasText', 'var(--gold)', 'var(--ach-rim)', 'var(--gold-ink)', 'var(--read-line-strong)', 'var(--hud-line)'];
     for (const p of paints) expect(ALLOWED, p.at).toContain(p.v);
     // gold marks an unlocked medal only: every declaration that names a --gold token (fill, stroke, background, shadow, …)
-    const gold = rules.flatMap((r) => [...r.decls].filter(([, v]) => v.includes('--gold')).map(([p, v]) => ({ at: `${r.media ?? ''} ${r.selector} { ${p}: ${v} }`, selector: r.selector })));
+    const gold = rules.flatMap((r) => [...r.decls].filter(([, v]) => /--gold|--ach-rim/.test(v)).map(([p, v]) => ({ at: `${r.media ?? ''} ${r.selector} { ${p}: ${v} }`, selector: r.selector })));
     expect(gold.length).toBeGreaterThanOrEqual(5);
     for (const p of gold) for (const s of splitSelectors(p.selector)) expect(s, p.at).toContain('[data-state="unlocked"]');
     // locked and hidden: outlines in currentColor = --read-line-strong on the light bands (list, records), --hud-line on the dark meter
@@ -93,16 +93,20 @@ describe('Medal.astro', () => {
     expect(decls('.medal path')?.get('stroke')).toBe('currentColor');
     expect(decls('.medal')?.get('color')).toBe('var(--read-line-strong)');
     expect(decls('.medal--meter')?.get('color')).toBe('var(--hud-line)');
-    // unlocked: a gold disc in a --gold-deep rim under a --gold-deep ribbon, the emblem in --gold-ink
+    // unlocked: a gold disc in an --ach-rim rim under an --ach-rim ribbon, the emblem in --gold-ink (named change GP-4:
+    // --ach-rim = --gold-deep outside game pages; on the game palette a darker cyan, so rim and disc stay apart)
     const unlocked = (part: string) => decls(`.medal[data-state="unlocked"] .medal__${part}`);
     expect(unlocked('disc')?.get('fill')).toBe('var(--gold)');
-    expect(unlocked('rim')?.get('fill')).toBe('var(--gold-deep)');
+    expect(unlocked('rim')?.get('fill')).toBe('var(--ach-rim)');
     // the rim stays a ring whichever way its inner octagon is wound
     expect(unlocked('rim')?.get('fill-rule')).toBe('evenodd');
-    expect(unlocked('ribbon')?.get('fill')).toBe('var(--gold-deep)');
+    expect(unlocked('ribbon')?.get('fill')).toBe('var(--ach-rim)');
     expect(unlocked('emblem')?.get('stroke')).toBe('var(--gold-ink)');
     // the rim keeps a gold medal's edge visible on the light band
     expect(contrast(tokens.get('--gold-deep')!, tokens.get('--read-bg')!)).toBeGreaterThanOrEqual(3);
+    // GP-4: the rim and ribbon use --ach-rim; the disc --gold
+    expect(unlocked('ribbon')?.get('stroke')).toBe('var(--ach-rim)');
+    expect(css).not.toMatch(/--gold-deep/);
     // hidden: the "?" and no emblem; every other state the emblem and no "?"
     expect(decls('.medal[data-state="hidden"] .medal__emblem')?.get('display')).toBe('none');
     expect(decls('.medal:not([data-state="hidden"]) .medal__q')?.get('display')).toBe('none');

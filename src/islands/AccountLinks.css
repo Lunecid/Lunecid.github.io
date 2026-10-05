@@ -307,10 +307,11 @@ button.acct-tile {
   display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 8px 12px;
   padding: 12px 12px 12px 20px; border-bottom: 1px solid var(--hud-line); background: var(--hud-panel);
 }
-/* the head's bracket line: an accent segment on the head's lower edge, drawn from the left on open */
+/* the head's bracket line: a second-highlight segment on the head's lower edge (decoration, not a control), drawn from
+   the left on open */
 .acct-dlg__rule {
   position: absolute; left: 0; bottom: -1px; width: calc(var(--bracket) * 2); height: 2px;
-  background: var(--accent); transform-origin: left center; pointer-events: none;
+  background: var(--hl2); transform-origin: left center; pointer-events: none;
 }
 .acct-dlg[data-state="open"] .acct-dlg__rule { animation-name: acct-rule; animation-timing-function: var(--ease-out); animation-fill-mode: both; }
 .acct-dlg__heading { flex: 1 1 160px; min-width: 0; padding-top: 6px; }

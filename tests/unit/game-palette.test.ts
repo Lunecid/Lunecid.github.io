@@ -23,7 +23,7 @@ const RAW: Record<string, string> = {
   '--gp-y-wash-8': 'rgba(255, 230, 0, .08)', '--gp-y-wash-12': 'rgba(255, 230, 0, .12)',
   '--gp-y-streak': 'rgba(255, 230, 0, .6)', '--gp-y-strip': 'rgba(255, 230, 0, .9)',
   '--gp-cy': '#00E5FF', '--gp-cy-dim': 'rgba(0, 229, 255, .45)', '--gp-cy-wash': 'rgba(0, 229, 255, .12)',
-  '--gp-cy-glow': 'rgba(0, 229, 255, .45)',
+  '--gp-cy-glow': 'rgba(0, 229, 255, .45)', '--gp-cy-light': '#99F5FF',
   '--gp-ink': '#0B0B0C',
   '--gp-w-panel': '#EEEEE9', '--gp-w-card': '#F7F7F3', '--gp-w-ink': '#1A1A1A', '--gp-w-ink-2': '#55554F',
   '--gp-w-cy': '#006F80', '--gp-w-cy-wash': '#E0F4F6',
@@ -56,7 +56,7 @@ const BLOCK: Record<string, string> = {
   '--read-label': 'var(--gp-t2)', '--read-line': 'var(--gp-frame)', '--read-line-strong': 'var(--gp-ln)',
   '--cart-shell': 'var(--gp-cart-shell)', '--cart-shell-hover': 'var(--gp-cart-shell-hover)',
   '--cart-shell-shade': 'var(--gp-cart-shell-shade)', '--cart-shell-grip': 'var(--gp-cart-shell-grip)',
-  '--hl2': 'var(--gp-cy)', '--hl2-deep': 'var(--gp-w-cy)', '--ach-rim': 'var(--gp-ach-rim)',
+  '--hl2': 'var(--gp-cy)', '--hl2-deep': 'var(--gp-w-cy)', '--hl2-light': 'var(--gp-cy-light)', '--ach-rim': 'var(--gp-ach-rim)',
 };
 
 /** #RRGGBB of a token as the game block resolves it ('w' = inside a white panel uses the --gp-w-* names directly). */
@@ -103,11 +103,12 @@ describe('game palette tokens (GP-1)', () => {
     expect(d.get('--hud-bg')).toBe('#0B0D11');
     expect(d.get('--hl2')).toBe('var(--accent-deep)');
     expect(d.get('--hl2-deep')).toBe('var(--accent-deep)');
+    expect(d.get('--hl2-light')).toBe('var(--accent-light)');
     expect(d.get('--ach-rim')).toBe('var(--gold-deep)');
     // no other selector re-points the role tokens
     for (const r of rules()) {
       if (r.selector === ':root' || r.selector === GAME) continue;
-      for (const name of ['--hl2', '--hl2-deep', '--ach-rim']) expect(r.decls.has(name), `${r.selector} ${name}`).toBe(false);
+      for (const name of ['--hl2', '--hl2-deep', '--hl2-light', '--ach-rim']) expect(r.decls.has(name), `${r.selector} ${name}`).toBe(false);
     }
   });
 

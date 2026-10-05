@@ -275,6 +275,7 @@
   --gp-cy-dim: rgba(0, 229, 255, .45);
   --gp-cy-wash: rgba(0, 229, 255, .12);
   --gp-cy-glow: rgba(0, 229, 255, .45); /* hover glow (text-shadow) */
+  --gp-cy-light: #99F5FF;       /* meter gradient end (cyan 40 % over white) */
   --gp-ink: #0B0B0C;            /* text on a yellow or cyan plate */
   --gp-w-panel: #EEEEE9;        /* white panels for dense and long text */
   --gp-w-card: #F7F7F3;
@@ -312,6 +313,7 @@
      resolve to today's colours, so the shared components that use them do not change there. */
   --hl2: var(--accent-deep);
   --hl2-deep: var(--accent-deep);
+  --hl2-light: var(--accent-light); /* the meters' gradient end */
   --ach-rim: var(--gold-deep);
 
   /* ── typography (spec §4; mobile-first values = "<734") ── */
@@ -474,7 +476,7 @@
   --read-label: var(--gp-t2); --read-line: var(--gp-frame); --read-line-strong: var(--gp-ln);
   --cart-shell: var(--gp-cart-shell); --cart-shell-hover: var(--gp-cart-shell-hover);
   --cart-shell-shade: var(--gp-cart-shell-shade); --cart-shell-grip: var(--gp-cart-shell-grip);
-  --hl2: var(--gp-cy); --hl2-deep: var(--gp-w-cy); --ach-rim: var(--gp-ach-rim);
+  --hl2: var(--gp-cy); --hl2-deep: var(--gp-w-cy); --hl2-light: var(--gp-cy-light); --ach-rim: var(--gp-ach-rim);
 }
 /* Printed paper page (D-15): black on white. */
 @media print {

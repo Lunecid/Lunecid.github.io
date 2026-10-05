@@ -35,8 +35,9 @@ const RIM = `${DISC} M11.83 9L6 14.83V23.17L11.83 29H20.17L26 23.17V14.83L20.17 
 
 <style>
   /* Locked and hidden medals are outlines in currentColor: --read-line-strong on the light bands (the list, the game
-     records), --hud-line on the dark meter. An unlocked medal is gold: a --gold disc in a --gold-deep rim (5.42:1 on
-     --read-bg, so its edge shows on the light band) hung from a --gold-deep ribbon, the emblem in --gold-ink. */
+     records), --hud-line on the dark meter. An unlocked medal is gold: a --gold disc in an --ach-rim rim (= --gold-deep,
+     5.42:1 on --read-bg, so its edge shows on the light band; on the game palette a darker cyan than the cyan disc) hung
+     from an --ach-rim ribbon, the emblem in --gold-ink. */
   .medal { display: block; aspect-ratio: 1; color: var(--read-line-strong); }
   .medal--list { width: 32px; } /* SiteAchievementList's 32px icon track */
   .medal--meter { width: 100%; color: var(--hud-line); }
@@ -48,9 +49,9 @@ const RIM = `${DISC} M11.83 9L6 14.83V23.17L11.83 29H20.17L26 23.17V14.83L20.17 
   .medal .medal__q { stroke-width: 1.6; stroke-linecap: round; }
   .medal[data-state="hidden"] .medal__emblem,
   .medal:not([data-state="hidden"]) .medal__q { display: none; }
-  .medal[data-state="unlocked"] .medal__ribbon { fill: var(--gold-deep); stroke: var(--gold-deep); }
+  .medal[data-state="unlocked"] .medal__ribbon { fill: var(--ach-rim); stroke: var(--ach-rim); }
   .medal[data-state="unlocked"] .medal__disc { fill: var(--gold); }
-  .medal[data-state="unlocked"] .medal__rim { fill: var(--gold-deep); fill-rule: evenodd; stroke: none; }
+  .medal[data-state="unlocked"] .medal__rim { fill: var(--ach-rim); fill-rule: evenodd; stroke: none; }
   .medal[data-state="unlocked"] .medal__emblem { stroke: var(--gold-ink); }
 
   /* The mint pop plays only under [data-pop], which the client sets on a live unlock, never on a page load. */

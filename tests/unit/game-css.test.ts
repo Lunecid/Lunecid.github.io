@@ -91,3 +91,24 @@ describe('game.css (GP-2)', () => {
     expect(read('src/styles/base.css')).not.toMatch(/--gp-|--hl2|--ach-rim/);
   });
 });
+
+describe('achievements in the game palette (GP-4)', () => {
+  it('GP-4: meters fill with --hl2, never --accent', () => {
+    const meter = read('src/components/player-log/AchievementMeter.astro');
+    const fav = read('src/islands/FavoriteGames.css');
+    expect(meter).toMatch(/\.ach-meter__fill[^{]*\{[^}]*linear-gradient\(90deg, var\(--hl2\), var\(--hl2-light\)\)/);
+    expect(fav).toMatch(/\.fg-acct__fill \{[^}]*linear-gradient\(90deg, var\(--hl2\), var\(--hl2-light\)\)/);
+    for (const src of [meter, fav]) {
+      const fills = [...src.matchAll(/(\.ach-meter__fill|\.fg-acct__fill)[^{]*\{([^}]*)\}/g)].map((m) => m[2]!);
+      for (const f of fills) expect(f).not.toMatch(/--accent/);
+    }
+  });
+
+  it('GP-4: medal rim and ribbon use --ach-rim; the disc --gold; the account dialog rule is decoration in --hl2', () => {
+    const medal = read('src/components/player-log/Medal.astro');
+    expect(medal).toMatch(/\.medal__rim \{ fill: var\(--ach-rim\)/);
+    expect(medal).toMatch(/\.medal__ribbon \{ fill: var\(--ach-rim\); stroke: var\(--ach-rim\)/);
+    expect(medal).toMatch(/\.medal__disc \{ fill: var\(--gold\)/);
+    expect(read('src/islands/AccountLinks.css')).toMatch(/\.acct-dlg__rule \{[^}]*background: var\(--hl2\)/);
+  });
+});

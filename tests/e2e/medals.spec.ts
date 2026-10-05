@@ -61,7 +61,7 @@ test.describe('PL-2: medals in the list and the meter', () => {
     await expect(list).not.toHaveAttribute('data-pop', /.*/);
     expect(await list.evaluate((el) => getComputedStyle(el).animationName)).toBe('none');
     expect(await animationsOf(page, listMedal('abstract-reader'))).toEqual([]);
-    expect(await page.locator(`${listMedal('abstract-reader')} .medal__disc`).evaluate((el) => getComputedStyle(el).fill)).toBe('rgb(245, 179, 1)');
+    expect(await page.locator(`${listMedal('abstract-reader')} .medal__disc`).evaluate((el) => getComputedStyle(el).fill)).toBe('rgb(0, 229, 255)'); // named change GP-4: --gold is cyan on game pages
     // the meter: the same medal, minted once the fill bar (--dur-enter) has arrived
     const meter = page.locator(meterMedal('abstract-reader'));
     await expect(meter).toHaveAttribute('data-state', 'unlocked');

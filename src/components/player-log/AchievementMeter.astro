@@ -82,7 +82,7 @@ const progressTemplate = ui[lang]['achievement.progress'];
     height: 100%;
     transform: scaleX(var(--ach-p));
     transform-origin: 0 50%;
-    background: linear-gradient(90deg, var(--accent), var(--accent-light));
+    background: linear-gradient(90deg, var(--hl2), var(--hl2-light)); /* a meter is not clickable: the second highlight */
     transition: transform var(--dur-enter) var(--ease-out);
   }
   /* one row at any width: the slots shrink from 34px instead of wrapping a lone medal onto a second line */
