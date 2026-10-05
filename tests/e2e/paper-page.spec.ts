@@ -74,7 +74,9 @@ for (const { lang, route } of ROUTES) {
       expect(await main.locator('section[id]').evaluateAll((els) => els.map((el) => el.id))).toEqual(['abstract', 'bibtex']);
     });
 
-    test('paper typography: Times New Roman first, white sheet, near-black ink', async ({ page }) => {
+    // Named change (GP-3, game palette v4, GP-OQ5): the game version's sheet is the off-white card of the white panels
+    // (#F7F7F3) with ink #1A1A1A (16.2:1); the general version's sheet stays white with #141414.
+    test('paper typography: Times New Roman first, light sheet, near-black ink', async ({ page }) => {
       await open(page, route);
       const style = await page.locator('#abstract .paper__text').evaluate((el) => {
         const s = getComputedStyle(el);
@@ -82,9 +84,10 @@ for (const { lang, route } of ROUTES) {
       });
       expect(style.fontFamily.startsWith('"Times New Roman"'), style.fontFamily).toBe(true);
       expect(style.fontSize).toBe('17px');
-      expect(style.color).toBe('rgb(20, 20, 20)');
+      const game = route.includes('/game/');
+      expect(style.color).toBe(game ? 'rgb(26, 26, 26)' : 'rgb(20, 20, 20)');
       expect(style.align).toBe('justify');
-      expect(await page.locator('.paper').evaluate((el) => getComputedStyle(el).backgroundColor)).toBe('rgb(255, 255, 255)');
+      expect(await page.locator('.paper').evaluate((el) => getComputedStyle(el).backgroundColor)).toBe(game ? 'rgb(247, 247, 243)' : 'rgb(255, 255, 255)');
       expect(await page.locator('#paper-title').evaluate((el) => getComputedStyle(el).fontFamily.startsWith('"Times New Roman"'))).toBe(true);
     });
 

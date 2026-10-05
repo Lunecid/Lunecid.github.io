@@ -28,7 +28,7 @@ test.describe('P1-9: the reading bands are light HUD, not rounded card grids', (
   test('/game/: PATCH NOTES is a dark band; ▶ shows on hover; one link per row; the research highlight shows the AUC chart', async ({ page }) => {
     await openAt(page, '/game/', 1440);
     const pn = page.locator('#patch-notes');
-    expect(await pn.evaluate((el) => getComputedStyle(el).backgroundColor)).toBe('rgb(11, 13, 17)'); // --hud-bg
+    expect(await pn.evaluate((el) => getComputedStyle(el).backgroundColor)).toBe('rgb(11, 11, 12)'); // --hud-bg (named change GP-1: the game palette's page black)
     const row = pn.locator('.pn__item').first();
     const ptr = row.locator('.pn__ptr');
     expect(await ptr.evaluate((el) => getComputedStyle(el).opacity)).toBe('0');
@@ -87,7 +87,10 @@ test.describe('P1-11 / P2-18: job-fit reads on a phone, fits as a table from 734
     }
   }
 
-  test('status badges differ at a glance: filled, outlined, gold dashed, grey', async ({ page }) => {
+  // Named change (GP-3): on the game palette the job-fit table is a white panel and its statuses are never yellow —
+  // met = deep cyan on its wash, partial = neutral outline, in progress = dashed, later = grey (game-panels.spec.ts holds
+  // the full check; the general version's case lives in data-records.spec.ts).
+  test('status badges differ at a glance: deep cyan on its wash, outlined, dashed, grey', async ({ page }) => {
     await openAt(page, '/game/records/', 1440);
     const look = (status: string) =>
       page.locator(`#job-fit .jobfit__status--${status}`).first().evaluate((el) => {
@@ -95,13 +98,13 @@ test.describe('P1-11 / P2-18: job-fit reads on a phone, fits as a table from 734
         return { bg: s.backgroundColor, color: s.color, border: s.borderTopStyle, borderColor: s.borderTopColor };
       });
     const [met, partial, progress, later] = await Promise.all(['met', 'partial', 'in-progress', 'later'].map(look));
-    expect(met.bg).toBe('rgb(79, 107, 0)');
-    expect(met.color).toBe('rgb(255, 255, 255)');
-    expect(partial.borderColor).toBe('rgb(79, 107, 0)');
+    expect(met.bg).toBe('rgb(224, 244, 246)');
+    expect(met.color).toBe('rgb(0, 111, 128)');
+    expect(partial.borderColor).toBe('rgb(133, 133, 127)');
     expect(partial.bg).not.toBe(met.bg);
     expect(progress.border).toBe('dashed');
-    expect(progress.color).toBe('rgb(138, 90, 0)');
-    expect(later.color).toBe('rgb(110, 110, 115)');
+    expect(progress.color).toBe('rgb(85, 85, 79)');
+    expect(later.color).toBe('rgb(85, 85, 79)');
   });
 });
 

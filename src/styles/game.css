@@ -94,3 +94,104 @@
 @media (max-width: 733px) {
   :root[data-variant="game"] .page-head::before { width: 72px; background-size: 10px 10px, 120px 10px; }
 }
+
+/* ═══ WHITE PANELS ═════════════════════════════════════════════════════════════════════════════════════════════
+   Blocks that are read rather than scanned sit on an off-white panel with ink text (palette v4 §1.3). WHITE_PANELS is
+   this one selector list (tests/e2e/game-panels.spec.ts proves each still matches on its page):
+     .rh .paper            home: the research highlight's paper card (abstract, BibTeX, AUC chart)
+     .rec__pubs            records: publications
+     .psum                 records: project summaries
+     .creds__table         records: activities, certificates, language, education
+     .skills__table        records: skills × evidence
+     .jobfit__table        records: job fit
+     .pub__list            research: the publication list
+     .paper-view__sheet    research paper page: the sheet (stays light)
+     article.prose.read    case studies: the prose band (full width, measure unchanged)
+     .pd__table            case studies: the details table
+   Re-pointing the read, accent-deep, gold-deep, HUD and paper names inside the panel re-skins every child. On white,
+   yellow and cyan never carry text (1.13 / 1.37:1): links are ink with an underline and a thin yellow highlighter
+   strip; the second highlight is deep cyan. */
+:root[data-variant="game"] :is(.rh .paper, .rec__pubs, .psum, .creds__table, .skills__table, .jobfit__table, .pub__list, .paper-view__sheet, article.prose.read, .pd__table) {
+  --read-bg: var(--gp-w-panel); --read-card: var(--gp-w-card); --read-text: var(--gp-w-ink);
+  --read-muted: var(--gp-w-ink-2); --read-label: var(--gp-w-ink-2);
+  --read-line: var(--gp-w-line); --read-line-strong: var(--gp-w-line-strong);
+  --accent-deep: var(--gp-w-ink); --gold-deep: var(--gp-w-cy); --hl2: var(--gp-w-cy);
+  --hud-text: var(--gp-w-ink); --hud-strong: var(--gp-w-ink); --hud-muted: var(--gp-w-ink-2); --hud-label: var(--gp-w-ink-2);
+  --hud-line: var(--gp-w-line-strong); --hud-line-dash: var(--gp-w-line);
+  --paper-bg: var(--gp-w-card); --paper-ink: var(--gp-w-ink); --paper-muted: var(--gp-w-ink-2); --paper-rule: var(--gp-w-rule);
+  --paper-code-bg: var(--gp-w-code); --paper-code-line: var(--gp-w-code-line);
+  color-scheme: light;
+  color: var(--gp-w-ink);
+  background-color: var(--gp-w-panel);
+  border-top: 3px solid var(--accent);
+}
+/* the boxed panels: a 16 px chamfer top right and room inside (the prose band keeps its centred column; the paper sheet
+   keeps its own margins and its shadow, which a clip-path would cut) */
+:root[data-variant="game"] :is(.rh .paper, .rec__pubs, .psum, .creds__table, .skills__table, .jobfit__table, .pub__list, .pd__table) {
+  clip-path: polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 0 100%);
+  padding: 14px 20px 18px;
+}
+:root[data-variant="game"] .rh .paper { border-right: 0; border-bottom: 0; border-left: 0; padding: 22px 24px; }
+:root[data-variant="game"] .paper-view__sheet { background-color: var(--gp-w-card); }
+/* tables need separate borders for the panel padding to apply */
+:root[data-variant="game"] :is(.creds__table, .skills__table, .jobfit__table, .pd__table) { border-collapse: separate; border-spacing: 0; }
+@media (max-width: 733px) {
+  :root[data-variant="game"] :is(.rh .paper, .rec__pubs, .psum, .creds__table, .skills__table, .jobfit__table, .pub__list, .pd__table) { padding: 12px 14px 14px; }
+}
+/* links on white: ink + a 1 px ink underline + a thin yellow highlighter strip at the baseline (ink on it 13.8:1) */
+:root[data-variant="game"] :is(.rh .paper, .rec__pubs, .psum, .creds__table, .skills__table, .jobfit__table, .pub__list, .paper-view__sheet, article.prose.read, .pd__table) :is(a:not([class]), .jobfit__ev, .creds__ev) {
+  color: var(--gp-w-ink); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: .2em;
+  background: linear-gradient(transparent 72%, var(--gp-y-strip) 72% 90%, transparent 90%);
+  text-shadow: none;
+}
+/* evidence chips (padded inline blocks) keep ink + underline only: a strip under every chip would be a yellow wall */
+/* (the doubled classes outrank the panel link rule above) */
+:root[data-variant="game"] :is(.jobfit__table, .creds__table, article.prose.read) a:is(.jobfit__ev.jobfit__ev, .creds__ev.creds__ev) { background: none; }
+@media (hover: hover) {
+  :root[data-variant="game"] :is(.rh .paper, .rec__pubs, .psum, .creds__table, .skills__table, .jobfit__table, .pub__list, .paper-view__sheet, article.prose.read, .pd__table) :is(a:not([class]), .jobfit__ev, .creds__ev):hover {
+    background: var(--accent); text-decoration-thickness: 2px; text-shadow: none;
+  }
+}
+:root[data-variant="game"] :is(.rh .paper, .rec__pubs, .psum, .creds__table, .skills__table, .jobfit__table, .pub__list, .paper-view__sheet, article.prose.read, .pd__table) :is(a:not([class]), .jobfit__ev, .creds__ev):active {
+  background: var(--accent); text-decoration-thickness: 2px; text-shadow: none;
+}
+/* focus on white: a 2 px ink ring with a yellow halo, inside the panel's padding (the chamfer never clips it) */
+:root[data-variant="game"] :is(.rh .paper, .rec__pubs, .psum, .creds__table, .skills__table, .jobfit__table, .pub__list, .paper-view__sheet, article.prose.read, .pd__table) :focus-visible {
+  outline: 2px solid var(--gp-w-ink); outline-offset: 2px; box-shadow: 0 0 0 5px var(--accent);
+}
+/* filled buttons on white: an ink plate with yellow text (13.7:1); hover and press: a yellow plate with ink text */
+:root[data-variant="game"] :is(.rh .paper, .rec__pubs, .pub__list) .btn--fill { color: var(--accent); --cut-fill: var(--gp-w-ink); }
+@media (hover: hover) {
+  :root[data-variant="game"] :is(.rh .paper, .rec__pubs, .pub__list) .btn--fill:hover { color: var(--gp-w-ink); --cut-fill: var(--accent); }
+}
+:root[data-variant="game"] :is(.rh .paper, .rec__pubs, .pub__list) .btn--fill:active { color: var(--gp-w-ink); --cut-fill: var(--accent); }
+/* a tier badge on white: a cyan plate with ink text and an ink keyline (the plate alone is 1.37:1 on the panel) */
+:root[data-variant="game"] :is(.rh .paper, .rec__pubs, .psum, .creds__table, .skills__table, .jobfit__table, .pub__list, .pd__table) .badge--tier {
+  color: var(--gp-ink); background: var(--gp-cy); border-color: var(--gp-w-ink);
+}
+/* job-fit statuses are not clickable, so never yellow: met = cyan outline, partial = neutral, in progress = dashed;
+   on the white table met is deep cyan on its wash */
+:root[data-variant="game"] .jobfit__status--met { background: transparent; border-color: var(--gp-cy); color: var(--gp-cy); }
+:root[data-variant="game"] .jobfit__status--partial { background: transparent; border-color: var(--gp-ln); color: var(--gp-t1); }
+:root[data-variant="game"] .jobfit__status--in-progress { background: transparent; border: 1px dashed var(--gp-ln); color: var(--gp-t2); }
+:root[data-variant="game"] .jobfit__table .jobfit__status--met { border-color: var(--gp-w-cy); color: var(--gp-w-cy); background: var(--gp-w-cy-wash); }
+:root[data-variant="game"] .jobfit__table .jobfit__status--partial { border-color: var(--gp-w-line-strong); color: var(--gp-w-ink); }
+:root[data-variant="game"] .jobfit__table .jobfit__status--in-progress { border: 1px dashed var(--gp-w-line-strong); color: var(--gp-w-ink-2); }
+
+/* ═══ PRINT ════════════════════════════════════════════════════════════════════════════════════════════════════
+   Game pages print black on white (tokens.css print twin). The white panels re-point their own names, so they get the
+   print values here: black ink on white paper, no yellow edge, no chamfer, no highlighter strip, no halo. */
+@media print {
+  :root[data-variant="game"] :is(.rh .paper, .rec__pubs, .psum, .creds__table, .skills__table, .jobfit__table, .pub__list, .paper-view__sheet, article.prose.read, .pd__table) {
+    --read-bg: var(--gp-print-paper); --read-card: var(--gp-print-paper); --read-text: var(--gp-print-ink);
+    --read-muted: var(--gp-print-muted); --read-label: var(--gp-print-muted);
+    --accent-deep: var(--gp-print-ink); --gold-deep: var(--gp-print-ink); --hl2: var(--gp-print-ink);
+    --hud-text: var(--gp-print-ink); --hud-strong: var(--gp-print-ink); --hud-muted: var(--gp-print-muted); --hud-label: var(--gp-print-muted);
+    --paper-bg: var(--gp-print-paper); --paper-ink: var(--gp-print-ink); --paper-muted: var(--gp-print-ink);
+    color: var(--gp-print-ink); background-color: var(--gp-print-paper);
+    border-top: 0; clip-path: none;
+  }
+  :root[data-variant="game"] :is(.rh .paper, .rec__pubs, .psum, .creds__table, .skills__table, .jobfit__table, .pub__list, .paper-view__sheet, article.prose.read, .pd__table) :is(a:not([class]), .jobfit__ev, .creds__ev) {
+    background: none; color: var(--gp-print-ink);
+  }
+}

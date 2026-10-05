@@ -36,6 +36,7 @@ const RAW: Record<string, string> = {
   '--gp-ach-rim': '#0097A7',
   '--gp-haz': 'repeating-linear-gradient(-45deg, var(--gp-y) 0 5px, transparent 5px 10px)',
   '--gp-edge-cy': 'var(--gp-cy)', '--gp-edge-y': 'var(--gp-y)',
+  '--gp-print-paper': '#FFFFFF', '--gp-print-ink': '#000000', '--gp-print-muted': '#333333',
 };
 
 const BLOCK: Record<string, string> = {

@@ -303,6 +303,9 @@
   /* barcodes (original drawing): cyan for the page head, grey for the kicker tails */
   --gp-bars-c: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='12'%3E%3Cpath fill='%2300E5FF' d='M0 0h2v12H0zM4 0h1v12H4zM7 0h3v12H7zM12 0h1v12h-1zM15 0h1v12h-1zM18 0h4v12h-4zM24 0h1v12h-1zM27 0h2v12h-2zM31 0h1v12h-1zM35 0h3v12h-3zM40 0h1v12h-1zM43 0h1v12h-1zM46 0h2v12h-2zM51 0h1v12h-1zM54 0h4v12h-4zM60 0h1v12h-1zM63 0h2v12h-2zM67 0h1v12h-1zM70 0h1v12h-1zM74 0h3v12h-3zM79 0h1v12h-1zM82 0h2v12h-2zM87 0h1v12h-1zM90 0h4v12h-4zM96 0h1v12h-1zM99 0h1v12h-1zM102 0h2v12h-2zM107 0h1v12h-1zM110 0h3v12h-3zM115 0h1v12h-1zM118 0h2v12h-2z'/%3E%3C/svg%3E");
   --gp-bars-g: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='12'%3E%3Cpath fill='%235A5A62' d='M0 0h2v12H0zM4 0h1v12H4zM7 0h3v12H7zM12 0h1v12h-1zM15 0h1v12h-1zM18 0h4v12h-4zM24 0h1v12h-1zM27 0h2v12h-2zM31 0h1v12h-1zM35 0h3v12h-3zM40 0h1v12h-1zM43 0h1v12h-1zM46 0h2v12h-2zM51 0h1v12h-1zM54 0h4v12h-4zM60 0h1v12h-1zM63 0h2v12h-2zM67 0h1v12h-1zM70 0h1v12h-1zM74 0h3v12h-3zM79 0h1v12h-1zM82 0h2v12h-2zM87 0h1v12h-1zM90 0h4v12h-4zM96 0h1v12h-1zM99 0h1v12h-1zM102 0h2v12h-2zM107 0h1v12h-1zM110 0h3v12h-3zM115 0h1v12h-1zM118 0h2v12h-2z'/%3E%3C/svg%3E");
+  --gp-print-paper: #FFFFFF;    /* print: the white panels and the paper sheet print black on white (game.css PRINT) */
+  --gp-print-ink: #000000;
+  --gp-print-muted: #333333;
   --gp-edge-cy: var(--gp-cy);   /* the edge frame's line-art */
   --gp-edge-y: var(--gp-y);
   /* role tokens: the second highlight (cyan on dark, deep cyan on white) and the medal rim. Outside game pages they

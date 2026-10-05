@@ -37,8 +37,9 @@ test.describe('P2-2: achievement toast', () => {
     // line layer (cut-corner panels never set their own background — see src/styles/hud.css), not the element's
     // own background-color.
     const bg = await toast.evaluate((el) => getComputedStyle(el, '::after').backgroundColor);
-    // --hud-panel #15181F = rgb(21, 24, 31): a dark panel, not the old cream pill (#F3E3B5-ish).
-    expect(bg).toBe('rgb(21, 24, 31)');
+    // --hud-panel on the game palette (#141416 = rgb(20, 20, 22); named change GP-1, was #15181F): a dark panel, not the
+    // old cream pill (#F3E3B5-ish).
+    expect(bg).toBe('rgb(20, 20, 22)');
     const box = (await toast.boundingBox())!;
     const viewport = page.viewportSize()!;
     expect(box.x + box.width, 'sits toward the right edge').toBeGreaterThan(viewport.width - 420);
