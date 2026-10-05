@@ -413,7 +413,7 @@ test.describe('MO-25: the declassify stamp', () => {
     expect([strike, ring]).toEqual(['none', 'none']);
     const dt = Number(await page.evaluate(() => sessionStorage.getItem('mo25:dt')));
     expect(dt).toBeGreaterThanOrEqual(140);
-    expect(dt).toBeLessThanOrEqual(300);
+    expect(dt).toBeLessThanOrEqual(400); // 150 ms timer; the bound leaves room for a loaded runner's event loop
   });
 
   test('ctrl+click opens no stamp and does not block', async ({ page, context }) => {

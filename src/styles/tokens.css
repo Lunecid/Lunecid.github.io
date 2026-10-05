@@ -409,6 +409,10 @@
   --x-line-at: .69s;     /* the line leaves the tablet across the page, the page goes dark */
   --x-line: .19s;
   --x-fade: .14s;
+  --x-data: .8s;         /* the page turn: the next page loads (EXIT_MS.data) */
+  --x-fold: .72s;        /* the fold crosses the sheet */
+  --x-pull-at: .4s;      /* the flap is pulled away from about here (a stop of the eased fold) */
+  --x-flap-fade-at: .576s; /* … and fades from 80% of the fold */
 
   /* ── layout ── */
   --container: 1180px;   /* includes gutters; the base width of every band's container */

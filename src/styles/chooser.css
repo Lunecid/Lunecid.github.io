@@ -677,6 +677,12 @@
     linear-gradient(135deg, var(--ch-folder-1) 0%, var(--ch-folder-2) 45%, var(--ch-folder-3) 100%);
   box-shadow: inset 1px 1px 0 color-mix(in srgb, var(--pr-on-color) 10%, transparent), 1px 2px 2px color-mix(in srgb, var(--cover-shadow) 45%, transparent), 6px 11px 18px -6px color-mix(in srgb, var(--cover-shadow) 55%, transparent);
 }
+/* the page-turn exit's wrappers (MO-39): at rest the page (.turn > .turn__in) is a plain column holding the paper and
+   the print; the next sheet, the flap and the shade take no room (chooser-exit.css draws the turn) */
+.file--data .turn, .file--data .turn__in { position: relative; display: flex; flex-direction: column; flex: 1; min-width: 0; }
+.file--data .turn { z-index: 1; }
+.file--data .under, .file--data .flap, .file--data .turn__shade { display: none; }
+
 /* the clip and the flag (v6.8): decoration on the sheet, above the print, no pointer. A steel gem clip over the top edge
    near the top-right corner, centred in the side margin (18/70 of it above the edge, its back leg behind the sheet,
    its shadow two offset copies); an index flag on the right edge: a translucent film on the paper and an opaque tip

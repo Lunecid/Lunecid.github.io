@@ -95,12 +95,21 @@ describe('chooser desk (MO-24)', () => {
     expect(key(m.data, 'ArrowRight', { shiftKey: true })).toBe(true); // modified: left to the browser
   });
 
+  // MO-39 (named change): the printout's link now plays its page turn before the navigation too
   it('a choice is remembered before the navigation', () => {
-    click(m.data);
-    expect(localStorage.getItem('sb:variant')).toBe('data');
-    click(m.game, 0);
-    expect(localStorage.getItem('sb:variant')).toBe('game'); // before the delayed navigation
-    expect(navigations).toEqual(['/data/']);
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    try {
+      click(m.data);
+      expect(localStorage.getItem('sb:variant')).toBe('data');
+      expect(navigations).toEqual([]); // the page turns first
+      settle();
+      click(m.game, 0);
+      expect(localStorage.getItem('sb:variant')).toBe('game'); // before the delayed navigation
+      vi.advanceTimersByTime(EXIT_MS.game);
+      expect(navigations).toEqual(['/data/', '/game/']);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('touch: first tap on the game link reveals without navigating; the second activates', () => {
@@ -373,6 +382,71 @@ describe('the stamp and the game exit (MO-25, MO-38)', () => {
     expect(EXIT_MS.game).toBeCloseTo(t('--x-game'), 5);
     expect(EXIT_MS.reduce).toBe(150);
     expect(EXIT_MS.reduce).toBeGreaterThanOrEqual(t('--x-fade'));
+  });
+});
+
+describe('the data exit (MO-39)', () => {
+  let m: ReturnType<typeof mount>;
+  let reduce = false;
+  beforeEach(() => {
+    navigations = [];
+    localStorage.clear();
+    reduce = false;
+    window.matchMedia = vi.fn().mockImplementation((q: string) => ({ matches: reduce && /reduced-motion: reduce/.test(q), media: q, addEventListener() {}, removeEventListener() {} })) as unknown as typeof window.matchMedia;
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    document.body.innerHTML = '';
+    m = mount();
+    m.dataFile.querySelector('.face')!.insertAdjacentHTML('afterbegin', '<div class="feed"></div>');
+    Object.defineProperties(m.dataFile.querySelector('.feed')!, { offsetWidth: { value: 556 }, offsetHeight: { value: 556 } });
+    initChooser(document, { navigate: (href) => navigations.push(href) });
+  });
+  afterEach(() => {
+    initDesk(m.desk, m.hint)();
+    vi.useRealTimers();
+  });
+
+  it('MO-39: the data link: data-exit=data, remembered, navigates after EXIT_MS.data (800); reduced → fade at 150 ms', () => {
+    click(m.data);
+    expect(m.desk.dataset.exit).toBe('data');
+    expect(localStorage.getItem('sb:variant')).toBe('data');
+    expect(m.dataFile.style.getPropertyValue('--fw')).toBe('556px');
+    expect(m.dataFile.style.getPropertyValue('--fh')).toBe('556px');
+    vi.advanceTimersByTime(EXIT_MS.data - 1);
+    expect(navigations).toEqual([]);
+    vi.advanceTimersByTime(1);
+    expect(navigations).toEqual(['/data/']);
+    const ev = new Event('pageshow') as Event & { persisted: boolean };
+    Object.defineProperty(ev, 'persisted', { value: true });
+    window.dispatchEvent(ev);
+    expect(m.dataFile.style.getPropertyValue('--fw')).toBe('');
+    reduce = true;
+    click(m.data);
+    expect(m.desk.dataset.exit).toBe('fade');
+    expect(m.desk.dataset.exitTo).toBe('data');
+    vi.advanceTimersByTime(EXIT_MS.reduce);
+    expect(navigations).toEqual(['/data/', '/data/']);
+  });
+
+  it('MO-39: a tap on the aside sheet only puts it back (no exit)', () => {
+    pointerdown(m.gameFile, 'touch');
+    click(m.game);
+    expect(m.desk.classList.contains('is-aside')).toBe(true);
+    click(m.data);
+    expect(m.desk.classList.contains('is-aside')).toBe(false);
+    expect(m.desk.dataset.exit).toBeUndefined();
+    vi.advanceTimersByTime(EXIT_MS.data + 10);
+    expect(navigations).toEqual([]);
+  });
+
+  it('MO-39: modified clicks native; second activation ignored', () => {
+    click(m.data, 1, { ctrlKey: true });
+    expect(navigations).toEqual(['/data/']);
+    expect(m.desk.dataset.exit).toBeUndefined();
+    click(m.data);
+    click(m.data, 0);
+    click(m.game, 0);
+    vi.advanceTimersByTime(EXIT_MS.game + 10);
+    expect(navigations).toEqual(['/data/', '/data/']);
   });
 });
 

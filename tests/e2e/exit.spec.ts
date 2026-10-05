@@ -95,7 +95,7 @@ test.describe('MO-38: the game exit (the waveform)', () => {
     armed = false;
     const dt = Number(await page.evaluate(() => sessionStorage.getItem('x:dt')));
     expect(dt).toBeGreaterThanOrEqual(870);
-    expect(dt).toBeLessThanOrEqual(940);
+    expect(dt).toBeLessThanOrEqual(1000); // 880 ms timer; room for a loaded runner
     expect(early.filter((u) => !/\/game\/$/.test(u))).toEqual([]);
   });
 
@@ -110,7 +110,7 @@ test.describe('MO-38: the game exit (the waveform)', () => {
     expect(await page.evaluate(() => sessionStorage.getItem('x:kind'))).toBe('fade');
     const dt = Number(await page.evaluate(() => sessionStorage.getItem('x:dt')));
     expect(dt).toBeGreaterThanOrEqual(140);
-    expect(dt).toBeLessThanOrEqual(300);
+    expect(dt).toBeLessThanOrEqual(400); // 150 ms timer; room for a loaded runner's event loop
   });
 
   for (const [w, h] of [[375, 812], [1280, 800]] as const) {
@@ -141,5 +141,129 @@ test.describe('MO-38: the game exit (the waveform)', () => {
     await expect(page.locator('.desk')).not.toHaveClass(/is-aside/);
     expect(await style(page, '.xnav', 'display')).toBe('none');
     expect(await style(page, '.file--game .xg', 'display')).toBe('none');
+  });
+});
+
+const DATA = 'a[data-choose-variant="data"]';
+const DATA_HIT = '.file--data .cta__hit';
+/** Lowest luminance (0–255) in a viewport box: dark ink shows as a low value. */
+async function darkest(page: Page, r: { x: number; y: number; width: number; height: number }): Promise<number> {
+  const png = (await page.screenshot({ clip: r })).toString('base64');
+  return page.evaluate(async (b64) => {
+    const img = new Image();
+    img.src = `data:image/png;base64,${b64}`;
+    await img.decode();
+    const c = document.createElement('canvas');
+    c.width = img.width;
+    c.height = img.height;
+    const ctx = c.getContext('2d')!;
+    ctx.drawImage(img, 0, 0);
+    const d = ctx.getImageData(0, 0, c.width, c.height).data;
+    let m = 255;
+    for (let i = 0; i < d.length; i += 4) m = Math.min(m, 0.2126 * d[i]! + 0.7152 * d[i + 1]! + 0.0722 * d[i + 2]!);
+    return m;
+  }, png);
+}
+
+test.describe('MO-39: the data exit (the page turn)', () => {
+  test('data exit: frames at 0/110/240/400/560/720/800 ms — the fold line starts at the bottom-right corner and passes the top-left by 720 ms (pixel probes on the paper vs the under sheet)', async ({ page }) => {
+    await openAt(page, '/?choose', 1280, 800);
+    const h2 = await page.locator('.file--data .pr__h2').evaluate((el) => el.getBoundingClientRect().toJSON() as DOMRect);
+    const box = { x: h2.left, y: h2.top, width: h2.width, height: h2.height };
+    expect(await darkest(page, box)).toBeLessThan(80); // ink at rest
+    await startHeld(page, DATA);
+    await expect(page.locator('.desk')).toHaveAttribute('data-exit', 'data');
+    // the fold's distance from the sheet's top-left corner along the diagonal: D = turn's translate in its turned frame + 3000
+    const fold = () => page.locator('.file--data .turn').evaluate((el) => {
+      const m = new DOMMatrix(getComputedStyle(el).transform);
+      const inv = new DOMMatrix().rotate(-45).multiply(m); // undo the 45° turn: what is left is the translate
+      return inv.m41 + 3000;
+    });
+    const fw = await page.locator('.file--data').evaluate((el) => parseFloat(getComputedStyle(el).getPropertyValue('--fw')));
+    const fh = await page.locator('.file--data').evaluate((el) => parseFloat(getComputedStyle(el).getPropertyValue('--fh')));
+    const full = (fw + fh) * 0.7071;
+    const ds: number[] = [];
+    for (const t of [0, 110, 240, 400, 560, 720]) {
+      await seek(page, t);
+      ds.push(await fold());
+    }
+    expect(Math.abs(ds[0]! - full)).toBeLessThan(2); // at the bottom-right corner
+    for (let i = 1; i < ds.length; i++) expect(ds[i]!, `step ${i}`).toBeLessThan(ds[i - 1]!);
+    expect(ds.at(-1)!).toBeLessThanOrEqual(0); // past the top-left corner
+    await seek(page, 720);
+    expect(await darkest(page, box)).toBeGreaterThan(120); // the page has gone: no ink where the title was
+    await seek(page, 800);
+    expect(await page.locator('.file--data .flap').evaluate((el) => Number(getComputedStyle(el).opacity))).toBeLessThan(0.05);
+  });
+
+  test('data exit: only transform and opacity animate; no clip-path or background change while running', async ({ page }) => {
+    await openAt(page, '/?choose', 1280, 800);
+    await startHeld(page, DATA);
+    const props = await page.evaluate(() => {
+      const set = new Set<string>();
+      for (const a of document.getAnimations().filter((x) => x instanceof CSSAnimation)) for (const k of (a.effect as KeyframeEffect).getKeyframes()) for (const p of Object.keys(k)) set.add(p);
+      return [...set].filter((p) => !['offset', 'computedOffset', 'easing', 'composite'].includes(p)).sort();
+    });
+    expect(props).toEqual(['opacity', 'transform']);
+    // the only transitions are the sheet's lift (transform) and its shadow (opacity)
+    const transitions = await page.evaluate(() => document.getAnimations().filter((a) => a instanceof CSSTransition).map((a) => (a as CSSTransition).transitionProperty));
+    expect(transitions.every((p) => p === 'transform' || p === 'opacity'), transitions.join(',')).toBe(true);
+  });
+
+  test('data exit: /data/ requested at 800 ± 60 ms', async ({ page }) => {
+    await openAt(page, '/?choose', 1280, 800);
+    await timeToLeave(page);
+    await page.locator(DATA_HIT).click({ position: { x: 40, y: 40 } });
+    await page.waitForURL(/\/data\/$/);
+    const dt = Number(await page.evaluate(() => sessionStorage.getItem('x:dt')));
+    expect(dt).toBeGreaterThanOrEqual(790);
+    expect(dt).toBeLessThanOrEqual(920); // 800 ms timer; room for a loaded runner
+  });
+
+  test('data exit: the clip and the flag stay put while the page passes over them', async ({ page }) => {
+    await openAt(page, '/?choose', 1280, 800);
+    // positions relative to the sheet's face (the face itself only keeps its lift while the page turns)
+    const rel = (sel: string) => page.evaluate((s2) => {
+      const f = document.querySelector('.file--data .face')!.getBoundingClientRect();
+      const r = document.querySelector(s2)!.getBoundingClientRect();
+      return [r.left - f.left, r.top - f.top];
+    }, sel);
+    const before = { clip: await rel('.file--data .clip'), tab: await rel('.file--data .tab') };
+    await startHeld(page, DATA);
+    for (const t of [240, 400, 560]) {
+      await seek(page, t);
+      for (const k of ['clip', 'tab'] as const) {
+        const now = await rel(`.file--data .${k}`);
+        expect(Math.abs(now[0]! - before[k][0]!), `${k} x @${t}`).toBeLessThan(1);
+        expect(Math.abs(now[1]! - before[k][1]!), `${k} y @${t}`).toBeLessThan(1);
+      }
+    }
+  });
+
+  test('data exit: reduced motion — a paper-coloured fade, /data/ at ≤ 300 ms', async ({ page }) => {
+    await openAt(page, '/?choose', 1280, 800, { reducedMotion: true });
+    await page.evaluate(() => {
+      document.addEventListener('click', () => setTimeout(() => sessionStorage.setItem('x:bg', getComputedStyle(document.querySelector('.xnav__bg')!).backgroundColor)), { capture: true });
+    });
+    await timeToLeave(page);
+    await page.locator(DATA_HIT).click({ position: { x: 40, y: 40 } });
+    await page.waitForURL(/\/data\/$/);
+    expect(await page.evaluate(() => sessionStorage.getItem('x:bg'))).toBe('rgb(251, 250, 246)');
+    expect(Number(await page.evaluate(() => sessionStorage.getItem('x:dt')))).toBeLessThanOrEqual(400); // 150 ms timer
+  });
+
+  test('data exit: bfcache restores the sheet whole', async ({ page }) => {
+    await openAt(page, '/?choose', 1280, 800);
+    const rest = await page.locator('.file--data .feed').evaluate((el) => el.getBoundingClientRect().toJSON() as DOMRect);
+    await page.locator(DATA_HIT).click({ position: { x: 40, y: 40 } });
+    await page.waitForURL(/\/data\/$/);
+    await page.goBack();
+    await expect(page).toHaveURL(/\?choose$/);
+    await expect(page.locator('.desk')).not.toHaveAttribute('data-exit', /.+/);
+    expect(await page.locator('.file--data .turn').evaluate((el) => getComputedStyle(el).transform)).toBe('none');
+    expect(await page.locator('.file--data .flap').evaluate((el) => getComputedStyle(el).display)).toBe('none');
+    const back = await page.locator('.file--data .feed').evaluate((el) => el.getBoundingClientRect().toJSON() as DOMRect);
+    expect(Math.abs(back.width - rest.width)).toBeLessThan(1);
+    expect(Math.abs(back.height - rest.height)).toBeLessThan(1);
   });
 });

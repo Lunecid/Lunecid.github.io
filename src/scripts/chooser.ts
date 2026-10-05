@@ -4,8 +4,8 @@
 // aside in CSS (:has, works without JS); this script measures where the sheet goes, and adds the touch rule: the first
 // tap on the game file only reveals it (.is-aside), the second follows its link, a tap anywhere else (the aside sheet
 // included) or Escape puts the sheet back. A hint (touch and JS only) says what the next tap does. Entering the game
-// file inks and strikes its "기밀 해제" stamp (MO-25), then plays its exit, the waveform (MO-38), before the link is
-// followed.
+// file inks and strikes its "기밀 해제" stamp (MO-25), then plays its exit, the waveform (MO-38); entering the general
+// file turns its page (MO-39); then the link is followed.
 import exitSheet from '../styles/chooser-exit.css?url';
 import { rememberVariant } from '../lib/variant-pref';
 import { isVariantId } from '../variants/ids';
@@ -82,8 +82,17 @@ function lineGeometry(desk: HTMLElement, layer: HTMLElement | null): void {
   layer.style.setProperty('--xl-k', ((2 * Math.max(cx, vw - cx)) / w + 0.05).toFixed(3));
 }
 
+/** The page turn folds the sheet's own layout box: its size, written once at the click (MO-39). */
+function foldGeometry(link: HTMLAnchorElement): void {
+  const file = link.closest<HTMLElement>('.file');
+  const feed = file?.querySelector<HTMLElement>('.feed');
+  if (!file || !feed) return;
+  file.style.setProperty('--fw', `${feed.offsetWidth}px`);
+  file.style.setProperty('--fh', `${feed.offsetHeight}px`);
+}
+
 /**
- * The exit of one link (MO-38): an unmodified primary activation that nothing else consumed (the first-tap rule calls
+ * The exit of one link (MO-38, MO-39): an unmodified primary activation that nothing else consumed (the first-tap rule calls
  * preventDefault first) remembers the choice and plays the exit: data-exit="game" on the desk (CSS keyframes; the
  * game file's stamp strikes first, at the press for mouse and pen, at the click for keyboard and assistive tech), or
  * data-exit="fade" under either reduced-motion path or forced colours; the page opens after EXIT_MS. Modified, middle
@@ -124,12 +133,12 @@ export function initExit(desk: HTMLElement, link: HTMLAnchorElement, kind: ExitK
     if (isVariantId(variant)) rememberVariant(variant);
     const fade = reduced() || matches('(forced-colors: active)');
     if (!stamp?.classList.contains('is-declassified')) strike();
+    // measure first: the exit's own rules change the layout they would read
+    if (!fade && kind === 'data') foldGeometry(link);
+    if (!fade && kind === 'game') lineGeometry(desk, layer);
     desk.dataset.exitTo = kind;
     desk.dataset.exit = fade ? 'fade' : kind;
-    if (!fade && kind === 'game') {
-      desk.classList.add('is-aside'); // the sheet makes way for the screen
-      lineGeometry(desk, layer);
-    }
+    if (!fade && kind === 'game') desk.classList.add('is-aside'); // the sheet makes way for the screen
     const href = link.getAttribute('href') ?? link.href;
     window.setTimeout(() => navigate(href), fade ? EXIT_MS.reduce : EXIT_MS[kind]);
   });
@@ -140,6 +149,9 @@ export function initExit(desk: HTMLElement, link: HTMLAnchorElement, kind: ExitK
     desk.classList.remove('is-aside');
     stamp?.classList.remove('is-declassified', 'is-struck');
     layer?.removeAttribute('style');
+    const file = link.closest<HTMLElement>('.file');
+    file?.style.removeProperty('--fw');
+    file?.style.removeProperty('--fh');
   });
 }
 
@@ -272,4 +284,6 @@ export function initChooser(root: ParentNode = document, opts: { navigate?: (hre
   attachExitSheet();
   const gameLink = links.find((l) => l.dataset.chooseVariant === 'game');
   if (gameLink) initExit(container, gameLink, 'game', { stamp: gameLink.closest('.file')?.querySelector<HTMLElement>('.stamp'), navigate: opts.navigate });
+  const dataLink = links.find((l) => l.dataset.chooseVariant === 'data');
+  if (dataLink) initExit(container, dataLink, 'data', { navigate: opts.navigate });
 }

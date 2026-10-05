@@ -8,7 +8,10 @@
 // underline; on hover or keyboard focus a yellow brush stroke sweeps in under it (transform only). One link; its hit
 // layer covers the print. Type: the site's sans (MO-OQ16 stand-ins; MO-29 moves the banner to the general version's
 // display face). MO-37 (v6.8/v6.12): a navy card folder under the sheet (it moves with it), a steel gem clip over the top
-// edge and a yellow index flag repeating the file number on the right edge; all decoration.
+// edge and a yellow index flag repeating the file number on the right edge; all decoration. MO-39: the page-turn exit's
+// layers (aria-hidden, shown only while leaving): .under (the next sheet, a hint of the general home), .turn > .turn__in
+// (the page itself, clipped to its side of the fold and counter-moved so it stays still), .flap (the turning page's back,
+// three flat shadow copies first).
 import { chooserCopy } from '../../data/copy/chooser';
 import { coverCopy } from '../../data/copy/chooser-covers';
 import type { CoverData } from '../../lib/chooser-covers';
@@ -29,6 +32,8 @@ const clauses = cover.tagline.split(/(?<=,) /);
     <i class="folder" aria-hidden="true"></i>
     <i class="lift" aria-hidden="true"></i>
     <div class="feed">
+      <div class="under" aria-hidden="true"><div class="under__in"><i class="under__rule"></i><p class="under__hero" lang="en">{d.banner.join(' ')}</p><i class="under__ln"></i><i class="under__ln"></i><i class="under__ln"></i><i class="under__ln"></i></div><i class="under__shade"></i></div>
+      <div class="turn"><div class="turn__in">
       <div class="paper" aria-hidden="true"><i class="curl"></i></div>
       <div class="pr">
         <p class="pr__hdr" lang="en" aria-hidden="true"><span class="pr__file">{d.file}</span><span class="pr__no">{d.serial}</span></p>
@@ -48,8 +53,11 @@ const clauses = cover.tagline.split(/(?<=,) /);
         </div>
         <p class="pr__foot" lang="en" aria-hidden="true"><span class="pr__foot-t">{foot}</span><i class="pr__blue"></i></p>
       </div>
+      <i class="turn__shade" aria-hidden="true"></i>
+      </div></div>
       <svg class="clip" viewBox="0 0 22 70" aria-hidden="true" focusable="false"><g class="clip__sh"><path d="M3.5 18V61A7.5 7.5 0 0 0 18.5 61V24" transform="translate(2.6 3.4)" stroke-opacity=".1" stroke-width="4.4"></path><path d="M3.5 18V61A7.5 7.5 0 0 0 18.5 61V24" transform="translate(1.1 1.5)" stroke-opacity=".2" stroke-width="2.8"></path></g><g class="clip__w"><path class="clip__leg" d="M15 18V12" stroke-width="2.6"></path><path class="clip__edge" d="M15 18V9A5.75 5.75 0 0 0 3.5 9V61A7.5 7.5 0 0 0 18.5 61V24" stroke-width="2.8"></path><path class="clip__steel" d="M15 18V9A5.75 5.75 0 0 0 3.5 9V61A7.5 7.5 0 0 0 18.5 61V24" stroke-width="2.1"></path><path class="clip__hi" d="M15 18V9A5.75 5.75 0 0 0 3.5 9V61A7.5 7.5 0 0 0 18.5 61V24" stroke-width=".7" stroke-opacity=".95" transform="translate(-.4 -.4)"></path></g><path class="clip__seat" d="M12.5 18H17.5" stroke-opacity=".18" stroke-width="1"></path></svg>
       <span class="tab" aria-hidden="true"><span class="tab__t" lang="en">{d.num}</span></span>
+      <div class="flap" aria-hidden="true">{[1, 2, 3].map((i) => <i class="flap__f flap__f--s" style={`--i:${i}`}><i class="flap__c"><i class="flap__p"></i></i></i>)}<i class="flap__f"><i class="flap__c"><i class="flap__p"><i class="flap__g"></i></i></i></i></div>
     </div>
   </div>
 </article>

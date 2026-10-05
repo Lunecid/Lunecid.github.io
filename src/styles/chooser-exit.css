@@ -110,9 +110,66 @@
 .desk[data-exit="fade"] ~ .xnav .xnav__bg { animation: x-in var(--x-fade) linear both; }
 @keyframes x-line { 0% { opacity: 1; transform: none; } 55% { opacity: 1; } 75% { transform: scaleX(var(--xl-k, 1)); } 100% { opacity: 0; transform: scaleX(var(--xl-k, 1)); } }
 
+/* ── data: the page turn (800 ms). A 45° fold line runs from the sheet's bottom-right corner past its top-left (0–720,
+   eased in and out); the page keeps its side of the fold; beyond it the flap (the paper's plain back) turns about the
+   fold in 3D (124° → 178°: it lifts toward the viewer and lays over to the top left), its shadow three flat copies;
+   from half way it is pulled off and from 72% it fades; under it the next sheet with a hint of the general home. The
+   clip, the flag and the folder stay on the stack. Built from transforms only: a frame turned 45° and slid along the
+   diagonal clips each side of the fold (overflow: clip), its content counter-moved so the paper stays still; the
+   shades are static gradients riding in the same frames. chooser.ts writes the sheet's size (--fw, --fh) at the
+   click; the eased stops are written out below (one per eighth of --x-fold). ── */
+.desk[data-exit="data"] .file--data { --fd0: calc((var(--fw) + var(--fh)) * .7071); --ly: -4px; }
+.desk[data-exit="data"] .file--data::before { opacity: 1; }
+.desk[data-exit="data"] .file--data .feed { flex: none; height: var(--fh); }
+.desk[data-exit="data"] .file--data :is(.under, .flap, .turn__shade) { display: block; }
+.file--data .under {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  background-color: var(--pr-paper);
+  background-image: var(--tooth), var(--formation);
+  background-size: 180px 180px, 420px 420px;
+  -webkit-mask-box-image: var(--deckle);
+}
+.file--data .under__in { display: grid; align-content: start; gap: calc(var(--row-gap) * 1.4); padding: var(--pr-pad-t) calc(var(--strip) + var(--pr-pad-x)); }
+.file--data .under__rule { display: block; height: 0; margin-top: 10px; border-top: 1px solid var(--pr-ink-2); }
+.file--data .under__hero { justify-self: start; margin: calc(var(--row-gap) * 1.5) 0 0 calc(4px - var(--pr-pad-x)); padding: .2em .34em .16em calc(var(--pr-pad-x) - 4px); font: 900 calc(var(--pdisp-fs) * .5)/.95 var(--pr-font-banner); font-stretch: 112%; color: var(--pr-on-color); text-transform: uppercase; white-space: nowrap; background: var(--tex-rh), var(--pr-red); -webkit-mask-box-image: var(--rag); }
+.file--data .under__ln { display: block; height: 7px; border-radius: 1px; background: color-mix(in srgb, var(--pr-ink) 13%, transparent); }
+.file--data .under__ln:nth-of-type(2) { width: 62%; margin-top: 6px; height: 11px; background: color-mix(in srgb, var(--pr-ink) 22%, transparent); }
+.file--data .under__ln:nth-of-type(3) { width: 88%; }
+.file--data .under__ln:nth-of-type(4) { width: 80%; }
+.file--data .under__ln:nth-of-type(5) { width: 46%; }
+/* the shades, each a strip in a fold frame: on the next sheet beyond the fold, on the page before it, on the flap */
+.file--data .under__shade, .file--data .turn__shade, .file--data .flap__g { position: absolute; left: 0; top: 0; height: 3000px; transform-origin: 0 0; pointer-events: none; }
+.file--data .under__shade { --off: 0px; width: 50px; background: linear-gradient(90deg, color-mix(in srgb, var(--cover-shadow) 32%, transparent), color-mix(in srgb, var(--cover-shadow) 8%, transparent) 18px, transparent 50px); }
+.file--data .turn__shade { --off: -64px; z-index: 2; width: 64px; background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--cover-shadow) 8%, transparent) 50px, color-mix(in srgb, var(--cover-shadow) 20%, transparent) 63.5px, transparent 64px); }
+.file--data .flap__g { --off: 0px; width: 140px; background: linear-gradient(90deg, color-mix(in srgb, var(--cover-shadow) 20%, transparent), color-mix(in srgb, var(--cover-shadow) 5%, transparent) 4px, color-mix(in srgb, var(--pr-on-color) 75%, transparent) 13px, transparent 46px, transparent 90px, color-mix(in srgb, var(--cover-shadow) 4%, transparent) 140px); }
+.desk[data-exit="data"] .file--data :is(.under__shade, .turn__shade) { animation: x-fold var(--x-fold) linear both, x-in calc(var(--x-fold) * .12) linear both; }
+.desk[data-exit="data"] .file--data .flap__g { animation: x-fold var(--x-fold) linear both; }
+/* the page: its side of the fold */
+.desk[data-exit="data"] .file--data .turn { position: absolute; left: 0; top: 0; width: 3000px; height: 3000px; overflow: clip; transform-origin: 0 0; --off: -3000px; animation: x-fold var(--x-fold) linear both; }
+.desk[data-exit="data"] .file--data .turn__in { position: absolute; left: 0; top: 0; flex: none; width: var(--fw); height: var(--fh); transform-origin: 0 0; animation: x-unfold var(--x-fold) linear both; }
+/* the flap: the other side, turned about the fold; its shadows the same outline projected flat, pushed down-right */
+.file--data .flap { position: absolute; inset: 0; z-index: 5; pointer-events: none; }
+.file--data .flap__f { position: absolute; left: 0; top: 0; width: 3000px; height: 3000px; transform-origin: 0 0; }
+.file--data .flap__c { position: absolute; inset: 0; overflow: clip; }
+.file--data .flap__p { position: absolute; left: 0; top: 0; width: var(--fw); height: var(--fh); overflow: hidden; transform-origin: 0 0; --off: 0px; background: var(--pr-paper); }
+.file--data .flap__f--s .flap__p { background: color-mix(in srgb, var(--cover-shadow) 5.5%, transparent); }
+.desk[data-exit="data"] .file--data .flap { animation: x-flap-fade var(--x-fold) linear both; }
+.desk[data-exit="data"] .file--data .flap__f { animation: x-flap var(--x-fold) linear both; }
+.desk[data-exit="data"] .file--data .flap__f--s { animation-name: x-flap-shadow; }
+.desk[data-exit="data"] .file--data .flap__p { animation: x-unfold var(--x-fold) linear both; }
+@keyframes x-fold { 0% { transform: rotate(45deg) translate(calc(calc(var(--fd0) * 1.0000 - 0.00px) + var(--off, 0px)), -1500px); } 12.5% { transform: rotate(45deg) translate(calc(calc(var(--fd0) * 0.9446 - 1.11px) + var(--off, 0px)), -1500px); } 25% { transform: rotate(45deg) translate(calc(calc(var(--fd0) * 0.8328 - 3.34px) + var(--off, 0px)), -1500px); } 37.5% { transform: rotate(45deg) translate(calc(calc(var(--fd0) * 0.6781 - 6.44px) + var(--off, 0px)), -1500px); } 50% { transform: rotate(45deg) translate(calc(calc(var(--fd0) * 0.5000 - 10.00px) + var(--off, 0px)), -1500px); } 55.56% { transform: rotate(45deg) translate(calc(calc(var(--fd0) * 0.4194 - 11.61px) + var(--off, 0px)), -1500px); } 62.5% { transform: rotate(45deg) translate(calc(calc(var(--fd0) * 0.3219 - 13.56px) + var(--off, 0px)), -1500px); } 75% { transform: rotate(45deg) translate(calc(calc(var(--fd0) * 0.1672 - 16.66px) + var(--off, 0px)), -1500px); } 87.5% { transform: rotate(45deg) translate(calc(calc(var(--fd0) * 0.0554 - 18.89px) + var(--off, 0px)), -1500px); } 100% { transform: rotate(45deg) translate(calc(calc(var(--fd0) * 0.0000 - 20.00px) + var(--off, 0px)), -1500px); } }
+@keyframes x-unfold { 0% { transform: translate(calc(-1 * calc(var(--fd0) * 1.0000 - 0.00px) - var(--off, 0px)), 1500px) rotate(-45deg); } 12.5% { transform: translate(calc(-1 * calc(var(--fd0) * 0.9446 - 1.11px) - var(--off, 0px)), 1500px) rotate(-45deg); } 25% { transform: translate(calc(-1 * calc(var(--fd0) * 0.8328 - 3.34px) - var(--off, 0px)), 1500px) rotate(-45deg); } 37.5% { transform: translate(calc(-1 * calc(var(--fd0) * 0.6781 - 6.44px) - var(--off, 0px)), 1500px) rotate(-45deg); } 50% { transform: translate(calc(-1 * calc(var(--fd0) * 0.5000 - 10.00px) - var(--off, 0px)), 1500px) rotate(-45deg); } 55.56% { transform: translate(calc(-1 * calc(var(--fd0) * 0.4194 - 11.61px) - var(--off, 0px)), 1500px) rotate(-45deg); } 62.5% { transform: translate(calc(-1 * calc(var(--fd0) * 0.3219 - 13.56px) - var(--off, 0px)), 1500px) rotate(-45deg); } 75% { transform: translate(calc(-1 * calc(var(--fd0) * 0.1672 - 16.66px) - var(--off, 0px)), 1500px) rotate(-45deg); } 87.5% { transform: translate(calc(-1 * calc(var(--fd0) * 0.0554 - 18.89px) - var(--off, 0px)), 1500px) rotate(-45deg); } 100% { transform: translate(calc(-1 * calc(var(--fd0) * 0.0000 - 20.00px) - var(--off, 0px)), 1500px) rotate(-45deg); } }
+@keyframes x-flap { 0% { transform: translate(0.0px, 0.0px) rotate(45deg) translate(calc(var(--fd0) * 1.0000 - 0.00px), -1500px) perspective(1700px) rotateY(124.00deg); } 12.5% { transform: translate(0.0px, 0.0px) rotate(45deg) translate(calc(var(--fd0) * 0.9446 - 1.11px), -1500px) perspective(1700px) rotateY(126.99deg); } 25% { transform: translate(0.0px, 0.0px) rotate(45deg) translate(calc(var(--fd0) * 0.8328 - 3.34px), -1500px) perspective(1700px) rotateY(133.03deg); } 37.5% { transform: translate(0.0px, 0.0px) rotate(45deg) translate(calc(var(--fd0) * 0.6781 - 6.44px), -1500px) perspective(1700px) rotateY(141.38deg); } 50% { transform: translate(0.0px, 0.0px) rotate(45deg) translate(calc(var(--fd0) * 0.5000 - 10.00px), -1500px) perspective(1700px) rotateY(151.00deg); } 55.56% { transform: translate(0.0px, 0.0px) rotate(45deg) translate(calc(var(--fd0) * 0.4194 - 11.61px), -1500px) perspective(1700px) rotateY(155.35deg); } 62.5% { transform: translate(-0.5px, -0.5px) rotate(45deg) translate(calc(var(--fd0) * 0.3219 - 13.56px), -1500px) perspective(1700px) rotateY(160.62deg); } 75% { transform: translate(-11.7px, -11.7px) rotate(45deg) translate(calc(var(--fd0) * 0.1672 - 16.66px), -1500px) perspective(1700px) rotateY(168.97deg); } 87.5% { transform: translate(-52.0px, -52.0px) rotate(45deg) translate(calc(var(--fd0) * 0.0554 - 18.89px), -1500px) perspective(1700px) rotateY(175.01deg); } 100% { transform: translate(-140.0px, -140.0px) rotate(45deg) translate(calc(var(--fd0) * 0.0000 - 20.00px), -1500px) perspective(1700px) rotateY(178.00deg); } }
+@keyframes x-flap-shadow { 0% { transform: translate(calc(var(--i) * 3.84px - 0.0px), calc(var(--i) * 6.97px - 0.0px)) rotate(45deg) translate(calc(var(--fd0) * 1.0000 - 0.00px), -1500px) rotateY(124.00deg); } 12.5% { transform: translate(calc(var(--i) * 3.74px - 0.0px), calc(var(--i) * 6.79px - 0.0px)) rotate(45deg) translate(calc(var(--fd0) * 0.9446 - 1.11px), -1500px) rotateY(126.99deg); } 25% { transform: translate(calc(var(--i) * 3.51px - 0.0px), calc(var(--i) * 6.39px - 0.0px)) rotate(45deg) translate(calc(var(--fd0) * 0.8328 - 3.34px), -1500px) rotateY(133.03deg); } 37.5% { transform: translate(calc(var(--i) * 3.16px - 0.0px), calc(var(--i) * 5.74px - 0.0px)) rotate(45deg) translate(calc(var(--fd0) * 0.6781 - 6.44px), -1500px) rotateY(141.38deg); } 50% { transform: translate(calc(var(--i) * 2.70px - 0.0px), calc(var(--i) * 4.91px - 0.0px)) rotate(45deg) translate(calc(var(--fd0) * 0.5000 - 10.00px), -1500px) rotateY(151.00deg); } 55.56% { transform: translate(calc(var(--i) * 2.48px - 0.0px), calc(var(--i) * 4.50px - 0.0px)) rotate(45deg) translate(calc(var(--fd0) * 0.4194 - 11.61px), -1500px) rotateY(155.35deg); } 62.5% { transform: translate(calc(var(--i) * 2.20px - 0.5px), calc(var(--i) * 3.99px - 0.5px)) rotate(45deg) translate(calc(var(--fd0) * 0.3219 - 13.56px), -1500px) rotateY(160.62deg); } 75% { transform: translate(calc(var(--i) * 1.73px - 11.7px), calc(var(--i) * 3.15px - 11.7px)) rotate(45deg) translate(calc(var(--fd0) * 0.1672 - 16.66px), -1500px) rotateY(168.97deg); } 87.5% { transform: translate(calc(var(--i) * 1.39px - 52.0px), calc(var(--i) * 2.52px - 52.0px)) rotate(45deg) translate(calc(var(--fd0) * 0.0554 - 18.89px), -1500px) rotateY(175.01deg); } 100% { transform: translate(calc(var(--i) * 1.22px - 140.0px), calc(var(--i) * 2.21px - 140.0px)) rotate(45deg) translate(calc(var(--fd0) * 0.0000 - 20.00px), -1500px) rotateY(178.00deg); } }
+@keyframes x-flap-fade { 0% { opacity: 1.000; } 80% { opacity: 1.000; } 85% { opacity: 0.844; } 90% { opacity: 0.500; } 95% { opacity: 0.156; } 100% { opacity: 0.000; } }
+
+
 /* reduced motion (either path; chooser.ts already takes the fade there): no game exit motion */
 @media (prefers-reduced-motion: reduce) {
-  .desk[data-exit="game"] .file--game :is(.xg, .xg *, .xg__off, .dev__screen > .face), .desk[data-exit="game"] ~ .xnav * { animation: none; }
+  .desk[data-exit="game"] .file--game :is(.xg, .xg *, .xg__off, .dev__screen > .face), .desk[data-exit="game"] ~ .xnav *, .desk[data-exit="data"] .file--data :is(.turn, .turn *, .under *, .flap, .flap *) { animation: none; }
 }
-:root[data-motion="reduce"] .desk[data-exit="game"] .file--game :is(.xg, .xg *, .xg__off, .dev__screen > .face), :root[data-motion="reduce"] .desk[data-exit="game"] ~ .xnav * { animation: none; }
+:root[data-motion="reduce"] .desk[data-exit="game"] .file--game :is(.xg, .xg *, .xg__off, .dev__screen > .face), :root[data-motion="reduce"] .desk[data-exit="game"] ~ .xnav *, :root[data-motion="reduce"] .desk[data-exit="data"] .file--data :is(.turn, .turn *, .under *, .flap, .flap *) { animation: none; }
 @media (forced-colors: active) { .file--game .xg, .file--game .xg__off { display: none !important; } }

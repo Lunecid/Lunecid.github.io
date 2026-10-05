@@ -621,6 +621,22 @@ describe('the chooser desk (MO-23, v6.4)', () => {
     expect(s('--x-line-at') + s('--x-line')).toBeCloseTo(s('--x-game'), 5);
   });
 
+  it('MO-39: --x-data .8s; the fold ends at .72s; EXIT_MS.data equals --x-data', async () => {
+    const d = declsOf(':root');
+    expect(d.get('--x-data')).toBe('.8s');
+    expect(d.get('--x-fold')).toBe('.72s');
+    expect(d.get('--x-pull-at')).toBe('.4s');
+    expect(d.get('--x-flap-fade-at')).toBe('.576s');
+    expect(parseFloat(d.get('--x-fold')!)).toBeLessThan(parseFloat(d.get('--x-data')!));
+    const { EXIT_MS } = await import('../../src/scripts/chooser');
+    expect(EXIT_MS.data).toBe(parseFloat(d.get('--x-data')!) * 1000);
+    // the baked stops of the turn match the pinned moments
+    const exit = read('src/styles/chooser-exit.css');
+    const fade = /@keyframes x-flap-fade \{ 0% \{ opacity: 1\.000; \} ([\d.]+)% \{ opacity: 1\.000; \}/.exec(exit)?.[1];
+    expect(Number(fade) / 100 * 720).toBeCloseTo(576, 0);
+    expect(exit).toMatch(/55\.56% \{ transform: translate\(0\.0px, 0\.0px\)/); // the pull starts at --x-pull-at
+  });
+
   it('MO-23: the chooser page is dark (color-scheme dark in the chooser sheet), the other neutral pages stay light', () => {
     const sheet = read('src/styles/chooser.css');
     expect(sheet).toMatch(/(^|\n):root\[data-variant="neutral"\]\[data-page="chooser"\]\s*\{[^}]*color-scheme:\s*dark/);
