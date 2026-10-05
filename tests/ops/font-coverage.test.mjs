@@ -16,7 +16,7 @@ import { dirname, join, relative, sep } from 'node:path';
 import { JSDOM } from 'jsdom';
 import { PRINTABLE_ASCII, isHangul } from '../../scripts/fonts/glyphs.mjs';
 import { cmapCodePoints, parseName, woff2Tables } from '../../scripts/fonts/sfnt.mjs';
-import { COVER_DISPLAY_FAMILY, COVER_MONO_FAMILY, DISPLAY_FAMILY, SANS_FAMILY, SERIF_KO_FAMILY } from '../../src/lib/fonts.ts';
+import { COVER_BANNER_FAMILY, COVER_DISPLAY_FAMILY, COVER_MONO_FAMILY, DISPLAY_FAMILY, SANS_FAMILY, SERIF_KO_FAMILY } from '../../src/lib/fonts.ts';
 
 const DIST = process.env.DIST_DIR ?? 'dist';
 
@@ -288,9 +288,7 @@ test('self-test: the Korean serif fails on a syllable Noto Serif KR has, warns o
   assert.ok(absent.warnings.some((w) => /Noto Serif KR has no glyph for ᄀ \(U\+1100\)/.test(w)), absent.warnings.join('\n'));
 });
 
-// MO-29 (named change): the chooser (/ and /en/) declares the display face too, for its printout's banner, with swap and
-// no preload; every other game or neutral page still declares none.
-test('DS-1: data pages declare and preload the display face; the chooser declares it without a preload (MO-29); no other game or neutral page declares it', () => {
+test('DS-1: data pages declare and preload the display face; no game or neutral page declares it', () => {
   /** @type {string[]} */
   const wrong = [];
   let data = 0;
@@ -304,10 +302,6 @@ test('DS-1: data pages declare and preload the display face; the chooser declare
       if (face.length !== 1) wrong.push(`${p.route}: ${face.length} display faces`);
       else if (!preloads.includes(face[0].url)) wrong.push(`${p.route}: the display face ${face[0].url} is not preloaded`);
       if (!/\/_astro\/sb-display\.[\w-]+\.woff2$/.test(face[0]?.url ?? '')) wrong.push(`${p.route}: display url ${face[0]?.url}`);
-    } else if (p.route === '/' || p.route === '/en/') {
-      if (face.length !== 1) wrong.push(`${p.route}: ${face.length} display faces (the chooser declares one)`);
-      if (!/font-display:swap/.test(html.slice(html.indexOf(`font-family:"${DISPLAY_FAMILY}"`)).split('}')[0])) wrong.push(`${p.route}: the display face is not swap`);
-      if (preloads.some((u) => /sb-display/.test(u))) wrong.push(`${p.route}: preloads the display face`);
     } else {
       if (face.length > 0) wrong.push(`${p.route}: declares the display face`);
       if (preloads.some((u) => /sb-display/.test(u))) wrong.push(`${p.route}: preloads the display face`);
@@ -410,5 +404,29 @@ test('MO-23: only the chooser declares the cover faces; each subset draws printa
     }
   }
   assert.equal(chooserPages, 2);
+  assert.deepEqual(wrong, []);
+});
+
+test('MO-29: the chooser printout\'s banner face draws every banner and contents-number character, only the chooser declares it, never preloaded', () => {
+  /** @type {string[]} */
+  const wrong = [];
+  for (const p of builtPages()) {
+    const html = readFileSync(p.file, 'utf8');
+    const doc = new JSDOM(html).window.document;
+    const faces = fontFaces(doc);
+    const banner = faces.filter((f) => f.family === COVER_BANNER_FAMILY);
+    const chooser = p.route === '/' || p.route === '/en/';
+    if (!chooser) {
+      if (banner.length > 0) wrong.push(`${p.route}: declares the banner face`);
+      continue;
+    }
+    if (banner.length !== 1) wrong.push(`${p.route}: ${banner.length} banner faces`);
+    if (/<link rel="preload"[^>]*sb-cover-banner/.test(html)) wrong.push(`${p.route}: preloads the banner face`);
+    // the banner is uppercased by CSS: check the uppercase forms of the banner and the printout's contents numbers
+    const text = [...doc.querySelectorAll('.file--data .pr__disp, .file--data .toc__n')].map((el) => (el.textContent ?? '').toUpperCase()).join('');
+    if (text.trim() === '') wrong.push(`${p.route}: no banner text`);
+    const missing = uncoveredBy(text, faces, COVER_BANNER_FAMILY);
+    if (missing.length > 0) wrong.push(`${p.route}: "${COVER_BANNER_FAMILY}" lacks ${describe(missing)}`);
+  }
   assert.deepEqual(wrong, []);
 });

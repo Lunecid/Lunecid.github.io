@@ -151,14 +151,14 @@ test.describe('MO-23: the static desk', () => {
     }
   });
 
-  // MO-29 (named change): the general version's display face (the printout's banner) is held back too
+  // MO-29 (named change): the printout banner's face (the display face's chooser subset) is held back too
   test('CLS ≤ 0.02 with mono, Anton and the display face delayed 1.5 s', async ({ browser }) => {
     test.setTimeout(90_000);
     for (const width of [375, 1280]) {
       const context = await browser.newContext({ viewport: { width, height: 800 } });
       const page = await context.newPage();
       let held = 0;
-      await page.route(/sb-(cover-mono|cover-display|display)[^/]*\.woff2/, (route) => {
+      await page.route(/sb-cover-(mono|display|banner)[^/]*\.woff2/, (route) => {
         held += 1;
         setTimeout(() => void route.continue(), 1500);
       });

@@ -126,6 +126,7 @@
 
   /* ── the chooser desk (MO-23, chooser v6.4): the game file's cyber cover and the general file's art-paper printout ── */
   --font-cover: "SB Cover Display", Impact, "Arial Narrow Bold", sans-serif;  /* the game cover's display words: Anton subset (MO-23), chooser only */
+  --font-chooser-banner: "SB Cover Banner", var(--font-ed-display);  /* the printout's banner: the display face's chooser subset (MO-29) */
   --cover-shadow: #000000;                    /* the files' drop shadows */
   --cover-scan: rgba(255, 255, 255, .025);    /* static scanlines: --hud-strong at 2.5% */
   --cover-grid: rgba(255, 255, 255, .03);     /* the cover's crossword grid: --hud-strong at 3% */
@@ -173,7 +174,7 @@
   /* the printout's type and link follow the general version (MO-OQ16 A): the banner in its display face, the link in
      its ink with the yellow brush stroke, the focus ring in its ink */
   --pr-font-text: var(--font-sans);
-  --pr-font-banner: var(--font-ed-display);
+  --pr-font-banner: var(--font-chooser-banner);
   --pr-link: var(--ed-link);
   --pr-link-stroke: var(--ed-yellow);
   --pr-focus: var(--ed-focus);

@@ -117,6 +117,23 @@ export async function subsetSans(text) {
   return subsetFont(renamed, null, { keepAllGlyphs: true, targetFormat: 'woff2', preserveNameIds: SANS_NAME_IDS });
 }
 
+/** The chooser printout's banner face: uppercase Latin, digits, space and full stop (the banner words are Latin and
+ *  uppercased by CSS; the contents numbers are digits). */
+export const COVER_BANNER_CHARACTERS = ' .0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+
+/**
+ * The chooser printout's banner face (MO-29): Archivo as the display face, pinned to wdth 112 and wght 900 (the banner
+ * is 900; the contents numbers ask for 800 and take the same file), over COVER_BANNER_CHARACTERS only.
+ */
+export async function subsetCoverBanner() {
+  return subsetFont(readFileSync(SOURCES.display), COVER_BANNER_CHARACTERS, {
+    targetFormat: 'woff2',
+    variationAxes: { wdth: 112, wght: 900 },
+    keepFeatures: ['kern', 'tnum', 'lnum'],
+    preserveNameIds: [0, 1, 2, 3, 4, 5, 6, 13, 14],
+  });
+}
+
 /** Features the display words and numerals can trigger. */
 const DISPLAY_FEATURES = ['kern', 'liga', 'tnum', 'case', 'lnum'];
 
@@ -353,6 +370,12 @@ export async function buildFonts(distDir, { warn = (message) => console.warn(mes
     }
   }
 
+  // ── the chooser printout's banner face (MO-29): one fixed subset, chooser pages only, never preloaded ──
+  if (pages.some((p) => p.html.includes(FONT_URL.coverBanner))) {
+    const banner = await step('subsetting Archivo (the chooser banner)', () => subsetCoverBanner());
+    replace.set(FONT_URL.coverBanner, write('coverBanner', 'sb-cover-banner', banner, COVER_BANNER_CHARACTERS.length));
+  }
+
   // ── Latin display face (general version, DS-1): one fixed subset, written only when some page declares it; its
   //    preload is rewritten with the URL below. ──
   if (pages.some((p) => p.html.includes(FONT_URL.display))) {
@@ -405,6 +428,7 @@ export async function devFont(url) {
   if (url === FONT_URL.coverDisplay) return readFileSync(SOURCES.coverDisplay);
   if (url === FONT_URL.serifKo) return (devSerif ??= subsetSerifKo(sourceHangul()).then((r) => r.data));
   if (url === FONT_URL.display) return subsetDisplay();
+  if (url === FONT_URL.coverBanner) return subsetCoverBanner();
   return null;
 }
 

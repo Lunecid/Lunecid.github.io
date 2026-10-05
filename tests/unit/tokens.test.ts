@@ -488,7 +488,7 @@ describe('the chooser desk (MO-23, v6.4)', () => {
       '--pr-plate': 'rgba(20, 20, 20, .075)', '--pr-lit': 'rgba(255, 255, 255, .95)',
       '--pr-red': '#CC281C', '--pr-blue': '#1F3A93', '--pr-yellow': '#F5C400', '--pr-on-color': '#FFFFFF',
       // MO-29 (named change): the stand-ins now point at the general version's type and link tokens
-      '--pr-font-text': 'var(--font-sans)', '--pr-font-banner': 'var(--font-ed-display)',
+      '--pr-font-text': 'var(--font-sans)', '--pr-font-banner': 'var(--font-chooser-banner)',
       '--pr-link': 'var(--ed-link)', '--pr-link-stroke': 'var(--ed-yellow)', '--pr-focus': 'var(--ed-focus)',
       '--font-cover': '"SB Cover Display", Impact, "Arial Narrow Bold", sans-serif',
       '--dur-stroke': '.2s',
@@ -519,7 +519,10 @@ describe('the chooser desk (MO-23, v6.4)', () => {
 
   it('MO-29: the printout uses the general version\'s type and link tokens (display face for the banner, ink link, yellow stroke, ink focus)', () => {
     const d = declsOf(':root');
-    expect(d.get('--pr-font-banner')).toBe('var(--font-ed-display)');
+    // the banner: the display face's chooser subset first, then the general version's display stack (named: the full
+    // display face cost the chooser ~75 ms of LCP)
+    expect(d.get('--pr-font-banner')).toBe('var(--font-chooser-banner)');
+    expect(d.get('--font-chooser-banner')).toBe('"SB Cover Banner", var(--font-ed-display)');
     expect(d.get('--pr-font-text')).toBe('var(--font-sans)');
     expect(d.get('--pr-link')).toBe('var(--ed-link)');
     expect(d.get('--pr-link-stroke')).toBe('var(--ed-yellow)');

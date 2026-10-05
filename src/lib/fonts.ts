@@ -21,8 +21,12 @@ export const DISPLAY_FAMILY = 'SB Display';
  * Name; renamed families so they never stand in for the site-wide faces. */
 export const COVER_MONO_FAMILY = 'SB Cover Mono';
 export const COVER_DISPLAY_FAMILY = 'SB Cover Display';
+/** The chooser printout's banner and contents numbers (MO-29): Archivo pinned to wdth 112 and wght 900 over A–Z, 0–9,
+ * space and full stop only (the banner is uppercased Latin), chooser only (swap, not preloaded): the general version's
+ * display face at a quarter of its size on the chooser's first load. */
+export const COVER_BANNER_FAMILY = 'SB Cover Banner';
 
-export type FontFace = 'sans' | 'mono' | 'serifKo' | 'display' | 'coverMono' | 'coverDisplay';
+export type FontFace = 'sans' | 'mono' | 'serifKo' | 'display' | 'coverMono' | 'coverDisplay' | 'coverBanner';
 
 /** Placeholder URL per face (replaced by the hashed file in dist). */
 export const FONT_URL: Record<FontFace, string> = {
@@ -32,6 +36,7 @@ export const FONT_URL: Record<FontFace, string> = {
   display: '/_fonts/sb-display.woff2',
   coverMono: '/_fonts/sb-cover-mono.woff2',
   coverDisplay: '/_fonts/sb-cover-display.woff2',
+  coverBanner: '/_fonts/sb-cover-banner.woff2',
 };
 
 /** The Hangul blocks (Jamo, Compatibility Jamo, Jamo Extended-A, Syllables, Jamo Extended-B). */
@@ -44,6 +49,7 @@ const DESCRIPTORS: Record<FontFace, string> = {
   display: `font-family:"${DISPLAY_FAMILY}";font-style:normal;font-weight:700 900;font-stretch:112%;font-display:swap`,
   coverMono: `font-family:"${COVER_MONO_FAMILY}";font-style:normal;font-weight:600;font-display:swap`,
   coverDisplay: `font-family:"${COVER_DISPLAY_FAMILY}";font-style:normal;font-weight:400;font-display:swap`,
+  coverBanner: `font-family:"${COVER_BANNER_FAMILY}";font-style:normal;font-weight:800 900;font-stretch:112%;font-display:swap`,
 };
 
 /** The Korean serif draws Hangul only, so Latin text keeps its Times face. */
