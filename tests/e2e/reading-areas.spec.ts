@@ -17,7 +17,11 @@ test.describe('P1-9: the reading bands are light HUD, not rounded card grids', (
         }
         return [...new Set(found)];
       });
-      expect(rounded).toEqual([]);
+      // The player log's game-achievement showcases wear their game's skin from the owner-confirmed reference board
+      // (2026-10-04): the TFT rank ring and the Hearthstone wood frame and leather inset are round there. Only these.
+      const skins = route === '/game/player-log/' ? ['span.plate__ring', 'article.hsq', 'div.hsq__inner'] : [];
+      expect(skins.filter((s) => !rounded.includes(s)), 'the skin exemptions still name real elements').toEqual([]);
+      expect(rounded.filter((s) => !skins.includes(s))).toEqual([]);
     });
   }
 
