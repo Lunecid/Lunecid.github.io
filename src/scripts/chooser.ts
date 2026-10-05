@@ -21,7 +21,7 @@ const FIRST_TAP_MS = 600;
 /**
  * Pure: where the sheet goes when it slides aside. Side by side (tablet and up) → to the right of the game cover, its
  * turned left edge clear of the cover by `gap`; stacked (phone) → below it, its highest turned corner clear by `gap`.
- * Boxes are untransformed offsets inside the desk (the outer file boxes, so a thicker device frame changes nothing).
+ * Boxes are untransformed offsets inside the desk: the tablet's body (bezel included) and the sheet.
  * `cx` centres the game cover on the desk while it plays alone (the opening, MO-26).
  */
 export function asideGeometry(game: Box, sheet: Box, tiltDeg: number, asideDeg: number, gap = 24): { side: boolean; ax: number; ay: number; cx: number } {
@@ -37,7 +37,16 @@ export function asideGeometry(game: Box, sheet: Box, tiltDeg: number, asideDeg: 
   return { side, ax: 12, ay: Math.round(game.y + game.h + gap + spill - sheet.y), cx: 0 };
 }
 
-const boxOf = (el: HTMLElement): Box => ({ x: el.offsetLeft, y: el.offsetTop, w: el.offsetWidth, h: el.offsetHeight });
+/** An element's untransformed layout box inside `root` (offsets summed up the offsetParent chain). */
+const boxIn = (el: HTMLElement, root: HTMLElement): Box => {
+  let x = 0;
+  let y = 0;
+  for (let e: HTMLElement | null = el; e && e !== root; e = e.offsetParent as HTMLElement | null) {
+    x += e.offsetLeft;
+    y += e.offsetTop;
+  }
+  return { x, y, w: el.offsetWidth, h: el.offsetHeight };
+};
 const degrees = (value: string): number => parseFloat(value) || 0;
 const matches = (query: string): boolean => {
   try {
@@ -117,6 +126,7 @@ export function initDesk(desk: HTMLElement, hint: HTMLElement | null): () => voi
   const dataFile = desk.querySelector<HTMLElement>('.file--data');
   const gameLink = gameFile?.querySelector<HTMLAnchorElement>('a[data-choose-variant]');
   if (!gameFile || !dataFile || !gameLink) return () => {};
+  const gameBody = gameFile.querySelector<HTMLElement>('.dev__body') ?? gameFile;
   const off: (() => void)[] = [];
   const on = (target: EventTarget, type: string, fn: (e: Event) => void, opts?: AddEventListenerOptions) => {
     target.addEventListener(type, fn, opts);
@@ -125,7 +135,8 @@ export function initDesk(desk: HTMLElement, hint: HTMLElement | null): () => voi
 
   const measure = () => {
     const st = getComputedStyle(desk);
-    const g = asideGeometry(boxOf(gameFile), boxOf(dataFile), degrees(st.getPropertyValue('--tilt')), degrees(st.getPropertyValue('--arot')));
+    // the tablet's body (bezel included), not the article round it (MO-34)
+    const g = asideGeometry(boxIn(gameBody, desk), boxIn(dataFile, desk), degrees(st.getPropertyValue('--tilt')), degrees(st.getPropertyValue('--arot')));
     desk.style.setProperty('--ax', `${g.ax}px`);
     desk.style.setProperty('--ay', `${g.ay}px`);
     desk.style.setProperty('--cx', `${g.cx}px`);

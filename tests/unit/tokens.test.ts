@@ -576,6 +576,19 @@ describe('the chooser desk (MO-23, v6.4)', () => {
     expect(contrast(v('--ch-y'), v('--ch-k1'))).toBeGreaterThanOrEqual(3);
   });
 
+  it('MO-34: device tokens exact; screen text pairs unchanged', () => {
+    const d = declsOf(':root');
+    const DEV: Record<string, string> = {
+      '--dev-shell': '#1A1D22', '--dev-shell-2': '#101215', '--dev-hi': '#24272D', '--dev-rim': 'rgba(255, 255, 255, .09)', '--dev-rim-top': 'rgba(255, 255, 255, .13)',
+      '--dev-edge': '#030304', '--dev-cam': '#0A0C10', '--dev-cam-glint': '#2B3A5C',
+      '--scr': '#0A0A0B', '--scr-lit': '#19191C', '--scr-off': '#020203', '--scr-spill': 'rgba(150, 160, 190, .06)', '--glare': 'rgba(255, 255, 255, .03)',
+    };
+    for (const [name, value] of Object.entries(DEV)) expect(squash(d.get(name)), name).toBe(squash(value));
+    // the screen is the game black; the cover window on it keeps every text pair (the window is --ch-k1)
+    expect(d.get('--scr')).toBe(d.get('--ch-k0'));
+    for (const fg of ['--ch-t0', '--ch-t1', '--ch-t2', '--ch-cy']) expect(contrast(d.get(fg)!, d.get('--ch-k1')!), fg).toBeGreaterThanOrEqual(4.5);
+  });
+
   it('MO-23: the chooser page is dark (color-scheme dark in the chooser sheet), the other neutral pages stay light', () => {
     const sheet = read('src/styles/chooser.css');
     expect(sheet).toMatch(/(^|\n):root\[data-variant="neutral"\]\[data-page="chooser"\]\s*\{[^}]*color-scheme:\s*dark/);

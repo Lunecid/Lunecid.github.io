@@ -72,7 +72,9 @@ describe('PrintoutCover.astro (MO-23)', () => {
     expect(css).toMatch(/\.paper::after\s*\{[^}]*background-image:\s*var\(--tooth\),\s*var\(--formation\)/);
     expect(css).toMatch(/\.paper\s*\{[^}]*-webkit-mask-box-image:\s*var\(--deckle\)/);
     expect(css).toMatch(/\.paper::before\s*\{[^}]*inset 1px 1px 0 var\(--pr-plate\)/);
-    expect(css).not.toMatch(/--hole|--rim|--vperf|--pr-band|--pr-perf|sprocket|radial-gradient/);
+    expect(css).not.toMatch(/--hole|--rim\b|--vperf|--pr-band|--pr-perf|sprocket/);
+    // MO-34 (named): the tablet's screen and camera use radial gradients; the printout's rules still use none
+    expect(css.split('\n').filter((l) => /\.file--data/.test(l) && /radial-gradient/.test(l))).toEqual([]);
     const html = await render('ko');
     expect(html).not.toMatch(/data-paper|class="(hole|perf|band)/);
   });

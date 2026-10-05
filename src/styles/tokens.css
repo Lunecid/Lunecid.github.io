@@ -159,6 +159,21 @@
   --ch-neon-glow: rgba(230, 230, 225, .5);    /* --ch-t1 at 50%: a static glow */
   --ch-neon-halo: rgba(163, 163, 156, .4);    /* --ch-t2 at 40% */
   --ch-blk-scan: rgba(10, 10, 11, .12);       /* scanlines inside the yellow GAME block */
+  /* ── the chooser's tablet (MO-34, v6.5/v6.8): a generic graphite shell, darker than the desk so the screen reads as
+     the light source; the screen is the game black, lit a little at its middle ── */
+  --dev-shell: #1A1D22;                       /* graphite body */
+  --dev-shell-2: #101215;
+  --dev-hi: #24272D;                          /* the shell's lit corner */
+  --dev-rim: rgba(255, 255, 255, .09);        /* the chamfer catching light */
+  --dev-rim-top: rgba(255, 255, 255, .13);
+  --dev-edge: #030304;                        /* the outer dark line against the desk */
+  --dev-cam: #0A0C10;                         /* the front camera's lens */
+  --dev-cam-glint: #2B3A5C;
+  --scr: #0A0A0B;                             /* the screen: the game black (= --ch-k0) */
+  --scr-lit: #19191C;                         /* its lit middle */
+  --scr-off: #020203;                         /* the screen switched off (opening) */
+  --scr-spill: rgba(150, 160, 190, .06);      /* the screen's light on the desk */
+  --glare: rgba(255, 255, 255, .03);          /* the glass reflection (decoration over the content) */
   /* the printout: white cotton-rag art paper (finish B "판화지") with painted fields; text pairs on the paper:
      ink 17.6:1, ink-2 8.6:1, stamp 8.6:1; white on the red field 5.4:1 flat; ink on the yellow 11.4:1 */
   --pr-paper: #FBFAF6;

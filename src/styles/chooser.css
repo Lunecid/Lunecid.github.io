@@ -31,11 +31,14 @@
 .chooser__sq { display: inline-block; width: .6em; height: .6em; margin-inline: .45em; vertical-align: .04em; background: var(--accent); }
 
 /* the desk: both files share one grid cell; the printout is offset onto the game cover and turned. Phone first: the
-   game file full width, the printout 10px in from each side (its turned corners stay inside the gutter) and 96px down
-   (the game's title bar, hazard band, emblem and series line stay in view) */
+   game file (the tablet, portrait) full width, the printout 10px in from each side (its turned corners stay inside the
+   gutter) and 96px below the screen's top (the game's title bar, hazard band, emblem and series line stay in view).
+   --bz is the tablet's bezel, --sp the screen's margin round the cover window (v6.5) */
 .desk {
+  --bz: 9px;
+  --sp: 11px;
   --dx: 10px;
-  --dy: 96px;
+  --dy: calc(96px + var(--bz) + var(--sp));
   --dw: calc(100% - 2 * var(--dx));
   --gw: 100%;
   --mx: 0px;
@@ -50,23 +53,37 @@
   grid-template-columns: minmax(0, 1fr);
   margin-block: auto;
 }
-/* tablet and up: side by side, the printout covering the game cover's right three fifths, the pair centred; the
-   width follows the height left under the header and the caption, so both files fit the first screen */
+/* tablet and up: side by side, the printout covering the game cover's right three fifths, the pair centred (whichever
+   of the two reaches further right); the width follows the height left under the header and the caption, so both
+   files fit the first screen */
 @media (min-width: 734px) {
   .desk {
+    --bz: 13px;
+    --sp: 15px;
     --dw: min(560px, calc(100svh - 160px - var(--nav-h)), 64%);
-    --gw: calc(var(--dw) * 1.03);
+    --gw: calc(var(--dw) * 1.03 + 2 * (var(--bz) + var(--sp)));
     --dx: calc(var(--dw) * .4);
-    --dy: 28px;
-    --mx: calc((100% - var(--dx) - var(--dw)) / 2);
+    --dy: calc(28px + var(--bz) + var(--sp));
+    --mx: calc((100% - max(var(--gw), var(--dx) + var(--dw))) / 2);
     --tilt: 3deg;
     --arot: 6deg;
     --ax: 360px;
     --ay: 18px;
   }
 }
-@media (min-width: 1068px) { .desk { --dw: min(660px, calc(100svh - 160px - var(--nav-h)), 56%); } }
-@media (min-width: 1600px) { .desk { --dw: min(720px, calc(100svh - 160px - var(--nav-h)), 56%); } }
+/* desktop: --u is the v6.4 file size; a landscape 4:3 tablet a little wider than it, the sheet over its right half */
+@media (min-width: 1068px) {
+  .desk {
+    --u: min(660px, calc(100svh - 160px - var(--nav-h)), 56%);
+    --bz: 17px;
+    --sp: 20px;
+    --dw: calc(var(--u) * .92);
+    --gw: calc(var(--u) * 1.3);
+    --dx: calc(var(--gw) * .5);
+    --dy: calc(var(--u) * .07);
+  }
+}
+@media (min-width: 1600px) { .desk { --u: min(720px, calc(100svh - 160px - var(--nav-h)), 56%); } }
 
 /* reduced motion (OS or the site toggle): the reveal is a crossfade of the printout, no slide */
 @media (prefers-reduced-motion: reduce) {
@@ -110,12 +127,11 @@
 }
 
 /* ═══ the game file (GameCover) ═══ */
-/* the file: a size container (its cover lays itself out from its own width) sharing the desk's one grid cell; the
-   desk (ChooserView) sets --gw (width) and --mx (the pair's centring margin) */
-.file--game { position: relative; display: flex; min-width: 0; container-type: inline-size; }
+/* the file: a size container sharing the desk's one grid cell; the desk (ChooserView) sets --gw (width) and --mx (the
+   pair's centring margin). Only the device's body takes the pointer (the rounded shell's corners click through) */
+.file--game { position: relative; display: flex; min-width: 0; container-type: inline-size; pointer-events: none; }
 .file--game { grid-area: 1 / 1; align-self: start; z-index: 1; width: var(--gw); margin-left: var(--mx); }
-/* on a desktop the file stays about square; only where the desk's width follows the screen height, so it always fits */
-@media (min-width: 1068px) { .file--game { aspect-ratio: 1 / .96; } }
+/* the cover window on the screen */
 .file--game .face {
   position: relative;
   z-index: 1;
@@ -138,26 +154,92 @@
   /* the display words follow the file's width, and on a short screen its height */
   --disp-fs: clamp(2.5rem, min(15cqi, 10.2vh), 7rem);
 }
-/* the screen: everything the cover shows, inside the device's frame (not positioned: the link's hit layer covers the
-   whole device) */
-.file--game .screen { flex: 1; display: flex; flex-direction: column; min-width: 0; background-color: var(--hud-panel); }
-
-/* ── the device frame (bezel). The one block that draws the game file's outer frame: its border, shadow, focus ring
-   and HUD bracket corners. A different bezel replaces only this block; the desk measures the outer .file--game box,
-   so a thicker frame moves nothing else. v6.11: a dark rim with a neutral hairline at its outer edge (the yellow is the
-   plate's outline); the width is unchanged, so the layout is too. ── */
-.file--game .device {
+/* the cover window: v6.11 a dark rim with a neutral hairline at its outer edge (the yellow is the plate's outline); its
+   drop shadow lands on the lit screen */
+.file--game .dev__screen > .face {
   background-color: var(--hud-panel);
   border: var(--frame) solid var(--hud-panel-2, var(--hud-panel));
   outline: 1px solid var(--hud-line);
   outline-offset: -1px;
-  box-shadow: 0 26px 52px -18px color-mix(in srgb, var(--cover-shadow) 85%, transparent), 0 2px 8px color-mix(in srgb, var(--cover-shadow) 55%, transparent);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--cover-shadow) 60%, transparent), 0 10px 30px -10px color-mix(in srgb, var(--cover-shadow) 80%, transparent);
 }
-.file--game:has(.cta:focus-visible) > .device { outline: 2px solid var(--accent); outline-offset: 5px; }
+
+/* ── the device (v6.5 / v6.8: a generic tablet, no brand, no logo): a graphite shell (a dark body, a lit chamfer, an
+   outer dark line) round a screen with its own colour (the game black, lit a little at its middle, static scanlines)
+   under glass (one faint diagonal reflection, a soft edge vignette); a small front camera. Landscape 4:3 from 1068px
+   (the camera on its short side), portrait below. The focus ring goes round the whole device. ── */
+.file--game .dev { position: relative; flex: 1; display: flex; flex-direction: column; min-width: 0; }
+.file--game .dev__body {
+  --dev-r: 22px;
+  --scr-r: calc(var(--dev-r) - var(--bz) + 3px);
+  position: relative;
+  flex: 1 0 auto;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: var(--bz);
+  border-radius: var(--dev-r);
+  pointer-events: auto;
+  background: linear-gradient(150deg, var(--dev-hi) 0%, var(--dev-shell) 24%, var(--dev-shell-2) 72%, var(--dev-shell) 100%);
+  box-shadow:
+    inset 0 0 0 1px var(--dev-rim),
+    inset 0 1px 0 var(--dev-rim-top),
+    inset 0 0 0 2px var(--dev-edge),
+    0 0 0 1px var(--dev-edge),
+    1px 2px 3px color-mix(in srgb, var(--cover-shadow) 70%, transparent),
+    10px 25px 48px -22px color-mix(in srgb, var(--cover-shadow) 95%, transparent),
+    0 0 110px -16px var(--scr-spill);
+}
+@media (min-width: 734px) { .file--game .dev__body { --dev-r: 28px; } }
+.file--game:has(.cta:focus-visible) .dev__body { outline: 2px solid var(--accent); outline-offset: 5px; }
+/* the screen: the cover's size container */
+.file--game .dev__screen {
+  position: relative;
+  flex: 1;
+  display: flex;
+  min-width: 0;
+  container-type: inline-size;
+  padding: var(--sp);
+  border-radius: var(--scr-r);
+  background-color: var(--scr);
+  background-image:
+    repeating-linear-gradient(to bottom, var(--cover-scan) 0 1px, transparent 1px 4px),
+    radial-gradient(ellipse 85% 80% at 50% 42%, var(--scr-lit) 0%, color-mix(in srgb, var(--scr-lit) 45%, transparent) 55%, transparent 100%);
+  box-shadow: 0 0 0 1px var(--dev-edge);
+}
+/* the glass: decoration over the content (text keeps 4.5:1 under it) */
+.file--game .dev__glass {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  border-radius: inherit;
+  background: linear-gradient(118deg, var(--glare) 0%, color-mix(in srgb, var(--glare) 30%, transparent) 22%, transparent 22.2%, transparent 100%);
+  box-shadow: inset 0 0 calc(var(--sp) + 4px) calc(var(--sp) * -.25) color-mix(in srgb, var(--cover-shadow) 55%, transparent), inset 0 0 2px color-mix(in srgb, var(--cover-shadow) 80%, transparent);
+}
+/* the front camera: a small dark lens with a faint glint; on a landscape slate on its short side */
+.file--game .dev__cam {
+  position: absolute;
+  top: calc(var(--bz) / 2 - 3px);
+  left: calc(50% - 3px);
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  pointer-events: none;
+  background: radial-gradient(circle at 38% 36%, var(--dev-cam-glint) 0 .8px, var(--dev-cam) 1.6px 100%);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--hud-strong) 5%, transparent);
+}
+/* the opening's screen-off and power-on layers (shown only while it plays) */
+.file--game .dev__off, .file--game .dev__pwr { position: absolute; inset: 0; z-index: 3; display: none; pointer-events: none; border-radius: inherit; }
+@media (min-width: 1068px) {
+  .file--game .dev__body { flex: none; aspect-ratio: 4 / 3; --dev-r: 34px; }
+  .file--game .dev__cam { top: calc(50% - 3px); left: calc(var(--bz) / 2 - 3px); }
+}
+
+/* ── the HUD bracket corners, set just outside the cover window's frame ── */
 .file--game .br { position: absolute; z-index: 5; width: 22px; height: 22px; border: 2px solid var(--accent); pointer-events: none; }
 .file--game .br--tl { left: calc(-1 * var(--frame) - 7px); top: calc(-1 * var(--frame) - 7px); border-right: 0; border-bottom: 0; }
 .file--game .br--br { right: calc(-1 * var(--frame) - 7px); bottom: calc(-1 * var(--frame) - 7px); border-left: 0; border-top: 0; }
-/* ── end of the device frame ── */
 @container (min-width: 440px) {
   .file--game .face { --haz-h: 10px; --cv-pad-x: 18px; --cv-pad-t: 14px; --cv-pad-b: 12px; --head-h: 44px; --row-gap: 10px; }
 }
@@ -376,11 +458,15 @@
 @media (hover: hover) { .file--game:hover .cta__hov { opacity: 1; } }
 .file--game:active .cta__hov, .file--game:has(.cta:focus-visible) .cta__hov { opacity: 1; }
 .file--game .cta__hit { position: absolute; inset: 0; z-index: 4; }
+/* the game link's hit layer reaches out from the cover window over the screen's margin and the bezel to the device
+   body's rounded edge (hit-testing follows the radius) */
+.file--game .cta__hit { inset: calc(-1 * (var(--frame) + var(--sp) + var(--bz))); border-radius: var(--dev-r); }
 
 /* forced colours: one 1px CanvasText frame; textures, bands and glows off (one step more specific than the rules
    they override: the bundler may reorder blocks) */
 @media (forced-colors: active) {
-  .file--game.file--game > .device { border: 1px solid CanvasText; box-shadow: none; }
+  .file--game .dev__body.dev__body { border: 1px solid CanvasText; box-shadow: none; }
+  .file--game .dev__glass, .file--game .dev__cam { display: none; }
   .file--game .cover, .file--game .disp__blk { background-image: none; }
   .file--game .haz, .file--game .cv__code, .file--game .bar__sq { background: none; }
   .file--game .neon, .file--game .neon--dim { text-shadow: none; }
@@ -392,7 +478,10 @@
 /* print: flat, under the printout (ChooserView stacks the desk), no shadow, no stamp */
 @media print {
   .file--game.file--game { width: 100%; margin: 0; aspect-ratio: auto; break-inside: avoid; }
-  .file--game.file--game > .device { box-shadow: none; }
+  .file--game .dev__body.dev__body { padding: 0; background: none; box-shadow: none; border-radius: 0; aspect-ratio: auto; }
+  .file--game .dev__screen.dev__screen { padding: 0; background: none; box-shadow: none; }
+  .file--game .dev__screen > .face { box-shadow: none; }
+  .file--game .dev__glass, .file--game .dev__cam, .file--game .dev__off, .file--game .dev__pwr { display: none; }
   .file--game .stamp { display: none; }
   .file--game .cv::before, .file--game .cv::after, .file--game .cv__circuit { display: none; }
 }

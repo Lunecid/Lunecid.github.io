@@ -31,7 +31,7 @@ test.describe('MO-23: the static desk', () => {
     expect(dataRing).toEqual(['solid', 'rgb(20, 20, 20)']);
     await page.keyboard.press('Tab');
     await expect(page.locator(GAME)).toBeFocused();
-    const gameRing = await page.locator('.file--game > .face').evaluate((el) => [getComputedStyle(el).outlineStyle, getComputedStyle(el).outlineColor]);
+    const gameRing = await page.locator('.file--game .dev__body').evaluate((el) => [getComputedStyle(el).outlineStyle, getComputedStyle(el).outlineColor]);
     expect(gameRing).toEqual(['solid', 'rgb(255, 230, 0)']);
   });
 
@@ -115,7 +115,7 @@ test.describe('MO-23: the static desk', () => {
   test('forced colors: 1px CanvasText frame on both files; text visible', async ({ page }) => {
     await page.emulateMedia({ forcedColors: 'active', colorScheme: 'dark' });
     await openAt(page, '/?choose', 1280, 800);
-    for (const sel of ['.file--game > .face', '.file--data > .face']) {
+    for (const sel of ['.file--game .dev__body', '.file--data > .face']) { // MO-34 (named): the game file's frame is the device
       const frame = await page.locator(sel).evaluate((el) => {
         const s = getComputedStyle(el);
         return { w: s.borderTopWidth, style: s.borderTopStyle, color: s.borderTopColor, text: s.color };
@@ -566,7 +566,10 @@ test.describe('MO-33: the game cover in the approved palette', () => {
     }
   });
 
-  test('MO-33: cover text boxes unchanged (±1 px) vs the MO-32 build at 375/768/1280', async ({ page }) => {
+  // MO-34 (named change): the fixture is re-recorded on the MO-34 build (the tablet's bezel and screen margin narrow the
+  // cover window); MO-33 itself kept every box within 1 px of the MO-32 base build. From here on it guards the cover's
+  // layout against the later desk tasks.
+  test('MO-33: cover text boxes unchanged (±1 px) vs the recorded build at 375/768/1280', async ({ page }) => {
     const fixture = JSON.parse(readFileSync(new URL('./fixtures/cover-boxes.json', import.meta.url), 'utf8')) as Record<string, Record<string, number[]>>;
     for (const [key, boxes] of Object.entries(fixture)) {
       if (key.startsWith('_')) continue;
@@ -587,5 +590,90 @@ test.describe('MO-33: the game cover in the approved palette', () => {
         box.forEach((v, i) => expect(Math.abs(now[sel]![i]! - v), `${key} ${sel}[${i}]`).toBeLessThanOrEqual(1));
       }
     }
+  });
+});
+
+test.describe('MO-34: the tablet', () => {
+  test('MO-34: ≥ 1068 px the device is 4:3 landscape; below it portrait (height ≥ width)', async ({ page }) => {
+    for (const [w, h] of [[1280, 800], [1440, 900], [2560, 1440]] as const) {
+      await openAt(page, '/?choose', w, h);
+      const b = await rectOf(page, '.file--game .dev__body');
+      expect(b.width, `@${w}`).toBeGreaterThan(b.height);
+      expect(await page.locator('.file--game .dev__body').evaluate((el) => getComputedStyle(el).aspectRatio), `@${w}`).toBe('4 / 3');
+      expect(b.height, `@${w}: at least 4:3`).toBeGreaterThanOrEqual((b.width * 3) / 4 - 1);
+    }
+    // below 1068px the slate stands and follows its cover's height: portrait on a phone and a tablet (a short landscape
+    // window such as 1024×768 may give a cover wider than tall: not pinned)
+    for (const [w, h] of [[375, 812], [768, 1024]] as const) {
+      await openAt(page, '/?choose', w, h);
+      const b = await rectOf(page, '.file--game .dev__body');
+      expect(b.height, `@${w}`).toBeGreaterThanOrEqual(b.width);
+    }
+  });
+
+  test("MO-34: the game link's hit area covers the device body and nothing outside it (corners of the shell click through to the page)", async ({ page }) => {
+    for (const [w, h] of [[1280, 800], [375, 812]] as const) {
+      await openAt(page, '/?choose', w, h);
+      const b = await rectOf(page, '.file--game .dev__body');
+      const r = await page.locator('.file--game .dev__body').evaluate((el) => parseFloat(getComputedStyle(el).borderTopLeftRadius));
+      const linkAt = (x: number, y: number) => page.evaluate(([px, py]) => !!document.elementFromPoint(px!, py!)?.closest('a[data-choose-variant="game"]'), [x, y]);
+      // on the bezel (left edge, mid height) and on the screen's margin: the link
+      expect(await linkAt(b.left + 4, b.top + b.height / 2), `@${w} bezel`).toBe(true);
+      expect(await linkAt(b.left + r, b.top + 4), `@${w} top bezel`).toBe(true);
+      // outside the rounded corner and outside the body: not the link
+      expect(await linkAt(b.left + 1, b.top + 1), `@${w} corner`).toBe(false);
+      if (b.left > 4) expect(await linkAt(b.left - 3, b.top + b.height / 2), `@${w} outside`).toBe(false);
+    }
+  });
+
+  for (const width of [320, 375, 768, 1280, 1440, 2560]) {
+    test(`MO-34: revealed at ${width}: the game CTA fully visible and hit-testable; no horizontal scroll`, async ({ page }) => {
+      await openAt(page, '/?choose', width, width === 2560 ? 1440 : 900);
+      await page.locator('.desk').evaluate((el) => el.classList.add('is-aside'));
+      await page.waitForTimeout(600);
+      expect(await gameCtaHit(page)).toEqual({ inside: true, hit: true });
+      const o = await horizontalOverflow(page);
+      expect(o.scrollWidth, o.offenders.join(', ')).toBeLessThanOrEqual(o.width);
+    });
+  }
+
+  test('MO-34: focus ring 2px yellow round the device body, ≥ 3:1 against the page', async ({ page }) => {
+    await openAt(page, '/?choose', 1280, 800);
+    await page.locator(DATA).focus();
+    await page.keyboard.press('Tab');
+    await expect(page.locator(GAME)).toBeFocused();
+    const ring = await page.locator('.file--game .dev__body').evaluate((el) => {
+      const s = getComputedStyle(el);
+      return { w: s.outlineWidth, style: s.outlineStyle, color: s.outlineColor, page: getComputedStyle(document.body).backgroundColor };
+    });
+    expect([ring.w, ring.style, ring.color]).toEqual(['2px', 'solid', 'rgb(255, 230, 0)']);
+    const lum = (c: string) => {
+      const n = c.match(/[\d.]+/g)!.slice(0, 3).map((v) => Number(v) / 255).map((v) => (v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4));
+      return 0.2126 * n[0]! + 0.7152 * n[1]! + 0.0722 * n[2]!;
+    };
+    expect((lum(ring.color) + 0.05) / (lum(ring.page) + 0.05)).toBeGreaterThanOrEqual(3);
+  });
+
+  test('MO-34: forced colours — 1px CanvasText frame on the device, glass/glare hidden', async ({ page }) => {
+    await page.emulateMedia({ forcedColors: 'active', colorScheme: 'dark' });
+    await openAt(page, '/?choose', 1280, 800);
+    const f = await page.locator('.file--game .dev__body').evaluate((el) => {
+      const s = getComputedStyle(el);
+      return [s.borderTopWidth, s.borderTopStyle, s.borderTopColor === s.color, s.boxShadow];
+    });
+    expect(f).toEqual(['1px', 'solid', true, 'none']);
+    for (const sel of ['.dev__glass', '.dev__cam']) expect(await page.locator(`.file--game ${sel}`).evaluate((el) => getComputedStyle(el).display), sel).toBe('none');
+  });
+
+  test('MO-34: print — no shell, the cover flat', async ({ page }) => {
+    await openAt(page, '/?choose', 1280, 800);
+    await page.emulateMedia({ media: 'print' });
+    const body = await page.locator('.file--game .dev__body').evaluate((el) => {
+      const s = getComputedStyle(el);
+      return [s.paddingTop, s.backgroundImage, s.boxShadow, s.borderTopLeftRadius];
+    });
+    expect(body).toEqual(['0px', 'none', 'none', '0px']);
+    expect(await page.locator('.file--game .dev__screen').evaluate((el) => getComputedStyle(el).paddingTop)).toBe('0px');
+    for (const sel of ['.dev__glass', '.dev__cam']) expect(await page.locator(`.file--game ${sel}`).evaluate((el) => getComputedStyle(el).display), sel).toBe('none');
   });
 });

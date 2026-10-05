@@ -5,8 +5,10 @@
 // series line and the display words, two short hazard strips, the cyan gamepad emblem, Anton display words with the
 // first one reversed out of yellow, the Korean h2, the hidden declassify stamp (MO-25 inks it on the entering click), the tagline,
 // a rule with the contents line and the link, the foot line, and from 540px a barcode rail. Behind the printout at rest.
-// The one link (its CTA) stretches its hit layer over the whole face. Structure: .file--game > .face.device (the frame,
-// one isolated CSS block, swappable for a device bezel) > .screen (the cover). Words: coverCopy (framing), chooserCopy (title,
+// MO-34 (v6.5/v6.8): the cover plays on a generic tablet (no brand, no logo, no text on the shell): .file--game > .dev >
+// .dev__body (the graphite shell; landscape 4:3 from 1068px, portrait below) > .dev__cam, .dev__screen (the screen,
+// the cover's size container) > .face (the cover window) + .dev__glass / .dev__off / .dev__pwr (glass and the opening's
+// power-on layers). The one link (its CTA) stretches its hit layer over the whole device body. Words: coverCopy (framing), chooserCopy (title,
 // CTA, mode number), the variant's tagline and nav labels (buildCover).
 import { chooserCopy } from '../../data/copy/chooser';
 import { coverCopy } from '../../data/copy/chooser-covers';
@@ -26,8 +28,11 @@ const clauses = cover.tagline.split(/(?<=,) /);
 const [first, ...rest] = g.display;
 ---
 <article class="file file--game" aria-labelledby={`file-${cover.id}-title`}>
-  <div class="face device">
-    <div class="screen">
+  <div class="dev">
+  <div class="dev__body">
+  <i class="dev__cam" aria-hidden="true"></i>
+  <div class="dev__screen">
+  <div class="face">
     <div class="bar">
       <i class="bar__sq" aria-hidden="true"></i>
       <span class="bar__name neon" lang="en">{g.file}</span>
@@ -63,8 +68,13 @@ const [first, ...rest] = g.display;
       </div>
       <i class="haz haz--b" aria-hidden="true"></i>
     </div>
-    </div>
     <span class="br br--tl" aria-hidden="true"></span>
     <span class="br br--br" aria-hidden="true"></span>
+  </div>
+  <i class="dev__glass" aria-hidden="true"></i>
+  <i class="dev__off" aria-hidden="true"></i>
+  <i class="dev__pwr" aria-hidden="true"></i>
+  </div>
+  </div>
   </div>
 </article>

@@ -77,15 +77,17 @@ describe('GameCover.astro (MO-23)', () => {
     expect(css).not.toMatch(/--gold/);
   });
 
-  it('the frame is a separate device wrapper around the screen, styled in one isolated block (a bezel can be swapped in)', async () => {
+  // MO-34 (named rewrite of the MO-23 "device wrapper" test): the bezel is a tablet now
+  it('MO-34: the cover sits in .dev__screen inside .dev__body; shell parts aria-hidden; one link; no logo/text in the shell', async () => {
     const html = await render('ko');
-    expect(html).toMatch(/<article class="file file--game"[^>]*>\s*<div class="face device"[^>]*>\s*<div class="screen"[^>]*>\s*<div class="bar"/);
-    const block = /\/\* ── the device frame[\s\S]*?end of the device frame ── \*\//.exec(css)?.[0] ?? '';
-    // MO-33 (named change): the window's frame is a dark rim with a neutral hairline (the yellow is the plate's outline)
-    expect(block).toMatch(/\.device\s*\{[^}]*border:\s*var\(--frame\) solid var\(--hud-panel-2, var\(--hud-panel\)\)/);
-    expect(block).toMatch(/\.br\s*\{/);
-    const outside = css.replace(block, '').replace(/@media \((forced-colors|print)[^{]*\{[\s\S]*?\n  \}/g, '');
-    expect(outside).not.toMatch(/border:\s*var\(--frame\)|\.br--tl|outline-offset:\s*5px/);
+    expect(html).toMatch(/<article class="file file--game"[^>]*>\s*<div class="dev"[^>]*>\s*<div class="dev__body"[^>]*>\s*<i class="dev__cam" aria-hidden="true"[^>]*><\/i>\s*<div class="dev__screen"[^>]*>\s*<div class="face"[^>]*>\s*<div class="bar"/);
+    for (const part of ['dev__cam', 'dev__glass', 'dev__off', 'dev__pwr']) expect(html, part).toMatch(new RegExp(`<i class="${part}" aria-hidden="true"[^>]*></i>`));
+    expect(html.match(/<a\b/g)).toHaveLength(1);
+    // the shell carries no text and no mark: everything between the body and the screen, and after the window, is empty
+    const shell = html.replace(/<div class="face"[\s\S]*<\/div>\s*(?=<i class="dev__glass")/, '');
+    expect(shell.replace(/<[^>]+>/g, '').trim()).toBe('');
+    expect(css).toMatch(/\.file--game \.dev__body\s*\{[^}]*pointer-events:\s*auto/);
+    expect(css).toMatch(/\.file--game\s*\{[^}]*pointer-events:\s*none/);
   });
 
   it('MO-33: plate wraps the series line and display words; circuit and grid pseudo-items aria-hidden; no text added', async () => {

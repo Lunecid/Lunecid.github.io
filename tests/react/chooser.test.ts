@@ -18,7 +18,7 @@ function mount() {
   document.body.innerHTML = `
     <div class="desk" data-chooser data-desk>
       <article class="file file--data"><div class="face"><a class="cta" href="/data/" data-choose-variant="data">D<span class="cta__hit"></span></a></div></article>
-      <article class="file file--game"><div class="face device"><span class="stamp" aria-hidden="true">S</span><a class="cta" href="/game/" data-choose-variant="game">G<span class="cta__hit"></span></a></div></article>
+      <article class="file file--game"><div class="dev"><div class="dev__body"><div class="dev__screen"><div class="face"><span class="stamp" aria-hidden="true">S</span><a class="cta" href="/game/" data-choose-variant="game">G<span class="cta__hit"></span></a></div></div></div></div></article>
     </div>
     <p class="desk__hint" aria-live="polite" data-rest="REST" data-aside="ASIDE"></p>
     <button id="elsewhere">x</button>`;
@@ -176,13 +176,13 @@ describe('chooser desk (MO-24)', () => {
     expect(m.hint.textContent).toBe('');
   });
 
-  it('measures the aside offsets on the desk from the outer file boxes', () => {
+  it('measures the aside offsets on the desk from the device body and the sheet boxes (MO-34, named: was the outer file boxes)', () => {
     const geo = (el: HTMLElement, x: number, y: number, w: number, h: number) => {
       Object.defineProperties(el, { offsetLeft: { value: x, configurable: true }, offsetTop: { value: y, configurable: true }, offsetWidth: { value: w, configurable: true }, offsetHeight: { value: h, configurable: true } });
     };
     cleanup();
     m = mount();
-    geo(m.gameFile, 0, 0, 618, 593);
+    geo(m.gameFile.querySelector<HTMLElement>('.dev__body')!, 0, 0, 618, 593); // MO-34: the device body is measured
     geo(m.dataFile, 240, 28, 600, 600);
     m.desk.style.setProperty('--tilt', '3deg');
     m.desk.style.setProperty('--arot', '6deg');
@@ -191,6 +191,37 @@ describe('chooser desk (MO-24)', () => {
     expect(m.desk.style.getPropertyValue('--ax')).toBe(`${want.ax}px`);
     expect(m.desk.style.getPropertyValue('--ay')).toBe(`${want.ay}px`);
     expect(m.desk.style.getPropertyValue('--cx')).toBe(`${want.cx}px`);
+  });
+});
+
+describe('the tablet (MO-34)', () => {
+  it('MO-34: asideGeometry clears the device body (bezel included) by the gap', () => {
+    // v6.12 boxes inside the desk (owner-assets/chooser-v6.12, measured from the prototype): the prototype's own
+    // measure() put the sheet at --ax 457px (1280×800) and --ay 496px (375×812)
+    const wide = asideGeometry({ x: 109.9, y: 0, w: 785.2, h: 621.9 }, { x: 502.5, y: 42.2, w: 555.7, h: 555.7 }, 3, 6);
+    expect(wide.side).toBe(true);
+    expect(wide.ax).toBe(457);
+    const narrow = asideGeometry({ x: 0, y: 0, w: 343, h: 574 }, { x: 10, y: 116, w: 323, h: 454.8 }, 1.5, 4);
+    expect(narrow.side).toBe(false);
+    expect(narrow.ay).toBe(496);
+    // the turned sheet's left corner clears the body's right edge (the bezel) by the gap
+    const th = (9 * Math.PI) / 180;
+    const leftCorner = 502.5 + wide.ax + 555.7 / 2 - (555.7 / 2) * Math.cos(th) - (555.7 / 2) * Math.sin(th);
+    expect(leftCorner - (109.9 + 785.2)).toBeGreaterThanOrEqual(23.5);
+  });
+
+  it('MO-34: initDesk measures the device body inside the desk, not the article', () => {
+    const m = mount();
+    const set = (el: HTMLElement, x: number, y: number, w: number, h: number) =>
+      Object.defineProperties(el, { offsetLeft: { value: x, configurable: true }, offsetTop: { value: y, configurable: true }, offsetWidth: { value: w, configurable: true }, offsetHeight: { value: h, configurable: true } });
+    set(m.gameFile, 0, 0, 900, 700); // the article is wider than the device (a size container round it)
+    set(m.gameFile.querySelector<HTMLElement>('.dev__body')!, 0, 0, 785, 622);
+    set(m.dataFile, 392, 42, 556, 556);
+    m.desk.style.setProperty('--tilt', '3deg');
+    m.desk.style.setProperty('--arot', '6deg');
+    const cleanup = initDesk(m.desk, m.hint);
+    expect(m.desk.style.getPropertyValue('--ax')).toBe(`${asideGeometry({ x: 0, y: 0, w: 785, h: 622 }, { x: 392, y: 42, w: 556, h: 556 }, 3, 6).ax}px`);
+    cleanup();
   });
 });
 
