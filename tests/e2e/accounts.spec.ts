@@ -13,6 +13,7 @@ import type { FavoriteGameData } from '../../src/content/schemas';
 import { adminCopy } from '../../src/i18n/accounts-admin';
 import { ui } from '../../src/i18n/ui';
 import { TILE_SLOTS, accountStatus, type AccountStatus } from '../../src/lib/account-state';
+import { containsTrademark } from '../../src/lib/seo';
 import type { AccountFeed, RiotLinks } from '../../src/lib/generated';
 import { FAKE_HANDLE, FAKE_STEAM, FAKE_TICKET, RELAY, collectViolations, expect, mockRelay, test, watchViolations } from './helpers';
 import { ACCOUNTS_ORIGIN, ORIGIN } from './ports';
@@ -105,17 +106,121 @@ test.describe('LINKED ACCOUNTS row — fixture build (SB_E2E_ACCOUNTS=1)', () =>
     });
   }
 
+  // PL-6 (named change): the tiles are small character cards now — three per row on a phone (was: all five on one
+  // row at 375), one row at 1280; never a horizontal scroll.
   for (const width of [320, 375]) {
-    test(`no horizontal scroll with five tiles at ${width}; five tiles on one row at 375`, async ({ page }) => {
+    test(`no horizontal scroll with five tiles at ${width}; rows of three at 375`, async ({ page }) => {
       await page.setViewportSize({ width, height: 800 });
       await page.goto(`${ACCOUNTS_ORIGIN}/game/player-log/`, { waitUntil: 'load' });
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
       if (width === 375) {
         const tops = await page.locator('#membership ul.acct-row > li').evaluateAll((els) => els.map((el) => Math.round(el.getBoundingClientRect().top)));
-        expect(new Set(tops).size).toBe(1);
+        expect(tops.slice(0, 3).every((t) => t === tops[0])).toBe(true);
+        expect(tops.slice(3).every((t) => t === tops[3])).toBe(true);
+        expect(tops[3]).toBeGreaterThan(tops[0] as number);
       }
     });
   }
+
+  test('PL-6: five character cards at 1280 in one row and at 375 in rows of three; no horizontal scroll at 320', async ({ page }) => {
+    const rows = async () => {
+      const tops = await page.locator('#membership ul.acct-row > li').evaluateAll((els) => els.map((el) => Math.round(el.getBoundingClientRect().top)));
+      const lines = [...new Set(tops)];
+      return lines.map((top) => tops.filter((t) => t === top).length);
+    };
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await page.goto(`${ACCOUNTS_ORIGIN}/game/player-log/`, { waitUntil: 'load' });
+    await expect(page.locator('#membership ul.acct-row > li > button.acct-tile')).toHaveCount(5);
+    expect(await rows()).toEqual([5]);
+    // every card: an art window in the 128:140 portrait box, at most 136px wide on the desktop track
+    const frames = await page.locator('#membership .acct-tile__frame').evaluateAll((els) => els.map((el) => el.getBoundingClientRect()).map((r) => ({ w: r.width, h: r.height })));
+    expect(frames).toHaveLength(5);
+    for (const f of frames) {
+      expect(f.w).toBeLessThanOrEqual(136);
+      expect(Math.abs(f.h / f.w - 140 / 128)).toBeLessThan(0.02);
+    }
+    await page.setViewportSize({ width: 375, height: 800 });
+    expect(await rows()).toEqual([3, 2]);
+    await page.setViewportSize({ width: 320, height: 800 });
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
+    // every tile keeps a ≥ 44px target
+    for (const box of await page.locator('#membership ul.acct-row > li > button.acct-tile').evaluateAll((els) => els.map((el) => el.getBoundingClientRect()))) {
+      expect(box.width).toBeGreaterThanOrEqual(44);
+      expect(box.height).toBeGreaterThanOrEqual(44);
+    }
+  });
+
+  test('PL-6: no layout shift when the card art loads (width/height reserve)', async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 800 });
+    // the art is lazy: hold every image response until the row has been measured without it
+    let release: () => void = () => {};
+    const gate = new Promise<void>((resolve) => (release = resolve));
+    await page.route(/\/_astro\/.*\.(webp|avif|png)(\?.*)?$/, async (route) => {
+      await gate;
+      await route.continue();
+    });
+    await page.goto(`${ACCOUNTS_ORIGIN}/game/player-log/`, { waitUntil: 'domcontentloaded' });
+    const row = page.locator('#membership ul.acct-row');
+    await row.scrollIntoViewIfNeeded();
+    const before = await page.locator('#membership ul.acct-row > li').evaluateAll((els) => els.map((el) => el.getBoundingClientRect()).map((r) => [r.width, r.height]));
+    // nothing has loaded yet: the boxes measured above are the reserved ones
+    expect(await page.locator('#membership img.acct-tile__art').evaluateAll((imgs) => imgs.some((img) => (img as HTMLImageElement).naturalWidth > 0))).toBe(false);
+    release();
+    await expect.poll(() => page.locator('#membership img.acct-tile__art').evaluateAll((imgs) => imgs.every((img) => (img as HTMLImageElement).complete && (img as HTMLImageElement).naturalWidth > 0))).toBe(true);
+    const after = await page.locator('#membership ul.acct-row > li').evaluateAll((els) => els.map((el) => el.getBoundingClientRect()).map((r) => [r.width, r.height]));
+    expect(after).toEqual(before);
+    // the whole page: no layout shift entry attributed to the row
+    const shift = await page.evaluate(
+      () =>
+        new Promise<number>((resolve) => {
+          let sum = 0;
+          new PerformanceObserver((list) => {
+            for (const e of list.getEntries() as (PerformanceEntry & { value: number; hadRecentInput: boolean; sources?: { node?: Node | null }[] })[]) {
+              if (!e.hadRecentInput && e.sources?.some((s) => s.node instanceof Element && s.node.closest('#membership .acct-row'))) sum += e.value;
+            }
+          }).observe({ type: 'layout-shift', buffered: true });
+          setTimeout(() => resolve(sum), 300);
+        }),
+    );
+    expect(shift).toBe(0);
+  });
+
+  test('PL-6: every card art URL is a /_astro/ file without a trademark term; no request leaves 127.0.0.1', async ({ page }) => {
+    const outside: string[] = [];
+    page.on('request', (req) => {
+      const url = new URL(req.url());
+      if (url.protocol !== 'data:' && url.hostname !== '127.0.0.1') outside.push(req.url());
+    });
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await page.goto(`${ACCOUNTS_ORIGIN}/game/player-log/`, { waitUntil: 'load' });
+    const imgs = page.locator('#membership .acct-tile__frame img.acct-tile__art');
+    await expect(imgs).toHaveCount(5);
+    const urls = await page.locator('#membership .acct-tile__frame').evaluateAll((frames) =>
+      frames.flatMap((f) => [...f.querySelectorAll('img, source')].flatMap((el) => [el.getAttribute('src') ?? '', ...(el.getAttribute('srcset') ?? '').split(',').map((part) => part.trim().split(/\s+/)[0] ?? '')]).filter(Boolean)),
+    );
+    expect(urls.length).toBeGreaterThanOrEqual(5 * 3);
+    for (const url of urls) {
+      expect(url, url).toMatch(/^\/_astro\/[^/]+$/);
+      expect(containsTrademark(url), url).toBe(false);
+    }
+    for (const img of await imgs.all()) {
+      await img.scrollIntoViewIfNeeded();
+      await expect.poll(() => img.evaluate((el) => (el as HTMLImageElement).complete && (el as HTMLImageElement).naturalWidth > 0)).toBe(true);
+    }
+    expect(outside).toEqual([]);
+  });
+
+  test('PL-6: with a Riot card shown the footer carries the Riot assets notice', async ({ page }) => {
+    for (const route of ROUTES) {
+      await page.goto(`${ACCOUNTS_ORIGIN}${route}`, { waitUntil: 'load' });
+      await expect(page.locator('#membership ul.acct-row [data-skin="lol"] img.acct-tile__art')).toHaveCount(1);
+      await expect(page.locator('#membership ul.acct-row [data-skin="tft"] img.acct-tile__art')).toHaveCount(1);
+      const notices = page.locator('.site-footer__notices');
+      await expect(notices).toContainText(ui.en['notice.riotAssets']);
+      // the API disclaimer stays off this page (no Riot API is used)
+      await expect(notices).not.toContainText(ui.en['notice.riot']);
+    }
+  });
 
   test('JavaScript off at 375×667: an opened <details> spans the full row and shows the numbers', async ({ browser }) => {
     const context = await browser.newContext({ javaScriptEnabled: false, viewport: { width: 375, height: 667 } });

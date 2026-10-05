@@ -190,6 +190,12 @@ describe('design tokens (src/styles/tokens.css)', () => {
     expect(d.get('--dur-toast-out')).toBe('.2s');
   });
 
+  it('PL-1: --dur-medal is at most .4s', () => {
+    const d = rootDecls(BASE);
+    expect(d.get('--dur-medal')).toBe('.36s');
+    expect(parseFloat(d.get('--dur-medal')!)).toBeLessThanOrEqual(0.4);
+  });
+
   it('F-067 (P-11): the cartridge shell colours are tokens', () => {
     const d = rootDecls(BASE);
     expect(['--cart-shell', '--cart-shell-hover', '--cart-shell-shade', '--cart-shell-grip'].map((n) => d.get(n))).toEqual(['#C9CED6', '#D5D9E0', '#AEB4BE', '#8E949E']);

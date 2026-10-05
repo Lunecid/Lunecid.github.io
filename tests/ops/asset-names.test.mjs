@@ -39,7 +39,7 @@ const TERMS = trademarkTerms();
 function containsTrademark(text) {
   const haystack = text.toLowerCase().replace(/[-_./#]+/g, ' ');
   return TERMS.some((term) => {
-    const needle = term.toLowerCase();
+    const needle = term.toLowerCase().replace(/[-_./#]+/g, ' ');
     if (!/^[\x20-\x7e]+$/.test(term)) return haystack.includes(needle);
     return new RegExp(`(^|[^a-z0-9])${needle.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}([^a-z0-9]|$)`).test(haystack);
   });
@@ -48,10 +48,10 @@ function containsTrademark(text) {
 test('the trademark check reads seo.ts and treats . - _ as separators (runs without dist)', () => {
   assert.ok(TERMS.length >= 30, `${TERMS.length} terms`);
   for (const term of ['Genshin', 'ZZZ', 'Steam', 'TFT', 'LoL', 'Riot']) assert.ok(TERMS.includes(term), term);
-  for (const name of ['Genshin.Dk3x_a9.webp', 'enka-zzz.json', 'steam_avatar.jpg', 'x.LoL.png', 'tft-icon.B3a.png', '원신.png']) {
+  for (const name of ['Genshin.Dk3x_a9.webp', 'enka-zzz.json', 'steam_avatar.jpg', 'x.LoL.png', 'tft-icon.B3a.png', '원신.png', 'battle-net.B3a.webp', 'BattleTag.x.png']) {
     assert.equal(containsTrademark(name), true, name);
   }
-  for (const name of ['PlayerLog.Dk3x_a9.css', '3fa2c1d09b7e.Bq9-Zx1a.webp', 'AccountLinks.C0ffee12.js', 'index.html', 'steamy.png']) {
+  for (const name of ['PlayerLog.Dk3x_a9.css', '3fa2c1d09b7e.Bq9-Zx1a.webp', 'AccountLinks.C0ffee12.js', 'index.html', 'steamy.png', 'battlement.png']) {
     assert.equal(containsTrademark(name), false, name);
   }
 });

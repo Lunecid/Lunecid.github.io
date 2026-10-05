@@ -5,7 +5,7 @@ import SiteAchievementList from '../../src/components/player-log/SiteAchievement
 import { achievementSchema } from '../../src/content/schemas';
 import { parseYamlList } from '../../src/content/yaml-loader';
 import { ui } from '../../src/i18n/ui';
-import { renderAstro } from './helpers';
+import { readSource, renderAstro } from './helpers';
 
 const defs = parseYamlList(readFileSync(join(process.cwd(), 'src/data/achievements.yaml'), 'utf8')).map((a) => achievementSchema.parse(a));
 const item = (html: string, id: string) => html.match(new RegExp(`<li[^>]*data-ach-id="${id}"[^>]*>([\\s\\S]*?)</li>`))?.[1] ?? '';
@@ -61,6 +61,34 @@ describe('SiteAchievementList', () => {
     // Korean pages are lang="ko" already: no extra spans there.
     const ko = await renderAstro(SiteAchievementList, { props: { variant: 'game', lang: 'ko', defs } });
     expect(ko).not.toMatch(/<span(?=[^>]*\blang="ko")/);
+  });
+
+  it('PL-2: each item shows its medal instead of the star: locked, or hidden (?) for the secret one', async () => {
+    const html = await renderAstro(SiteAchievementList, { props: { variant: 'game', lang: 'ko', defs } });
+    for (const d of defs) {
+      const row = withoutTemplate(item(html, d.id));
+      const medals = row.match(/<span[^>]*class="[^"]*\bmedal\b[^"]*"[^>]*>/g) ?? [];
+      expect(medals, d.id).toHaveLength(1);
+      expect(medals[0]).toContain(`data-medal="${d.id}"`);
+      expect(medals[0]).toContain(`data-state="${d.hidden ? 'hidden' : 'locked'}"`);
+      expect(medals[0]).toMatch(/class="[^"]*\bmedal--list\b/);
+      expect(medals[0]).toContain('aria-hidden="true"');
+    }
+    expect(defs.some((d) => d.hidden), 'the list has a secret entry').toBe(true);
+    // the medal sits in the icon column of the row grid and pops only from the live-unlock path of the script
+    const src = readSource('src/components/player-log/SiteAchievementList.astro');
+    expect(src).toMatch(/\.site-ach__item > :global\(\.medal\) \{[^}]*grid-area: icon/);
+    expect(src).toMatch(/window\.addEventListener\(UNLOCK_EVENT, \(\) => sync\(true\)\)/);
+    expect(src).toMatch(/^\s*sync\(\);$/m);
+    expect(src).toContain("addEventListener('animationend'");
+  });
+
+  it('PL-2: no ★ remains in the list markup', async () => {
+    for (const lang of ['ko', 'en'] as const) {
+      const html = await renderAstro(SiteAchievementList, { props: { variant: 'game', lang, defs } });
+      expect(html).not.toContain('★');
+      expect(html).not.toContain('site-ach__icon');
+    }
   });
 
   it('English page uses English copy', async () => {

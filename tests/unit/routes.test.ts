@@ -42,6 +42,13 @@ describe('route table after the move (contract §2.1)', () => {
     expect(ANCHORS['/research/cog-2026-engagement/']).toEqual(['abstract', 'bibtex']); // D-15 paper page
   });
 
+  it("PL-4: ANCHORS['/player-log/'] lists game-achievements between favorite-games and site-achievements, owned by playerLog", () => {
+    expect(ANCHORS['/player-log/']).toEqual(['membership', 'favorite-games', 'game-achievements', 'site-achievements']);
+    expect(ANCHOR_MODULES['game-achievements']).toBe('playerLog');
+    expect(anchorsFor('/player-log/', 'game')).toContain('game-achievements');
+    expect(anchorsFor('/player-log/', 'data')).toEqual([]);
+  });
+
   it("ANCHORS['/records/'] lists projects between publications and awards", () => {
     const records = ANCHORS['/records/'] ?? [];
     expect(records).toEqual(['profile', 'education', 'publications', 'projects', 'awards', 'activities', 'certifications', 'languages', 'training', 'skills', 'job-fit', 'documents']);
@@ -170,7 +177,7 @@ describe('route table v2 (final names, A-2)', () => {
 
   it('anchorsFor drops module-owned ids for versions without the module; shared pages only without a version', () => {
     expect(ANCHOR_MODULES).toEqual({
-      'main-menu': 'mainMenu', membership: 'playerLog', 'favorite-games': 'playerLog', 'site-achievements': 'playerLog', 'for-game-teams': 'audienceGame',
+      'main-menu': 'mainMenu', membership: 'playerLog', 'favorite-games': 'playerLog', 'game-achievements': 'playerLog', 'site-achievements': 'playerLog', 'for-game-teams': 'audienceGame',
     });
     expect(anchorsFor('/', 'game')).toEqual(ANCHORS['/']);
     expect(anchorsFor('/', 'data')).toEqual(['featured-projects', 'research-highlight', 'patch-notes', 'hello']);

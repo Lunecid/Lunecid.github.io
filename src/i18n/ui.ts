@@ -246,8 +246,17 @@ export const ui = {
     // 플레이 로그
     'playerLog.title': '플레이 로그',
     'playerLog.intro': '회원 카드와 좋아하는 게임·캐릭터, 이 사이트에서 모을 수 있는 업적을 모았습니다.',
-    'playerLog.gameAchievements': '게임 업적',
-    'playerLog.gameAchievementsLocked': '계정을 연동하면 게임 업적이 여기에 표시됩니다.',
+    'playerLog.gameAchievements': '내 게임 업적',
+    // 게임 기록(game-records.yaml) 카드의 문구. 자리표시 문구는 PLAYER_LOG_COPY_STATUS가 추적한다.
+    'gameRecords.tier': '{tier} 달성',
+    'gameRecords.rank': '{queue} {tier} · 최고 {rank}위',
+    'gameRecords.reached': '달성',
+    'gameRecords.main': '본계정',
+    'gameRecords.alt': '부계정',
+    'gameRecords.dateCapture': '스크린샷 날짜',
+    'gameRecords.dateSaved': '스크린샷 저장일',
+    'gameRecords.evidence': '증빙 보기',
+    'gameRecords.viewerLabel': '기록 증빙',
     'favorites.locked': 'LOCKED',
     'favorites.fetchedAt': '기준 시각',
     'favorites.source': '출처',
@@ -382,6 +391,10 @@ export const ui = {
     'notice.riot':
       "Seongeun Baek's portfolio isn't endorsed by Riot Games and doesn't reflect the views or opinions of Riot Games or anyone officially involved in producing or managing Riot Games properties. Riot Games, and all associated properties are trademarks or registered trademarks of Riot Games, Inc.",
     'notice.valve': '© Valve Corporation. Steam and the Steam logo are trademarks and/or registered trademarks of Valve Corporation in the U.S. and/or other countries.',
+    'notice.riotAssets':
+      'Seongeun Baek\'s portfolio was created under Riot Games\' "Legal Jibber Jabber" policy using assets owned by Riot Games. Riot Games does not endorse or sponsor this project.',
+    'notice.blizzard':
+      'Hearthstone and Blizzard Entertainment are trademarks or registered trademarks of Blizzard Entertainment, Inc. in the U.S. and/or other countries.',
   },
   en: {
     // Site
@@ -607,8 +620,16 @@ export const ui = {
     // Player Log
     'playerLog.title': 'Player Log',
     'playerLog.intro': 'A membership card, the games and characters I like, and the achievements you can collect on this site.',
-    'playerLog.gameAchievements': 'Game achievements',
-    'playerLog.gameAchievementsLocked': 'Game achievements appear here once an account is linked.',
+    'playerLog.gameAchievements': 'My game achievements',
+    'gameRecords.tier': 'Reached {tier}',
+    'gameRecords.rank': '{queue} {tier} · best rank {rank}',
+    'gameRecords.reached': 'Achieved',
+    'gameRecords.main': 'main account',
+    'gameRecords.alt': 'alt account',
+    'gameRecords.dateCapture': 'Screenshot date',
+    'gameRecords.dateSaved': 'Screenshot saved',
+    'gameRecords.evidence': 'View screenshot',
+    'gameRecords.viewerLabel': 'Record evidence',
     'favorites.locked': 'LOCKED',
     'favorites.fetchedAt': 'As of',
     'favorites.source': 'Source',
@@ -743,6 +764,10 @@ export const ui = {
     'notice.riot':
       "Seongeun Baek's portfolio isn't endorsed by Riot Games and doesn't reflect the views or opinions of Riot Games or anyone officially involved in producing or managing Riot Games properties. Riot Games, and all associated properties are trademarks or registered trademarks of Riot Games, Inc.",
     'notice.valve': '© Valve Corporation. Steam and the Steam logo are trademarks and/or registered trademarks of Valve Corporation in the U.S. and/or other countries.',
+    'notice.riotAssets':
+      'Seongeun Baek\'s portfolio was created under Riot Games\' "Legal Jibber Jabber" policy using assets owned by Riot Games. Riot Games does not endorse or sponsor this project.',
+    'notice.blizzard':
+      'Hearthstone and Blizzard Entertainment are trademarks or registered trademarks of Blizzard Entertainment, Inc. in the U.S. and/or other countries.',
   },
 } as const;
 

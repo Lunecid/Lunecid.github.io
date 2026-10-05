@@ -22,6 +22,9 @@ export const NOTICE_LINES: Readonly<Record<NoticeKey, readonly NoticeLine[]>> = 
     { key: 'notice.valve', english: true },
     { key: 'footer.valveDisclaimer', english: false },
   ],
+  // Riot's Legal Jibber Jabber sentence for pages that show Riot assets (not the API-policy line of 'riot').
+  'riot-assets': [{ key: 'notice.riotAssets', english: true }],
+  blizzard: [{ key: 'notice.blizzard', english: true }],
 };
 
 /** The lines of the given notices, always in NOTICE_KEYS order. */

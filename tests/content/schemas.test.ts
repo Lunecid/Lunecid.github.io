@@ -7,6 +7,7 @@ import { describe, expect, it } from 'vitest';
 import {
   awardSchema,
   favoriteGameSchema,
+  gameRecordSchema,
   jobfitSchema,
   newsSchema,
   projectSchema,
@@ -114,6 +115,35 @@ const validGame = {
   notices: ['cognosphere', 'zzz-fan-guide', 'fan-content'],
   integration: { platform: 'enka-zzz', enabled: false },
   account: null,
+};
+
+const tierRecord = {
+  id: 'gm-2026',
+  game: 'tft',
+  kind: 'tier',
+  tier: L('그랜드마스터', 'Grandmaster'),
+  queue: L('랭크 게임', 'Ranked'),
+  account: '루네시드#Lune',
+  alt: false,
+  date: '2026-05-15',
+  dateSource: 'capture',
+  image: 'gm-2026.webp',
+  imageAlt: L('승급 알림 화면.', 'Promotion screen.'),
+  notices: ['riot-assets'],
+};
+const rankRecord = {
+  id: 'rank-2018',
+  game: 'hearthstone',
+  kind: 'rank',
+  rank: 293,
+  queue: L('정규전', 'Standard'),
+  account: 'SEK#31221',
+  alt: false,
+  date: '2018-12-11',
+  dateSource: 'saved',
+  image: 'rank-2018.webp',
+  imageAlt: L('정규전 시작 화면.', 'Standard play screen.'),
+  notices: ['blizzard'],
 };
 
 describe('projectSchema', () => {
@@ -245,6 +275,50 @@ describe('favoriteGameSchema', () => {
     expect(favoriteGameSchema.safeParse({ ...validGame, locked: true }).success).toBe(false);
     expect(favoriteGameSchema.safeParse({ ...validGame, locked: true, reason: L('연동 전', 'Not linked') }).success).toBe(true);
     expect(favoriteGameSchema.safeParse({ ...validGame, account: { level: 60 } }).success).toBe(false);
+  });
+});
+
+describe('gameRecordSchema', () => {
+  it('gameRecordSchema rejects a trademark id, a bad date, a tier record without a tier and a rank record without a rank', () => {
+    expect(gameRecordSchema.safeParse(tierRecord).success).toBe(true);
+    expect(gameRecordSchema.safeParse(rankRecord).success).toBe(true);
+    expect(gameRecordSchema.safeParse({ ...tierRecord, id: 'tft-gm-2026' }).success).toBe(false);
+    expect(gameRecordSchema.safeParse({ ...rankRecord, id: 'hearthstone-293' }).success).toBe(false);
+    expect(gameRecordSchema.safeParse({ ...tierRecord, id: 'GM 2026' }).success).toBe(false);
+    expect(gameRecordSchema.safeParse({ ...tierRecord, date: '2026-5-15' }).success).toBe(false);
+    expect(gameRecordSchema.safeParse({ ...tierRecord, date: unquotedDate }).success).toBe(false);
+    const { tier: _tier, ...noTier } = tierRecord;
+    expect(gameRecordSchema.safeParse(noTier).success).toBe(false);
+    const { rank: _rank, ...noRank } = rankRecord;
+    expect(gameRecordSchema.safeParse(noRank).success).toBe(false);
+    for (const rank of [0, -1, 29.3, '293']) expect(gameRecordSchema.safeParse({ ...rankRecord, rank }).success, String(rank)).toBe(false);
+    expect(gameRecordSchema.safeParse({ ...tierRecord, kind: 'season' }).success).toBe(false);
+  });
+
+  it('gameRecordSchema: a rank record may name the tier its rank was held in (ko and en); a tier record names no rank', () => {
+    const legend = gameRecordSchema.safeParse({ ...rankRecord, tier: L('전설', 'Legend') });
+    expect(legend.success).toBe(true);
+    expect(legend.data).toMatchObject({ kind: 'rank', rank: 293, tier: { ko: '전설', en: 'Legend' } });
+    expect(gameRecordSchema.parse(rankRecord)).not.toHaveProperty('tier');
+    expect(gameRecordSchema.safeParse({ ...rankRecord, tier: { ko: '전설' } }).success).toBe(false);
+    expect(gameRecordSchema.safeParse({ ...rankRecord, tier: '전설' }).success).toBe(false);
+    expect(gameRecordSchema.safeParse({ ...tierRecord, rank: 293 }).success).toBe(false);
+  });
+
+  it('gameRecordSchema: neutral image names, a known game, short accounts and alts, known date sources and notices', () => {
+    expect(gameRecordSchema.safeParse({ ...tierRecord, image: 'gm-2025.png' }).success).toBe(true);
+    expect(gameRecordSchema.safeParse({ ...tierRecord, image: 'tft-gm.webp' }).success).toBe(false);
+    expect(gameRecordSchema.safeParse({ ...tierRecord, image: 'gm-2026.jpg' }).success).toBe(false);
+    expect(gameRecordSchema.safeParse({ ...tierRecord, image: 'GM_2026.webp' }).success).toBe(false);
+    expect(gameRecordSchema.safeParse({ ...tierRecord, game: 'maplestory' }).success).toBe(false);
+    expect(gameRecordSchema.safeParse({ ...tierRecord, account: 'x'.repeat(40) }).success).toBe(true);
+    expect(gameRecordSchema.safeParse({ ...tierRecord, account: 'x'.repeat(41) }).success).toBe(false);
+    expect(gameRecordSchema.safeParse({ ...tierRecord, account: '' }).success).toBe(false);
+    expect(gameRecordSchema.safeParse({ ...tierRecord, imageAlt: L('가'.repeat(200), 'alt') }).success).toBe(true);
+    expect(gameRecordSchema.safeParse({ ...tierRecord, imageAlt: L('가'.repeat(201), 'alt') }).success).toBe(false);
+    expect(gameRecordSchema.safeParse({ ...tierRecord, imageAlt: L('', 'alt') }).success).toBe(false);
+    expect(gameRecordSchema.safeParse({ ...tierRecord, dateSource: 'guess' }).success).toBe(false);
+    expect(gameRecordSchema.safeParse({ ...tierRecord, notices: ['riot-asset'] }).success).toBe(false);
   });
 });
 

@@ -1,0 +1,57 @@
+# game-records.yaml — 플레이 로그 '내 게임 업적'의 기록과 증거 스크린샷.
+# 규칙
+# - id와 이미지 파일 이름은 중립적으로 짓는다. 게임 상표를 쓰지 않는다(A-9: 이 이름이 에셋 파일 이름과 뷰어 해시 #view-…가 된다).
+#   이미지는 src/assets/game-records/<image>에 있는 주인의 원본 파일이다. 이름만 바꾸고 바이트는 그대로 둔다(다시 인코딩하지 않음).
+# - date는 주인이 준 원본 파일 이름의 날짜이고, dateSource가 그 날짜의 출처다.
+#     capture  Windows 스크린샷 이름의 촬영 시각(그 화면이 떠 있던 때)
+#     saved    카카오톡에 저장·전송한 날짜(기록은 그날이거나 그 전)
+# - 계정 이름은 공개 게임 ID다(account-link R-14: 카드와 실행 기록에도 보인다). 로그인 이메일과 비밀값은 절대 넣지 않는다.
+# - 티어·큐·순위는 주인이 준 것과 스크린샷에 보이는 것만 쓴다. 시즌·LP·백분위 같은 숫자를 지어내지 않는다.
+# - kind: tier는 tier가 필요하다. kind: rank는 양의 정수 rank가 필요하고, 그 순위를 기록한 티어를 tier로 함께 적을 수 있다.
+# - notices: riot-assets(TFT 스크린샷), blizzard(하스스톤 스크린샷).
+
+records:
+  - id: gm-2026
+    game: tft
+    kind: tier
+    tier: { ko: 그랜드마스터, en: Grandmaster }
+    queue: { ko: 랭크 게임, en: Ranked }
+    account: '루네시드#Lune'
+    alt: false
+    date: '2026-05-15'
+    dateSource: capture # Windows 스크린샷 이름 "스크린샷 2026-05-15 002113"
+    image: gm-2026.webp
+    imageAlt:
+      ko: '전략적 팀 전투 랭크 게임에서 그랜드마스터로 승급했다는 알림 화면. 그랜드마스터 문장 아래에 계정 이름 루네시드#Lune이 보입니다.'
+      en: 'Teamfight Tactics ranked promotion screen saying the account was promoted to Grandmaster, with the Grandmaster crest and the account name 루네시드#Lune.'
+    notices: [riot-assets]
+  - id: gm-2025 # 부계정. 카카오톡 저장 날짜 "KakaoTalk_2025-01-02"
+    game: tft
+    kind: tier
+    tier: { ko: 그랜드마스터, en: Grandmaster }
+    queue: { ko: 랭크 게임, en: Ranked }
+    account: '하트눈#KR1'
+    alt: true
+    date: '2025-01-02'
+    dateSource: saved
+    image: gm-2025.png
+    imageAlt:
+      ko: '전략적 팀 전투 랭크 게임에서 그랜드마스터로 승급했다는 알림 화면. 그랜드마스터 문장 아래에 계정 이름 하트눈#KR1이 보입니다.'
+      en: 'Teamfight Tactics ranked promotion screen saying the account was promoted to Grandmaster, with the Grandmaster crest and the account name 하트눈#KR1.'
+    notices: [riot-assets]
+  - id: rank-2018 # 카카오톡 저장 날짜 "KakaoTalk_20181211". 스크린샷에 BattleTag는 보이지 않는다(계정은 주인의 진술).
+    game: hearthstone
+    kind: rank
+    rank: 293
+    # 2020년 4월 전의 등급전은 25..1등급 다음이 전설이고, 순위 숫자는 전설에서만 보였다(주인 확인 2026-10-04).
+    tier: { ko: 전설, en: Legend }
+    queue: { ko: 정규전, en: Standard }
+    account: 'SEK#31221'
+    alt: false
+    date: '2018-12-11'
+    dateSource: saved
+    image: rank-2018.webp
+    imageAlt:
+      ko: 하스스톤 정규전 시작 화면. 오른쪽 등급전 표시에 순위 293이 보입니다.
+      en: Hearthstone Standard play screen; the Ranked badge on the right shows rank 293.
+    notices: [blizzard]

@@ -1,6 +1,8 @@
 ---
 import { Font } from 'astro:assets';
 import { getCollection } from 'astro:content';
+import recordsYaml from '../data/game-records.yaml?raw';
+import { parseYamlList } from '../content/yaml-loader';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import PageHeader from '../components/hud/PageHeader.astro';
 import GameAchievements from '../components/player-log/GameAchievements.astro';
@@ -9,8 +11,10 @@ import SiteAchievementList from '../components/player-log/SiteAchievementList.as
 import { membershipCard, playerLogCopy } from '../data/copy/player-log';
 import type { Lang } from '../i18n/ui';
 import { t } from '../i18n/utils';
+import { ui } from '../i18n/ui';
 import AccountLinks from '../islands/AccountLinks';
 import FavoriteGames from '../islands/FavoriteGames';
+import ImageViewer from '../islands/ImageViewer';
 import { characterCredit, characters } from '../lib/characters';
 import { TILE_SOURCES, accountLinksLabels, accountStatus, accountStatusJson, buildAccountView } from '../lib/account-view';
 import { relayOrigin } from '../lib/csp';
@@ -18,7 +22,9 @@ import { buildFavoriteGames, buildFavoriteTiles } from '../lib/favorites';
 import { generated } from '../lib/generated';
 import { availableAchievements } from '../lib/achievements';
 import { soundAvailability, steamButtonAvailable } from '../lib/public-assets';
-import { ACHIEVEMENT_TRIGGERS, GAME_IDS } from '../types';
+import { recordViews } from '../lib/game-records';
+import { evidence } from '../lib/game-records.server';
+import { ACHIEVEMENT_TRIGGERS, GAME_IDS, NOTICE_KEYS } from '../types';
 import { resolveDeep } from '../lib/facts';
 import { getFactSource } from '../lib/portfolio';
 import { getVariant, pageMetaFor, resolveIdentity } from '../variants';
@@ -38,8 +44,8 @@ const defs = (await getCollection('achievements'))
   .map((e) => e.data)
   .sort((a, b) => ACHIEVEMENT_TRIGGERS.indexOf(a.trigger) - ACHIEVEMENT_TRIGGERS.indexOf(b.trigger));
 
-// D-13: until an account feed exists, the locked games (LoL, Dungeon & Fighter, Steam) stay out of the showcase,
-// and GameAchievements renders nothing. The bgm-on achievement is listed only when the BGM file exists.
+// D-13: until an account feed exists, the locked games (LoL, Dungeon & Fighter, Steam) stay out of the showcase.
+// The bgm-on achievement is listed only when the BGM file exists.
 const showcase = await buildFavoriteGames(games.filter((g) => !g.locked), lang);
 const tiles = buildFavoriteTiles(games, lang);
 // LINKED ACCOUNTS (account-link AL-10): both switches must be on — the committed favorites.yaml switch and an ok,
@@ -51,8 +57,22 @@ const accountTiles = await buildAccountView(games, accountFeeds, riotLinks, gene
 const anyAccountEnabled = games.some((g) => g.integration.enabled && Object.hasOwn(TILE_SOURCES, g.id));
 const acctStatus = accountStatusJson(accountStatus(games, accountFeeds, riotLinks));
 const steamShown = accountTiles.some((tile) => tile.key === 'steam' && tile.state === 'shown');
+// a shown LoL or TFT card shows Riot's character art (Ezreal, Pengu): Riot's Legal Jibber Jabber notice
+const riotCardShown = accountTiles.some((tile) => (tile.key === 'lol' || tile.key === 'tft') && tile.state === 'shown' && tile.art !== undefined);
 const siteAchievements = availableAchievements(defs, soundAvailability());
-const notices = [...characters.notices(['remielle', 'eula', 'mona']), ...(steamShown ? (['valve'] as const) : [])];
+// 내 게임 업적: the owner's records with their evidence screenshots (game-records.yaml order), each opening in the
+// ImageViewer; their notices (riot-assets, blizzard) join the footer's.
+// Collections do not promise insertion order: sort by the ids in game-records.yaml's own order.
+const recordOrder = parseYamlList(recordsYaml, 'records').map((r) => r.id);
+const recordData = (await getCollection('gameRecords')).map((e) => e.data).sort((a, b) => recordOrder.indexOf(a.id) - recordOrder.indexOf(b.id));
+const records = await Promise.all(
+  recordViews(recordData, games, lang, { tier: ui[lang]['gameRecords.tier'], rank: ui[lang]['gameRecords.rank'] }).map(async (view, i) => ({
+    ...view,
+    evidence: await evidence.build(recordData[i]),
+  })),
+);
+const shownNotices = new Set([...characters.notices(['remielle', 'eula', 'mona']), ...(steamShown ? (['valve'] as const) : []), ...(riotCardShown ? (['riot-assets'] as const) : []), ...records.flatMap((r) => r.notices)]);
+const notices = NOTICE_KEYS.filter((key) => shownNotices.has(key));
 const credit = characterCredit(['remielle', 'eula', 'mona'], lang);
 const labels = {
   tablist: t(lang, 'favorites.tablist'),
@@ -90,8 +110,18 @@ const labels = {
       />
     </div>
   </section>
-  <GameAchievements lang={lang} platforms={copy.gamePlatforms} accounts={{}} />
+  <GameAchievements lang={lang} records={records} />
   <SiteAchievementList lang={lang} defs={siteAchievements} />
+  <ImageViewer
+    client:idle
+    labels={{
+      dialog: t(lang, 'modal.viewer'),
+      close: t(lang, 'action.close'),
+      previous: t(lang, 'viewer.previous'),
+      next: t(lang, 'viewer.next'),
+      counter: ui[lang]['viewer.counter'],
+    }}
+  />
 </BaseLayout>
 
 <style>

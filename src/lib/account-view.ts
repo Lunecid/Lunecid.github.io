@@ -9,6 +9,7 @@ import { formatDate, formatNumber, t } from '../i18n/utils';
 import type { NoticeKey } from '../types';
 import { noticeLines } from './notices';
 import { RECENT_PLAYTIME_WEEKS } from './account-config';
+import { cardArt, cardArtLookup, type CardArtLookup } from './account-cards';
 import { HREF_ALLOW } from './account-ids';
 import { TILE_SLOTS, TILE_SOURCES, resolveTile, tileGames, type AccountSource, type AccountTileKey, type ResolvedTile, type TileState } from './account-state';
 import type { AccountCard, AccountFeed, AccountMetric, AccountMetricKey, RiotLinks } from './generated';
@@ -60,13 +61,16 @@ const GAME_NAME_KEYS: Readonly<Record<AccountTileKey, UiKey>> = {
   steam: 'accounts.game.steam',
 };
 
-/** Per-card rights-holder notices (spec §9.3). The Riot tiles carry none (§3.4). */
+/**
+ * Per-card rights-holder notices (spec §9.3). The Riot cards show Riot's character art (Ezreal, Pengu), so they carry
+ * the Legal Jibber Jabber notice (riot-assets), not the API disclaimer (riot).
+ */
 const CARD_NOTICES: Readonly<Record<AccountTileKey, readonly NoticeKey[]>> = {
   genshin: ['cognosphere'],
   zzz: ['zzz-fan-guide'],
   steam: ['valve'],
-  lol: [],
-  tft: [],
+  lol: ['riot-assets'],
+  tft: ['riot-assets'],
 };
 
 /** The Enka cards' courtesy data line (spec §9.3); Steam's attribution lives in the valve notice. */
@@ -115,6 +119,11 @@ export interface AccountTile {
   tint: string;
   teaser?: string;
   teaserSr?: string;
+  /**
+   * Shown tiles only: the card's decorative character art (src/lib/account-cards.ts), Steam's the owner's own avatar
+   * from the feed. Absent → the glyph is the face.
+   */
+  art?: IslandImage;
   card?: AccountCardView;
   fetchedAt?: string;
   maxAgeDays?: number;
@@ -183,6 +192,16 @@ async function imageOf(name: string | undefined, images: Readonly<Record<string,
   return islandImage(images[name] as ImageMetadata, widths, sizes);
 }
 
+/** The card art of a shown tile: its committed crop, or for Steam the feed's avatar; none without a file. */
+async function artOf(key: AccountTileKey, card: AccountCard | undefined, images: Readonly<Record<string, ImageMetadata>>, lookup: CardArtLookup): Promise<IslandImage | undefined> {
+  if (key === 'steam') {
+    const name = card?.image;
+    return name !== undefined && Object.hasOwn(images, name) ? cardArt(images[name] as ImageMetadata) : undefined;
+  }
+  const meta = lookup.art(key);
+  return meta === undefined ? undefined : cardArt(meta);
+}
+
 async function cardView(key: AccountTileKey, r: ResolvedTile, links: RiotLinks | undefined, images: Readonly<Record<string, ImageMetadata>>, lang: Lang): Promise<AccountCardView | undefined> {
   const { source, link } = TILE_SOURCES[key];
   if (link !== undefined) {
@@ -228,7 +247,7 @@ function tintOf(game: FavoriteGameData & { id: AccountTileKey }): string {
 
 /**
  * favorites.yaml switches + feeds + Riot links + images → one tile per enabled tile game (GAME_IDS order). Every
- * enabled tile is listed with its state (owner mode); `card` and the teaser only when `shown`.
+ * enabled tile is listed with its state (owner mode); `card`, the teaser and the art only when `shown`.
  */
 export async function buildAccountView(
   games: readonly FavoriteGameData[],
@@ -237,6 +256,7 @@ export async function buildAccountView(
   images: Readonly<Record<string, ImageMetadata>>,
   lang: Lang,
   now: number = Date.now(),
+  arts: CardArtLookup = cardArtLookup,
 ): Promise<AccountTile[]> {
   return Promise.all(
     tileGames(games).map(async (game): Promise<AccountTile> => {
@@ -260,6 +280,8 @@ export async function buildAccountView(
         const card = await cardView(key, r, links, images, lang);
         if (card !== undefined) tile.card = card;
         Object.assign(tile, teaserOf(key, r.card, lang));
+        const art = await artOf(key, r.card, images, arts);
+        if (art !== undefined) tile.art = art;
       }
       return tile;
     }),

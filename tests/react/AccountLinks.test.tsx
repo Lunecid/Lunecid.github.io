@@ -118,6 +118,71 @@ describe('AccountLinks SSR (<details> tiles, no JavaScript needed)', () => {
     }
   });
 
+  it('PL-6: the tile face draws the art as a decorative image (alt="", lazy, width and height) inside the frame; the name stays visible text', async () => {
+    const tiles = await tilesFor('ko');
+    const doc = parse(await ssr('ko', tiles));
+    const summaries = [...doc.querySelectorAll('details.acct-tile > summary')];
+    expect(summaries).toHaveLength(5);
+    for (const [i, s] of summaries.entries()) {
+      const tile = tiles[i] as AccountTile;
+      const face = s.querySelector('.acct-tile__face');
+      expect(face?.getAttribute('data-skin')).toBe(tile.key);
+      const frame = face?.querySelector(':scope > .acct-tile__frame');
+      expect(frame?.getAttribute('aria-hidden')).toBe('true');
+      const img = frame?.querySelector('img.acct-tile__art');
+      expect(img, tile.key).not.toBeNull();
+      expect(img?.getAttribute('alt')).toBe('');
+      expect(img?.getAttribute('loading')).toBe('lazy');
+      expect(img?.getAttribute('decoding')).toBe('async');
+      expect(img?.getAttribute('width')).toBe(String(tile.art?.width));
+      expect(img?.getAttribute('height')).toBe(String(tile.art?.height));
+      expect(img?.getAttribute('src')).toBe(tile.art?.src);
+      // AVIF first inside a <picture>, the WebP <img> the fallback
+      expect(frame?.querySelector('picture > source[type="image/avif"]')?.getAttribute('srcset')).toBe(tile.art?.avifSrcSet);
+      // the brackets sit over the art; the glyph is a small corner label
+      expect(frame?.querySelector('.acct-tile__corners')).not.toBeNull();
+      expect(frame?.querySelector('.acct-tile__glyph')?.classList.contains('acct-tile__glyph--corner')).toBe(true);
+      // the name is visible text outside the aria-hidden frame and names the tile
+      const name = s.querySelector('.acct-tile__text > .acct-tile__name');
+      expect(name?.textContent).toBe(tile.name);
+      expect(name?.closest('[aria-hidden]')).toBeNull();
+    }
+    // the fixture's card art: the four committed crops (zzz, genshin, lol, tft), and Steam's feed avatar
+    expect(tiles.map((t) => /[^/?]+(?=\?)/.exec(t.art?.src ?? '')?.[0])).toEqual(['card-2.webp', 'card-1.webp', 'card-3.webp', 'card-4.webp', expect.stringMatching(/^e2efixture0\d\.png$/)]);
+    // the mounted buttons draw the same face
+    const host = document.createElement('div');
+    document.body.append(host);
+    host.innerHTML = await ssr('ko', tiles);
+    let root: Root | undefined;
+    await act(async () => {
+      root = hydrateRoot(host, <AccountLinks lang="ko" tiles={tiles} labels={accountLinksLabels('ko')} relay={null} steamButton={false} />);
+    });
+    const buttons = [...host.querySelectorAll<HTMLButtonElement>('ul.acct-row > li > button.acct-tile')];
+    expect(buttons).toHaveLength(5);
+    for (const b of buttons) {
+      expect(b.querySelector('.acct-tile__frame img.acct-tile__art')?.getAttribute('alt')).toBe('');
+      expect(b.textContent).toContain(b.querySelector('.acct-tile__name')?.textContent ?? '\u0000');
+    }
+    await act(async () => root?.unmount());
+    host.remove();
+  });
+
+  it('PL-6: without art the glyph is the face, as before', async () => {
+    const tiles = (await tilesFor('en')).map(({ art: _art, ...rest }) => rest as AccountTile);
+    const doc = parse(await ssr('en', tiles));
+    const summaries = [...doc.querySelectorAll('details.acct-tile > summary')];
+    expect(summaries).toHaveLength(5);
+    for (const s of summaries) {
+      const frame = s.querySelector('.acct-tile__frame');
+      expect(frame?.querySelector('img, picture')).toBeNull();
+      const glyph = frame?.querySelector('.acct-tile__glyph');
+      expect(glyph?.classList.contains('acct-tile__glyph--corner')).toBe(false);
+      expect(glyph?.getAttribute('lang')).toBe('en');
+    }
+    expect(summaries.map((s) => s.querySelector('.acct-tile__glyph')?.textContent)).toEqual(['ZZZ', 'GI', 'LOL', 'TFT', 'STM']);
+    expect(summaries.map((s) => s.querySelector('.acct-tile__name')?.textContent)).toEqual(['Zenless Zone Zero', 'Genshin Impact', 'League of Legends', 'Teamfight Tactics', 'Steam']);
+  });
+
   it('the lol static card has exactly one link (op.gg), the tft card exactly one (lolchess.gg); new-tab, no referrer', async () => {
     const doc = parse(await ssr('ko'));
     const [, , lol, tft] = [...doc.querySelectorAll('details.acct-tile')];

@@ -22,7 +22,8 @@ describe('toolchain', () => {
     // P1-13 (A-6): legacy-redirects runs last, after the sitemap and the font subsetting.
     // AL-1 (C0): csp-finalize re-hashes every inline block after the font rewrite, before the stubs (own CSP meta).
     // feed-images drops the account feed images no page names (scripts/assets/prune-feed-images.mjs).
-    expect((config.integrations ?? []).map((i) => (i && 'name' in i ? i.name : ''))).toEqual(['@astrojs/react', '@astrojs/sitemap', 'feed-images', 'font-subsets', 'csp-finalize', 'legacy-redirects']);
+    // card-originals drops the account card art originals no page names (scripts/assets/prune-card-originals.mjs).
+    expect((config.integrations ?? []).map((i) => (i && 'name' in i ? i.name : ''))).toEqual(['@astrojs/react', '@astrojs/sitemap', 'feed-images', 'card-originals', 'font-subsets', 'csp-finalize', 'legacy-redirects']);
     expect(config.security?.csp).toMatchObject({ algorithm: 'SHA-256' });
   });
 
@@ -246,6 +247,8 @@ describe('toolchain', () => {
     expect(types.ACHIEVEMENT_TRIGGERS).not.toContain('visit-404');
     expect(types.NOTICE_KEYS).toContain('riot');
     expect(types.NOTICE_KEYS).toContain('valve'); // AL-9
+    expect(types.NOTICE_KEYS).toContain('riot-assets'); // PL-4
+    expect(types.NOTICE_KEYS).toContain('blizzard'); // PL-4
     expect(types.CERTIFICATE_IDS).toEqual(['busan-mayor-award', 'cds-encouragement-award', 'multicampus-grand-award']);
     expect(types.GAME_IDS).toEqual(['zzz', 'genshin', 'lol', 'tft', 'dnf', 'eternal-return', 'hearthstone', 'steam']);
     expect(types.SFX_NAMES).toEqual(['move', 'select', 'open', 'close']);

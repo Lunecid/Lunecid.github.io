@@ -257,7 +257,7 @@ function pxFontSizes(file: string, text: string): string[] {
   return out.sort();
 }
 
-const PX_FONT_BASELINE_MAX = 77;
+const PX_FONT_BASELINE_MAX = 74;
 const PX_FONT_BASELINE: Record<string, string[]> = {
   'src/components/data/DataNav.astro': ['.data-nav__name | 20px'],
   'src/components/home/HelloProfile.astro': ['.hello__title | 32px', '.hello__title | 40px'],
@@ -266,11 +266,10 @@ const PX_FONT_BASELINE: Record<string, string[]> = {
   'src/components/hud/Hero.astro': ['.hero__chip-face | 13px', '.hero__jobfit | 15px'],
   'src/components/hud/HudNav.astro': ['.hud-nav__bar | 13px', '.hud-nav__list a | 16px', '.hud-nav__toggle | 13px'],
   'src/components/hud/MainMenu.astro': ['.mm__cap | 14px', '.mm__link | 18px', '.mm__link | 20px'],
-  'src/components/player-log/AchievementMeter.astro': ['.ach-meter__count | clamp(28px, 3vw, 40px)', '.ach-meter__note | 14px', '.ach-meter__slot | 15px'],
+  'src/components/player-log/AchievementMeter.astro': ['.ach-meter__count | clamp(28px, 3vw, 40px)', '.ach-meter__note | 14px'],
   'src/components/player-log/FavoriteTiles.astro': ['.fav-tile__cap strong | 16px', '.fav-tile__cap strong | 20px', '.fav-tile__kicker | 12px'],
-  'src/components/player-log/GameAchievements.astro': ['.game-ach__note | 15px'],
   'src/components/player-log/MembershipCard.astro': ['.mcard__band | 12px', '.mcard__field dd | 15px', '.mcard__field dt | 13px', '.mcard__sticker | 12px', '.mcard__sticker | 13px', '.mcard__title small | 13px'],
-  'src/components/player-log/SiteAchievementList.astro': ['.site-ach__desc | 15px', '.site-ach__hint | 14px', '.site-ach__icon | 16px', '.site-ach__note, .site-ach__nojs | 14px', '.site-ach__progress | 15px'],
+  'src/components/player-log/SiteAchievementList.astro': ['.site-ach__desc | 15px', '.site-ach__hint | 14px', '.site-ach__note, .site-ach__nojs | 14px', '.site-ach__progress | 15px'],
   'src/components/projects/ProjectAudience.astro': ['.audience__text | 16px'],
   'src/components/projects/ProjectCartridge.astro': ['.cart__label--text .cart__title | 16px', '.cart__label--text .cart__title | 18px', '.cart__plate-id | 13px', '.cart__plate-id | 16px', '.cart__plate-period | 13px', '.cart__plate-tag | 13px', '.cart__sticker | 12px', '.cart__summary | 13px', '.cart__title | 14px', '.cart__title | 16px'],
   'src/components/records/CredentialList.astro': ['.creds__primary | 16px'],

@@ -54,6 +54,16 @@ for (const stub of legacyPaths()) {
   });
 }
 
+test('PL-4: no CSP violation with the evidence viewer open on the Player Log', async ({ page }) => {
+  await page.goto('/game/player-log/', { waitUntil: 'load' });
+  const trigger = page.locator('#game-achievements [data-viewer="game-records"]').first();
+  await trigger.scrollIntoViewIfNeeded();
+  await trigger.click();
+  await expect(page.locator('dialog.image-viewer[open]')).toHaveCount(1);
+  await expect(page.locator('dialog.image-viewer .image-viewer__img')).toHaveAttribute('data-ready', 'true');
+  expect(await collectViolations(page)).toEqual([]);
+});
+
 // Owner mode with the management chunk rendered (spec §8.2): on the real build (no relay: the relay-unset screen) and
 // on the fixture build (the relay mocked: the panel's heading, signed in after the same-tab return).
 for (const [build, origin] of [['dist', ORIGIN], ['fixture', ACCOUNTS_ORIGIN]] as const) {

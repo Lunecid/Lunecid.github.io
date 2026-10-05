@@ -25,6 +25,7 @@ import type { AdminDeps, FormStore } from '../lib/account-admin';
 import { ACCOUNT_MAX_AGE_DAYS } from '../lib/account-config';
 import type { AccountVar } from '../lib/account-ids';
 import type { AccountLinksLabels, AccountTile, AccountTileKey } from '../lib/account-view';
+import type { IslandImage } from '../lib/island-image';
 import { isFresh } from '../lib/freshness';
 import { prefersReducedNow, useReducedMotionPref } from '../lib/motion-pref';
 import { useHudDialog } from '../lib/use-hud-dialog';
@@ -192,28 +193,54 @@ function teaserParts(teaser: string): ReactNode[] {
   return teaser.split(/(?=\.)/).flatMap((part, i) => (i === 0 ? [part] : [<wbr key={i} />, part]));
 }
 
+/** The card art: decorative (alt=""), lazy, width/height reserving its box (no layout shift when it loads). */
+function TileArt({ image }: { image: IslandImage }): JSX.Element {
+  const img = (
+    <img className="acct-tile__art" src={image.src} srcSet={image.srcSet} sizes={image.sizes} width={image.width} height={image.height} alt="" loading="lazy" decoding="async" />
+  );
+  return (
+    <span className="acct-tile__window">
+      {image.avifSrcSet ? (
+        <picture className="acct-tile__pic">
+          <source type="image/avif" srcSet={image.avifSrcSet} sizes={image.sizes} />
+          {img}
+        </picture>
+      ) : (
+        img
+      )}
+    </span>
+  );
+}
+
 /**
- * The tile's face, the same inside the SSR <summary> and the mounted <button>. An owner-mode status tile (not on the
- * visitors' row) shows its state word, a visible part of the button's name, where a shown tile has its teaser.
+ * The tile's face, the same inside the SSR <summary> and the mounted <button>: a small character card. The frame (the
+ * art window, aria-hidden) holds the art under the corner brackets with the glyph as a corner label, or without art the
+ * glyph alone, as before; the skin layer (data-skin, per game, AccountLinks.css) is decoration only. The visible name
+ * and the teaser name the tile. An owner-mode status tile (not on the visitors' row) shows its state word, a visible
+ * part of the button's name, where a shown tile has its teaser.
  */
 function TileFace({ tile, state }: { tile: AccountTile; state?: string | null }): JSX.Element {
   return (
-    <>
+    <span className="acct-tile__face" data-skin={tile.key}>
+      <span className="acct-tile__skin" aria-hidden="true" />
       <span className="acct-tile__frame" aria-hidden="true">
-        <span className="acct-tile__corners" />
-        <span className="acct-tile__glyph" lang="en">
+        {tile.art !== undefined && <TileArt image={tile.art} />}
+        <span className={tile.art !== undefined ? 'acct-tile__glyph acct-tile__glyph--corner' : 'acct-tile__glyph'} lang="en">
           {tile.glyph}
         </span>
+        <span className="acct-tile__corners" />
       </span>
-      <span className="acct-tile__name">{tile.name}</span>
-      {state != null && <span className="acct-tile__state">{state}</span>}
-      {state == null && tile.teaser !== undefined && (
-        <span className="acct-tile__teaser" aria-hidden="true" lang="en">
-          {teaserParts(tile.teaser)}
-        </span>
-      )}
-      {state == null && tile.teaserSr !== undefined && <span className="sr-only">{tile.teaserSr}</span>}
-    </>
+      <span className="acct-tile__text">
+        <span className="acct-tile__name">{tile.name}</span>
+        {state != null && <span className="acct-tile__state">{state}</span>}
+        {state == null && tile.teaser !== undefined && (
+          <span className="acct-tile__teaser" aria-hidden="true" lang="en">
+            {teaserParts(tile.teaser)}
+          </span>
+        )}
+        {state == null && tile.teaserSr !== undefined && <span className="sr-only">{tile.teaserSr}</span>}
+      </span>
+    </span>
   );
 }
 

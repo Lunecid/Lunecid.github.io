@@ -6,6 +6,7 @@ import { fontSubsets } from './scripts/fonts/build.mjs';
 import { legacyRedirectStubs } from './scripts/redirects/build.mjs';
 import { cspFinalize } from './scripts/csp/finalize.mjs';
 import { feedImages } from './scripts/assets/prune-feed-images.mjs';
+import { cardOriginals } from './scripts/assets/prune-card-originals.mjs';
 import { cspDirectives, relayOrigin, scriptResources, STYLE_RESOURCES } from './src/lib/csp.ts';
 import { goatcounterSelfHosted } from './src/lib/public-assets.ts';
 import { satteri } from '@astrojs/markdown-satteri';
@@ -66,6 +67,7 @@ export default defineConfig({
     react(),
     sitemap({ filter: sitemapFilter, serialize: sitemapSerialize, i18n: { defaultLocale: 'ko', locales: { ko: 'ko', en: 'en' } } }),
     feedImages(join(GENERATED_DIR, 'accounts/img')), // after the build: drop the feed images no page shows (the glob imports all)
+    cardOriginals(), // after the build: drop the card art originals no page shows (unshown tiles import them too)
     fontSubsets(), // after the build: subset the page fonts to the characters of the built pages (batch 2)
     cspFinalize(), // AL-1 (C0): re-hash every inline block after the font rewrite; the CSP meta right after <meta charset>
     legacyRedirectStubs(), // P1-13 (A-6): LAST — after the sitemap and the font subsetting, so stubs are in neither

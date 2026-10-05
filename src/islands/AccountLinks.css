@@ -9,38 +9,56 @@
 @media (min-width: 1068px) { .acct-links { margin-top: 36px; } }
 .acct-links__cap { margin: 0 0 12px; }
 
+/* The row of small character cards (owner-confirmed design board §7): one shared box per card — the art window
+   128:140 inset 6px, then the text band (name, teaser) — in the same grid tracks; each game's skin (plate, window
+   edge, band, one motif, one hover effect) lives inside that box only. Lime stays on the brackets and the focus ring. */
 .acct-row {
-  display: grid; grid-template-columns: repeat(auto-fill, minmax(76px, 96px)); gap: 20px 16px;
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px 10px;
   margin: 0; padding: 0; list-style: none;
 }
-/* ≤480px: fluid 56–76px columns so the five tiles share one row at 375 (a 76px minimum would allow four). */
-@media (max-width: 480px) { .acct-row { grid-template-columns: repeat(auto-fill, minmax(56px, 1fr)); gap: 16px 6px; } }
-.acct-row__item { min-width: 0; }
-/* Without JavaScript an opened <details> spans the whole row (spec §3.1). */
+@media (max-width: 359.98px) { .acct-row { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (min-width: 481px) { .acct-row { grid-template-columns: repeat(3, minmax(0, 140px)); gap: 20px 16px; } }
+@media (min-width: 900px) { .acct-row { grid-template-columns: repeat(6, minmax(0, 136px)); } }
+.acct-row__item { display: flex; min-width: 0; }
+.acct-row__item > .acct-tile { flex: 1 1 auto; }
+/* Without JavaScript an opened <details> spans the whole row (spec §3.1); its card face keeps the track's width. */
 .acct-row__item:has(> details[open]) { grid-column: 1 / -1; }
+.acct-row__item:has(> details[open]) .acct-tile__face { max-width: 140px; }
 
 .acct-tile { min-width: 0; }
 .acct-tile__sum {
-  display: grid; justify-items: start; align-content: start; gap: 6px;
-  min-width: var(--tap); min-height: var(--tap); cursor: pointer; list-style: none; color: var(--hud-muted);
+  display: flex; min-width: var(--tap); min-height: var(--tap); height: 100%;
+  cursor: pointer; list-style: none; color: var(--hud-text);
 }
+details.acct-tile[open] > .acct-tile__sum { height: auto; }
 .acct-tile__sum::-webkit-details-marker { display: none; }
 .acct-tile__sum::marker { content: ""; }
 .acct-tile__sum:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
 
-/* the tile: a cut-corner tinted plate (1px line), two corner brackets, the site's own mono glyph */
+/* the card box: the skin layer under everything, the art window, the text band */
+.acct-tile__face {
+  position: relative; isolation: isolate; display: grid; grid-template-rows: auto 1fr; align-content: start;
+  width: 100%; min-width: 0;
+}
+.acct-tile__skin { position: absolute; inset: 0; z-index: -1; overflow: hidden; background: var(--hud-panel); }
+.acct-tile__skin::before, .acct-tile__skin::after { content: ""; position: absolute; pointer-events: none; }
+
+/* the art window: a tinted plate (1px line) under the brackets; the art fills it, or the glyph alone without art */
 .acct-tile__frame {
-  position: relative; isolation: isolate; display: grid; place-items: center;
-  width: 100%; max-width: 96px; aspect-ratio: 1;
+  position: relative; display: grid; place-items: center;
+  margin: 6px 6px 0; aspect-ratio: 128 / 140;
 }
-@media (max-width: 480px) { .acct-tile__frame { max-width: 76px; } }
-.acct-tile__frame::before, .acct-tile__frame::after {
-  content: ""; position: absolute; z-index: -1;
-  clip-path: polygon(0 0, calc(100% - var(--cut-btn)) 0, 100% var(--cut-btn), 100% 100%, var(--cut-btn) 100%, 0 calc(100% - var(--cut-btn)));
-}
+.acct-tile__frame::before, .acct-tile__frame::after { content: ""; position: absolute; z-index: 0; }
 .acct-tile__frame::before { inset: 0; background: var(--hud-line); }
 .acct-tile__frame::after { inset: 1px; background: linear-gradient(var(--acct-tint), var(--acct-tint)), var(--hud-bg); }
-.acct-tile__corners { position: absolute; inset: 0; pointer-events: none; transition: transform var(--dur-hover) var(--ease-out); }
+.acct-tile__window { position: absolute; inset: 0; z-index: 1; overflow: hidden; }
+.acct-tile__pic { display: contents; }
+.acct-tile__art {
+  position: absolute; left: 0; top: 0; width: 100%; max-width: none; height: calc(100% + 2px);
+  object-fit: cover; object-position: 50% 0;
+  transition: transform var(--dur-hover) var(--ease-out);
+}
+.acct-tile__corners { position: absolute; inset: 0; z-index: 3; pointer-events: none; transition: transform var(--dur-hover) var(--ease-out); }
 .acct-tile__corners::before, .acct-tile__corners::after {
   content: ""; position: absolute; width: var(--bracket-sm); height: var(--bracket-sm);
   border: 2px solid var(--hud-line-strong); transition: border-color var(--dur-hover) linear;
@@ -48,42 +66,149 @@
 .acct-tile__corners::before { left: -2px; top: -2px; border-right: 0; border-bottom: 0; }
 .acct-tile__corners::after { right: -2px; bottom: -2px; border-left: 0; border-top: 0; }
 .acct-tile__glyph {
+  position: relative; z-index: 2;
   font: 700 var(--fs-sub)/1 var(--font-mono); letter-spacing: .04em; color: var(--hud-text);
   transition: transform var(--dur-hover) var(--ease-out);
 }
-.acct-tile__name {
-  max-width: 100%; font: 600 var(--fs-label)/1.35 var(--font-sans); color: var(--hud-muted);
-  overflow-wrap: anywhere; transition: color var(--dur-hover) linear;
+/* with art the glyph is a small corner label (bottom left: the brackets hold top left and bottom right) */
+.acct-tile__glyph--corner {
+  position: absolute; left: 4px; bottom: 4px; padding: 1px 4px;
+  font-size: var(--fs-min); letter-spacing: .02em; background: var(--hud-bg); transition: none;
 }
-.acct-tile__teaser { font: 600 var(--fs-label)/1.2 var(--font-mono); letter-spacing: .02em; color: var(--hud-muted); overflow-wrap: normal; } /* breaks only at spaces and the <wbr> before a dot */
-@media (max-width: 480px) { .acct-tile__teaser { letter-spacing: 0; } }
+
+.acct-tile__text { position: relative; display: grid; align-content: start; gap: 2px; min-width: 0; margin-top: 6px; padding: 8px 9px 11px; }
+.acct-tile__name {
+  justify-self: start; max-width: 100%; font: 700 var(--fs-label)/1.35 var(--font-sans); color: var(--hud-text);
+  overflow-wrap: anywhere; transition: color var(--dur-hover) linear, background-color var(--dur-hover) linear;
+}
+.acct-tile__teaser { font: 600 var(--fs-label)/1.3 var(--font-mono); letter-spacing: 0; color: var(--hud-text); overflow-wrap: normal; } /* breaks only at spaces and the <wbr> before a dot */
 /* Korean text never sits in a mono face (these are lang="en"; the rule guards a future Korean value) */
 .acct-tile__glyph:lang(ko), .acct-tile__teaser:lang(ko), .acct-card__head:lang(ko), .acct-card__item-meta:lang(ko) { font-family: var(--font-sans); letter-spacing: 0; }
+
+/* Zenless Zone Zero · city slab: a pinstriped slab with one 45° cut (top right) shared by the window and a large
+   bottom-left radius; the name on a sticker pill over the window's lower edge. Effect: the pill inverts (colour) and
+   the stripes slide on the diagonal (transform). */
+.acct-tile__face[data-skin="zzz"] .acct-tile__skin {
+  background: var(--skin-zzz-slab); border-bottom-left-radius: 16px;
+  clip-path: polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 0 100%);
+}
+.acct-tile__face[data-skin="zzz"] .acct-tile__skin::before {
+  inset: -10px; background: repeating-linear-gradient(135deg, var(--skin-zzz-slab) 0 5px, var(--skin-zzz-stripe) 5px 6px);
+  transition: transform var(--dur-fade) var(--ease-out);
+}
+.acct-tile__face[data-skin="zzz"] .acct-tile__frame::after,
+.acct-tile__face[data-skin="zzz"] .acct-tile__frame::before,
+.acct-tile__face[data-skin="zzz"] .acct-tile__window { clip-path: polygon(0 0, calc(100% - 12.5px) 0, 100% 12.5px, 100% 100%, 0 100%); }
+.acct-tile__face[data-skin="zzz"] .acct-tile__glyph--corner { bottom: 18px; } /* above the name pill */
+.acct-tile__face[data-skin="zzz"] .acct-tile__name {
+  position: relative; z-index: 1; margin: -20px 0 4px -3px; padding: 1px 8px;
+  border: 2px solid var(--skin-zzz-slab); border-radius: 11px; box-shadow: 0 0 0 2px var(--skin-zzz-ring);
+  font-weight: 800; color: var(--skin-zzz-slab); background-color: var(--skin-zzz-field);
+}
+
+/* Genshin Impact · record tablet: a night plate, a sand-gold hairline 3px inside the window (double edge), a dotted
+   diamond on the window's top edge, a slate band under a 28×2 gold rule, the name in a serif. Effect: the diamond
+   turns 45° (transform). */
+.acct-tile__face[data-skin="genshin"] .acct-tile__skin { background: var(--skin-gi-night); border-radius: 0 4px 0 4px; }
+.acct-tile__face[data-skin="genshin"] .acct-tile__skin::after {
+  top: 1px; left: calc(50% - 5px); z-index: 4; width: 10px; height: 10px;
+  border: 1px solid var(--skin-gi-rule);
+  background: radial-gradient(circle, var(--skin-gi-sand) 0 1.5px, var(--skin-gi-night) 2px);
+  transform: rotate(45deg); transition: transform var(--dur-fade) var(--ease-out);
+}
+.acct-tile__face[data-skin="genshin"] .acct-tile__skin { overflow: visible; }
+.acct-tile__face[data-skin="genshin"] .acct-tile__window::after {
+  content: ""; position: absolute; inset: 3px; border: 1px solid var(--skin-gi-sand); pointer-events: none;
+}
+.acct-tile__face[data-skin="genshin"] .acct-tile__text { background: var(--skin-gi-slate); border-bottom-left-radius: 4px; }
+.acct-tile__face[data-skin="genshin"] .acct-tile__text::before { content: ""; width: 28px; height: 2px; margin-bottom: 4px; background: var(--skin-gi-rule); }
+.acct-tile__face[data-skin="genshin"] .acct-tile__name { font-family: var(--font-skin-serif); color: var(--skin-gi-cream); }
+
+/* League of Legends · floating gold line: a square navy plate, a 1px gold line 3px outside the window, a gold diamond
+   on the band's rule. Effect: the art comes closer, scale(1.04) inside the window (transform); the line brightens. */
+.acct-tile__face[data-skin="lol"] .acct-tile__skin { background: var(--skin-lol-navy); }
+.acct-tile__face[data-skin="lol"] .acct-tile__frame { outline: 1px solid var(--skin-lol-gold); outline-offset: 3px; transition: outline-color var(--dur-hover) linear; }
+.acct-tile__face[data-skin="lol"] .acct-tile__text { margin-top: 10px; }
+.acct-tile__face[data-skin="lol"] .acct-tile__text::before {
+  content: ""; height: 5px; margin-bottom: 4px;
+  background:
+    linear-gradient(var(--skin-lol-gold), var(--skin-lol-gold)) center / 5px 5px no-repeat,
+    linear-gradient(var(--skin-lol-gold-faint), var(--skin-lol-gold-faint)) center / 100% 1px no-repeat;
+}
+
+/* Teamfight Tactics · hex board: a night-purple plate over a drawn hex grid, a 3px violet band edge, one orange hex
+   pip before the name. Effect: the pip turns 60° and the grid slides one cell (transform). */
+.acct-tile__face[data-skin="tft"] .acct-tile__skin { background: var(--skin-tft-night); border-radius: 0 2px 0 2px; }
+.acct-tile__face[data-skin="tft"] .acct-tile__skin::before {
+  inset: -24px; background: var(--skin-tft-hex) 0 0 / 18px 10.392px repeat;
+  transition: transform var(--dur-fade) var(--ease-out);
+}
+.acct-tile__face[data-skin="tft"] .acct-tile__text { background: var(--skin-tft-night); border-top: 3px solid var(--skin-tft-violet); border-bottom-left-radius: 2px; }
+.acct-tile__face[data-skin="tft"] .acct-tile__name { font-weight: 800; color: var(--skin-tft-white); }
+.acct-tile__face[data-skin="tft"] .acct-tile__name::before {
+  content: ""; display: inline-block; width: 11px; height: 9.5px; margin-inline-end: 5px; vertical-align: -.02em;
+  background-color: var(--skin-tft-orange); clip-path: polygon(25% 0, 75% 0, 100% 50%, 75% 100%, 25% 100%, 0 50%);
+  transition: transform var(--dur-fade) var(--ease-out), background-color var(--dur-fade) linear;
+}
+
+/* Steam · library capsule: the store-background gradient plate, the avatar as a capsule with a faint chalky-blue
+   hairline, a 3px button-gradient line on the band. Effect: the line extends from 35% to full width (transform). */
+.acct-tile__face[data-skin="steam"] .acct-tile__skin { background: linear-gradient(180deg, var(--skin-st-top) 0%, var(--skin-st-bottom) 80%); border-radius: 0 2px 0 2px; }
+.acct-tile__face[data-skin="steam"] .acct-tile__frame::after { background: linear-gradient(var(--acct-tint), var(--acct-tint)), var(--skin-st-header); }
+.acct-tile__face[data-skin="steam"] .acct-tile__window { box-shadow: inset 0 0 0 1px var(--skin-st-blue-line); }
+.acct-tile__face[data-skin="steam"] .acct-tile__text::before {
+  content: ""; height: 3px; margin-bottom: 5px;
+  background: linear-gradient(to right, var(--skin-st-btn-a) 5%, var(--skin-st-btn-b) 60%);
+  transform: scaleX(.35); transform-origin: left center; transition: transform var(--dur-fade) var(--ease-out);
+}
+.acct-tile__face[data-skin="steam"] .acct-tile__name { color: var(--skin-st-text); }
 
 /* Owner mode: a status tile that is not on the visitors' row (unlinked, error, stale) has dotted brackets and its
    state word; only the aria-hidden glyph dims. Before the hover/focus/current rules, which keep their accent. */
 .acct-tile[data-off] .acct-tile__corners::before, .acct-tile[data-off] .acct-tile__corners::after { border-style: dotted; border-color: var(--hud-line); }
 .acct-tile[data-off] .acct-tile__glyph { color: var(--hud-muted); }
-.acct-tile__state { font: 600 var(--fs-label)/1.35 var(--font-sans); color: var(--hud-muted); overflow-wrap: anywhere; }
+.acct-tile__state { font: 600 var(--fs-label)/1.35 var(--font-sans); color: var(--hud-text); overflow-wrap: anywhere; }
 
+/* on = keyboard focus, and inside (hover: hover) the mouse: the brackets open in accent, the art (or glyph) lifts 2px,
+   then each skin's own effect */
 .acct-tile__sum:focus-visible .acct-tile__corners { transform: scale(1.06); }
 .acct-tile__sum:focus-visible .acct-tile__corners::before, .acct-tile__sum:focus-visible .acct-tile__corners::after { border-color: var(--accent); }
-.acct-tile__sum:focus-visible .acct-tile__glyph { transform: translateY(-2px); }
+.acct-tile__sum:focus-visible :is(.acct-tile__glyph:not(.acct-tile__glyph--corner), .acct-tile__art) { transform: translateY(-2px); }
+.acct-tile__sum:focus-visible [data-skin="zzz"] .acct-tile__name { color: var(--skin-zzz-field); background-color: var(--skin-zzz-pill); }
+.acct-tile__sum:focus-visible [data-skin="zzz"] .acct-tile__skin::before { transform: translate(3px, 3px); }
+.acct-tile__sum:focus-visible [data-skin="genshin"] .acct-tile__skin::after { transform: rotate(90deg); }
+.acct-tile__sum:focus-visible [data-skin="lol"] .acct-tile__frame { outline-color: var(--skin-lol-gold-hi); }
+.acct-tile__sum:focus-visible [data-skin="lol"] .acct-tile__art { transform: translateY(-2px) scale(1.04); }
+.acct-tile__sum:focus-visible [data-skin="tft"] .acct-tile__name::before { transform: rotate(60deg); background-color: var(--skin-tft-orange-hi); }
+.acct-tile__sum:focus-visible [data-skin="tft"] .acct-tile__skin::before { transform: translate(9px, 5.196px); }
+.acct-tile__sum:focus-visible [data-skin="steam"] .acct-tile__text::before { transform: scaleX(1); }
 @media (hover: hover) {
   .acct-tile__sum:hover .acct-tile__corners { transform: scale(1.06); }
   .acct-tile__sum:hover .acct-tile__corners::before, .acct-tile__sum:hover .acct-tile__corners::after { border-color: var(--accent); }
-  .acct-tile__sum:hover .acct-tile__glyph { transform: translateY(-2px); }
-  .acct-tile__sum:hover .acct-tile__name { color: var(--hud-text); }
+  .acct-tile__sum:hover :is(.acct-tile__glyph:not(.acct-tile__glyph--corner), .acct-tile__art) { transform: translateY(-2px); }
+  .acct-tile__sum:hover [data-skin="zzz"] .acct-tile__name { color: var(--skin-zzz-field); background-color: var(--skin-zzz-pill); }
+  .acct-tile__sum:hover [data-skin="zzz"] .acct-tile__skin::before { transform: translate(3px, 3px); }
+  .acct-tile__sum:hover [data-skin="genshin"] .acct-tile__skin::after { transform: rotate(90deg); }
+  .acct-tile__sum:hover [data-skin="lol"] .acct-tile__frame { outline-color: var(--skin-lol-gold-hi); }
+  .acct-tile__sum:hover [data-skin="lol"] .acct-tile__art { transform: translateY(-2px) scale(1.04); }
+  .acct-tile__sum:hover [data-skin="tft"] .acct-tile__name::before { transform: rotate(60deg); background-color: var(--skin-tft-orange-hi); }
+  .acct-tile__sum:hover [data-skin="tft"] .acct-tile__skin::before { transform: translate(9px, 5.196px); }
+  .acct-tile__sum:hover [data-skin="steam"] .acct-tile__text::before { transform: scaleX(1); }
 }
 .acct-tile__sum:active .acct-tile__corners::before, .acct-tile__sum:active .acct-tile__corners::after { border-color: var(--accent-hover); }
-.acct-tile__sum:active .acct-tile__name { color: var(--hud-text); }
 .acct-tile[open] .acct-tile__corners::before, .acct-tile[open] .acct-tile__corners::after { border-color: var(--accent); }
 
-/* reduced motion (both paths): colour only, no scale or shift */
+/* reduced motion (both paths): colour only — no scale, shift, turn or slide; the Steam line keeps its resting length */
 @media (prefers-reduced-motion: reduce) {
-  .acct-tile__sum .acct-tile__corners, .acct-tile__sum .acct-tile__glyph { transform: none !important; transition: none; }
+  .acct-tile__sum :is(.acct-tile__corners, .acct-tile__glyph, .acct-tile__art) { transform: none !important; transition: none; }
+  .acct-tile__sum .acct-tile__skin::before, .acct-tile__sum .acct-tile__skin::after, .acct-tile__sum .acct-tile__name::before { transform: none !important; transition: none; }
+  .acct-tile__sum [data-skin="genshin"] .acct-tile__skin::after { transform: rotate(45deg) !important; }
+  .acct-tile__sum [data-skin="steam"] .acct-tile__text::before { transform: scaleX(.35) !important; transition: none; }
 }
-:root[data-motion="reduce"] .acct-tile__sum .acct-tile__corners, :root[data-motion="reduce"] .acct-tile__sum .acct-tile__glyph { transform: none !important; transition: none; }
+:root[data-motion="reduce"] .acct-tile__sum :is(.acct-tile__corners, .acct-tile__glyph, .acct-tile__art) { transform: none !important; transition: none; }
+:root[data-motion="reduce"] .acct-tile__sum .acct-tile__skin::before, :root[data-motion="reduce"] .acct-tile__sum .acct-tile__skin::after, :root[data-motion="reduce"] .acct-tile__sum .acct-tile__name::before { transform: none !important; transition: none; }
+:root[data-motion="reduce"] .acct-tile__sum [data-skin="genshin"] .acct-tile__skin::after { transform: rotate(45deg) !important; }
+:root[data-motion="reduce"] .acct-tile__sum [data-skin="steam"] .acct-tile__text::before { transform: scaleX(.35) !important; transition: none; }
 
 /* the static card: the whole account card as HTML inside the opened <details> (no JavaScript needed, G-010) */
 .acct-card--static {

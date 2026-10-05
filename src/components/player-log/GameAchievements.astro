@@ -1,46 +1,334 @@
 ---
-// Game achievements on the Player Log. D-13: rendered only once an account feed exists (src/data/generated/accounts/,
-// passed in as `accounts`); with no feed the whole section, id included, is absent.
+// "내 게임 업적" on the Player Log: the owner's game records (src/data/game-records.yaml), always rendered, as the two
+// showcases of the owner-confirmed design board — the TFT records on one promotion-ceremony card (title band, gold
+// rule, smoky stage, drawn emblem, one plate per account, evidence band), each Hearthstone record on a wooden plaque
+// with a drawn gem medal. The emblem and the medal are original drawings, not rank crests or logos. Only the evidence
+// thumbnails are clickable: each is an ImageViewer trigger (group "game-records"; no data-cert-id, so no achievement)
+// whose no-JS href is the full WebP. The page footer carries the records' notices (PlayerLogView).
 import SectionHead from '../hud/SectionHead.astro';
 import type { Lang } from '../../i18n/ui';
-import { t } from '../../i18n/utils';
-import type { AccountFeed } from '../../lib/generated';
+import { formatNumber, t } from '../../i18n/utils';
+import type { GameRecordView } from '../../lib/game-records';
+import type { Evidence } from '../../lib/game-records.server';
+import type { GameId } from '../../types';
 
+type RecordItem = GameRecordView & { evidence: Evidence };
 interface Props {
   lang: Lang;
-  platforms: { label: string }[];
-  accounts: Readonly<Record<string, AccountFeed>>;
+  records: RecordItem[];
 }
-const { lang, platforms, accounts } = Astro.props;
-const hasFeed = Object.keys(accounts).length > 0;
+const { lang, records } = Astro.props;
+
+/** The skin per game: 'ceremony' groups all of the game's records on one card, 'plaque' shows one record each. */
+type Skin = 'ceremony' | 'plaque';
+const SKINS: Partial<Record<GameId, Skin>> = { tft: 'ceremony', hearthstone: 'plaque' };
+const showcases: { skin: Skin; key: string; records: RecordItem[] }[] = [];
+for (const record of records) {
+  const skin = SKINS[record.game];
+  if (!skin) throw new Error(`GameAchievements: no showcase skin for game '${record.game}' (record '${record.id}')`);
+  const open = skin === 'ceremony' ? showcases.find((s) => s.skin === skin && s.records[0].game === record.game) : undefined;
+  if (open) open.records.push(record);
+  else showcases.push({ skin, key: record.id, records: [record] });
+}
+
+/** lang="en" only on an all-Latin account name. */
+const latin = (text: string) => (/^[\x20-\x7e]+$/.test(text) ? 'en' : undefined);
+/** "루네시드#Lune" → ["루네시드", "#Lune"]: the tag is set lighter on the plate. */
+const splitAccount = (account: string): [string, string] => {
+  const at = account.indexOf('#');
+  return at > 0 ? [account.slice(0, at), account.slice(at)] : [account, ''];
+};
+const dateLabel = (record: RecordItem) => t(lang, record.dateSource === 'capture' ? 'gameRecords.dateCapture' : 'gameRecords.dateSaved');
+const evidenceLabel = t(lang, 'gameRecords.evidence');
+const viewerLabel = t(lang, 'gameRecords.viewerLabel');
+/** Thumbnail widths: two side by side on the ceremony card, one across the plaque. */
+const THUMB_SIZES: Record<Skin, string> = { ceremony: '(min-width: 980px) 260px, 50vw', plaque: '(min-width: 980px) 520px, 100vw' };
 ---
-{hasFeed && (
 <section id="game-achievements" class="game-ach read read-sec" aria-labelledby="game-ach-title">
   <div class="container">
     <SectionHead variant="game" id="game-ach-title" caption={t(lang, 'section.gameAchievements')} title={t(lang, 'playerLog.gameAchievements')} />
-    <ul class="game-ach__list" role="list">
-      {platforms.map((p) => (
-        <li class="game-ach__item">
-          <span class="game-ach__name" lang="en">{p.label}</span>
-          <span class="game-ach__lock"><span aria-hidden="true">🔒 </span>{t(lang, 'favorites.locked')}</span>
-        </li>
-      ))}
-    </ul>
-    <p class="game-ach__note">{t(lang, 'playerLog.gameAchievementsLocked')}</p>
+    <ol class="game-ach__list" role="list">
+      {showcases.map(({ skin, key, records: group }) => {
+        const first = group[0];
+        const headingId = `game-ach-${key}`;
+        const evidence = (record: RecordItem) => (
+          <figure class="ev">
+            <a
+              class="ev__link game-ach__evidence"
+              href={record.evidence.full.src}
+              data-viewer="game-records"
+              data-viewer-id={record.id}
+              data-viewer-w={record.evidence.full.width}
+              data-viewer-h={record.evidence.full.height}
+              data-viewer-srcset={record.evidence.full.srcSet}
+              data-viewer-sizes={record.evidence.full.sizes}
+              data-viewer-label={viewerLabel}
+              data-viewer-caption={`${record.title} · ${record.account} · ${record.dateText}`}
+              data-viewer-alt={record.imageAlt}
+              aria-haspopup="dialog"
+            >
+              <span class="ev__thumb">
+                <img
+                  class="game-ach__thumb"
+                  src={record.evidence.thumb.src}
+                  srcset={record.evidence.thumb.srcSet}
+                  sizes={THUMB_SIZES[skin]}
+                  alt={record.imageAlt}
+                  width={record.evidence.thumb.width}
+                  height={record.evidence.thumb.height}
+                  loading="lazy"
+                  decoding="async"
+                />
+              </span>
+              <span class="ev__label">{evidenceLabel}<span class="sr-only"> · {record.title} · {record.account}</span></span>
+            </a>
+          </figure>
+        );
+        return (
+          <li class="game-ach__item" data-records={group.map((r) => r.id).join(' ')}>
+            {skin === 'ceremony' ? (
+              <article class="gm" aria-labelledby={headingId}>
+                <div class="gm__band">
+                  <h3 class="gm__title" id={headingId}>{first.title}<span class="gm__badge">{t(lang, 'gameRecords.reached')}</span></h3>
+                  <p class="gm__sub">{first.gameName} · {first.queue}</p>
+                </div>
+                <div class="gm__rule"></div>
+                <div class="gm__stage" data-glint-stage>
+                  <svg class="gm__emblem" viewBox="0 0 120 120" aria-hidden="true" focusable="false" data-glint>
+                    <defs>
+                      <linearGradient id={`${headingId}-glint`}>
+                        <stop offset="0" class="glint__stop glint__stop--edge" />
+                        <stop offset=".5" class="glint__stop" />
+                        <stop offset="1" class="glint__stop glint__stop--edge" />
+                      </linearGradient>
+                      <clipPath id={`${headingId}-clip`}><path d="M60 6 106 32V88L60 114 14 88V32Z" /></clipPath>
+                    </defs>
+                    <path class="hex" d="M60 6 106 32V88L60 114 14 88V32Z" />
+                    <polygon class="crown" points="42,42 46,27 53,35 60,22 67,35 74,27 78,42" />
+                    <polyline class="c3" points="36,62 60,48 84,62" />
+                    <polyline class="c2" points="36,78 60,64 84,78" />
+                    <polyline class="c1" points="36,94 60,80 84,94" />
+                    <g clip-path={`url(#${headingId}-clip)`}><g transform="rotate(18 60 60)"><rect class="glint" x="-40" y="-30" width="30" height="180" fill={`url(#${headingId}-glint)`} /></g></g>
+                  </svg>
+                  {first.tierLatin && (
+                    <p class="gm__tier" aria-hidden="true">
+                      <span class="gm__tier-en" lang="en">{first.tierLatin}</span>
+                      {lang === 'ko' && first.tier && <span class="gm__tier-ko">{first.tier}</span>}
+                    </p>
+                  )}
+                  <ul class="gm__plates" role="list">
+                    {group.map((record) => {
+                      const [name, tag] = splitAccount(record.account);
+                      return (
+                        <li class="plate" data-record={record.id}>
+                          <span class="plate__ring" aria-hidden="true">{[...name][0]}</span>
+                          <span class="plate__name" lang={latin(record.account)}>{name}{tag && <span>{tag}</span>}</span>
+                          <span class="plate__meta"><b>{t(lang, record.alt ? 'gameRecords.alt' : 'gameRecords.main')}</b> · {dateLabel(record)} <time datetime={record.dateIso}>{record.dateText}</time></span>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+                <div class="gm__rule"></div>
+                <div class="gm__evidence">{group.map(evidence)}</div>
+              </article>
+            ) : (
+              <article class="hsq" aria-labelledby={headingId}>
+                <div class="hsq__inner" data-glint-stage>
+                  <svg class="hsq__medal" viewBox="0 0 120 120" aria-hidden="true" focusable="false" data-glint>
+                    <defs>
+                      <linearGradient id={`${headingId}-glint`}>
+                        <stop offset="0" class="glint__stop glint__stop--edge" />
+                        <stop offset=".5" class="glint__stop" />
+                        <stop offset="1" class="glint__stop glint__stop--edge" />
+                      </linearGradient>
+                      <clipPath id={`${headingId}-clip`}><polygon points="47,22 73,22 98,47 98,73 73,98 47,98 22,73 22,47" /></clipPath>
+                    </defs>
+                    <circle class="rim" cx="60" cy="60" r="56" />
+                    <circle class="rimhi" cx="60" cy="60" r="52" />
+                    <circle class="well" cx="60" cy="60" r="46" />
+                    {[[60, 10], [95.4, 24.6], [110, 60], [95.4, 95.4], [60, 110], [24.6, 95.4], [10, 60], [24.6, 24.6]].map(([cx, cy]) => (
+                      <circle class="rivet" cx={cx} cy={cy} r="3" />
+                    ))}
+                    <polygon class="gem" points="47,22 73,22 98,47 98,73 73,98 47,98 22,73 22,47" />
+                    <polygon class="facet-m" points="47,22 73,22 68,34 52,34" />
+                    <polygon class="facet-m" points="22,47 34,52 34,68 22,73" />
+                    <polygon class="facet-d" points="98,47 98,73 86,68 86,52" />
+                    <polygon class="facet-d" points="47,98 73,98 68,86 52,86" />
+                    <polygon class="face" points="52,34 68,34 86,52 86,68 68,86 52,86 34,68 34,52" />
+                    <g clip-path={`url(#${headingId}-clip)`}><g transform="rotate(18 60 60)"><rect class="glint" x="-40" y="-30" width="26" height="180" fill={`url(#${headingId}-glint)`} /></g></g>
+                    {first.rank !== undefined && <text class="hsq__num" x="60" y="68" text-anchor="middle">{formatNumber(first.rank, lang)}</text>}
+                  </svg>
+                  <h3 class="hsq__ribbon" id={headingId}><span class="sr-only">{first.gameName} </span>{first.title}</h3>
+                  <p class="hsq__meta">
+                    <span class="hsq__acct" lang={latin(first.account)}>{first.account}</span> · {dateLabel(first)} <time datetime={first.dateIso}>{first.dateText}</time>
+                  </p>
+                </div>
+                {evidence(first)}
+              </article>
+            )}
+          </li>
+        );
+      })}
+    </ol>
   </div>
 </section>
-)}
+
+<script>
+  // The optional light sweep: once per drawing, the first time half of its stage is in view, and never with reduced
+  // motion (<html data-motion> covers the footer toggle and the OS setting; the CSS also stops it on both paths).
+  const stages = document.querySelectorAll<HTMLElement>('[data-glint-stage]');
+  const reduced = () =>
+    document.documentElement.getAttribute('data-motion') === 'reduce' || window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (stages.length > 0 && typeof IntersectionObserver === 'function') {
+    const seen = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (!entry.isIntersecting) continue;
+          seen.unobserve(entry.target);
+          if (!reduced()) entry.target.querySelector('[data-glint]')?.classList.add('is-glint');
+        }
+      },
+      { threshold: 0.5 },
+    );
+    stages.forEach((stage) => seen.observe(stage));
+  }
+</script>
 
 <style>
   .game-ach { padding-block: var(--section-pad-y); }
-  .game-ach__list { margin-top: 16px; display: grid; gap: 8px; padding: 0; list-style: none; }
-  @media (min-width: 734px) { .game-ach__list { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-  @media (min-width: 1068px) { .game-ach__list { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-  .game-ach__item {
-    display: flex; justify-content: space-between; align-items: center; gap: 12px; min-height: var(--tap);
-    padding: 10px 14px; background: var(--read-card); border: 1px dashed var(--read-line-strong);
+  .game-ach__list { display: grid; gap: 20px; margin-top: 22px; padding: 0; list-style: none; }
+  .game-ach__item { min-width: 0; max-width: 640px; }
+  @media (min-width: 980px) {
+    .game-ach__list { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
+    .game-ach__item { max-width: none; }
   }
-  .game-ach__name { font-weight: 700; color: var(--read-text); }
-  .game-ach__lock { flex: none; font: 600 var(--fs-label)/1.4 var(--font-mono); letter-spacing: .1em; color: var(--read-muted); } /* P2-24 */
-  .game-ach__note { margin-top: 14px; font-size: 15px; color: var(--read-muted); }
+
+  /* the evidence thumbnail: the one link in each showcase, so the accent brackets and the focus ring sit here only;
+     the box comes from the image's width and height (no layout shift) */
+  .ev { margin: 0; min-width: 0; }
+  .ev__link { display: grid; gap: 7px; min-height: var(--tap); color: inherit; text-decoration: none; }
+  .ev__thumb { position: relative; display: block; background: var(--hud-bg); }
+  .ev__thumb img { display: block; width: 100%; height: auto; }
+  .ev__thumb::before, .ev__thumb::after {
+    content: ""; position: absolute; z-index: 1; width: 12px; height: 12px; pointer-events: none;
+    border: 2px solid var(--hud-line-strong);
+    transition: transform var(--dur-hover) var(--ease-out), border-color var(--dur-hover) linear;
+  }
+  .ev__thumb::before { left: -3px; top: -3px; border-right: 0; border-bottom: 0; }
+  .ev__thumb::after { right: -3px; bottom: -3px; border-left: 0; border-top: 0; }
+  .ev__label { font: 600 var(--fs-label)/1.4 var(--font-sans); }
+  .ev__link:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
+  .ev__link:focus-visible .ev__thumb::before { transform: translate(-2px, -2px); border-color: var(--accent); }
+  .ev__link:focus-visible .ev__thumb::after { transform: translate(2px, 2px); border-color: var(--accent); }
+  @media (hover: hover) {
+    .ev__link:hover .ev__thumb::before { transform: translate(-2px, -2px); border-color: var(--accent); }
+    .ev__link:hover .ev__thumb::after { transform: translate(2px, 2px); border-color: var(--accent); }
+  }
+  .ev__link:active .ev__thumb::before, .ev__link:active .ev__thumb::after { border-color: var(--accent-hover); }
+
+  /* the light sweep inside the two drawings: one pass, transform and opacity only */
+  .glint { opacity: 0; }
+  .glint__stop { stop-color: var(--glint-colour); }
+  .glint__stop--edge { stop-opacity: 0; }
+  .is-glint .glint { animation: game-ach-glint var(--dur-glint) ease-in-out 1; }
+  @keyframes game-ach-glint {
+    0% { transform: translateX(0); opacity: 0; }
+    25% { opacity: 1; }
+    75% { opacity: 1; }
+    100% { transform: translateX(170px); opacity: 0; }
+  }
+
+  /* TFT Grandmaster: the client's promotion screen — title band, 1px gold rule, smoky stage, gold rule, evidence band */
+  .gm { --glint-colour: var(--gm-glint); display: grid; min-width: 0; background: var(--gm-stage); border: 1px solid var(--hud-frame); }
+  .gm__band { padding: 14px 16px 12px; background: var(--gm-band); }
+  .gm__title { font: 800 var(--fs-sub)/1.35 var(--font-sans); color: var(--gm-title); }
+  /* the one --gold on the showcases: the achievement badge */
+  .gm__badge {
+    display: inline-block; margin-inline-start: 8px; padding: 1px 7px; vertical-align: .15em;
+    font: 700 var(--fs-min)/1.5 var(--font-sans); color: var(--gold-ink); background: var(--gold);
+  }
+  .gm__sub { margin-top: 2px; font: 500 var(--fs-label)/1.5 var(--font-sans); color: var(--gm-grey); }
+  .gm__rule { height: 1px; background: var(--gm-rule); }
+  .gm__stage {
+    display: grid; justify-items: center; gap: 10px; padding: 22px 16px 20px;
+    background:
+      radial-gradient(ellipse 55% 60% at 18% 62%, var(--gm-smoke), var(--skin-clear) 70%),
+      radial-gradient(ellipse 50% 55% at 86% 30%, var(--gm-smoke-2), var(--skin-clear) 70%),
+      var(--gm-stage);
+  }
+  .gm__emblem { width: 112px; height: auto; }
+  .gm__emblem .hex { fill: var(--gm-crimson-deep); fill-opacity: .55; stroke: var(--gm-gold); stroke-width: 1.5; }
+  .gm__emblem .c1 { fill: none; stroke: var(--gm-crimson); stroke-width: 7; stroke-linejoin: miter; }
+  .gm__emblem .c2 { fill: none; stroke: var(--gm-crimson-2); stroke-width: 7; stroke-linejoin: miter; }
+  .gm__emblem .c3 { fill: none; stroke: var(--gm-ember); stroke-width: 7; stroke-linejoin: miter; }
+  .gm__emblem .crown { fill: var(--gm-amber); }
+  .gm__tier { display: grid; justify-items: center; }
+  .gm__tier-en { font: 400 1.25rem/1.2 var(--font-skin-serif); letter-spacing: .08em; text-transform: uppercase; color: var(--gm-amber); }
+  .gm__tier-ko { font: 700 var(--fs-label)/1.5 var(--font-sans); color: var(--gm-cream); }
+  .gm__plates { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; width: 100%; padding: 0; list-style: none; }
+  .plate {
+    display: grid; grid-template-columns: 34px minmax(0, 1fr); gap: 0 10px; align-items: center;
+    flex: 1 1 210px; max-width: 280px; padding: 8px 10px; background: var(--gm-plate); border: 1px solid var(--gm-rule);
+  }
+  .plate__ring {
+    grid-row: span 2; display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%;
+    border: 2px solid var(--gm-ring); font: 700 var(--fs-label)/1 var(--font-sans); color: var(--gm-cream);
+  }
+  .plate__name { font: 700 var(--fs-small)/1.35 var(--font-sans); color: var(--gm-cream); overflow-wrap: anywhere; }
+  .plate__name span { font-weight: 500; color: var(--gm-grey); }
+  .plate__meta { font: 500 var(--fs-label)/1.5 var(--font-sans); color: var(--gm-grey); }
+  .plate__meta b { font-weight: 700; color: var(--gm-gold); }
+  .gm__evidence { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; padding: 14px 16px 16px; background: var(--gm-band); }
+  .gm .ev__label { color: var(--gm-cream); }
+
+  /* Hearthstone Legend: grained wood, three-step bevelled rim, red leather inset, the drawn gem medal (the number on
+     the light face only), parchment ribbon, account and date, then the evidence thumbnail */
+  .hsq {
+    --glint-colour: var(--skin-hs-glint);
+    display: grid; gap: 14px; min-width: 0; padding: 12px; border-radius: 10px;
+    background: repeating-linear-gradient(100deg, var(--skin-hs-wood-3) 0 4px, var(--skin-hs-wood-2) 4px 7px, var(--skin-hs-wood) 7px 12px, var(--skin-hs-wood-3) 12px 16px);
+    border: 3px solid var(--skin-hs-rim-mid);
+    box-shadow: inset 0 0 0 1px var(--skin-hs-rim-shadow), inset 0 2px 0 1px var(--skin-hs-rim-hi);
+  }
+  .hsq__inner {
+    display: grid; justify-items: center; gap: 10px; padding: 18px 12px 16px; border-radius: 6px;
+    background: linear-gradient(var(--skin-hs-leather), var(--skin-hs-leather-2)); box-shadow: inset 0 0 0 1px var(--skin-hs-rim-shadow);
+  }
+  .hsq__medal { width: 128px; height: auto; }
+  .hsq__medal .rim { fill: var(--skin-hs-rim-mid); stroke: var(--skin-hs-rim-shadow); stroke-width: 2; }
+  .hsq__medal .rimhi { fill: none; stroke: var(--skin-hs-rim-hi); stroke-width: 2; }
+  .hsq__medal .well { fill: var(--skin-hs-leather-2); }
+  .hsq__medal .rivet { fill: var(--skin-hs-rim-hi); stroke: var(--skin-hs-rim-shadow); stroke-width: 1; }
+  .hsq__medal .gem { fill: var(--skin-hs-gem-2); stroke: var(--skin-hs-gem-3); stroke-width: 1.5; }
+  .hsq__medal .facet-d { fill: var(--skin-hs-gem-3); }
+  .hsq__medal .facet-m { fill: var(--skin-hs-gem-mid); }
+  .hsq__medal .face { fill: var(--skin-hs-gem-light); }
+  .hsq__num { fill: var(--skin-hs-num); font: 800 1.375rem var(--font-skin-serif); }
+  .hsq__ribbon {
+    max-width: 100%; padding: 4px 18px; text-align: center; text-wrap: balance;
+    font: 800 var(--fs-small)/1.4 var(--font-sans); color: var(--skin-hs-wood); background: var(--skin-hs-parch-2);
+    clip-path: polygon(10px 0, calc(100% - 10px) 0, 100% 50%, calc(100% - 10px) 100%, 10px 100%, 0 50%);
+  }
+  .hsq__ribbon:lang(en) { font-family: var(--font-skin-serif); }
+  .hsq__meta { font: 500 var(--fs-label)/1.5 var(--font-sans); color: var(--skin-hs-text); text-align: center; }
+  .hsq__acct { font-family: var(--font-mono); }
+  .hsq .ev__label { color: var(--skin-hs-text); }
+
+  /* forced colours: frames and plates keep an edge; the drawings keep their own paint */
+  @media (forced-colors: active) {
+    .gm, .hsq, .plate { border: 1px solid CanvasText; }
+    .gm__emblem, .hsq__medal, .gm__badge { forced-color-adjust: none; }
+  }
+
+  /* reduced motion (the OS setting and the footer toggle): the brackets keep their colour change but do not move;
+     the sweep never runs */
+  @media (prefers-reduced-motion: reduce) {
+    .ev__thumb::before, .ev__thumb::after { transform: none !important; transition: border-color var(--dur-hover) linear !important; }
+    .glint { animation: none !important; }
+  }
+  :root[data-motion="reduce"] .ev__thumb::before, :root[data-motion="reduce"] .ev__thumb::after {
+    transform: none !important; transition: border-color var(--dur-hover) linear !important;
+  }
+  :root[data-motion="reduce"] .glint { animation: none !important; }
 </style>

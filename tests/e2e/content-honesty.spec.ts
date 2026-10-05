@@ -75,7 +75,9 @@ test.describe('D-13: the Player Log shows only what exists', () => {
       // the unlocked favourites (zzz, genshin, lol, tft, eternal-return, hearthstone since 2026-09-30); locked ones stay out (D-13)
       await expect(page.locator('#favorite-games [role="tab"]')).toHaveCount(6);
       await expect(page.locator('#favorite-games [role="tab"][aria-disabled="true"]')).toHaveCount(0);
-      await expect(page.locator('#game-achievements')).toHaveCount(0);
+      // PL-4 (named change, was 0): 내 게임 업적 always shows the owner's three records
+      await expect(page.locator('#game-achievements')).toHaveCount(1);
+      await expect(page.locator('#game-achievements [data-viewer="game-records"]')).toHaveCount(3);
       await page.locator('#favorite-games').scrollIntoViewIfNeeded();
       await expect(page.locator('.fg__scene')).toHaveCount(1);
       await expect(page.locator('.fg-acct')).toHaveCount(0);

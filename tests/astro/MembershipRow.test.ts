@@ -96,4 +96,29 @@ describe('AchievementMeter', () => {
     expect(en).toMatch(new RegExp(`data-ach-meter-count[^>]*>0 \\/ ${defs.length} unlocked<`));
     expect(en).toContain('See all achievements');
   });
+
+  it('PL-2: the meter slots hold small medals inside the aria-hidden list; no ★', async () => {
+    const html = await renderAstro(AchievementMeter, { props: { variant: 'game', lang: 'ko', defs } });
+    expect(html).not.toContain('★');
+    const doc = new JSDOM(html).window.document;
+    const list = doc.querySelector('ol.ach-meter__slots');
+    expect(list?.getAttribute('aria-hidden')).toBe('true');
+    const slots = [...doc.querySelectorAll('[data-ach-slot]')];
+    expect(slots).toHaveLength(defs.length);
+    for (const d of defs) {
+      const slot = doc.querySelector(`[data-ach-slot="${d.id}"]`);
+      expect(slot?.closest('ol')).toBe(list);
+      const medals = slot?.querySelectorAll('.medal') ?? [];
+      expect(medals, d.id).toHaveLength(1);
+      expect(medals[0]!.classList.contains('medal--meter')).toBe(true);
+      expect(medals[0]!.getAttribute('data-medal')).toBe(d.id);
+      expect(medals[0]!.getAttribute('data-state')).toBe(d.hidden ? 'hidden' : 'locked');
+    }
+    // AL-13's pop after the fill now runs on the medal; neither reduce path animates it
+    const src = readSource('src/components/player-log/AchievementMeter.astro');
+    expect(src).toMatch(/\.ach-meter__slot\[data-unlocked="true"\] :global\(\.medal\) \{\s*animation: medal-mint var\(--dur-medal\) var\(--ease-out\) var\(--dur-enter\) backwards;/);
+    expect(src).not.toMatch(/ach-slot-pop|250ms/);
+    expect(src).toMatch(/:global\(:root\[data-motion="reduce"\]\) \.ach-meter__slot\[data-unlocked="true"\] :global\(\.medal\) \{\s*animation: none;/);
+    expect(src).toMatch(/@media \(prefers-reduced-motion: reduce\) \{\s*\.ach-meter__slot\[data-unlocked="true"\] :global\(\.medal\) \{\s*animation: none;/);
+  });
 });
