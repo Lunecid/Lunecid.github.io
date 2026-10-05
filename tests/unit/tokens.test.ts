@@ -216,6 +216,15 @@ describe('design tokens (src/styles/tokens.css)', () => {
     expect(d.get('--dur-lift')).toBe(d.get('--dur-exit'));
   });
 
+  it('GP-1: --dur-tilt-in .22s; tilt angles; --dur-tilt-in > --dur-panel-out', () => {
+    const d = rootDecls(BASE);
+    expect(d.get('--dur-tilt-in')).toBe('.22s');
+    expect(parseFloat(d.get('--dur-tilt-in')!)).toBeGreaterThan(parseFloat(d.get('--dur-panel-out')!));
+    expect(d.get('--tilt-deg')).toBe('2deg');
+    expect(d.get('--tilt-deg-wide')).toBe('1.25deg');
+    expect(d.get('--tilt-deg-fig')).toBe('.8deg');
+  });
+
   it('F-067 (P-11): the cartridge shell colours are tokens', () => {
     const d = rootDecls(BASE);
     expect(['--cart-shell', '--cart-shell-hover', '--cart-shell-shade', '--cart-shell-grip'].map((n) => d.get(n))).toEqual(['#C9CED6', '#D5D9E0', '#AEB4BE', '#8E949E']);

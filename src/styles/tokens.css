@@ -246,6 +246,71 @@
   --skin-st-btn-b: #1A44C2;
   --skin-st-btn-hi: #66C0F4;
 
+  /* ── game palette v4 (owner-approved 2026-10-05; owner-assets/game-palette/v4/palette.md): raw values only. The game
+        block below re-points the HUD, read, gold and cartridge names to them on game pages; these names stay unused
+        elsewhere. Pairs (palette.md §2a–§2c): t1 on k0 15.71, t2 on the card 6.84, yellow text on the card 13.33, cyan on
+        k0 12.79, ink on yellow 15.52; on the white panel ink 14.95, ink-2 6.45, deep cyan 5.03 (5.14 on its wash). ── */
+  --gp-k0: #0B0B0C;             /* page and HUD bands */
+  --gp-k1: #141416;             /* HUD panels */
+  --gp-k2: #1C1C1F;             /* raised: chips, title bars */
+  --gp-k-read: #121214;         /* reading bands */
+  --gp-k-card: #1A1A1D;         /* cards on a reading band */
+  --gp-t0: #F4F4F0;             /* titles */
+  --gp-t1: #E6E6E1;             /* text */
+  --gp-t2: #A3A39C;             /* secondary text */
+  --gp-ln: #707078;             /* component boundaries (UI ≥ 3:1 on every dark surface) */
+  --gp-ln-strong: #9A9AA2;
+  --gp-ln-dash: #3A3A40;        /* dashed table rules (decoration) */
+  --gp-divider: #24242A;        /* band rules (decoration) */
+  --gp-frame: #2C2C31;          /* frames and soft separators (decoration) */
+  --gp-y: #FFE600;              /* the clickable colour: fills, strokes, focus ring; never a ground, never body text */
+  --gp-y-text: #FFE14A;         /* yellow as text (links in dark bands) */
+  --gp-y-hover: #FFF06B;        /* filled hover */
+  --gp-y-light: #FFF3A6;
+  --gp-y-wash-8: rgba(255, 230, 0, .08);
+  --gp-y-wash-12: rgba(255, 230, 0, .12);
+  --gp-y-streak: rgba(255, 230, 0, .6);
+  --gp-y-strip: rgba(255, 230, 0, .9);   /* the highlighter strip under links on the white panels */
+  --gp-cy: #00E5FF;             /* the second highlight: data, numbers, line-art, meters, achievements; never clickable */
+  --gp-cy-dim: rgba(0, 229, 255, .45);
+  --gp-cy-wash: rgba(0, 229, 255, .12);
+  --gp-cy-glow: rgba(0, 229, 255, .45); /* hover glow (text-shadow) */
+  --gp-ink: #0B0B0C;            /* text on a yellow or cyan plate */
+  --gp-w-panel: #EEEEE9;        /* white panels for dense and long text */
+  --gp-w-card: #F7F7F3;
+  --gp-w-ink: #1A1A1A;
+  --gp-w-ink-2: #55554F;
+  --gp-w-cy: #006F80;           /* deep cyan: the second highlight on white */
+  --gp-w-cy-wash: #E0F4F6;      /* status "met" ground */
+  --gp-w-line: rgba(26, 26, 26, .14);
+  --gp-w-line-strong: #85857F;  /* UI boundary on white (≥ 3:1) */
+  --gp-w-rule: #B9B9B3;
+  --gp-w-code: #E6E6E0;         /* BibTeX ground on white */
+  --gp-w-code-line: #CFCFC8;
+  --gp-nav-bg: rgba(11, 11, 12, .97);
+  --gp-panel-92: rgba(20, 20, 22, .92);
+  --gp-panel-75: rgba(20, 20, 22, .75);
+  --gp-fade: rgba(11, 11, 12, .95);
+  --gp-scrim: rgba(0, 0, 0, .55);
+  --gp-grid: rgba(255, 255, 255, .03);
+  --gp-cart-shell: #2A2A2E;     /* graphite cartridge shell */
+  --gp-cart-shell-hover: #323237;
+  --gp-cart-shell-shade: #1D1D21;
+  --gp-cart-shell-grip: #45454B;
+  --gp-paper-shadow: 0 0 0 1px #2C2C31, 0 18px 40px rgba(0, 0, 0, .5);
+  --gp-ach-rim: #0097A7;        /* medal rim and ribbon: 2.28:1 against the cyan disc, 4.95:1 on the card */
+  --gp-haz: repeating-linear-gradient(-45deg, var(--gp-y) 0 5px, transparent 5px 10px);
+  /* barcodes (original drawing): cyan for the page head, grey for the kicker tails */
+  --gp-bars-c: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='12'%3E%3Cpath fill='%2300E5FF' d='M0 0h2v12H0zM4 0h1v12H4zM7 0h3v12H7zM12 0h1v12h-1zM15 0h1v12h-1zM18 0h4v12h-4zM24 0h1v12h-1zM27 0h2v12h-2zM31 0h1v12h-1zM35 0h3v12h-3zM40 0h1v12h-1zM43 0h1v12h-1zM46 0h2v12h-2zM51 0h1v12h-1zM54 0h4v12h-4zM60 0h1v12h-1zM63 0h2v12h-2zM67 0h1v12h-1zM70 0h1v12h-1zM74 0h3v12h-3zM79 0h1v12h-1zM82 0h2v12h-2zM87 0h1v12h-1zM90 0h4v12h-4zM96 0h1v12h-1zM99 0h1v12h-1zM102 0h2v12h-2zM107 0h1v12h-1zM110 0h3v12h-3zM115 0h1v12h-1zM118 0h2v12h-2z'/%3E%3C/svg%3E");
+  --gp-bars-g: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='12'%3E%3Cpath fill='%235A5A62' d='M0 0h2v12H0zM4 0h1v12H4zM7 0h3v12H7zM12 0h1v12h-1zM15 0h1v12h-1zM18 0h4v12h-4zM24 0h1v12h-1zM27 0h2v12h-2zM31 0h1v12h-1zM35 0h3v12h-3zM40 0h1v12h-1zM43 0h1v12h-1zM46 0h2v12h-2zM51 0h1v12h-1zM54 0h4v12h-4zM60 0h1v12h-1zM63 0h2v12h-2zM67 0h1v12h-1zM70 0h1v12h-1zM74 0h3v12h-3zM79 0h1v12h-1zM82 0h2v12h-2zM87 0h1v12h-1zM90 0h4v12h-4zM96 0h1v12h-1zM99 0h1v12h-1zM102 0h2v12h-2zM107 0h1v12h-1zM110 0h3v12h-3zM115 0h1v12h-1zM118 0h2v12h-2z'/%3E%3C/svg%3E");
+  --gp-edge-cy: var(--gp-cy);   /* the edge frame's line-art */
+  --gp-edge-y: var(--gp-y);
+  /* role tokens: the second highlight (cyan on dark, deep cyan on white) and the medal rim. Outside game pages they
+     resolve to today's colours, so the shared components that use them do not change there. */
+  --hl2: var(--accent-deep);
+  --hl2-deep: var(--accent-deep);
+  --ach-rim: var(--gold-deep);
+
   /* ── typography (spec §4; mobile-first values = "<734") ── */
   /* "SB Sans" is the build-time subset of Pretendard Variable (renamed: "Pretendard" is an OFL Reserved Font
      Name); "JetBrains Mono Variable" is the fontsource latin file of JetBrains Mono. @font-face: src/lib/fonts.ts. */
@@ -327,6 +392,11 @@
   --dur-aside: .45s;     /* the chooser's printout slides aside to reveal the game file (MO-24) */
   --dur-strike: .32s;    /* the chooser's "기밀 해제" stamp is struck on the entering click (MO-25) */
   --dur-strike-ring: .42s; /* its lime ring spreads once; ENTER_DELAY_MS.full (440 ms) waits for it */
+  /* the game version's media tilt: research and project media lean on hover and keyboard focus; out = --dur-panel-out */
+  --dur-tilt-in: .22s;
+  --tilt-deg: 2deg;         /* cartridge thumbnails, alternating sign per card */
+  --tilt-deg-wide: 1.25deg; /* the wide cartridge */
+  --tilt-deg-fig: .8deg;    /* a chart: leans, does not tip */
 
   /* ── layout ── */
   --container: 1180px;   /* includes gutters; the base width of every band's container */
@@ -382,6 +452,27 @@
   :root { --container-hud: 1440px; --gutter: 72px; --fs-name: 5.625rem; --fs-display: 4rem; --fs-h2: 2.25rem; --fs-sub: 1.625rem; } /* type: 90 / 64 / 36 / 26px */
 }
 :lang(en) { --lh-display: 1.07; --lh-h2: 1.125; --lh-sub: 1.2; --lh-body: 1.47; --measure: 36em; }
+:root[data-variant="game"] {
+  /* game palette v4: the game pages re-point the HUD, read, gold and cartridge names to the --gp-* values (the :root
+     values above stay for the non-game consumers). The paper sheet, tints, account tints and game skins keep theirs. */
+  color-scheme: dark;
+  --hud-bg: var(--gp-k0); --hud-panel: var(--gp-k1); --hud-text: var(--gp-t1); --hud-strong: var(--gp-t0);
+  --hud-muted: var(--gp-t2); --hud-label: var(--gp-t2);
+  --accent: var(--gp-y); --accent-ink: var(--gp-ink); --accent-deep: var(--gp-y-text); --accent-hover: var(--gp-y-hover);
+  --accent-light: var(--gp-y-light); --accent-wash: var(--gp-k1); --accent-wash-strong: var(--gp-k2);
+  --accent-wash-12: var(--gp-y-wash-8); --accent-wash-16: var(--gp-y-wash-12); --accent-streak: var(--gp-y-streak);
+  --hud-line: var(--gp-ln); --hud-line-strong: var(--gp-ln-strong); --hud-line-dash: var(--gp-ln-dash);
+  --hud-divider: var(--gp-divider); --hud-frame: var(--gp-frame); --hud-nav-bg: var(--gp-nav-bg);
+  --hud-panel-92: var(--gp-panel-92); --hud-panel-75: var(--gp-panel-75); --hud-fade: var(--gp-fade);
+  --grid-line: var(--gp-grid); --chip-bg: var(--gp-k2); --scrim: var(--gp-scrim);
+  --gold: var(--gp-cy); --gold-ink: var(--gp-ink); --gold-line: var(--gp-cy-dim); --gold-wash: var(--gp-cy-wash);
+  --gold-deep: var(--gp-cy);
+  --read-bg: var(--gp-k-read); --read-card: var(--gp-k-card); --read-text: var(--gp-t1); --read-muted: var(--gp-t2);
+  --read-label: var(--gp-t2); --read-line: var(--gp-frame); --read-line-strong: var(--gp-ln);
+  --cart-shell: var(--gp-cart-shell); --cart-shell-hover: var(--gp-cart-shell-hover);
+  --cart-shell-shade: var(--gp-cart-shell-shade); --cart-shell-grip: var(--gp-cart-shell-grip);
+  --hl2: var(--gp-cy); --hl2-deep: var(--gp-w-cy); --ach-rim: var(--gp-ach-rim);
+}
 /* Printed paper page (D-15): black on white. */
 @media print {
   :root { --paper-bg: #FFFFFF; --paper-ink: #000000; --paper-muted: #000000; }
@@ -397,6 +488,16 @@
     /* the game-achievement skins lose their dark grounds on paper, so their text turns dark */
     --gm-title: #000000; --gm-cream: #000000; --gm-amber: #000000; --gm-grey: #333333; --gm-gold: #333333;
     --skin-hs-text: #000000;
+  }
+  /* the game palette's dark bands and light text print black on white too; yellow and cyan text darken (olive 8.7:1,
+     deep cyan 5.9:1 on white). After the game block and the rule above, so it wins on game pages. */
+  :root[data-variant="game"] {
+    --hud-bg: #FFFFFF; --hud-panel: #FFFFFF; --hud-text: #000000; --hud-strong: #000000;
+    --hud-muted: #333333; --hud-label: #333333;
+    --read-bg: #FFFFFF; --read-card: #FFFFFF; --read-text: #000000; --read-muted: #333333; --read-label: #333333;
+    --read-line: #CCCCCC; --read-line-strong: #666666;
+    --accent: #3D5200; --accent-deep: #3D5200;
+    --hl2: #006F80; --hl2-deep: #006F80; --gold: #006F80; --gold-deep: #006F80; --gold-ink: #000000;
   }
   /* G-026 (P-12): the origin printed before a site-relative PDF link (base.css); the same value as SITE.url. */
   :root { --print-origin: "https://lunecid.github.io"; }
