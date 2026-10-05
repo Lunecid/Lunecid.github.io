@@ -149,13 +149,14 @@ test.describe('MO-23: the static desk', () => {
     }
   });
 
-  test('CLS ≤ 0.02 with mono and Anton delayed 1.5 s', async ({ browser }) => {
+  // MO-29 (named change): the general version's display face (the printout's banner) is held back too
+  test('CLS ≤ 0.02 with mono, Anton and the display face delayed 1.5 s', async ({ browser }) => {
     test.setTimeout(90_000);
     for (const width of [375, 1280]) {
       const context = await browser.newContext({ viewport: { width, height: 800 } });
       const page = await context.newPage();
       let held = 0;
-      await page.route(/sb-cover-(mono|display)[^/]*\.woff2/, (route) => {
+      await page.route(/sb-(cover-mono|cover-display|display)[^/]*\.woff2/, (route) => {
         held += 1;
         setTimeout(() => void route.continue(), 1500);
       });
@@ -171,7 +172,7 @@ test.describe('MO-23: the static desk', () => {
             setTimeout(() => { po.disconnect(); resolve(sum); }, 2600);
           }),
       );
-      expect(held, `@${width}: mono and Anton were requested and held back`).toBeGreaterThanOrEqual(2);
+      expect(held, `@${width}: mono, Anton and the display face were requested and held back`).toBeGreaterThanOrEqual(3);
       expect(cls, `@${width}`).toBeLessThanOrEqual(0.02);
       await context.close();
     }

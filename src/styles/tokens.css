@@ -145,13 +145,13 @@
   --pr-blue: #1F3A93;
   --pr-yellow: #F5C400;
   --pr-on-color: #FFFFFF;                     /* type reversed out of the red field */
-  /* MO-OQ16 role tokens: stand-ins until the general version's type and link tokens are merged (MO-29 repoints them:
-     the banner to the display face, the link and focus to the general version's link tokens) */
+  /* the printout's type and link follow the general version (MO-OQ16 A): the banner in its display face, the link in
+     its ink with the yellow brush stroke, the focus ring in its ink */
   --pr-font-text: var(--font-sans);
-  --pr-font-banner: var(--font-sans);
-  --pr-link: var(--ed-ink);
-  --pr-link-stroke: var(--pr-yellow);
-  --pr-focus: var(--ed-ink);
+  --pr-font-banner: var(--font-ed-display);
+  --pr-link: var(--ed-link);
+  --pr-link-stroke: var(--ed-yellow);
+  --pr-focus: var(--ed-focus);
 
   /* ── HUD labels (D8 / Task 0 Q13). Accent means "clickable" only, so labels are muted.
         Q13 = lime flips both lines: --hud-label: var(--accent); --read-label: var(--accent-deep). ── */

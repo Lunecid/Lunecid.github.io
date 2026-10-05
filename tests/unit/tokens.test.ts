@@ -487,9 +487,9 @@ describe('the chooser desk (MO-23, v6.4)', () => {
       '--pr-paper': '#FBFAF6', '--pr-ink': 'var(--ed-ink)', '--pr-ink-2': 'var(--paper-muted)', '--pr-stamp': '#8A2416',
       '--pr-plate': 'rgba(20, 20, 20, .075)', '--pr-lit': 'rgba(255, 255, 255, .95)',
       '--pr-red': '#CC281C', '--pr-blue': '#1F3A93', '--pr-yellow': '#F5C400', '--pr-on-color': '#FFFFFF',
-      // MO-OQ16 stand-ins until the general version's type and link tokens arrive (MO-29 repoints them)
-      '--pr-font-text': 'var(--font-sans)', '--pr-font-banner': 'var(--font-sans)',
-      '--pr-link': 'var(--ed-ink)', '--pr-link-stroke': 'var(--pr-yellow)', '--pr-focus': 'var(--ed-ink)',
+      // MO-29 (named change): the stand-ins now point at the general version's type and link tokens
+      '--pr-font-text': 'var(--font-sans)', '--pr-font-banner': 'var(--font-ed-display)',
+      '--pr-link': 'var(--ed-link)', '--pr-link-stroke': 'var(--ed-yellow)', '--pr-focus': 'var(--ed-focus)',
       '--font-cover': '"SB Cover Display", Impact, "Arial Narrow Bold", sans-serif',
       '--dur-stroke': '.2s',
     };
@@ -515,6 +515,17 @@ describe('the chooser desk (MO-23, v6.4)', () => {
     // the game cover keeps the HUD pairs: muted labels on the panel, the reversed word in ink on lime
     expect(contrast(hex('--hud-muted'), hex('--hud-panel'))).toBeGreaterThanOrEqual(4.5);
     expect(contrast(hex('--hud-bg'), hex('--accent'))).toBeGreaterThanOrEqual(7);
+  });
+
+  it('MO-29: the printout uses the general version\'s type and link tokens (display face for the banner, ink link, yellow stroke, ink focus)', () => {
+    const d = declsOf(':root');
+    expect(d.get('--pr-font-banner')).toBe('var(--font-ed-display)');
+    expect(d.get('--pr-font-text')).toBe('var(--font-sans)');
+    expect(d.get('--pr-link')).toBe('var(--ed-link)');
+    expect(d.get('--pr-link-stroke')).toBe('var(--ed-yellow)');
+    expect(d.get('--pr-focus')).toBe('var(--ed-focus)');
+    // the display face is the general version's own token, not a copy
+    expect(d.get('--font-ed-display')).toMatch(/^"SB Display"/);
   });
 
   it('MO-23: the chooser page is dark (color-scheme dark in the chooser sheet), the other neutral pages stay light', () => {

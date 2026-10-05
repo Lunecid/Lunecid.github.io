@@ -539,7 +539,7 @@
 
 /* the banner: heavy capitals; the first word painted out of a red field (horizontal strokes, frayed edge, white type,
    as the game cover reverses its first word out of lime); a small yellow dab beside it, a paper gap between */
-.file--data .pr__disp { grid-area: disp; font: 900 var(--pdisp-fs)/.9 var(--pr-font-banner); color: var(--pr-ink); text-transform: uppercase; }
+.file--data .pr__disp { grid-area: disp; font: 900 var(--pdisp-fs)/.9 var(--pr-font-banner); font-stretch: 112%; color: var(--pr-ink); text-transform: uppercase; }
 .file--data .pr__disp > span { display: block; white-space: nowrap; }
 .file--data .pr__disp > span + span { margin-top: .08em; }
 .file--data .pr__row1 { display: flex; align-items: flex-end; gap: var(--rw); }
@@ -588,7 +588,7 @@
 .file--data .pr__end { grid-area: end; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 16px; }
 .file--data .pr__end::before { content: ""; flex-basis: 100%; height: 0; margin-bottom: 4px; border-top: 1px dashed var(--pr-ink-2); }
 .file--data .pr__toc { display: flex; flex-wrap: wrap; gap: 2px 18px; font: 700 var(--fs-label)/1.5 var(--pr-font-text); color: var(--pr-ink); }
-.file--data .toc__n { margin-right: 6px; font: 800 var(--fs-label)/1 var(--pr-font-banner); color: var(--pr-ink-2); font-variant-numeric: tabular-nums; }
+.file--data .toc__n { margin-right: 6px; font: 800 var(--fs-label)/1 var(--pr-font-banner); font-stretch: 112%; color: var(--pr-ink-2); font-variant-numeric: tabular-nums; }
 /* the foot line, and the blue field (vertical strokes) painted at its right, down to the foot margin */
 .file--data .pr__foot { grid-area: foot; display: flex; align-items: stretch; gap: 12px; min-width: 0; font: 600 var(--fs-label)/1.4 var(--pr-font-text); letter-spacing: .04em; color: var(--pr-ink-2); text-transform: uppercase; }
 .file--data .pr__foot-t { flex: none; align-self: center; white-space: nowrap; }
