@@ -12,6 +12,8 @@ test.describe('general projects page (P2-6)', () => {
     const first = await items.first().locator('.pli__title').textContent();
     expect(first?.trim()).toBe('사각지대를 예측하다'); // projectsOrder starts with school-zone-blindspots (contract §1.7)
     await page.locator('[data-tag-filter] [data-tag="ml"]').click();
+    // The cards swap inside the filter's view transition (R1), a frame after the click.
+    await page.waitForFunction(() => [...document.querySelectorAll<HTMLElement>('#project-grid > li[data-tags]')].some((el) => el.hidden));
     const hidden = await items.evaluateAll((els) => els.filter((el) => (el as HTMLElement).hidden).length);
     expect(hidden).toBeGreaterThan(0);
     // What the visitor sees: a filtered-out item must not render (the hidden property alone proves nothing).

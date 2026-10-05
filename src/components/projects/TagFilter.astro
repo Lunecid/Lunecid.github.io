@@ -42,6 +42,16 @@ const countTemplateOne = ui[lang]['projects.countOne'];
   // leaving a project and returning (or sharing the filtered URL) does not silently reset to "all".
   const TAG_PARAM = 'tag';
 
+  // Reduced motion or no View Transitions API: a direct swap. Chrome 111–124 take only the callback form (no types).
+  const swap = (fn: () => void): void => {
+    if (document.documentElement.dataset.motion === 'reduce' || typeof document.startViewTransition !== 'function') return fn();
+    try {
+      document.startViewTransition({ update: fn, types: ['filter'] });
+    } catch {
+      document.startViewTransition(fn);
+    }
+  };
+
   function initTagFilter(root: HTMLElement): void {
     const grid = document.getElementById(root.dataset.controls ?? '');
     if (!grid) return;
@@ -55,21 +65,30 @@ const countTemplateOne = ui[lang]['projects.countOne'];
     // with the filter (a skip-link or any other in-page #hash jump also pushes a history entry the browser will
     // later pop).
     let current: string | null = null;
+    // Counts the swaps; a click's swap that is still waiting for its view transition when a newer apply() has run
+    // (a fast back/forward) is stale and does nothing.
+    let swaps = 0;
 
     // Fix round 1 minor: `announce` is false for the initial-load call — a role="status" region should not speak
     // up the moment the page appears, only in response to something the visitor did (a click, or a real
     // navigation via back/forward).
-    const apply = (key: string | null, { updateUrl = true, announce = true }: { updateUrl?: boolean; announce?: boolean } = {}): void => {
+    // `glide` (a click only): the cards change inside a view transition of type `filter`, so the remaining ones move
+    // to their new places; the pressed state, the status line and the URL stay synchronous.
+    const apply = (key: string | null, { updateUrl = true, announce = true, glide = false }: { updateUrl?: boolean; announce?: boolean; glide?: boolean } = {}): void => {
       for (const button of buttons) {
         const pressed = key === null ? button.hasAttribute('data-tag-all') : button.dataset.tag === key;
         button.setAttribute('aria-pressed', String(pressed));
       }
-      let visible = 0;
-      for (const item of Array.from(grid.querySelectorAll<HTMLElement>('[data-tags]'))) {
-        const match = key === null || (item.dataset.tags ?? '').split(' ').includes(key);
-        item.hidden = !match;
-        if (match) visible += 1;
-      }
+      const items = Array.from(grid.querySelectorAll<HTMLElement>('[data-tags]'));
+      const matches = items.map((item) => key === null || (item.dataset.tags ?? '').split(' ').includes(key));
+      const visible = matches.filter(Boolean).length;
+      const ticket = ++swaps;
+      const show = (): void => {
+        if (ticket !== swaps) return;
+        items.forEach((item, i) => { item.hidden = !matches[i]; });
+      };
+      if (glide) swap(show);
+      else show();
       if (status && announce) status.textContent = (visible === 1 ? templateOne : template).replace('{n}', String(visible));
       if (updateUrl) {
         const url = new URL(location.href);
@@ -86,7 +105,7 @@ const countTemplateOne = ui[lang]['projects.countOne'];
       if (!button || !root.contains(button)) return;
       const key = button.dataset.tag ?? null;
       // Pressing the active tag again returns to "all".
-      apply(key !== null && button.getAttribute('aria-pressed') === 'true' ? null : key);
+      apply(key !== null && button.getAttribute('aria-pressed') === 'true' ? null : key, { glide: true });
     });
 
     const fromUrl = (): string | null => {
@@ -127,4 +146,15 @@ const countTemplateOne = ui[lang]['projects.countOne'];
   .tag-filter__btn:active { transform: scale(.96); }
   /* F-022: no scale under reduce; pressed/aria colour states stay. */
   :global(:root[data-motion="reduce"]) .tag-filter__btn:active { transform: none; }
+</style>
+
+<style is:global>
+  /* A filter click (a view transition of type `filter`): each card is its own group while the transition runs, so
+     the remaining cards move to their new places over --dur-reflow; a card that leaves or arrives fades like a page;
+     the rest of the page (the root) does not animate. */
+  :root:active-view-transition-type(filter) #project-grid > [data-tags] { view-transition-name: match-element; view-transition-class: pcard; }
+  ::view-transition-group(*.pcard) { animation-duration: var(--dur-reflow); animation-timing-function: var(--ease-wipe); }
+  ::view-transition-old(*.pcard):only-child { animation: vt-out var(--dur-nav-out) var(--ease-in) both; }
+  ::view-transition-new(*.pcard):only-child { animation: vt-in var(--dur-nav-in) var(--ease-out) var(--dur-nav-out) both; }
+  :root:active-view-transition-type(filter)::view-transition-old(root), :root:active-view-transition-type(filter)::view-transition-new(root) { animation: none; }
 </style>

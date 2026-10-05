@@ -197,3 +197,55 @@ test("V1: the image viewer's #view- hash and history.pushState are not cross-doc
   await page.waitForTimeout(300);
   expect((await log(page)).slice(before)).toEqual([]);
 });
+
+test('R1: a tag click on /game/projects/ runs a same-document transition; remaining cards move over --dur-reflow; the root does not animate', async ({ page }) => {
+  type R1 = { types: string[]; anims: (Anim & { easing: string })[] } | { skipped: true };
+  await page.addInitScript(() => {
+    const original = Document.prototype.startViewTransition;
+    Document.prototype.startViewTransition = function (this: Document, arg?: Parameters<Document['startViewTransition']>[0]) {
+      const vt = original.call(this, arg) as ViewTransition & { types?: Set<string> };
+      const w = window as Window & { __r1?: unknown };
+      vt.ready.then(() => {
+        w.__r1 = {
+          types: vt.types ? [...vt.types] : [],
+          anims: document.getAnimations()
+            .filter((a) => ((a.effect as KeyframeEffect | null)?.pseudoElement ?? '').startsWith('::view-transition'))
+            .map((a) => {
+              const effect = a.effect as KeyframeEffect;
+              const kf = effect.getKeyframes();
+              return {
+                pe: effect.pseudoElement,
+                name: (a as CSSAnimation).animationName ?? '',
+                delay: Number(effect.getTiming().delay ?? 0),
+                duration: Number(effect.getTiming().duration),
+                easing: String(kf[0]?.easing ?? ''),
+                kf: kf.map((k) => ({ transform: k.transform as string | undefined, width: k.width as string | undefined, height: k.height as string | undefined })),
+              };
+            }),
+        };
+      }, () => { w.__r1 = { skipped: true }; });
+      return vt;
+    };
+  });
+  await page.goto('/game/projects/');
+  await clearLog(page);
+  await page.locator('.tag-filter button[data-tag="viz"]').click();
+  await page.waitForFunction(() => (window as Window & { __r1?: unknown }).__r1 !== undefined);
+  const r1 = await page.evaluate(() => (window as Window & { __r1?: unknown }).__r1) as R1;
+  expect(r1).not.toHaveProperty('skipped');
+  const { types, anims } = r1 as Exclude<R1, { skipped: true }>;
+  expect(types).toEqual(['filter']);
+  // the root neither fades nor slides: no old/new root image animation
+  expect(anims.filter((a) => /^::view-transition-(old|new)\(root\)$/.test(a.pe))).toEqual([]);
+  // every card group moves over --dur-reflow with --ease-wipe, and at least one card really moves
+  const cards = anims.filter((a) => a.pe.startsWith('::view-transition-group(') && a.pe !== '::view-transition-group(root)');
+  expect(cards.length).toBeGreaterThanOrEqual(3);
+  for (const g of cards) {
+    expect(g.duration, g.pe).toBeCloseTo(300, 3);
+    expect(g.easing, g.pe).toBe('cubic-bezier(0.65, 0, 0.35, 1)');
+  }
+  expect(cards.some((g) => g.kf[0]?.transform !== g.kf[g.kf.length - 1]?.transform)).toBe(true);
+  // a same-document transition: no page swap or reveal
+  expect(await log(page)).toEqual([]);
+  await expect(page.locator('#project-grid > [data-tags]:not([hidden])')).toHaveCount(3);
+});
