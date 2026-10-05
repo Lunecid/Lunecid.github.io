@@ -135,7 +135,7 @@ export function initExit(desk: HTMLElement, link: HTMLAnchorElement, kind: ExitK
   const navigate = opts.navigate ?? ((href: string) => window.location.assign(href));
   const reduced = opts.reduced ?? reducedMotion;
   const stamp = opts.stamp ?? null;
-  const layer = document.querySelector<HTMLElement>('.xnav');
+  const layer = () => document.querySelector<HTMLElement>('.xnav');
   const leaving = () => desk.hasAttribute('data-exit');
   const strike = () => {
     if (!stamp) return;
@@ -176,7 +176,7 @@ export function initExit(desk: HTMLElement, link: HTMLAnchorElement, kind: ExitK
       foldGeometry(link);
       rustle();
     }
-    if (!fade && kind === 'game') lineGeometry(desk, layer);
+    if (!fade && kind === 'game') lineGeometry(desk, layer());
     desk.dataset.exitTo = kind;
     desk.dataset.exit = fade ? 'fade' : kind;
     if (!fade && kind === 'game') desk.classList.add('is-aside'); // the sheet makes way for the screen
@@ -195,7 +195,7 @@ export function initExit(desk: HTMLElement, link: HTMLAnchorElement, kind: ExitK
     desk.removeAttribute('data-exit-done');
     desk.classList.remove('is-aside');
     stamp?.classList.remove('is-declassified', 'is-struck');
-    layer?.removeAttribute('style');
+    layer()?.removeAttribute('style');
     const file = link.closest<HTMLElement>('.file');
     file?.style.removeProperty('--fw');
     file?.style.removeProperty('--fh');
@@ -284,12 +284,51 @@ export function initDesk(desk: HTMLElement, hint: HTMLElement | null): () => voi
   return cleanup;
 }
 
-/** The exits' sheet (looks and keyframes of the exit layers) is attached once the page has loaded: exits only follow a
- *  click, so their bytes stay out of the first render. */
-export function attachExitSheet(doc: Document = document): void {
+/** The game exit's layers inside the screen (scrim, graticule, band, the trace's window and layers, its head). */
+const XG = '<i class="xg__scrim"></i><i class="xg__grat"></i><i class="xg__band"></i><div class="xg__trace"><div class="xg__win"><div class="xg__in"><div class="xg__amp"><div class="xg__flat"><i class="xg__echo"><i class="xg__g xg__s"><i class="xg__l xg__e"></i></i><i class="xg__g xg__q"><i class="xg__l xg__e"></i></i></i><i class="xg__g xg__s"><i class="xg__l xg__w1"></i><i class="xg__l xg__w2"></i><i class="xg__l xg__w3"></i></i><i class="xg__g xg__q"><i class="xg__l xg__w1"></i><i class="xg__l xg__w2"></i><i class="xg__l xg__w3"></i><i class="xg__l xg__w4"></i></i></div></div></div><i class="xg__head"></i></div></div>';
+const FLAP = '<i class="flap__f"><i class="flap__c"><i class="flap__p"><i class="flap__g"></i></i></i></i>';
+const SHADOW = '<i class="flap__f flap__f--s"><i class="flap__c"><i class="flap__p"></i></i></i>';
+
+/** Builds the exits' decorative layers once (aria-hidden; chooser.css keeps them out of the layout until a click). They
+ *  are only needed after a click, so the page's first flight carries none of them. */
+export function buildExitLayers(desk: HTMLElement): void {
+  if (desk.querySelector('.xg')) return;
+  const el = (cls: string, html = '') => {
+    const node = document.createElement(cls === 'xg' || cls === 'xnav' || cls === 'under' || cls === 'flap' ? 'div' : 'i');
+    node.className = cls;
+    node.setAttribute('aria-hidden', 'true');
+    node.innerHTML = html;
+    return node;
+  };
+  const screen = desk.querySelector<HTMLElement>('.file--game .dev__screen');
+  const face = screen?.querySelector<HTMLElement>(':scope > .face');
+  if (screen && face) {
+    face.before(el('xg__off'));
+    face.after(el('xg', XG));
+  }
+  const feed = desk.querySelector<HTMLElement>('.file--data .feed');
+  if (feed) {
+    // the next sheet: a hint of the general home, its banner words as the printout's own
+    const under = el('under', '<div class="under__in"><i class="under__rule"></i><p class="under__hero" lang="en"></p><i class="under__ln"></i><i class="under__ln"></i><i class="under__ln"></i><i class="under__ln"></i></div><i class="under__shade"></i>');
+    under.querySelector('.under__hero')!.textContent = (feed.querySelector('.pr__disp')?.textContent ?? '').replace(/\s+/g, ' ').trim();
+    feed.prepend(under);
+    feed.querySelector('.turn__in')?.append(el('turn__shade'));
+    const flap = el('flap', SHADOW.repeat(3) + FLAP);
+    flap.querySelectorAll<HTMLElement>('.flap__f--s').forEach((s, i) => s.style.setProperty('--i', String(i + 1)));
+    feed.append(flap);
+  }
+  if (!desk.parentElement?.querySelector(':scope > .xnav')) desk.parentElement?.append(el('xnav', '<i class="xnav__bg"></i><i class="xnav__ln"></i>'));
+}
+
+/** The exits' sheet (looks and keyframes of the exit layers) and their layers are attached once the page has loaded:
+ *  exits only follow a click, so their bytes stay out of the first render. A click before that still navigates. */
+export function attachExitSheet(doc: Document = document, desk: HTMLElement | null = doc.querySelector<HTMLElement>('[data-chooser][data-desk]')): void {
   if (doc.querySelector('link[data-chooser-exit]')) return;
   const add = () => {
     if (doc.querySelector('link[data-chooser-exit]')) return;
+    if (desk) buildExitLayers(desk);
+    // the desk's props: their sprite is fetched only now (DeskProps.astro)
+    desk?.querySelectorAll<SVGUseElement>('.props use[data-href]').forEach((use) => use.setAttribute('href', use.dataset.href ?? ''));
     const link = doc.createElement('link');
     link.rel = 'stylesheet';
     link.href = exitSheet;
@@ -328,7 +367,7 @@ export function initChooser(root: ParentNode = document, opts: { navigate?: (hre
   container.addEventListener('click', (event) => {
     if (container.hasAttribute('data-exit') && event.target instanceof Element && event.target.closest('a')) event.preventDefault();
   }, { capture: true });
-  attachExitSheet();
+  attachExitSheet(document, container);
   initSoundToggle(document.querySelector<HTMLButtonElement>('[data-sound-toggle]'));
   const gameLink = links.find((l) => l.dataset.chooseVariant === 'game');
   if (gameLink) initExit(container, gameLink, 'game', { stamp: gameLink.closest('.file')?.querySelector<HTMLElement>('.stamp'), navigate: opts.navigate });

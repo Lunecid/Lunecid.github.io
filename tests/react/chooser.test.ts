@@ -3,7 +3,7 @@
 // first-tap reveal, tap-outside and Escape, and the touch hint.
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { readFileSync } from 'node:fs';
-import { EXIT_MS, asideGeometry, attachExitSheet, initChooser, initDesk } from '../../src/scripts/chooser';
+import { EXIT_MS, asideGeometry, attachExitSheet, buildExitLayers, initChooser, initDesk } from '../../src/scripts/chooser';
 
 let navigations: string[] = [];
 // jsdom would try to navigate: count the default actions instead (bubble phase on the document: after every listener
@@ -639,11 +639,14 @@ describe('the exit sheet (MO-38)', () => {
   it('MO-38: the exit sheet is attached once, only after the page has loaded', () => {
     document.head.querySelectorAll('link[data-chooser-exit]').forEach((l) => l.remove());
     const state = vi.spyOn(document, 'readyState', 'get').mockReturnValue('interactive');
+    document.body.innerHTML = '<div class="desk" data-chooser data-desk><div class="props"><svg class="prop"><use data-href="/s.svg#prop-kb"></use></svg></div></div>';
     try {
       attachExitSheet();
+      expect(document.querySelector('use')!.hasAttribute('href')).toBe(false); // MO-36: the props' sprite waits for load too
       expect(document.head.querySelectorAll('link[data-chooser-exit]')).toHaveLength(0);
       window.dispatchEvent(new Event('load'));
       expect(document.head.querySelectorAll('link[data-chooser-exit]')).toHaveLength(1);
+      expect(document.querySelector('use')!.getAttribute('href')).toBe('/s.svg#prop-kb');
       attachExitSheet();
       window.dispatchEvent(new Event('load'));
       expect(document.head.querySelectorAll('link[data-chooser-exit]')).toHaveLength(1);
@@ -651,6 +654,26 @@ describe('the exit sheet (MO-38)', () => {
     } finally {
       state.mockRestore();
     }
+  });
+});
+
+describe('the exit layers (MO-38, MO-39)', () => {
+  it('buildExitLayers adds every layer once, aria-hidden, with the banner words on the next sheet', () => {
+    document.body.innerHTML = `<div class="chooser__stage"><div class="desk" data-chooser data-desk>
+      <article class="file file--data"><div class="face"><div class="feed"><div class="turn"><div class="turn__in"><div class="pr"><p class="pr__disp"><span>DATA</span> <span>ANALYST</span></p></div></div></div><span class="tab"></span></div></div></article>
+      <article class="file file--game"><div class="dev"><div class="dev__body"><div class="dev__screen"><div class="face"></div><i class="dev__glass"></i></div></div></div></article>
+    </div><p class="desk__hint"></p></div>`;
+    const desk = document.querySelector<HTMLElement>('.desk')!;
+    buildExitLayers(desk);
+    buildExitLayers(desk);
+    for (const sel of ['.xg', '.xg__off', '.under', '.flap', '.turn__shade']) expect(desk.querySelectorAll(sel), sel).toHaveLength(1);
+    expect(document.querySelectorAll('.xnav')).toHaveLength(1);
+    expect(document.querySelector('.desk ~ .xnav')).not.toBeNull(); // a later sibling: the exit rules reach it
+    expect(desk.querySelector('.dev__screen > .xg__off + .face + .xg + .dev__glass')).not.toBeNull();
+    expect(desk.querySelector('.feed')!.firstElementChild!.className).toBe('under');
+    expect(desk.querySelector('.under__hero')!.textContent).toBe('DATA ANALYST');
+    expect([...desk.querySelectorAll<HTMLElement>('.flap__f--s')].map((e) => e.style.getPropertyValue('--i'))).toEqual(['1', '2', '3']);
+    for (const sel of ['.xg', '.xg__off', '.under', '.flap', '.turn__shade', '.xnav']) expect(document.querySelector(sel)!.getAttribute('aria-hidden'), sel).toBe('true');
   });
 });
 

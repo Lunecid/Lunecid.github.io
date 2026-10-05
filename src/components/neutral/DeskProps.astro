@@ -1,0 +1,21 @@
+---
+// The chooser desk's props (MO-36, chooser v6.12): a keyboard, a stylus, a phone, a binder clip, a cup on its coaster
+// and a succulent, each at its real size in the desk's centimetres (chooser.css places them per breakpoint). Their
+// drawings live in one same-origin, content-hashed SVG sprite (src/assets/chooser/props.svg, cached) referenced with
+// <use href>, so the page's first flight carries only six empty frames. The reference is data-href: chooser.ts sets it
+// once the page has loaded, so the sprite never competes with the first render; without the script, or if the sprite
+// does not load, the props are simply absent (nothing lays out around them). Decoration: inside the aria-hidden .props
+// layer, no pointer.
+import sprite from '../../assets/chooser/props.svg?url';
+
+/** Paint order: the plant and the cup behind, the keyboard, then the stylus lying across it. */
+export const PROPS = [
+  ['plant', '0 0 100 100'],
+  ['cup', '0 0 120 120'],
+  ['phone', '0 0 72 150'],
+  ['clip', '0 0 34 36'],
+  ['kb', '0 0 600 206'],
+  ['pen', '0 0 20 260'],
+] as const;
+---
+{PROPS.map(([name, viewBox]) => <svg class={`prop prop--${name}`} viewBox={viewBox} focusable="false"><use data-href={`${sprite}#prop-${name}`}></use></svg>)}

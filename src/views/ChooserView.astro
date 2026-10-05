@@ -9,6 +9,7 @@ import NeutralLayout from '../layouts/NeutralLayout.astro';
 // The page, desk and cover styles ship as ONE external, content-hashed stylesheet that only the chooser links (the
 // HTML stays within the first flight; the textures are cached): src/styles/chooser.css.
 import chooserCss from '../styles/chooser.css?url';
+import DeskProps from '../components/neutral/DeskProps.astro';
 import GameCover from '../components/neutral/GameCover.astro';
 import PrintoutCover from '../components/neutral/PrintoutCover.astro';
 import { coverCopy } from '../data/copy/chooser-covers';
@@ -58,11 +59,10 @@ const covers = COVER_ORDER.map((id) => buildCover(id, lang, today));
         <button type="button" class="chooser__sound" data-sound-toggle aria-pressed="true" data-on={sound.on} data-off={sound.off} hidden><span class="chooser__sound-l">{sound.label}</span> <span class="chooser__sound-s">{sound.on}</span></button>
       </div>
       <div class="desk" data-chooser data-desk>
-        <div class="props" aria-hidden="true"><i class="mat"></i></div>
+        <div class="props" aria-hidden="true"><i class="mat"></i><DeskProps /></div>
         {covers.map((cover) => (cover.id === 'data' ? <PrintoutCover cover={cover} /> : <GameCover cover={cover} />))}
       </div>
       <p class="desk__hint" aria-live="polite" data-rest={touch.rest} data-aside={touch.aside}></p>
-      <div class="xnav" aria-hidden="true"><i class="xnav__bg"></i><i class="xnav__ln"></i></div>
     </div>
   </section>
 </NeutralLayout>

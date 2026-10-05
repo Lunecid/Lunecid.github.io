@@ -726,7 +726,12 @@ test.describe('MO-35: the desk in real centimetres', () => {
   for (const [w, h] of [[375, 812], [768, 1024], [1280, 800], [2560, 1440]] as const) {
     test(`MO-35: caption text ≥ 4.5:1 against the lightest desk pixel under it (pixel sample, ${w})`, async ({ page }) => {
       await openAt(page, '/?choose', w, h);
-      const cap = await rectOf(page, '.chooser__cap');
+      // the caption's words (its row spans the stage; the box of its text is what must read)
+      const cap = await page.evaluate(() => {
+        const rs = [...document.querySelectorAll('.chooser__cap > span')].map((s) => s.getBoundingClientRect());
+        const left = Math.min(...rs.map((r) => r.left)), top = Math.min(...rs.map((r) => r.top));
+        return { left, top, width: Math.max(...rs.map((r) => r.right)) - left, height: Math.max(...rs.map((r) => r.bottom)) - top };
+      });
       const ink = await page.locator('.chooser__cap > span:last-child').evaluate((el) => getComputedStyle(el).color);
       // hide the caption, sample the desk under its box, keep the lightest pixel
       await page.locator('.chooser__cap').evaluate((el) => (el as HTMLElement).style.setProperty('visibility', 'hidden'));
@@ -833,5 +838,74 @@ test.describe('MO-37: the printout\'s folder, clip and flag', () => {
     for (const sel of ['.folder', '.clip', '.tab']) expect(await page.locator(`.file--data ${sel}`).evaluate((el) => getComputedStyle(el).display), `print ${sel}`).toBe('none');
     await page.emulateMedia({ media: 'screen', forcedColors: 'active' });
     for (const sel of ['.folder', '.clip', '.tab']) expect(await page.locator(`.file--data ${sel}`).evaluate((el) => getComputedStyle(el).display), `forced ${sel}`).toBe('none');
+  });
+});
+
+const SIZES_36: [number, number][] = [[375, 812], [768, 1024], [1024, 768], [1280, 800], [1440, 900], [1920, 1080], [2560, 1440], [1280, 1200]];
+const propBoxes = (page: Page) =>
+  page.evaluate(() => [...document.querySelectorAll<SVGSVGElement>('.desk .prop')].filter((el) => getComputedStyle(el).display !== 'none').map((el) => ({ name: el.getAttribute('class')!.replace('prop prop--', ''), r: el.getBoundingClientRect().toJSON() as DOMRect })));
+
+test.describe('MO-36: the desk props (one cached sprite)', () => {
+  test('MO-36: props visible per breakpoint — 375: kb, pen; 768: + phone, clip, cup; 1280: + plant', async ({ page }) => {
+    for (const [w, h, want] of [[375, 812, ['kb', 'pen']], [768, 1024, ['cup', 'phone', 'clip', 'kb', 'pen']], [1280, 800, ['plant', 'cup', 'phone', 'clip', 'kb', 'pen']]] as const) {
+      await openAt(page, '/?choose', w, h);
+      expect((await propBoxes(page)).map((p) => p.name).sort(), `@${w}`).toEqual([...want].sort());
+    }
+  });
+
+  for (const [w, h] of SIZES_36) {
+    test(`MO-36: no prop box intersects the caption text or either CTA at rest (${w}×${h})`, async ({ page }) => {
+      await openAt(page, '/?choose', w, h);
+      const targets = await page.evaluate(() => [...document.querySelectorAll('.chooser__cap > span, .file--game .cta__face, .file--data .cta__face')].map((el) => el.getBoundingClientRect().toJSON() as DOMRect));
+      for (const p of await propBoxes(page)) for (const t of targets) expect(intersects(p.r, t), `${p.name} @${w}×${h}`).toBe(false);
+    });
+  }
+
+  // the clear zone is v6.12's desktop rule (x 29-52 cm); on a tablet the keyboard's corner passes under the aside sheet's
+  // foot in the prototype too (shots-v612/desk-aside-768x1024), so the check runs from 1068 px
+  test('MO-36: no prop lies under the slid-aside sheet at ≥ 1068 px (the right of the scene stays clear)', async ({ page }) => {
+    for (const [w, h] of SIZES_36.filter(([w]) => w >= 1068)) {
+      await openAt(page, '/?choose', w, h);
+      await page.locator('.desk').evaluate((el) => el.classList.add('is-aside'));
+      await page.waitForTimeout(600);
+      const sheet = await rectOf(page, '.file--data .feed');
+      for (const p of await propBoxes(page)) if (p.name !== 'plant') expect(intersects(p.r, sheet), `${p.name} @${w}×${h}`).toBe(false);
+    }
+  });
+
+  test("MO-36: each prop's rendered width / --cm equals its real size ±3% (keyboard 31.7, phone 7.2, cup coaster 11)", async ({ page }) => {
+    for (const [w, h] of [[768, 1024], [1280, 800], [2560, 1440]] as const) {
+      await openAt(page, '/?choose', w, h);
+      const cm = await pxPerCm(page);
+      const sizes = await page.evaluate(() => Object.fromEntries([...document.querySelectorAll<SVGSVGElement>('.desk .prop')].map((el) => [el.getAttribute('class')!.replace('prop prop--', ''), (el as unknown as HTMLElement).getBoundingClientRect().width / 1])));
+      const own = await page.evaluate(() => Object.fromEntries([...document.querySelectorAll<SVGSVGElement>('.desk .prop')].map((el) => [el.getAttribute('class')!.replace('prop prop--', ''), parseFloat(getComputedStyle(el).width)])));
+      expect(Math.abs(own.kb! / cm - 31.7) / 31.7, `kb @${w}`).toBeLessThanOrEqual(0.03);
+      expect(Math.abs(own.phone! / cm - 7.2) / 7.2, `phone @${w}`).toBeLessThanOrEqual(0.03);
+      // the cup's frame is 12 cm, its coaster 11 cm (110 of the 120-unit box)
+      expect(Math.abs((own.cup! * 110) / 120 / cm - 11) / 11, `coaster @${w}`).toBeLessThanOrEqual(0.03);
+      expect(sizes.kb).toBeGreaterThan(0);
+    }
+  });
+
+  test('MO-36: props never receive a click (elementFromPoint over each prop is the desk or a file)', async ({ page }) => {
+    for (const [w, h] of [[375, 812], [1280, 800]] as const) {
+      await openAt(page, '/?choose', w, h);
+      for (const p of await propBoxes(page)) {
+        const x = Math.min(w - 2, Math.max(1, p.r.left + p.r.width / 2));
+        const y = Math.min(h - 2, Math.max(1, p.r.top + p.r.height / 2));
+        expect(await page.evaluate(([px, py]) => !!document.elementFromPoint(px!, py!)?.closest('.props'), [x, y]), `${p.name} @${w}`).toBe(false);
+      }
+    }
+  });
+
+  test('MO-36: one sprite request and no image request, no console error; axe clean', async ({ page }) => {
+    const sprites: string[] = [];
+    const errors: string[] = [];
+    page.on('request', (r) => { if (/\/_astro\/props\.[\w-]+\.svg/.test(r.url())) sprites.push(r.url()); });
+    page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
+    await openAt(page, '/?choose', 1280, 800);
+    expect(new Set(sprites).size).toBe(1);
+    expect(errors).toEqual([]);
+    await expectNoAxeViolations(page);
   });
 });

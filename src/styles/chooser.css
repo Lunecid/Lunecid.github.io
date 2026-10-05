@@ -132,6 +132,53 @@
    tablet the files are sized by, so the scene keeps its proportions at every width and its scale is capped with --u.
    Beyond the scene the felt simply continues; the section's overflow: clip crops it like a photo. ── */
 .desk .props { position: absolute; left: var(--mx); top: 0; bottom: 0; width: var(--gw); z-index: 0; pointer-events: none; }
+/* each prop placed by its centre in cm (--x, --y; --ty: 1 measures --y from the desk's bottom edge), at its real size
+   (--w, --h), turned a little (--r; the sprite draws each prop's shadow for that turn and one key light from the top
+   left). Per breakpoint as v6.12: phone the keyboard and the stylus at the foot; tablet + the phone, the clip and the
+   cup; desktop + the plant. The right of the scene stays clear: it is the slid-aside sheet's path. */
+.desk .prop {
+  position: absolute;
+  max-width: none;  /* the base reset caps svg at its container: a prop keeps its real size */
+  display: block;
+  overflow: visible;
+  left: calc((var(--x) - var(--w) / 2) * var(--cm));
+  top: calc(var(--ty, 0) * 100% + (var(--y) - var(--h) / 2) * var(--cm));
+  width: calc(var(--w) * var(--cm));
+  height: calc(var(--h) * var(--cm));
+  transform: rotate(var(--r));
+}
+/* real sizes (cm) and turns */
+.desk .prop--kb { --w: 31.7; --h: 10.9; --r: -2deg; }        /* 65% keyboard, 19.05 mm key pitch */
+.desk .prop--pen { --w: 1.12; --h: 14.5; --r: 72.7deg; }     /* stylus, lying across the keyboard's front edge */
+.desk .prop--phone { --w: 7.2; --h: 15; --r: -8deg; }        /* phone, screen up, beside the tablet */
+.desk .prop--clip { --w: 3.4; --h: 3.6; --r: 24deg; }        /* 32 mm binder clip, handles folded */
+.desk .prop--cup { --w: 12; --h: 12; --r: 0deg; }            /* 8.4 cm cup on an 11 cm coaster */
+.desk .prop--plant { --w: 10; --h: 10; --r: 0deg; }          /* succulent, 9.2 cm concrete pot */
+/* phone: the files fill the width; the keyboard and the stylus at the foot, cropped by the page's sides and bottom */
+.desk .prop--kb { --x: 11; --y: 6.3; --ty: 1; }
+.desk .prop--pen { --x: 15.5; --y: 2.4; --ty: 1; }
+.desk .prop--phone, .desk .prop--clip, .desk .prop--cup, .desk .prop--plant { display: none; }
+/* tablet (portrait slate, 21 cm): the keyboard and stylus below the files, the phone and the clip at the slate's left,
+   the cup above the sheet (clear of the caption and of the slid-aside sheet, which goes right) */
+@media (min-width: 734px) {
+  .desk .prop--kb { --x: 11; --y: 7.4; }
+  .desk .prop--pen { --x: 21; --y: 3.2; }
+  .desk .prop--phone { display: block; --x: -4.6; --y: 9; }
+  .desk .prop--clip { display: block; --x: -2.8; --y: 20; }
+  .desk .prop--cup { display: block; --x: 23.5; --y: -6.4; }
+}
+/* desktop (landscape slate, 28 cm; the sheet reaches 33.8 cm): as ref-desk-16 / -17, the objects close round the
+   documents: the phone at the slate's left, the clip below it, the keyboard just in front of the files with the stylus
+   across it, the plant and the cup behind them. The right side (x 29-52 cm, y 0-23.5 cm) stays clear: it is the path of
+   the slid-aside sheet. */
+@media (min-width: 1068px) {
+  .desk .prop--kb { --x: 11.5; --y: 6.4; }
+  .desk .prop--pen { --x: 21.6; --y: 2.6; }
+  .desk .prop--phone { --x: -5; --y: 8.8; }
+  .desk .prop--clip { --x: -3.2; --y: 19.2; }
+  .desk .prop--cup { --x: 35.5; --y: -6.2; }
+  .desk .prop--plant { display: block; --x: 16.5; --y: -6.6; }
+}
 /* the felt desk mat (desktop): 72 × 47.5 cm centred under the scene, on a darker desk; its edges only come into a very
    large crop (2560px wide): a bound edge with a stitch line, a thin contact shadow, the desk beyond it darker (one
    static spread shadow, no filters) */
