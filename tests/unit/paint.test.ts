@@ -1,4 +1,5 @@
 import { readFileSync } from 'node:fs';
+import { sep } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import sharp from 'sharp';
 import { PIGMENTS, TILES, paintCss, ragBox, strokes, tileFile, tileSvg, worstContrast } from '../../scripts/paint/paint.mjs';
@@ -94,8 +95,8 @@ describe('brush paint (scripts/paint/paint.mjs → src/styles/paint.css, DS-2)',
     for (const key of TILES) {
       expect(decls.get(`--tex-${key}`)).toBe('none');
       expect(texDecls.get(`--tex-${key}`)).toBe(`image-set(url("./paint/paint-${key}.webp") 1x, url("./paint/paint-${key}-2x.webp") 2x)`);
-      expect(tileFile(key, 1)).toMatch(new RegExp(`src/styles/paint/paint-${key}\\.webp$`));
-      expect(tileFile(key, 2)).toMatch(new RegExp(`src/styles/paint/paint-${key}-2x\\.webp$`));
+      expect(tileFile(key, 1).split(sep).join('/')).toMatch(new RegExp(`src/styles/paint/paint-${key}\\.webp$`));
+      expect(tileFile(key, 2).split(sep).join('/')).toMatch(new RegExp(`src/styles/paint/paint-${key}-2x\\.webp$`));
     }
     expect(css).not.toMatch(/feTurbulence|<filter|%3Cfilter/);
     expect(decls.get('--ed-stroke-tex')).toBe('none');
