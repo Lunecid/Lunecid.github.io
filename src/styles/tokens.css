@@ -78,6 +78,9 @@
      build-time static wght-700 subset of Noto Serif KR over the Hangul inside [data-serif] (scripts/fonts/build.mjs). */
   --font-ed-serif: "Times New Roman", Times, "TeX Gyre Termes", "Nimbus Roman", "Liberation Serif", serif;
   --font-ed-head: "Times New Roman", Times, "TeX Gyre Termes", "Nimbus Roman", "Liberation Serif", "SB Serif KR Head", serif;
+  /* DS-1: Latin display words, numerals, section numbers and folios of the general version in "SB Display" (the
+     build-time Archivo subset, width 112 %, weight 700–900; src/lib/fonts.ts); Hangul inside them falls to SB Sans. */
+  --font-ed-display: "SB Display", var(--font-sans);
 
   /* ── neutral (chooser, shared pages, 404; §7): aliases of the editorial palette ── */
   --nt-bg: var(--ed-bg);

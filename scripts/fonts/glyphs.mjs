@@ -15,6 +15,10 @@ export const PRINTABLE_ASCII = String.fromCharCode(...Array.from({ length: 0x7f 
 /** Punctuation and symbols the site uses (or is likely to add), kept even when no page uses them today. */
 export const ALWAYS_SYMBOLS = ' ·—–…‘’“”→←↑↓↗×©°₩▶◆›‹★♪↻≤≥•';
 
+/** The characters of the display face (DS-1): Latin letters, numbers and the symbol list; Hangul inside a display
+ * element is drawn by SB Sans through --font-ed-display. */
+export const DISPLAY_CHARACTERS = PRINTABLE_ASCII + ALWAYS_SYMBOLS;
+
 /** The Hangul blocks (Jamo, Compatibility Jamo, Jamo Extended-A/B, Syllables). */
 export const HANGUL_RANGES = /** @type {const} */ ([
   [0x1100, 0x11ff],

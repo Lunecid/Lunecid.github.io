@@ -319,6 +319,13 @@ describe('editorial palette, neutral aliases and role tokens (P2-1, spec §8, co
     for (const [name, value] of Object.entries(expected)) expect(d.get(name), name).toBe(value);
   });
 
+  it('DS-1: --font-ed-display = "SB Display", var(--font-sans)', () => {
+    const d = declsOf(':root');
+    expect(d.get('--font-ed-display')).toBe('"SB Display", var(--font-sans)');
+    // Hangul inside a display element falls to SB Sans by the stack, never to a system font
+    expect(d.get('--font-sans')).toMatch(/^"SB Sans",/);
+  });
+
   it('neutral tokens alias the editorial palette', () => {
     const d = declsOf(':root');
     expect(['--nt-bg', '--nt-ink', '--nt-muted', '--nt-rule', '--nt-accent'].map((n) => d.get(n))).toEqual([

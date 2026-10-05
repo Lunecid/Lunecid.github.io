@@ -15,7 +15,11 @@ export const SERIF_KO_FAMILY = 'SB Serif KR';
  * [data-serif]; separate from the paper's variable "SB Serif KR". Declared by DataLayout, never preloaded (§9). */
 export const SERIF_KO_HEAD_FAMILY = 'SB Serif KR Head';
 
-export type FontFace = 'sans' | 'mono' | 'serifKo' | 'serifKoHead';
+/** Latin display face of the general version: a subset of Archivo (OFL 1.1, Omnibus-Type; no Reserved Font Name —
+ *  its LICENSE and name ID 0 declare none), width axis pinned at 112 %, weight 700–900. Data pages only. */
+export const DISPLAY_FAMILY = 'SB Display';
+
+export type FontFace = 'sans' | 'mono' | 'serifKo' | 'serifKoHead' | 'display';
 
 /** Placeholder URL per face (replaced by the hashed file in dist). */
 export const FONT_URL: Record<FontFace, string> = {
@@ -23,6 +27,7 @@ export const FONT_URL: Record<FontFace, string> = {
   mono: '/_fonts/jetbrains-mono.woff2',
   serifKo: '/_fonts/sb-serif-kr.woff2',
   serifKoHead: '/_fonts/sb-serif-kr-head.woff2',
+  display: '/_fonts/sb-display.woff2',
 };
 
 /** The Hangul blocks (Jamo, Compatibility Jamo, Jamo Extended-A, Syllables, Jamo Extended-B). */
@@ -33,6 +38,7 @@ const DESCRIPTORS: Record<FontFace, string> = {
   mono: `font-family:"${MONO_FAMILY}";font-style:normal;font-weight:100 800;font-display:swap`,
   serifKo: `font-family:"${SERIF_KO_FAMILY}";font-style:normal;font-weight:200 900;font-display:swap`,
   serifKoHead: `font-family:"${SERIF_KO_HEAD_FAMILY}";font-style:normal;font-weight:700;font-display:swap`,
+  display: `font-family:"${DISPLAY_FAMILY}";font-style:normal;font-weight:700 900;font-stretch:112%;font-display:swap`,
 };
 
 /** The Korean serifs draw Hangul only, so Latin text keeps its Times face. */
