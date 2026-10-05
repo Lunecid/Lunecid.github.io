@@ -1,7 +1,11 @@
 scripts/paint/paint.mjs generates src/styles/paint.css, the brush-paint textures of the general version (data pages
-only): six static SVG stroke tiles (red, blue and yellow, horizontal and vertical) and the frayed outline used with
+only): six brush stroke tiles (red, blue and yellow, horizontal and vertical) and the frayed outline used with
 -webkit-mask-box-image. It is a line-for-line port of the owner-approved v5 prototype's paint-tex.py (notes:
 owner-assets/data-redesign/v5/), including Python's seeded random for the outline, so the output equals the
-prototype's. Run `node scripts/paint/paint.mjs --write` after changing a pigment (its base must match --ed-red,
---ed-blue or --ed-yellow in tokens.css), `--check` to compare the committed file, `--lab <file>` for a swatch sheet;
-tests/unit/paint.test.ts checks the file, the pigments and the contrast bound of text on the paint.
+prototype's. The tiles' source is that SVG noise, but browsers would rasterise it on the main thread on every page, so
+the script renders each tile once in headless Chromium, flattens it onto its pigment and commits it as WebP at 1× and
+2× (src/styles/paint/; the build hashes them into /_astro/). Run `node scripts/paint/paint.mjs --write` after changing
+a pigment (its base must match --ed-red, --ed-blue or --ed-yellow in tokens.css) to rewrite paint.css and the tiles,
+`--check` to compare the committed CSS and tiles with a fresh render, `--lab <file>` for a swatch sheet. Rendering
+needs Chromium (Playwright's, or CHROME_PATH / PW_CHANNEL). tests/unit/paint.test.ts checks the file, the pigments,
+the tiles and the contrast of text on the paint, from the formula and from the tiles' pixels.

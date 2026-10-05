@@ -1,19 +1,37 @@
 // Brush-paint textures of the general version (DS-2): a Node port of the prototype's paint-tex.py (owner-approved v5,
 // notes owner-assets/data-redesign/v5/). It writes src/styles/paint.css, the data-only stylesheet DataLayout imports:
-// six static SVG stroke tiles (red / blue / yellow × horizontal / vertical) and the frayed outline used with
-// -webkit-mask-box-image, as custom properties under :root[data-variant="data"]. No live CSS filter: each tile is
-// rasterised once and repeated.
+// six brush stroke tiles (red / blue / yellow × horizontal / vertical) and the frayed outline used with
+// -webkit-mask-box-image, as custom properties under :root[data-variant="data"].
+// Each tile's source is an SVG filter (feTurbulence noise); the browser would rasterise that filter on the main thread
+// on every data page (0.6–1.2 s on a throttled phone), so the tiles are rendered once here, in headless Chromium (the
+// renderer the SVG was tuned in), flattened onto their pigment and shipped as opaque WebP at 1× and 2×
+// (src/styles/paint/, hashed into /_astro/ by the build). The outline is a plain path (no filter) and stays an SVG.
 //
-//   node scripts/paint/paint.mjs --write          regenerate src/styles/paint.css
-//   node scripts/paint/paint.mjs --check          exit 1 when the committed file differs from what this script makes
+//   node scripts/paint/paint.mjs --write          regenerate src/styles/paint.css and render the tiles
+//   node scripts/paint/paint.mjs --check          exit 1 when paint.css differs or a committed tile no longer matches a
+//                                                 fresh render (within TILE_TOLERANCE)
 //   node scripts/paint/paint.mjs --lab <file>     write the swatch sheet of the prototype (paint-lab.html) for a look
+// Rendering needs Chromium: Playwright's (npx playwright install chromium), CHROME_PATH=<binary> or PW_CHANNEL=chrome.
 //
 // Python's random.Random (Mersenne Twister, seeded from an int) is ported below, so the rag box path is the
 // prototype's, number for number.
-import { readFileSync, writeFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 export const PAINT_CSS = fileURLToPath(new URL('../../src/styles/paint.css', import.meta.url));
+/** Where the rendered tiles live; paint.css (src/styles/) names them relative to itself. */
+export const TILE_DIR = fileURLToPath(new URL('../../src/styles/paint/', import.meta.url));
+const TILE_URL = './paint/';
+/** The tiles: pigment (r / b / y) + stroke direction (h = horizontal, 800×400; v = vertical, 400×800). */
+export const TILES = /** @type {const} */ (['rh', 'rv', 'bh', 'bv', 'yh', 'yv']);
+/** WebP quality per scale. Phones (and Lighthouse's mobile run) load the 2× tiles early, next to the LCP image, so
+ *  their bytes count: q70 keeps the six at ~62 KB (q95 ≈ 590 KB cost ~0.14 of mobile performance through LCP); the 1×
+ *  tiles, loaded by DPR-1 screens only, keep more of the fine bristle detail at q90. Mean channel error against the
+ *  Chromium render ≈ 1.2–1.9 / 255; the worst text contrast on each tile stays ≥ 4.5 (tests/unit/paint.test.ts). */
+const QUALITY = { 1: 90, 2: 70 };
+/** --check: mean channel difference (0–255) allowed between a committed tile and a fresh render encoded the same way. */
+export const TILE_TOLERANCE = 0.75;
 
 /** base = the pigment token's value (tokens.css --ed-red/--ed-blue/--ed-yellow); dark/light = the streak tints;
  *  darkCap/lightCap = their alpha caps; seeds per direction (h = horizontal strokes, v = vertical). */
@@ -164,15 +182,109 @@ export function ragBox(seed = 31, S = 132, T = 6) {
   return `<svg xmlns='http://www.w3.org/2000/svg' width='${S}' height='${S}'><path d='${d}'/></svg>`;
 }
 
-/** The six stroke tiles and the rag box, as the prototype's custom properties. */
-export function textureDecls() {
-  const out = [];
-  for (const [k, p] of Object.entries(PIGMENTS)) {
-    out.push(`  --tex-${k}h: ${uri(strokes(true, p.seeds.h, p.dark, p.light, p.darkCap, p.lightCap))};`);
-    out.push(`  --tex-${k}v: ${uri(strokes(false, p.seeds.v, p.dark, p.light, p.darkCap, p.lightCap))};`);
-  }
+/** The source SVG of one tile. @param {typeof TILES[number]} key */
+export function tileSvg(key) {
+  const p = PIGMENTS[/** @type {keyof typeof PIGMENTS} */ (key[0])];
+  const horizontal = key[1] === 'h';
+  return strokes(horizontal, horizontal ? p.seeds.h : p.seeds.v, p.dark, p.light, p.darkCap, p.lightCap);
+}
+
+/** @param {typeof TILES[number]} key @param {1 | 2} scale */
+const tileName = (key, scale) => `paint-${key}${scale === 2 ? '-2x' : ''}.webp`;
+/** The committed tile file. @param {typeof TILES[number]} key @param {1 | 2} scale */
+export const tileFile = (key, scale) => join(TILE_DIR, tileName(key, scale));
+
+/** The six stroke tiles and the rag box, as the prototype's custom properties. @param {string} [base] tile URL prefix */
+export function textureDecls(base = TILE_URL) {
+  const out = TILES.map((k) => `  --tex-${k}: image-set(url("${base}${tileName(k, 1)}") 1x, url("${base}${tileName(k, 2)}") 2x);`);
   out.push(`  --ragbox: ${uri(ragBox())};`);
   return out;
+}
+
+// ── tiles: render the SVG in Chromium, flatten onto the pigment, encode ──
+
+async function launch() {
+  const { chromium } = await import('@playwright/test');
+  return chromium.launch({
+    ...(process.env.CHROME_PATH ? { executablePath: process.env.CHROME_PATH } : process.env.PW_CHANNEL ? { channel: process.env.PW_CHANNEL } : {}),
+    args: ['--force-color-profile=srgb'],
+  });
+}
+
+/**
+ * Each tile as Chromium paints it on a data page (the SVG over its pigment, as background: var(--ed-paint-…)), at
+ * device scale 1 and 2: PNG buffers keyed `${key}@${scale}`. @returns {Promise<Map<string, Buffer>>}
+ */
+export async function renderTiles() {
+  const browser = await launch();
+  /** @type {Map<string, Buffer>} */
+  const out = new Map();
+  try {
+    for (const scale of /** @type {const} */ ([1, 2])) {
+      const page = await browser.newPage({ deviceScaleFactor: scale, viewport: { width: 900, height: 900 } });
+      for (const key of TILES) {
+        const p = PIGMENTS[/** @type {keyof typeof PIGMENTS} */ (key[0])];
+        const [w, h] = key[1] === 'h' ? [800, 400] : [400, 800];
+        const src = uri(tileSvg(key));
+        await page.setContent(`<!doctype html><style>body{margin:0}div{width:${w}px;height:${h}px;background:${src},${p.base}}</style><div></div>`);
+        await page.evaluate(async (u) => {
+          const img = new Image();
+          img.src = u.slice(5, -2);
+          await img.decode();
+          await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+        }, src);
+        out.set(`${key}@${scale}`, await page.locator('div').screenshot({ animations: 'disabled' }));
+      }
+      await page.close();
+    }
+  } finally {
+    await browser.close();
+  }
+  return out;
+}
+
+/** @param {Buffer} png @param {1 | 2} scale */
+async function encode(png, scale) {
+  const { default: sharp } = await import('sharp');
+  return sharp(png).removeAlpha().webp({ quality: QUALITY[scale], effort: 6, smartSubsample: true }).toBuffer();
+}
+
+/** Mean absolute channel difference (RGB, 0–255) of two same-size images. @param {Buffer} a @param {Buffer} b */
+export async function meanDiff(a, b) {
+  const { default: sharp } = await import('sharp');
+  const [x, y] = await Promise.all([a, b].map((img) => sharp(img).removeAlpha().raw().toBuffer({ resolveWithObject: true })));
+  if (x.info.width !== y.info.width || x.info.height !== y.info.height) return Infinity;
+  let sum = 0;
+  for (let i = 0; i < x.data.length; i++) sum += Math.abs(x.data[i] - y.data[i]);
+  return sum / x.data.length;
+}
+
+async function writeTiles() {
+  mkdirSync(TILE_DIR, { recursive: true });
+  for (const [id, png] of await renderTiles()) {
+    const [key, scale] = /** @type {[typeof TILES[number], string]} */ (id.split('@'));
+    const file = tileFile(key, scale === '2' ? 2 : 1);
+    writeFileSync(file, await encode(png, scale === '2' ? 2 : 1));
+    console.log(`wrote ${file}`);
+  }
+}
+
+/** Committed tiles against a fresh render: [{ id, mean (vs the fresh render encoded the same way), raw (vs the render) }]. */
+export async function checkTiles() {
+  const rows = [];
+  for (const [id, png] of await renderTiles()) {
+    const [key, s] = /** @type {[typeof TILES[number], string]} */ (id.split('@'));
+    const scale = s === '2' ? 2 : 1;
+    let committed;
+    try {
+      committed = readFileSync(tileFile(key, scale));
+    } catch {
+      rows.push({ id, mean: Infinity, raw: Infinity });
+      continue;
+    }
+    rows.push({ id, mean: await meanDiff(committed, await encode(png, scale)), raw: await meanDiff(committed, png) });
+  }
+  return rows;
 }
 
 const PIGMENT_TOKEN = { r: '--ed-red', b: '--ed-blue', y: '--ed-yellow' };
@@ -185,7 +297,8 @@ export function paintCss() {
   ]);
   return `/* generated by scripts/paint/paint.mjs — do not edit (node scripts/paint/paint.mjs --write regenerates it).
    Brush-paint textures of the general version: data pages only (DataLayout imports this file). Each --tex-* is one
-   static SVG stroke tile per pigment and direction (h / v), --ragbox the frayed outline for -webkit-mask-box-image
+   pre-rendered brush tile per pigment and direction (h / v; WebP at 1× and 2×, src/styles/paint/, rendered from the
+   script's SVG so the browser never rasterises noise), --ragbox the frayed outline for -webkit-mask-box-image
    (Firefox has no mask-box-image and shows straight edges). A painted field is background: var(--ed-paint-rh) etc.;
    its frayed edge is -webkit-mask-box-image: var(--ed-rag) (--ed-rag-s for marks under 20 px). */
 :root[data-variant="data"] {
@@ -228,7 +341,7 @@ export function worstContrast(pigment, textHex) {
 /** The prototype's swatch sheet. @param {string} file */
 function writeLab(file) {
   const col = { r: '#CC281C', b: '#1F3A93', y: '#F5C400' };
-  const block = textureDecls().join('\n');
+  const block = textureDecls(pathToFileURL(TILE_DIR).href).join('\n');
   const sw = ['r', 'b', 'y']
     .flatMap((c) => ['h', 'v'].map((d) => `<div class="s" style="background:var(--tex-${c}${d}),${col[/** @type {'r'} */ (c)]}"><b>${col[/** @type {'r'} */ (c)]} ${d}</b></div>`))
     .join('');
@@ -245,10 +358,15 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
   if (args[0] === '--write') {
     writeFileSync(PAINT_CSS, paintCss());
     console.log(`wrote ${PAINT_CSS}`);
+    await writeTiles();
   } else if (args[0] === '--check') {
     const same = readFileSync(PAINT_CSS, 'utf8') === paintCss();
     console.log(same ? 'paint.css is up to date' : 'paint.css differs from what scripts/paint/paint.mjs makes: run --write');
-    process.exit(same ? 0 : 1);
+    const rows = await checkTiles();
+    for (const r of rows) console.log(`${r.id.padEnd(6)} vs fresh render, same encoding: ${r.mean.toFixed(3)}   vs the render itself: ${r.raw.toFixed(3)}`);
+    const stale = rows.filter((r) => !(r.mean <= TILE_TOLERANCE));
+    console.log(stale.length ? `tiles differ from a fresh render (> ${TILE_TOLERANCE}): ${stale.map((r) => r.id).join(', ')}: run --write` : 'tiles match a fresh render');
+    process.exit(same && !stale.length ? 0 : 1);
   } else if (args[0] === '--lab' && args[1]) {
     writeLab(args[1]);
     console.log(`wrote ${args[1]}`);

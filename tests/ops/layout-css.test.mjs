@@ -4,7 +4,7 @@
 // A sheet's "own" classes are the classes it defines that no other stylesheet in src/ names (other src/**/*.css files,
 // <style> blocks of src/**/*.astro); they reach a page's inlined CSS only through that sheet.
 import assert from 'node:assert/strict';
-import { readdirSync, readFileSync } from 'node:fs';
+import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, relative, sep } from 'node:path';
 import { test } from 'node:test';
 
@@ -120,5 +120,25 @@ test('DS-2: data pages load paint.css; game and neutral pages never contain --te
   }
   for (const p of [...ofVariant('game'), ...ofVariant('neutral')]) {
     assert.ok(!/--tex-|--ragbox|--ed-paint-/.test(p.css), `${p.path}: paint.css leaked`);
+  }
+});
+
+// Live SVG feTurbulence cost 0.6–1.2 s of main-thread rasterising per data page on phones (TBT up to 685 ms): the six
+// brush tiles ship pre-rendered (scripts/paint/paint.mjs), as hashed, cacheable WebP files next to the data sheet.
+test('the brush textures are pre-rendered WebP tiles (1× and 2×) in /_astro/, never SVG noise', () => {
+  const data = ofVariant('data');
+  assert.ok(data.length >= 16, 'the general pages');
+  for (const p of data) assert.ok(!/feTurbulence|%3Cfilter|<filter/i.test(p.css), `${p.path}: SVG noise in the page CSS`);
+  const css = data[0].css;
+  for (const key of ['rh', 'rv', 'bh', 'bv', 'yh', 'yv']) {
+    const value = new RegExp(`--tex-${key}:([^;}]+)`).exec(css)?.[1] ?? '';
+    const urls = [...value.matchAll(/url\(\s*["']?([^"')\s]+)["']?\s*\)\s*([\d.]+x)/g)].map((m) => [m[1], m[2]]);
+    assert.equal(urls.length, 2, `--tex-${key}: ${value}`);
+    assert.match(value.trim(), /^image-set\(/, `--tex-${key} is an image-set`);
+    const [[one, s1], [two, s2]] = urls;
+    assert.deepEqual([s1, s2], ['1x', '2x'], `--tex-${key} scales`);
+    assert.match(one, new RegExp(`^/_astro/paint-${key}\\.[\\w-]{6,}\\.webp$`), `--tex-${key} 1x`);
+    assert.match(two, new RegExp(`^/_astro/paint-${key}-2x\\.[\\w-]{6,}\\.webp$`), `--tex-${key} 2x`);
+    for (const href of [one, two]) assert.ok(statSync(join('dist', ...href.split('/').filter(Boolean))).size > 0, `${href} exists`);
   }
 });

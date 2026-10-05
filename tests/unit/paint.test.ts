@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { PIGMENTS, paintCss, ragBox, strokes, worstContrast } from '../../scripts/paint/paint.mjs';
+import sharp from 'sharp';
+import { PIGMENTS, TILES, paintCss, ragBox, strokes, tileFile, tileSvg, worstContrast } from '../../scripts/paint/paint.mjs';
 import { parseRules, splitSelectors } from '../helpers/css';
 
 const read = (rel: string): string => readFileSync(new URL(`../../${rel}`, import.meta.url), 'utf8').replace(/\r\n/g, '\n');
@@ -37,21 +38,62 @@ describe('brush paint (scripts/paint/paint.mjs → src/styles/paint.css, DS-2)',
     expect(yellow.atLightest).toBeGreaterThan(yellow.atDarkest);
   });
 
-  it('each texture is an 800×400 or 400×800 SVG with stitched, tiled turbulence (seamless) and no CSS colour literal', () => {
-    for (const k of ['r', 'b', 'y']) {
-      for (const [d, w, h] of [['h', 800, 400], ['v', 400, 800]] as const) {
-        const svg = svgOf(decls.get(`--tex-${k}${d}`) ?? '');
-        expect(svg).toMatch(new RegExp(`^<svg xmlns='http://www.w3.org/2000/svg' width='${w}' height='${h}'>`));
-        expect(svg.match(/<feTurbulence [^>]*stitchTiles='stitch'/g)).toHaveLength(4);
-        expect(svg.match(/<feTile /g)).toHaveLength(4);
-        expect(svg).toContain("color-interpolation-filters='sRGB'");
-        expect(svg).not.toMatch(/#[0-9a-f]{3,8}\b|rgba?\(|\b(black|white|red|blue|yellow|gr[ae]y)\b/i);
-      }
+  // Named change (textures pre-rendered): the SVG is the tiles' source (paint.mjs renders it), no longer the CSS value.
+  it('each texture source is an 800×400 or 400×800 SVG with stitched, tiled turbulence (seamless) and no CSS colour literal', () => {
+    expect(TILES).toEqual(['rh', 'rv', 'bh', 'bv', 'yh', 'yv']);
+    for (const key of TILES) {
+      const [w, h] = key.endsWith('h') ? [800, 400] : [400, 800];
+      const svg = tileSvg(key);
+      expect(svg).toMatch(new RegExp(`^<svg xmlns='http://www.w3.org/2000/svg' width='${w}' height='${h}'>`));
+      expect(svg.match(/<feTurbulence [^>]*stitchTiles='stitch'/g)).toHaveLength(4);
+      expect(svg.match(/<feTile /g)).toHaveLength(4);
+      expect(svg).toContain("color-interpolation-filters='sRGB'");
+      expect(svg).not.toMatch(/#[0-9a-f]{3,8}\b|rgba?\(|\b(black|white|red|blue|yellow|gr[ae]y)\b/i);
     }
     // the direction swaps the frequencies; dark and light tints are the pigment's own (never black or grey)
     expect(strokes(true, 3, [0, 0, 0], [0, 0, 0], 0.3, 0.075)).toContain("baseFrequency='0.0017 0.045'");
     expect(strokes(false, 3, [0, 0, 0], [0, 0, 0], 0.3, 0.075)).toContain("baseFrequency='0.045 0.0017'");
     expect(css).not.toMatch(/#[0-9a-fA-F]{3,8}\b|\brgba?\(|\bhsla?\(/);
+  });
+
+  // Live feTurbulence cost 0.6–1.2 s of main-thread rasterising per data page on phones; the tiles are pre-rendered.
+  it('paint.css ships each texture as pre-rendered WebP tiles (image-set of a 1× and a 2× file), never SVG noise', () => {
+    for (const key of TILES) {
+      expect(decls.get(`--tex-${key}`)).toBe(`image-set(url("./paint/paint-${key}.webp") 1x, url("./paint/paint-${key}-2x.webp") 2x)`);
+      expect(tileFile(key, 1)).toMatch(new RegExp(`src/styles/paint/paint-${key}\\.webp$`));
+      expect(tileFile(key, 2)).toMatch(new RegExp(`src/styles/paint/paint-${key}-2x\\.webp$`));
+    }
+    expect(css).not.toMatch(/feTurbulence|<filter|%3Cfilter/);
+  });
+
+  it('the tiles are opaque WebP files of the tile size (1×) and twice it (2×)', async () => {
+    for (const key of TILES) {
+      const [w, h] = key.endsWith('h') ? [800, 400] : [400, 800];
+      for (const scale of [1, 2] as const) {
+        const meta = await sharp(tileFile(key, scale)).metadata();
+        expect([meta.format, meta.width, meta.height, meta.hasAlpha], `${key} ${scale}x`).toEqual(['webp', w * scale, h * scale, false]);
+      }
+    }
+  });
+
+  it('worst pixel of the committed tiles: white on red ≥ 4.5, white on blue ≥ 7, ink on yellow ≥ 7 (both scales)', async () => {
+    const lin = (v: number): number => (v / 255 <= 0.03928 ? v / 255 / 12.92 : ((v / 255 + 0.055) / 1.055) ** 2.4);
+    const lum = (r: number, g: number, b: number): number => 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
+    const ratio = (a: number, b: number): number => (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
+    const floor = { r: 4.5, b: 7, y: 7 } as const;
+    const text = { r: lum(255, 255, 255), b: lum(255, 255, 255), y: lum(0x14, 0x14, 0x14) } as const;
+    const minima: string[] = [];
+    for (const key of TILES) {
+      const pigment = key[0] as 'r' | 'b' | 'y';
+      for (const scale of [1, 2] as const) {
+        const px = await sharp(tileFile(key, scale)).removeAlpha().raw().toBuffer();
+        let worst = Infinity;
+        for (let i = 0; i < px.length; i += 3) worst = Math.min(worst, ratio(text[pigment], lum(px[i]!, px[i + 1]!, px[i + 2]!)));
+        minima.push(`${key}@${scale}x ${worst.toFixed(2)}`);
+        expect(worst, `${key} ${scale}x`).toBeGreaterThanOrEqual(floor[pigment]);
+      }
+    }
+    console.info(`paint tiles, worst text contrast: ${minima.join(', ')}`);
   });
 
   it('the rag box is a closed path inside its 132 px box with every corner point inset; slice 6 and 3 px variants', () => {
