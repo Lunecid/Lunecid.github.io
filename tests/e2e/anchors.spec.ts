@@ -90,3 +90,73 @@ test.describe('/game/records/ and /en/game/records/ show the tagline', () => {
     });
   }
 });
+
+// T1 (motion audit): a figure reached through the body's "그림 N" link marks itself once — the game figure's corner
+// marks lock on (cue-lock-*), the general figure draws an accent line over its top rule (cue-rule).
+const CUE_PAGES = [
+  { variant: 'game', path: '/game/projects/school-zone-blindspots/', names: ['cue-lock-br', 'cue-lock-tl'], num: '.figure__num' },
+  { variant: 'data', path: '/data/projects/school-zone-blindspots/', names: ['cue-rule'], num: '.ed-figcap__num' },
+] as const;
+const cueNames = (page: Page, id: string) =>
+  page.evaluate((targetId) => {
+    const el = document.getElementById(targetId)!;
+    return el.getAnimations({ subtree: true }).map((a) => (a as CSSAnimation).animationName).filter((n) => n.startsWith('cue-')).sort();
+  }, id);
+/** The colour `value` (a var() or keyword) resolves to inside #id. */
+const resolved = (page: Page, id: string, value: string) =>
+  page.evaluate(([targetId, v]) => {
+    const probe = document.createElement('span');
+    probe.style.color = v;
+    document.getElementById(targetId)!.append(probe);
+    const c = getComputedStyle(probe).color;
+    probe.remove();
+    return c;
+  }, [id, value] as const);
+
+test.describe('T1: in-page arrival cue', () => {
+  test('T1: following a "그림 N" link plays the cue once on the target figure (game and general)', async ({ page }) => {
+    for (const c of CUE_PAGES) {
+      await page.goto(c.path, { waitUntil: 'load' });
+      await settle(page);
+      const link = page.locator('main a[href="#figure-2"]').first();
+      expect(await cueNames(page, 'figure-2'), c.variant).toEqual([]);
+      // the cue's own clock: every animationstart inside the figure (pseudo-elements included) is logged, so a short
+      // cue that ends before a poll sample still counts
+      await page.evaluate(() => {
+        const w = window as Window & { __cueStarts?: string[] };
+        w.__cueStarts = [];
+        document.getElementById('figure-2')!.addEventListener('animationstart', (e) => {
+          if (e.animationName.startsWith('cue-')) w.__cueStarts!.push(e.animationName);
+        });
+      });
+      const starts = () => page.evaluate(() => [...((window as Window & { __cueStarts?: string[] }).__cueStarts ?? [])].sort());
+      await link.click();
+      await expect(page).toHaveURL(/#figure-2$/);
+      await expect.poll(starts, { message: `${c.variant}: the cue runs` }).toEqual([...c.names]);
+      // it ends (≈ 1.3 s at most) and a second click on the same link, the figure still targeted, does not replay it
+      await expect.poll(() => cueNames(page, 'figure-2'), { timeout: 5000, message: `${c.variant}: the cue ends` }).toEqual([]);
+      await link.click();
+      await page.waitForTimeout(200);
+      expect(await cueNames(page, 'figure-2'), `${c.variant}: no replay`).toEqual([]);
+      expect(await starts(), `${c.variant}: started once`).toEqual([...c.names]);
+    }
+  });
+
+  test('T1: reduced motion — no animation; the figure number takes the accent colour', async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    for (const c of CUE_PAGES) {
+      await page.goto(c.path, { waitUntil: 'load' });
+      await settle(page);
+      const fig = page.locator('#figure-2');
+      const idle = await fig.locator(c.num).evaluate((el) => getComputedStyle(el).color);
+      await page.locator('main a[href="#figure-2"]').first().click();
+      await expect(page).toHaveURL(/#figure-2$/);
+      await page.waitForTimeout(100);
+      expect(await cueNames(page, 'figure-2'), c.variant).toEqual([]);
+      const accent = await resolved(page, 'figure-2', c.variant === 'game' ? 'var(--accent-deep)' : 'var(--ed-accent)');
+      expect(accent).not.toBe(idle);
+      expect(await fig.locator(c.num).evaluate((el) => getComputedStyle(el).color), c.variant).toBe(accent);
+      if (c.variant === 'data') expect(await fig.evaluate((el) => getComputedStyle(el).borderTopColor)).toBe(accent);
+    }
+  });
+});

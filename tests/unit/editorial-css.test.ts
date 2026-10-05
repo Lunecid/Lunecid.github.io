@@ -10,7 +10,11 @@ describe('src/styles/editorial.css (P2-1, spec §8)', () => {
 
   it('scopes every selector to the general version (defence in depth: a data rule must never style a game page)', () => {
     expect(rules.length).toBeGreaterThan(0);
-    const unscoped = rules.flatMap((r) => splitSelectors(r.selector)).filter((s) => s !== SCOPE && !s.startsWith(`${SCOPE} `));
+    // @keyframes preludes are names, not selectors; the reduced-motion path compounds the scope with data-motion
+    const unscoped = rules
+      .filter((r) => !r.selector.startsWith('@keyframes '))
+      .flatMap((r) => splitSelectors(r.selector))
+      .filter((s) => s !== SCOPE && !s.startsWith(`${SCOPE} `) && !s.startsWith(`${SCOPE}[data-motion="reduce"] `));
     expect(unscoped).toEqual([]);
   });
 

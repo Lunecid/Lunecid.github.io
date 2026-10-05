@@ -577,6 +577,8 @@ describe('style scanner fixtures', () => {
     expect(literalDurations('fixture.css', '.a{animation:k var(--dur-enter) var(--ease-out) .2s both}')).toEqual([]);
     expect(literalDurations('fixture.css', '.a{transition-duration:.2s, 0ms} @media (prefers-reduced-motion: reduce){.b{animation:k .15s ease-in both}}')).toEqual(['.a | .2s', '.b | .15s']);
     expect(literalDurations('fixture.css', '@keyframes k { from { opacity: 0; } to { opacity: 1; } } .a{animation-delay:.3s}')).toEqual([]);
+    // a calc() of --dur-* tokens is a token duration (the arrival cue's draw + hold + fade)
+    expect(literalDurations('fixture.css', '.a::before{animation:cue-rule calc(var(--dur-panel-in) + var(--dur-streak)) var(--ease-out)}')).toEqual([]);
   });
 
   it('10.5pt passes, 8pt fails', () => {

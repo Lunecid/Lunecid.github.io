@@ -45,6 +45,22 @@
 .bracket--sm::before { left: -1px; top: -1px; }
 .bracket--sm::after { right: -1px; bottom: -1px; }
 .read .bracket, .read-section .bracket { border-color: var(--read-line); --bracket-color: var(--accent-deep); }
+/* Arrival cue: a figure reached through an in-page link ("그림 N") locks its corner marks on once, when it becomes the
+   :target (a second click on the same link changes nothing). Reduced motion: no movement; the figure number takes the
+   accent colour while targeted. Print: no cue. */
+@keyframes cue-lock-tl { from { transform: translate(-6px, -6px); opacity: .4; } }
+@keyframes cue-lock-br { from { transform: translate(6px, 6px); opacity: .4; } }
+.figure.bracket:target::before { animation: cue-lock-tl var(--dur-panel-in) var(--ease-out); }
+.figure.bracket:target::after { animation: cue-lock-br var(--dur-panel-in) var(--ease-out); }
+:root[data-motion="reduce"] .figure.bracket:target::before, :root[data-motion="reduce"] .figure.bracket:target::after { animation: none; }
+:root[data-motion="reduce"] .figure.bracket:target .figure__num { color: var(--accent-deep); }
+@media (prefers-reduced-motion: reduce) {
+  .figure.bracket:target::before, .figure.bracket:target::after { animation: none; }
+  .figure.bracket:target .figure__num { color: var(--accent-deep); }
+}
+@media print {
+  .figure.bracket:target::before, .figure.bracket:target::after { animation: none !important; }
+}
 
 /* ── Buttons: <a class="btn btn--fill cut"> · <a class="btn btn--line cut cut--line"> ── */
 .btn {

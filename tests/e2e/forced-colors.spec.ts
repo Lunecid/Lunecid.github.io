@@ -76,4 +76,23 @@ test.describe('N14: forced colours', () => {
     }));
     expect(pair.sq).not.toBe(pair.body);
   });
+  test('T1: the general cue line is drawn in CanvasText under forced colors', async ({ page }) => {
+    // The line is a border (not a background), so forced colours repaint it in CanvasText instead of erasing it.
+    await page.emulateMedia({ forcedColors: 'active', colorScheme: 'light' });
+    await page.goto('/data/projects/school-zone-blindspots/', { waitUntil: 'load' });
+    await page.locator('main a[href="#figure-2"]').first().click();
+    await expect(page).toHaveURL(/#figure-2$/);
+    const line = await page.locator('#figure-2').evaluate((el) => {
+      const probe = document.createElement('span');
+      probe.style.color = 'CanvasText';
+      el.append(probe);
+      const canvasText = getComputedStyle(probe).color;
+      probe.remove();
+      const cs = getComputedStyle(el, '::before');
+      return { display: cs.display, width: cs.borderTopWidth, color: cs.borderTopColor, canvasText };
+    });
+    expect(line.display).not.toBe('none');
+    expect(line.width).toBe('2px');
+    expect(line.color).toBe(line.canvasText);
+  });
 });
