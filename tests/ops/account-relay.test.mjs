@@ -53,6 +53,11 @@ const allLogs = [];
 const SENSITIVE = new Set();
 const sensitive = (v) => (SENSITIVE.add(String(v)), v);
 const realFetch = globalThis.fetch;
+// The real timers, kept before any case mocks setTimeout: the clock helper's wall-time bounds use them.
+const realSetTimeout = globalThis.setTimeout;
+const realClearTimeout = globalThis.clearTimeout;
+/** Woken on every recorded request (the clock helper waits on these instead of counting turns). */
+let callListeners = [];
 const realConsole = { log: console.log, info: console.info, warn: console.warn, error: console.error, debug: console.debug };
 
 function route(match, respond) {
@@ -64,6 +69,7 @@ async function fakeFetch(input, init = {}) {
   const method = String(init.method ?? (input instanceof Request ? input.method : 'GET')).toUpperCase();
   const rec = { url, method, headers: new Headers(init.headers), body: init.body == null ? null : String(init.body), redirect: init.redirect, signal: init.signal };
   calls.push(rec);
+  for (const wake of callListeners) wake();
   const hit = routes.find((r) => r.match(rec));
   if (!hit) {
     unexpected.push(`${method} ${url}`);
@@ -75,6 +81,7 @@ async function fakeFetch(input, init = {}) {
 beforeEach(() => {
   calls = [];
   routes = [];
+  callListeners = [];
   unexpected = [];
   logs = [];
   globalThis.fetch = fakeFetch;
@@ -611,14 +618,7 @@ test('callback: a repository check that never answers is aborted after 10 s, the
   const l = await loggedIn();
   mock.timers.enable({ apis: ['setTimeout'] });
   try {
-    const pending = callback(l.cookie, `?code=${CODE}&state=${l.state}`);
-    for (let i = 0; i < 1000 && !calls.some((c) => c.url === GH_REPO_CHECK); i++) await new Promise((r) => setImmediate(r));
-    const repo = calls.find((c) => c.url === GH_REPO_CHECK);
-    assert.ok(repo, 'the repository check started');
-    mock.timers.tick(9_999);
-    assert.equal(repo.signal.aborted, false);
-    mock.timers.tick(1);
-    const res = await pending;
+    const { res, started: repo } = await runWithClock(callback(l.cookie, `?code=${CODE}&state=${l.state}`), GH_REPO_CHECK);
     assert.equal(repo.signal.aborted, true);
     assert.equal(res.headers.get('location'), `${LINK_RETURN}#gh-error=upstream&n=${N}`);
     assert.equal(grantCalls().length, 1);
@@ -643,16 +643,77 @@ test('callback: the rate-limit binding and a missing config also clear the cooki
 /** A 200 whose headers arrive but whose body never does. */
 const stalled = () => new Response(new ReadableStream({ start() {} }), { status: 200, headers: { 'content-type': 'application/json' } });
 
-async function runWithClock(pending, startedUrl) {
-  for (let i = 0; i < 1000 && !calls.some((c) => c.url === startedUrl); i++) await new Promise((r) => setImmediate(r));
-  const started = calls.find((c) => c.url === startedUrl);
-  assert.ok(started, `${startedUrl} started`);
-  mock.timers.tick(9_999);
-  await new Promise((r) => setImmediate(r));
-  assert.equal(started.signal.aborted, false);
-  mock.timers.tick(1);
-  return { res: await pending, started };
+const WALL_LIMIT_MS = 30_000;
+const turn = () => new Promise((r) => setImmediate(r));
+
+/** The request to `url`, once the Worker sends it: woken by fakeFetch, bounded by wall time (not by a turn count). */
+function requestTo(url) {
+  const found = () => calls.find((c) => c.url === url);
+  if (found()) return Promise.resolve(found());
+  return new Promise((resolve, reject) => {
+    const done = (fn) => {
+      realClearTimeout(timer);
+      callListeners = callListeners.filter((l) => l !== wake);
+      fn();
+    };
+    const wake = () => {
+      const rec = found();
+      if (rec) done(() => resolve(rec));
+    };
+    const timer = realSetTimeout(() => done(() => reject(new Error(`${url} did not start within ${WALL_LIMIT_MS} ms`))), WALL_LIMIT_MS);
+    callListeners.push(wake);
+  });
 }
+
+/**
+ * Drives a Worker request under the mocked clock: waits for the request to `startedUrl`, checks it is still open 1 ms
+ * before `limitMs` (10 s unless given) and aborted at it, and returns the Worker's answer. Whatever happens, the Worker's promise is settled
+ * before this returns (its timers are fired until it is), so no request of this case reaches the next one.
+ */
+async function runWithClock(pending, startedUrl, limitMs = 10_000) {
+  let settled = false;
+  const watched = pending.then(
+    (value) => ((settled = true), { value }),
+    (error) => ((settled = true), { error }),
+  );
+  try {
+    const started = await requestTo(startedUrl);
+    mock.timers.tick(limitMs - 1);
+    await turn();
+    assert.equal(started.signal.aborted, false);
+    mock.timers.tick(1);
+    const outcome = await watched;
+    if ('error' in outcome) throw outcome.error;
+    return { res: outcome.value, started };
+  } finally {
+    const deadline = Date.now() + WALL_LIMIT_MS;
+    while (!settled && Date.now() < deadline) {
+      mock.timers.tick(10_000);
+      await turn();
+    }
+    assert.ok(settled, 'the Worker request settled before the case ended');
+  }
+}
+
+test('the clock helper waits for a request that starts late (a loaded machine), not for a number of event-loop turns', async () => {
+  const aborted = (rec) => new Promise((_, reject) => rec.signal.addEventListener('abort', () => reject(new DOMException('aborted', 'AbortError'))));
+  route((r) => r.url === GH_TOKEN, aborted);
+  mock.timers.enable({ apis: ['setTimeout'] });
+  try {
+    // the request starts only after 2,000 turns, as a callback does when other processes hold the CPU
+    const late = (async () => {
+      for (let i = 0; i < 2_000; i++) await new Promise((r) => setImmediate(r));
+      const ctrl = new AbortController();
+      setTimeout(() => ctrl.abort(), 10_000);
+      return fetch(GH_TOKEN, { method: 'POST', signal: ctrl.signal }).then(() => 'answered', (e) => e.name);
+    })();
+    const { res, started } = await runWithClock(late, GH_TOKEN);
+    assert.equal(res, 'AbortError');
+    assert.equal(started.signal.aborted, true);
+  } finally {
+    mock.timers.reset();
+  }
+});
 
 test('callback: the 10 s limit covers the response body — a stalled /user or repository body → grant DELETE, then upstream', async () => {
   const del = `DELETE ${GH_GRANT}`;
@@ -972,7 +1033,9 @@ async function relayBody(res) {
 
 // ---- /gh/api: the handle and the request shape ----------------------------------------------------------------------
 
-test('api: tampered, other-key, expired, other-uid, ticket-typed or missing handles → 401 handle, nothing fetched', async () => {
+test('api: tampered, other-key, expired, other-uid, ticket-typed or missing handles → 401 handle, nothing fetched', async (t) => {
+  // the clock stands still: a second passing between minting and checking would make "now + 3601" exactly 60 min
+  t.mock.timers.enable({ apis: ['Date'], now: Date.now() });
   const otherKeys = await deriveKeys(randomBytes(32).toString('base64'));
   const flip = (t, i) => t.slice(0, i) + (t[i] === 'A' ? 'B' : 'A') + t.slice(i + 1);
   const cases = [
@@ -1469,13 +1532,8 @@ test('verify: check_authentication must say exactly ns 2.0 and is_valid:true; St
   steam({ check: (rec) => new Promise((_, reject) => rec.signal.addEventListener('abort', () => reject(new DOMException('aborted', 'AbortError')))) });
   mock.timers.enable({ apis: ['setTimeout'] });
   try {
-    const pending = verify(steamFields());
-    for (let i = 0; i < 1000 && calls.length === 0; i++) await new Promise((r) => setImmediate(r));
-    mock.timers.tick(5_999);
-    await new Promise((r) => setImmediate(r));
-    assert.equal(calls[0].signal.aborted, false);
-    mock.timers.tick(1);
-    const res = await pending;
+    const { res, started } = await runWithClock(verify(steamFields()), 'https://steamcommunity.com/openid/login', 6_000);
+    assert.equal(started.signal.aborted, true);
     assert.equal(res.status, 502);
     assert.deepEqual(await res.json(), { error: 'steam-busy' });
   } finally {
