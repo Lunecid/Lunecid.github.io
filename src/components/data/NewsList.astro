@@ -1,6 +1,8 @@
 ---
 // The general home's news (spec §10.2 item 4): the entries of the game's PATCH NOTES (toPatchNotes) as a plain dated
-// list — no version tag, pointer or HUD chip. The section id stays #patch-notes (one skeleton, §5.3).
+// list — no version tag, pointer or HUD chip. The section id stays #patch-notes (one skeleton, §5.3). DS-4 (v5): dated
+// rows (the date in SB Display, the kind beside it), the title as a stretched link with the ring on the row; styled in
+// editorial.css (no scoped style).
 import SectionHead from '../hud/SectionHead.astro';
 import type { Lang } from '../../i18n/ui';
 import { t } from '../../i18n/utils';
@@ -16,18 +18,16 @@ const { lang, notes } = Astro.props;
 <section id="patch-notes" class="news ed-sec" aria-labelledby="pn-title">
   <div class="container">
     <SectionHead variant="data" id="pn-title" caption={captionFor(getVariant('data'), 'patchNotes', lang)} title={t(lang, 'section.patchNotes.title')} />
-    <ol class="ed-list" role="list">
+    <ol class="ed-news" role="list">
       {notes.map((note) => (
-        <li class="ed-item news__item">
-          <p class="ed-meta"><time datetime={note.dateIso}>{note.dateLabel}</time> · {note.kindLabel}</p>
-          <p class="news__title">{note.href ? <a class="hit" href={note.href}>{note.short ?? note.text}</a> : (note.short ?? note.text)}</p>
-          {note.short && <p class="ed-body">{note.text}</p>}
+        <li class="ed-news__item news__item">
+          <p class="ed-news__date"><time datetime={note.dateIso}>{note.dateLabel}</time><span aria-hidden="true">·</span><span>{note.kindLabel}</span></p>
+          <div class="ed-news__main">
+            <p class="ed-news__title">{note.href ? <a class="hit" href={note.href}>{note.short ?? note.text}</a> : (note.short ?? note.text)}</p>
+            {note.short && <p class="ed-news__body">{note.text}</p>}
+          </div>
         </li>
       ))}
     </ol>
   </div>
 </section>
-
-<style>
-  .news__title { margin-top: 2px; font-weight: 700; }
-</style>

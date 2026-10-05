@@ -1,8 +1,11 @@
 ---
-// One project in the general version's lists (spec §8: lists and tables instead of cards): the title (the link, or plain
-// text for a project without a page, D-4), the tools line, the one-line summary of a page-less project, up to four tags,
-// and the project's real figure — its cover, or the paper's AUC chart for the CoG item — as a small figure. No cartridge
-// shell, sticker or lift. It takes ProjectCartridge's props, so a section only picks the component (contract §4.4).
+// One project in the general version's lists. variant 'row' (P2-6, spec §8: lists instead of cards): the title (the
+// link, or plain text for a project without a page, D-4), the tools line, the one-line summary of a page-less project,
+// up to four tags, and the project's real figure — its cover, or the paper's AUC chart for the CoG item — as a small
+// figure. variant 'card' (DS-4, v5): the same facts as an image card — the figure on top, an aria-hidden card number
+// beside the tools line, the title (a stretched link: the whole card is the target, the ring goes round the card),
+// the tags; a page-less project is a plain neutral card with its summary. No cartridge shell, sticker or lift. It takes
+// ProjectCartridge's props, so a section only picks the component (contract §4.4); data-tags drives the tag filter.
 import { Picture } from 'astro:assets';
 import AucLabel from '../research/AucLabel.astro';
 import { CARD_FORMATS, fitWidths, sourceSize } from '../../lib/images';
@@ -13,13 +16,52 @@ type Props = CartridgeProps & {
   priority?: boolean;
   /** Eager at low priority (the first image item on the general home). */
   eager?: boolean;
+  variant?: 'row' | 'card' | 'lead';
+  /** Card variants: the card's number on the page (aria-hidden furniture). */
+  n?: number;
+  /** Card variants: the image's sizes attribute (the grid's column width). */
+  sizes?: string;
 };
 
-const { href, title, meta, summary, tagKeys, tags, cover, coverPosition = '50% 50%', coverFit = 'cover', chart, headingLevel = 3, priority = false, eager = false } = Astro.props;
+const { href, title, meta, summary, tagKeys, tags, cover, coverPosition = '50% 50%', coverFit = 'cover', chart, headingLevel = 3, priority = false, eager = false, variant = 'row', n, sizes } = Astro.props;
 const Heading = headingLevel === 2 ? 'h2' : 'h3';
 const shownTags = tags.slice(0, 4);
-const widths = cover ? fitWidths([192, 288, 440], sourceSize(cover).width) : [];
+const card = variant !== 'row';
+const widths = cover ? fitWidths(card ? [288, 440, 720, 1040] : [192, 288, 440], sourceSize(cover).width) : [];
+const number = n === undefined ? null : String(n).padStart(2, '0');
 ---
+{card ? (
+  <li class:list={['ed-card', { 'ed-card--lead': variant === 'lead', 'ed-card--plain': !chart && !cover }]} data-tags={tagKeys.join(' ')}>
+    {chart ? (
+      <div class="ed-card__img ed-card__img--chart"><AucLabel lang={chart.lang} tone="editorial" /></div>
+    ) : cover ? (
+      <div class:list={['ed-card__img', { 'ed-card__img--contain': coverFit === 'contain' }]}>
+        <Picture
+          src={cover}
+          alt=""
+          formats={CARD_FORMATS}
+          fallbackFormat="webp"
+          widths={widths}
+          sizes={sizes ?? '(min-width: 734px) 50vw, 100vw'}
+          priority={priority}
+          loading={!priority && eager ? 'eager' : undefined}
+          fetchpriority={!priority && eager ? 'low' : undefined}
+          style={`object-position: ${coverPosition}`}
+        />
+      </div>
+    ) : null}
+    <div class="ed-card__body">
+      <p class="ed-card__top">{number && <span class="ed-card__n" aria-hidden="true">{number}</span>}<span>{meta}</span></p>
+      <Heading class="ed-card__title">{href ? <a class="hit" href={href}>{title}</a> : title}</Heading>
+      {!href && summary && <p class="ed-card__text">{summary}</p>}
+      {shownTags.length > 0 && (
+        <ul class="ed-card__tags" role="list">
+          {shownTags.map((tag) => <li class="ed-tag">{tag}</li>)}
+        </ul>
+      )}
+    </div>
+  </li>
+) : (
 <li class:list={['pli', 'ed-item', { 'pli--chart': !!chart, 'pli--text': !chart && !cover }]} data-tags={tagKeys.join(' ')}>
   <div class="pli__text">
     <Heading class="pli__title ed-item__title" data-serif>{href ? <a class="pli__link hit" href={href}>{title}</a> : title}</Heading>
@@ -49,6 +91,7 @@ const widths = cover ? fitWidths([192, 288, 440], sourceSize(cover).width) : [];
     />
   ) : null}
 </li>
+)}
 
 <style>
   .pli { display: grid; grid-template-columns: minmax(0, 1fr) 96px; gap: 16px; align-items: start; }

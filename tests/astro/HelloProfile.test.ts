@@ -123,12 +123,25 @@ describe('HelloProfile.astro', () => {
     expect(data).not.toContain('ghost-art');
   });
 
-  it('general version (P2-7): serif greeting, underlined contact links, plain lists without decorative English or ◆', async () => {
+  // DS-4 (named rewrite of the P2-7 test): the greeting opens a v5 section (rail number + chip), the three subheads
+  // are SB Sans (no data-serif), the contact links stay underlined ed-links, the lists stay plain.
+  it('general version (DS-4): rail opener, greeting h2, sans subheads, underlined contact links, plain lists without decorative English or ◆', async () => {
     const html = await renderAstro(HelloProfile, { props: { ...base, variant: 'data', lang: 'ko' } });
     expect(html).toMatch(/<section id="hello" class="hello-ed ed-sec"/);
-    expect(html).toMatch(/<h2 id="hello-title" class="hello-ed__title" data-serif[^>]*>안녕하세요!<\/h2>/);
-    expect(html.match(/<h[34] class="hello-ed__h" data-serif/g)).toHaveLength(3);
+    expect(html).toMatch(/<header class="ed-head ed-sh"[^>]*>\s*<div class="ed-rail"[^>]*><div class="ed-rail__in"[^>]*><span class="ed-rail__n" aria-hidden="true"[^>]*><\/span><p class="ed-label ed-chip"[^>]*>프로필<\/p><\/div><\/div>\s*<h2 id="hello-title" class="ed-head__title"[^>]*>안녕하세요!<\/h2>\s*<\/header>/);
+    expect(html.match(/<h[34] class="hello-ed__h"/g)).toHaveLength(3);
+    expect(html).not.toMatch(/data-serif/);
     expect(html).toMatch(/<a class="ed-link" href="mailto:/);
     expect(html).not.toMatch(/EDUCATION|SKILLS|HIGHLIGHTS|◆|hud-label|hello__chips|ghost-art/);
+  });
+
+  it('DS-4: the photo composition is aria-hidden and sits after the photo, never behind it', async () => {
+    const html = await renderAstro(HelloProfile, { props: { ...base, variant: 'data', lang: 'ko' } });
+    const frame = /<div class="hello-ed__frame"[^>]*>([\s\S]*?)<\/div>/.exec(html)?.[1] ?? '';
+    expect(frame).toMatch(/^<picture[\s\S]*<\/picture><span class="ed-mc ed-mc--photo" aria-hidden="true"/);
+    expect(frame.indexOf('<img')).toBeLessThan(frame.indexOf('ed-mc--photo'));
+    expect(html.match(/ed-mc--photo/g)).toHaveLength(1);
+    const game = await renderAstro(HelloProfile, { props: base });
+    expect(game).not.toMatch(/ed-mc/);
   });
 });

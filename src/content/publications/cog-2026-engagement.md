@@ -87,4 +87,8 @@ card:
 facts:
   window: { ko: 30초, en: 30 seconds }
   matchesShort: { ko: 20.6만 경기, en: 206K matches }
+  # DS-4: the general home's research figure tiles (the abstract's own numbers; tests/unit/facts.test.ts)
+  matches: { ko: "206,442", en: "206,442" }
+  bestAuc: { ko: "0.675", en: "0.675" }
+  neuralRange: { ko: "0.569–0.581", en: "0.569–0.581" }
 ---

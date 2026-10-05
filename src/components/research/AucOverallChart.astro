@@ -107,6 +107,8 @@ const charts = KINDS.map((kind) => {
   return { kind, layout, placed, chanceX: placed.x(CHANCE_AUC), titleId: `${idPrefix}-title-${kind}`, descId: `${idPrefix}-desc-${kind}` };
 });
 const tableCaptionId = `${idPrefix}-table-caption`;
+// DS-4 (v5): in the editorial tone the paper's model sits on a flat black band (the full row, under everything else);
+// the <rect> is written on the <desc> line so the other tones' markup stays byte-identical.
 const summaryId = `${idPrefix}-table-summary`;
 const columns = lang === 'ko' ? ['모델', '입력 표현', 'AUC'] : ['Model', 'Input view', 'AUC'];
 ---
@@ -115,7 +117,7 @@ const columns = lang === 'ko' ? ['모델', '입력 표현', 'AUC'] : ['Model', '
     <Fragment>{index > 0 && ' '}<div class={`chart__scroll chart__scroll--${kind}`} data-table-scroll data-label-id={titleId}>
       <svg class:list={['chart__svg', kind !== 'wide' && `chart__svg--${kind}`]} viewBox={`0 0 ${layout.w} ${placed.h}`} role="img" aria-labelledby={titleId} aria-describedby={descId}>
         <title id={titleId}>{lang === 'ko' ? '모델별 AUC 점 그래프' : 'AUC by model, dot plot'}</title>
-        <desc id={descId}>{alt}</desc>
+        <desc id={descId}>{alt}</desc>{tone === 'editorial' && placed.rows.filter((row) => row.highlight).map((row) => <rect class="chart__band" x="0" y={row.cy - layout.row / 2} width={layout.w} height={layout.row} />)}
         <line class="chart__axis-line" x1={layout.left} x2={layout.right} y1={placed.axisY} y2={placed.axisY} />
         {layout.ticks.map((v) => (
           <g class="chart__tick-group">

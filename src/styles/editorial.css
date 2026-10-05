@@ -288,3 +288,218 @@
   :root[data-variant="data"] .ed-mc { display: none !important; }
   :root[data-variant="data"] .ed-rail__in { position: static; }
 }
+
+/* ══ v5 home (DS-4): hero with the painted job title and stat tiles, the map spread, image cards, research figures and
+   the oral badge, the AUC chart's LightGBM band, the 진행 중 band, dated news rows, the framed profile photo ══ */
+
+/* ── titles that link (cards, the paper, news): ink with the fine underline; the painted band on hover / focus ── */
+:root[data-variant="data"] .ed-card__title a,
+:root[data-variant="data"] .ed-paper__link,
+:root[data-variant="data"] .ed-news__title a {
+  color: var(--ed-link);
+  text-decoration: underline var(--ed-ul) var(--ed-link-line); text-underline-offset: var(--ed-ul-off); text-decoration-skip-ink: auto;
+  -webkit-box-decoration-break: clone; box-decoration-break: clone;
+  background: var(--tex-yh) 0 .8em / 520px .38em repeat-x, linear-gradient(var(--ed-yellow), var(--ed-yellow)) 0 .8em / 100% .38em no-repeat;
+  background-size: 0 0, 0 0;
+}
+:root[data-variant="data"] .ed-paper__link:focus-visible,
+:root[data-variant="data"] .ed-card:has(.hit:focus-visible) .ed-card__title a,
+:root[data-variant="data"] .ed-news__item:has(.hit:focus-visible) .ed-news__title a { background-size: 520px .38em, 100% .38em; text-decoration-thickness: var(--ed-ul-on); }
+@media (hover: hover) {
+  :root[data-variant="data"] .ed-paper__link:hover,
+  :root[data-variant="data"] .ed-card:has(.hit):hover .ed-card__title a,
+  :root[data-variant="data"] .ed-news__item:has(.hit):hover .ed-news__title a { background-size: 520px .38em, 100% .38em; text-decoration-thickness: var(--ed-ul-on); }
+}
+:root[data-variant="data"] .ed-paper__link:active,
+:root[data-variant="data"] .ed-card:has(.hit:active) .ed-card__title a,
+:root[data-variant="data"] .ed-news__item:has(.hit:active) .ed-news__title a { background-size: 520px .38em, 100% .38em; text-decoration-thickness: var(--ed-ul-on); }
+
+/* ── stat tiles (StatTiles): big numbers in SB Display with small captions; DOM order = the sentence's order ── */
+:root[data-variant="data"] .ed-stats { display: flex; flex-wrap: wrap; gap: 1px; margin-top: 26px; background: var(--ed-line); border: 1px solid var(--ed-line); }
+:root[data-variant="data"] .ed-stat { flex: 1 1 auto; min-width: min(100%, 120px); display: flex; flex-direction: column; gap: 4px; padding: 16px 16px 18px; background: var(--ed-n-50); }
+:root[data-variant="data"] .ed-stat__v { font-family: var(--font-ed-display); font-stretch: 112%; font-size: var(--fs-ed-num); font-weight: 900; line-height: 1.05; color: var(--ed-ink); font-variant-numeric: tabular-nums; }
+:root[data-variant="data"] .ed-stat__v small { margin-inline: .12em; font-family: var(--font-sans); font-stretch: normal; font-size: var(--fs-small); font-weight: 700; }
+:root[data-variant="data"] .ed-stat__k { font-size: var(--fs-label); font-weight: 600; line-height: 1.45; color: var(--ed-ink-2); }
+:root[data-variant="data"] .ed-stats--plain .ed-stat,
+:root[data-variant="data"] .ed-stats--band .ed-stat { background: var(--ed-bg); }
+/* the research figures: the headline number on a blue painted field (white text), the others neutral, white gaps */
+:root[data-variant="data"] .ed-stats--plain .ed-stat { padding: 14px 16px 16px; }
+:root[data-variant="data"] .ed-stats--figure { gap: var(--ed-rw); background: none; border: 0; }
+:root[data-variant="data"] .ed-stats--figure > .ed-stat:first-child { flex-grow: 2; background: var(--ed-paint-bh); -webkit-mask-box-image: var(--ed-rag); }
+:root[data-variant="data"] .ed-stats--figure > .ed-stat:first-child :is(.ed-stat__v, .ed-stat__k) { color: var(--ed-on-color); }
+:root[data-variant="data"] .ed-stats__src { margin-top: 8px; font-size: var(--fs-min); font-weight: 600; line-height: 1.5; color: var(--ed-ink-2); }
+
+/* ── hero: label block in the rail; the job title in white on the red field with a yellow cell beside it ── */
+:root[data-variant="data"] .ed-hero { padding-block: 24px 0; background: var(--ed-bg); color: var(--ed-ink); }
+:root[data-variant="data"] .ed-hero__grid { row-gap: 24px; }
+:root[data-variant="data"] .ed-hero__panel { position: relative; z-index: 1; background: var(--ed-bg); }
+:root[data-variant="data"] .ed-hero__mark { display: inline-grid; grid-template-columns: auto auto; gap: var(--ed-rw); max-width: 100%; vertical-align: top; }
+:root[data-variant="data"] .ed-hero__bars { display: flex; flex-direction: column; align-items: flex-start; min-width: 0; padding: .16em .24em .14em .2em; background: var(--ed-paint-rh); -webkit-mask-box-image: var(--ed-rag); color: var(--ed-on-color); font-size: var(--fs-ed-display); line-height: .9; }
+:root[data-variant="data"] .ed-hero__bars span { display: block; }
+:root[data-variant="data"] .ed-hero__name { margin-top: 18px; font-size: var(--fs-ed-h1); font-weight: 800; line-height: 1.1; color: var(--ed-ink); }
+:root[data-variant="data"] .ed-hero .dhero__headline { margin-top: 8px; font-size: var(--fs-sub); font-weight: 700; line-height: var(--lh-sub); }
+:root[data-variant="data"] .ed-hero .dhero__tagline { margin-top: 6px; max-width: 24em; font-size: var(--fs-sub); line-height: 1.5; color: var(--ed-ink-2); }
+:root[data-variant="data"] .ed-cl { display: inline-block; }
+:root[data-variant="data"] .ed-hero__actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 22px; margin-top: 20px; }
+
+/* ── the map spread: the image in a white frame over a neutral tint block (left) and a blue painted field (right,
+      its top-right corner left white with a yellow cell); a "그림 1" tab on the image edge; the caption on white ── */
+:root[data-variant="data"] .ed-spread { --ed-ycw: clamp(24px, 4.2vw, 56px); --ed-ych: clamp(36px, 6vw, 88px); --ed-sft: 64px; position: relative; isolation: isolate; padding: 28px 0 0; border-top: 0; }
+:root[data-variant="data"] .ed-spread::before { content: ""; position: absolute; z-index: -1; left: 0; top: 0; width: 46%; bottom: 40%; background: var(--ed-n-100); }
+:root[data-variant="data"] .ed-spread::after { content: ""; position: absolute; z-index: -1; right: 0; top: var(--ed-sft); width: 58%; bottom: 0;
+  background: linear-gradient(var(--ed-bg), var(--ed-bg)) 100% 0 / calc(var(--ed-ycw) + var(--ed-rw)) calc(var(--ed-ych) + var(--ed-rw)) no-repeat, var(--ed-paint-bv);
+  -webkit-mask-box-image: var(--ed-rag); }
+:root[data-variant="data"] .ed-spread__y { position: absolute; z-index: 0; right: 0; top: var(--ed-sft); width: var(--ed-ycw); height: var(--ed-ych); background: var(--ed-paint-yh); -webkit-mask-box-image: var(--ed-rag); }
+:root[data-variant="data"] .ed-spread__img { position: relative; margin-inline: 16px; padding: 8px; background: var(--ed-bg); border: 1px solid var(--ed-line); }
+:root[data-variant="data"] .ed-spread__tab { position: absolute; left: 24px; bottom: -14px; z-index: 1; }
+:root[data-variant="data"] .ed-spread__cap { position: relative; margin: 26px 0 0 auto; max-width: 30rem; padding: 16px 18px 18px; background: var(--ed-bg); }
+:root[data-variant="data"] .ed-spread__cap .ed-link { white-space: nowrap; }
+
+/* ── image cards (ProjectListItem card / lead): the whole card is the link (.hit stretched), the ring round the card ── */
+:root[data-variant="data"] .ed-cards { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; margin-top: 28px; }
+:root[data-variant="data"] .ed-card { position: relative; isolation: isolate; display: flex; flex-direction: column; min-width: 0; background: var(--ed-bg); border: 1px solid var(--ed-line); }
+:root[data-variant="data"] .ed-card[hidden] { display: none; }
+:root[data-variant="data"] .ed-card::before { content: ""; position: absolute; inset: 0; z-index: -1; background: var(--ed-wash); opacity: 0; transition: opacity var(--dur-hover) linear; pointer-events: none; }
+:root[data-variant="data"] .ed-card .hit { position: static; }
+:root[data-variant="data"] .ed-card .hit::after { z-index: 2; }
+:root[data-variant="data"] .ed-card .hit:focus-visible { outline: none; }
+:root[data-variant="data"] .ed-card:has(.hit:focus-visible) { outline: 2px solid var(--ed-focus); outline-offset: 3px; }
+@media (hover: hover) {
+  :root[data-variant="data"] .ed-card:has(.hit):hover::before { opacity: .7; }
+}
+:root[data-variant="data"] .ed-card:has(.hit:active)::before { opacity: .7; }
+:root[data-variant="data"] .ed-card__img { aspect-ratio: 4 / 3; overflow: hidden; background: var(--ed-n-50); border-bottom: 1px solid var(--ed-line); }
+:root[data-variant="data"] .ed-card__img img { display: block; width: 100%; height: 100%; object-fit: cover; }
+:root[data-variant="data"] .ed-card__img--contain img { object-fit: contain; background: var(--ed-bg); }
+:root[data-variant="data"] .ed-card__img--chart { aspect-ratio: auto; padding: 12px; background: var(--ed-bg); }
+:root[data-variant="data"] .ed-card__body { display: flex; flex-direction: column; gap: 8px; padding: 16px 18px 20px; }
+:root[data-variant="data"] .ed-card__top { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; font-size: var(--fs-label); font-weight: 600; line-height: 1.5; color: var(--ed-ink-2); }
+:root[data-variant="data"] .ed-card__n { font-family: var(--font-ed-display); font-stretch: 112%; font-size: 1.5rem; font-weight: 900; line-height: 1; color: var(--ed-ink); font-variant-numeric: tabular-nums; }
+:root[data-variant="data"] .ed-card__title { font-size: var(--fs-sub); font-weight: 800; line-height: 1.4; color: var(--ed-ink); }
+:root[data-variant="data"] .ed-card__text { font-size: var(--fs-small); line-height: 1.65; }
+:root[data-variant="data"] .ed-card__tags { display: flex; flex-wrap: wrap; gap: 0 4px; }
+:root[data-variant="data"] .ed-card__tags .ed-tag { font-size: var(--fs-label); font-weight: 600; color: var(--ed-ink-2); }
+:root[data-variant="data"] .ed-card__tags li + li::before { content: "/ " / ""; }
+:root[data-variant="data"] .ed-card--plain { background: var(--ed-n-50); }
+
+/* ── research: the figure tiles, the paper with the oral badge beside the chart, the 진행 중 band ── */
+:root[data-variant="data"] .ed-rh__figures { margin-top: 28px; }
+:root[data-variant="data"] .ed-rh__figures .ed-stats { margin-top: 0; }
+:root[data-variant="data"] .ed-rh__grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 36px; margin-top: 28px; }
+:root[data-variant="data"] .ed-paper { position: relative; min-width: 0; }
+:root[data-variant="data"] .ed-paper__venue { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; }
+:root[data-variant="data"] .ed-paper__venue .ed-label { font-family: var(--font-sans); font-style: normal; font-size: var(--fs-label); font-weight: 600; color: var(--ed-ink); }
+:root[data-variant="data"] .ed-paper__venue .ed-stamp { margin-left: auto; margin-right: 6px; }
+:root[data-variant="data"] .ed-paper__title { margin-top: 14px; font-size: var(--fs-sub); font-weight: 700; line-height: 1.4; }
+:root[data-variant="data"] .ed-paper__authors strong { color: var(--ed-ink); }
+/* the award badge (one per view): real text on a red painted field with a yellow cell, a white gap; no rotation */
+:root[data-variant="data"] .ed-stamp { display: inline-block; }
+:root[data-variant="data"] .ed-stamp__ink { position: relative; isolation: isolate; display: inline-block; padding: .55em calc(.9em + 18px) .5em .9em; font-size: var(--fs-body); font-weight: 800; line-height: 1.25; color: var(--ed-on-color); }
+:root[data-variant="data"] .ed-stamp__ink::before { content: ""; position: absolute; z-index: -1; left: 0; top: 0; bottom: 0; right: 18px; background: var(--ed-paint-rh); -webkit-mask-box-image: var(--ed-rag); }
+:root[data-variant="data"] .ed-stamp__ink::after { content: ""; position: absolute; z-index: -1; right: 0; top: 0; bottom: 0; width: 14px; background: var(--ed-paint-yv); -webkit-mask-box-image: var(--ed-rag-s); }
+/* 진행 중: a yellow painted label cell and a neutral text cell, a white gap between */
+:root[data-variant="data"] .ed-now { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: var(--ed-rw); }
+:root[data-variant="data"] .ed-now > p { display: flex; align-items: center; min-width: 0; margin: 0; padding: 12px 16px; background: var(--ed-n-50); }
+:root[data-variant="data"] .ed-now > .ed-now__label { min-width: 5.5em; font-size: var(--fs-label); font-weight: 800; color: var(--ed-ink); background: var(--ed-paint-yv); -webkit-mask-box-image: var(--ed-rag); }
+:root[data-variant="data"] .ed-now > .ed-now__text { font-size: var(--fs-small); }
+/* the AUC dot plot (SVG kept, DV-5): the paper's model on a flat black band with a red mark in a white ring; ticks and
+   values in SB Display; "표로 보기" as a bracket toggle. .chart.chart--editorial outranks the chart's own scoped
+   .chart--editorial rules (this sheet is linked before the inlined component CSS, so a tie would lose). */
+:root[data-variant="data"] .chart.chart--editorial .chart__band { fill: var(--ed-black); }
+:root[data-variant="data"] .chart.chart--editorial .chart__dot { fill: var(--ed-bg); stroke: var(--ed-black); stroke-width: 1.5px; }
+:root[data-variant="data"] .chart.chart--editorial .chart__dot--hl { fill: var(--ed-red); stroke: none; }
+:root[data-variant="data"] .chart.chart--editorial .chart__ring { stroke: var(--ed-on-color); }
+:root[data-variant="data"] .chart.chart--editorial .chart__label--hl,
+:root[data-variant="data"] .chart.chart--editorial .chart__value--hl { fill: var(--ed-on-color); }
+:root[data-variant="data"] .chart.chart--editorial :is(.chart__tick, .chart__value) { font-family: var(--font-ed-display); font-stretch: 112%; }
+:root[data-variant="data"] .chart.chart--editorial .chart__summary { border: 0; padding-inline: 4px; color: var(--ed-ink); font-weight: 700; }
+:root[data-variant="data"] .chart.chart--editorial .chart__summary::before { content: "[" / ""; margin-right: .35em; color: var(--ed-ink-2); }
+:root[data-variant="data"] .chart.chart--editorial .chart__summary::after { content: "]" / ""; margin-left: .35em; color: var(--ed-ink-2); }
+:root[data-variant="data"] .chart.chart--editorial .chart__table[open] .chart__summary { text-decoration: underline var(--ed-ul-on); text-underline-offset: .3em; }
+
+/* ── paper links (PaperLinks, every data page): bracket toggles [ 초록 ] [ BibTeX ] in ink; open = 2px underline;
+      the painted band under the label on hover and focus; the pending note as plain grey text ── */
+:root[data-variant="data"] .pub__links { gap: 0 10px; margin-left: -4px; }
+:root[data-variant="data"] .pub__btn,
+:root[data-variant="data"] .chart.chart--editorial .chart__summary {
+  background: var(--tex-yh) 0 calc(50% + .39em) / 520px .38em repeat-x, linear-gradient(var(--ed-yellow), var(--ed-yellow)) 0 calc(50% + .39em) / 100% .38em no-repeat;
+  background-size: 0 0, 0 0; background-origin: content-box; background-clip: content-box;
+}
+:root[data-variant="data"] .pub__btn { padding: 0 4px; border: 0; color: var(--ed-ink); font-size: var(--fs-meta); font-weight: 700; }
+:root[data-variant="data"] .pub__btn::before { content: "[" / ""; margin-right: .35em; color: var(--ed-ink-2); }
+:root[data-variant="data"] .pub__btn::after { content: "]" / ""; margin-left: .35em; color: var(--ed-ink-2); }
+:root[data-variant="data"] .pub__btn[aria-expanded="true"] { text-decoration: underline var(--ed-ul-on); text-underline-offset: .3em; }
+:root[data-variant="data"] .pub__btn[aria-expanded="true"]::before,
+:root[data-variant="data"] .pub__btn[aria-expanded="true"]::after { color: var(--ed-ink); }
+:root[data-variant="data"] .pub__btn:focus-visible,
+:root[data-variant="data"] .chart.chart--editorial .chart__summary:focus-visible { background-size: 520px .38em, 100% .38em; }
+@media (hover: hover) {
+  :root[data-variant="data"] .pub__btn:hover,
+  :root[data-variant="data"] .chart.chart--editorial .chart__summary:hover { background-size: 520px .38em, 100% .38em; color: var(--ed-ink); }
+}
+:root[data-variant="data"] .pub__btn:active,
+:root[data-variant="data"] .chart.chart--editorial .chart__summary:active { background-size: 520px .38em, 100% .38em; color: var(--ed-ink); }
+:root[data-variant="data"] .pub__pending { padding: 0 6px; border: 0; font-size: var(--fs-min); font-weight: 600; color: var(--ed-ink-2); }
+:root[data-variant="data"] .pub__abstract { background: var(--ed-n-50); border-left: 3px solid var(--ed-black); }
+
+/* ── news: dated rows; the row is the link (stretched), the ring round the row, a wash on hover ── */
+:root[data-variant="data"] .ed-news { margin-top: 24px; }
+:root[data-variant="data"] .ed-news__item { position: relative; isolation: isolate; display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px 24px; padding-block: 18px; border-top: 1px solid var(--ed-line); }
+:root[data-variant="data"] .ed-news__item:last-child { border-bottom: 1px solid var(--ed-line); }
+:root[data-variant="data"] .ed-news__item::before { content: ""; position: absolute; inset: 0; z-index: -1; background: var(--ed-wash); opacity: 0; transition: opacity var(--dur-hover) linear; pointer-events: none; }
+:root[data-variant="data"] .ed-news__item .hit { position: static; }
+:root[data-variant="data"] .ed-news__item .hit:focus-visible { outline: none; }
+:root[data-variant="data"] .ed-news__item:has(.hit:focus-visible) { outline: 2px solid var(--ed-focus); outline-offset: 3px; }
+@media (hover: hover) {
+  :root[data-variant="data"] .ed-news__item:has(.hit):hover::before { opacity: .7; }
+}
+:root[data-variant="data"] .ed-news__item:has(.hit:active)::before { opacity: .7; }
+:root[data-variant="data"] .ed-news__date { display: flex; flex-wrap: wrap; gap: 0 8px; padding-top: 4px; font-size: var(--fs-label); font-weight: 600; line-height: 1.5; color: var(--ed-ink-2); }
+:root[data-variant="data"] .ed-news__date time { font-family: var(--font-ed-display); font-weight: 800; color: var(--ed-ink); font-variant-numeric: tabular-nums; }
+:root[data-variant="data"] .ed-news__title { font-size: var(--fs-sub); font-weight: 800; line-height: 1.4; }
+:root[data-variant="data"] .ed-news__body { margin-top: 4px; max-width: var(--measure); }
+
+/* ── profile: the photo in a white frame, the painted composition directly below it; facts lists over an ink rule ── */
+:root[data-variant="data"] .ed-hello { display: grid; grid-template-columns: minmax(0, 1fr); gap: 28px; margin-top: 28px; }
+:root[data-variant="data"] .ed-hello > * { min-width: 0; }
+:root[data-variant="data"] .hello-ed__frame { width: 160px; }
+:root[data-variant="data"] .hello-ed__frame img { display: block; width: 100%; height: auto; aspect-ratio: 3 / 4; object-fit: cover; padding: 6px; background: var(--ed-bg); border: 2px solid var(--ed-black); }
+:root[data-variant="data"] .hello-ed__facts .hello-ed__h { font-size: var(--fs-body); font-weight: 800; }
+:root[data-variant="data"] .hello-ed__facts .hello-ed__list { gap: 0; border-top: 2px solid var(--ed-ink); }
+:root[data-variant="data"] .hello-ed__list li { padding: 6px 0; font-size: var(--fs-small); line-height: 1.6; border-bottom: 1px solid var(--ed-line); }
+
+@media (min-width: 560px) {
+  :root[data-variant="data"] .ed-cards--tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (min-width: 734px) {
+  :root[data-variant="data"] .ed-cards { gap: 24px; }
+  :root[data-variant="data"] .ed-hero__grid > .ed-tblock { grid-column: 1 / 4; grid-row: 1; min-height: 180px; }
+  :root[data-variant="data"] .ed-hero__grid > .ed-hero__panel { grid-column: 4 / -1; grid-row: 1; }
+  :root[data-variant="data"] .ed-spread { padding-top: 40px; }
+  :root[data-variant="data"] .ed-spread__img { margin-inline: 8% 10%; padding: 10px; }
+  :root[data-variant="data"] .ed-spread__cap { margin-right: 6%; margin-top: 30px; }
+  :root[data-variant="data"] .ed-news__item { grid-template-columns: 10.5em minmax(0, 1fr); }
+  :root[data-variant="data"] .ed-hello { grid-template-columns: 180px minmax(0, 1fr); }
+  :root[data-variant="data"] .hello-ed__frame { width: 180px; }
+  :root[data-variant="data"] .ed-hello > .hello-ed__facts { grid-column: 2; }
+}
+@media (min-width: 1068px) {
+  :root[data-variant="data"] .ed-cards { gap: 32px; }
+  :root[data-variant="data"] .ed-cards--tiles { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  :root[data-variant="data"] .ed-hero__grid > .ed-hero__panel { grid-column: 4 / 11; }
+  /* the spread rises under the stat tiles; its image is narrower than on tablets so the first project card stays within
+     two screens at 1280 × 720 in both languages (success criterion 1; English tiles wrap to two rows) */
+  :root[data-variant="data"] .ed-hero .ed-spread { --ed-sft: 0px; margin-top: -96px; padding-top: 112px; }
+  :root[data-variant="data"] .ed-hero .ed-spread__img { margin-inline: 15% 17%; }
+  :root[data-variant="data"] .ed-hero .ed-spread__cap { margin-top: 18px; }
+  :root[data-variant="data"] .ed-rh__grid { grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); column-gap: 40px; }
+  :root[data-variant="data"] .ed-rh__grid > .ed-now { grid-column: 1 / -1; }
+  :root[data-variant="data"] .ed-hello { grid-template-columns: 190px minmax(0, 1.2fr) minmax(0, 1fr); column-gap: 32px; }
+  :root[data-variant="data"] .hello-ed__frame { width: 190px; }
+  :root[data-variant="data"] .ed-hello > .hello-ed__facts { grid-column: 3; }
+}
+@media print {
+  :root[data-variant="data"] .ed-spread::before,
+  :root[data-variant="data"] .ed-spread::after,
+  :root[data-variant="data"] .ed-spread__y { display: none !important; }
+}

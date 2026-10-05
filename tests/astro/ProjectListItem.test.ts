@@ -27,4 +27,21 @@ describe('ProjectListItem.astro (P2-6)', () => {
     expect(html).not.toContain('<a ');
     expect(html).toMatch(/<p class="ed-body"[^>]*>한 줄 요약입니다\.<\/p>/);
   });
+
+  it('DS-4: the card variant — image, aria-hidden card number, tools line, title link (stretched), tags; data-tags kept', async () => {
+    const html = await renderAstro(ProjectListItem, { props: { ...base, href: '/data/projects/school-zone-blindspots/', cover, variant: 'card', n: 1 } });
+    expect(html).toMatch(/^<li class="ed-card"[^>]*data-tags="geospatial ml"/);
+    expect(html).toMatch(/<div class="ed-card__img"[^>]*>\s*<picture/);
+    const img = /<img\b[^>]*>/.exec(html)?.[0] ?? '';
+    expect(img).toMatch(/\salt(="")?[\s>]/);
+    expect(img).toMatch(/\swidth="\d+"[\s\S]*\sheight="\d+"/);
+    expect(html).toMatch(/<p class="ed-card__top"[^>]*><span class="ed-card__n" aria-hidden="true"[^>]*>01<\/span><span[^>]*>Python · QGIS<\/span><\/p>/);
+    expect(html).toMatch(/<h3 class="ed-card__title"[^>]*><a class="hit" href="\/data\/projects\/school-zone-blindspots\/"[^>]*>사각지대를 예측하다<\/a><\/h3>/);
+    expect(html.match(/<li class="ed-tag"/g)).toHaveLength(2);
+    expect(html).not.toMatch(/data-serif|pli__|fetchpriority="high"/);
+    const plain = await renderAstro(ProjectListItem, { props: { ...base, summary: '한 줄 요약입니다.', variant: 'card', n: 4 } });
+    expect(plain).toMatch(/^<li class="ed-card ed-card--plain"/);
+    expect(plain).toMatch(/<h3 class="ed-card__title"[^>]*>사각지대를 예측하다<\/h3>\s*<p class="ed-card__text"[^>]*>한 줄 요약입니다\.<\/p>/);
+    expect(plain).not.toMatch(/<a |ed-card__img/);
+  });
 });

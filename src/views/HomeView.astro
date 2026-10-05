@@ -3,7 +3,8 @@
 // All copy hrefs are base form and built here with pageHref for the version; resume.yaml is the single source of name and
 // education, the version identity (src/variants/*.ts) of tagline, status and about (site = PDFs).
 // P2-7: the general version (spec §10.2) has DataHero (the heatmap as 그림 1) instead of the HUD hero, no MAIN MENU, the
-// featured projects, the research highlight (its chart as 그림 2), NewsList instead of PATCH NOTES, and the profile.
+// featured projects, the research highlight (its chart as 그림 2), NewsList instead of PATCH NOTES, and the profile;
+// DS-4: a perforation folio between its sections.
 import type { PageLayout } from '../layouts/page-layout';
 import Hero from '../components/hud/Hero.astro';
 import MainMenu from '../components/hud/MainMenu.astro';
@@ -13,6 +14,7 @@ import PatchNotes from '../components/home/PatchNotes.astro';
 import HelloProfile from '../components/home/HelloProfile.astro';
 import DataHero from '../components/data/DataHero.astro';
 import NewsList from '../components/data/NewsList.astro';
+import Folio from '../components/data/Folio.astro';
 import type { Lang } from '../i18n/ui';
 import { t } from '../i18n/utils';
 import { homeHref, pageHref } from '../lib/links';
@@ -107,9 +109,9 @@ const location = lang === 'ko' ? `${profile.location.ko} · ${profile.location.e
       caption={captionFor(v, 'heroLabel', lang)}
       name={person.name[lang]}
       headline={identity.headline}
+      display={resolveIdentity(v, 'en', facts).headline}
       tagline={identity.tagline}
-      status={identity.status}
-      evidence={dataHome.evidence}
+      stats={dataHome.heroStats}
       projects={{ label: dataHome.cta.projects.label, href: pageHref(dataHome.cta.projects.href, ctx) }}
       cv={{ label: dataHome.cta.cv.label, href: DOCUMENTS[v.documents.resume[lang]], docLabel: t(lang, 'nav.cvResume') }}
       figure={{ src: heroCover.src, alt: heroCover.alt, caption: dataHome.heroFigure.caption, href: pageHref(dataHome.heroFigure.href, ctx), linkLabel: t(lang, 'action.viewProject'), projectTitle: heroTitle }}
@@ -140,6 +142,7 @@ const location = lang === 'ko' ? `${profile.location.ko} · ${profile.location.e
       playerCard={{ ...hero.playerCard, classLine: lang === 'ko' ? identity.headline : resolveIdentity(v, 'en', facts).headline.toUpperCase() }}
     />
   )}
+  {editorial && <div class="container"><Folio /></div>}
   {on('mainMenu') && (
     <MainMenu
       lang={lang}
@@ -149,8 +152,21 @@ const location = lang === 'ko' ? `${profile.location.ko} · ${profile.location.e
     />
   )}
   <CartridgeSection lang={lang} variant={variant} cartridges={featured} moreHref={pageHref(BASE_PATH.projects, ctx)} moreLabel={editorial ? dataHome.moreProjects : home.moreProjects} />
-  <ResearchHighlight lang={lang} variant={variant} paper={paper} nowPlaying={home.researchNowPlaying} figureLabel={hero.artifact.label} intro={editorial ? dataHome.researchSentence : undefined} figureNumber={editorial ? 2 : undefined} />
+  {editorial && <div class="container"><Folio /></div>}
+  <ResearchHighlight
+    lang={lang}
+    variant={variant}
+    paper={paper}
+    nowPlaying={home.researchNowPlaying}
+    figureLabel={hero.artifact.label}
+    intro={editorial ? dataHome.researchSentence : undefined}
+    figureNumber={editorial ? 2 : undefined}
+    stats={editorial ? dataHome.researchStats : undefined}
+    statsSource={editorial ? t(lang, 'research.aucSource') : undefined}
+  />
+  {editorial && <div class="container"><Folio /></div>}
   {editorial ? <NewsList lang={lang} notes={notes} /> : <PatchNotes lang={lang} variant={variant} notes={notes} />}
+  {editorial && <div class="container"><Folio /></div>}
   <HelloProfile
     lang={lang}
     variant={variant}

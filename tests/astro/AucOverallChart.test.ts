@@ -301,4 +301,30 @@ describe('final fix 2', () => {
       expect(block, file).toMatch(/stroke: GrayText/);
     }
   });
+
+  it('DS-4: editorial chart draws the LightGBM band and keeps the ring, the table and the three layouts', async () => {
+    const props = { lang: 'ko', rows: overallAuc, caption: figureCopy.aucOverall.caption.ko, alt: figureCopy.aucOverall.alt.ko };
+    const ed = await renderAstro(AucOverallChart, { props: { ...props, tone: 'editorial', figureNumber: 2 } });
+    for (const name of LAYOUTS) {
+      const part = layoutOf(ed, name);
+      const bands = openTags(part, 'rect', 'chart__band');
+      expect(bands, `${name}: one band`).toHaveLength(1);
+      const dot = openTags(part, 'circle', 'chart__dot--hl')[0] ?? '';
+      const band = bands[0] ?? '';
+      const y = Number(attr(band, 'y'));
+      const h = Number(attr(band, 'height'));
+      // the band is the LightGBM row (round its dot, the full chart width) and is drawn under it
+      expect(Number(attr(dot, 'cy')), name).toBeGreaterThan(y);
+      expect(Number(attr(dot, 'cy')), name).toBeLessThan(y + h);
+      expect([attr(band, 'x'), attr(band, 'width')], name).toEqual(['0', String(viewBoxWidth(part))]);
+      expect(part.indexOf('chart__band'), name).toBeLessThan(part.indexOf('chart__dot--hl'));
+      expect(openTags(part, 'circle', 'chart__ring'), `${name}: the ring stays`).toHaveLength(1);
+    }
+    expect(ed).toMatch(/<details class="chart__table"/);
+    // the read and hud tones draw no band
+    for (const tone of ['read', 'hud'] as const) expect(await render('ko', tone)).not.toMatch(/chart__band/);
+    const css = readSource('src/styles/editorial.css');
+    expect(css).toMatch(/\.chart\.chart--editorial \.chart__band \{[^}]*fill: var\(--ed-black\)/);
+    expect(css).toMatch(/\.chart\.chart--editorial \.chart__dot--hl \{[^}]*fill: var\(--ed-red\)/);
+  });
 });
