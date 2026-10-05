@@ -1,6 +1,7 @@
 // Numbers and figure copy for the CoG 2026 AUC charts. The CoG page itself shows the abstract only since D-15;
 // overallAuc / figureCopy.aucOverall feed the hero artefact and the research highlight (AucOverallChart); the
-// cartridge AucLabel no longer renders since P1-8 (the CoG card shows the KDE figure). Keep them in sync.
+// cartridge AucLabel no longer renders since P1-8 (the CoG card shows the paper's Fig. 1,
+// owner decision 2026-10-05: Fig. 1 is the cover (reverses F-045)). Keep them in sync.
 // All AUCs: held-out test on patch 15.16, mean of three seeds (paper/result.tex).
 
 export const CHANCE_AUC = 0.5;
@@ -46,8 +47,8 @@ export const figureCopy: Readonly<Record<'aucOverall' | 'killGap' | 'labelHorizo
       en: 'Density curve of inter-kill intervals with peaks at 5.72 and 62.73 seconds and a valley at 13.72 seconds. The band from 10 to 18 seconds is shaded.',
     },
   },
-  // label-horizon.webp = the paper's Fig. 1 (its alt texts were the publication thumbnail's until P1-8; the thumbnail
-  // is now kill-gap-kde.webp with the killGap alt, P-01/F-045).
+  // label-horizon.webp = the paper's Fig. 1, the publication thumbnail again: its alt texts are the thumbnail's alt/altKo
+  // in cog-2026-engagement.md, verbatim (owner decision 2026-10-05: Fig. 1 is the cover (reverses F-045)).
   labelHorizon: {
     caption: {
       ko: 'CoG 2026 논문 그림 1: 교전 구간을 찾는 과정과 예측 설정입니다.',

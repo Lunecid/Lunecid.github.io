@@ -76,10 +76,12 @@ abstractKo: >-
   관측되지 않는다.
 # paper/abstract.tex의 IEEEkeywords 블록 그대로(논문 페이지의 "Index Terms—").
 keywords: ["League of Legends", "esports analytics", "engagement-outcome prediction", "public game telemetry"]
+# owner decision 2026-10-05: Fig. 1 is the cover (reverses F-045). alt/altKo = figureCopy.labelHorizon.alt
+# (src/data/research/cog-2026.ts), verbatim.
 thumbnail:
-  src: "../../assets/research/cog-2026/kill-gap-kde.webp"
-  alt: "Density curve of inter-kill intervals with peaks at 5.72 and 62.73 seconds and a valley at 13.72 seconds. The band from 10 to 18 seconds is shaded."
-  altKo: "킬 간격 분포 곡선. 5.72초와 62.73초에 두 봉우리가 있고 그 사이 13.72초에 골짜기가 있습니다. 10초에서 18초 사이가 음영으로 표시되어 있습니다."
+  src: "../../assets/research/cog-2026/label-horizon.webp"
+  alt: "Figure 1 of the paper. Top: champion-kill events and 60-second timeline frames pass through temporal clustering, spatial validation, and merging to produce a localized engagement. Bottom: the model observes six 5-second bins before onset and a label window of events decides whether the blue or red side gained."
+  altKo: "논문 그림 1. 위: 킬 사건과 60초 타임라인 프레임이 시간 군집화, 공간 검증, 병합을 거쳐 하나의 교전이 됩니다. 아래: 교전 시작 전 5초 구간 6개를 관측하고, 라벨 창의 사건으로 블루 팀과 레드 팀 중 어느 쪽이 이득을 봤는지 정합니다."
 highlight: true
 card:
   tags: [ml, collection]

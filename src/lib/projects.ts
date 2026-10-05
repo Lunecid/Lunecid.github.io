@@ -27,7 +27,7 @@ export interface CartridgeProps {
    */
   plate?: { id: string; period: string; tag?: string };
   /** Fix round 1: the paper's AUC result drawn as the label (AucLabel.astro). No builder sets it since P1-8 (the CoG
-   *  card shows the KDE figure as its cover, P-01/F-045). */
+   *  card shows the paper's Fig. 1 as its cover, owner decision 2026-10-05: Fig. 1 is the cover (reverses F-045)). */
   chart?: { kind: 'auc-overall'; lang: Lang };
   sticker?: { text: string; sr?: string; kind: 'oral' | 'award' };
   wide?: boolean;

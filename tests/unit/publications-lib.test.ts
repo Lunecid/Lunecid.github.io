@@ -4,6 +4,7 @@ import { z } from 'astro/zod';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { publicationSchema } from '../../src/content/schemas';
+import { figureCopy } from '../../src/data/research/cog-2026';
 import { tagLabel } from '../../src/content/tags';
 import { bibtexField, toPaperCard, toPaperCartridge, toPaperPage } from '../../src/lib/publications';
 import { readFrontmatter } from '../content/helpers';
@@ -139,7 +140,10 @@ describe('toPaperCartridge', () => {
     expect(toPaperCartridge(entry({ format: 'Poster' }), 'ko', null)).not.toHaveProperty('sticker');
     expect(toPaperCartridge(entry(), 'ko', null)).not.toHaveProperty('href');
     expect(() => toPaperCartridge(entry({ card: undefined }), 'ko', '/x/')).toThrow(/has no card/);
-    // P-01/F-045 (owner decision 11): the cover is the publication thumbnail, the KDE figure, never a manuscript crop
-    expect(parsed.thumbnail.src).toBe('../../assets/research/cog-2026/kill-gap-kde.webp');
+    // Owner decision 2026-10-05: Fig. 1 is the cover (reverses F-045). The cover is the publication thumbnail, the
+    // paper's Fig. 1 (label-horizon), with the approved Fig. 1 alt texts (figureCopy.labelHorizon), never a manuscript crop
+    expect(parsed.thumbnail.src).toBe('../../assets/research/cog-2026/label-horizon.webp');
+    expect(parsed.thumbnail.alt).toBe(figureCopy.labelHorizon.alt.en);
+    expect(parsed.thumbnail.altKo).toBe(figureCopy.labelHorizon.alt.ko);
   });
 });

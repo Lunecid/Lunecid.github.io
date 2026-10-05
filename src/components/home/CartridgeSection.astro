@@ -20,7 +20,8 @@ interface Props {
 
 const { lang, variant, cartridges, moreHref, moreLabel } = Astro.props;
 // Final fix 2 item 13: on a 2560x1440 screen the first image card is the home page's LCP element, so it loads eagerly
-// (since P1-8 that is the CoG card's KDE figure, P-01/F-045; it loads eagerly at low priority on home).
+// (the CoG card's Fig. 1, owner decision 2026-10-05: Fig. 1 is the cover (reverses F-045);
+// it loads eagerly at low priority on home).
 const firstImage = cartridges.findIndex((cartridge) => cartridge.cover !== undefined);
 ---
 

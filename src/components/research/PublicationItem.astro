@@ -68,7 +68,9 @@ const gloss = lang === 'ko' ? paper.titleGloss : null;
     max-width: 320px;
     height: auto;
     aspect-ratio: 16 / 9;
-    object-fit: cover;
+    /* The CoG thumbnail is the paper's Fig. 1 (owner decision 2026-10-05: Fig. 1 is the cover (reverses F-045)), a
+       1600x873 diagram with text: contained, so a 16:9 box never cuts its outer boxes off. */
+    object-fit: contain;
     border: 1px solid var(--read-line);
     background: var(--read-card);
   }

@@ -111,7 +111,8 @@ export function toPaperPage(entry: CollectionEntry<'publications'>, lang: Lang):
 
 /**
  * The CoG card on home and /projects/ (A-16; views built it by hand from src/data/copy/home.ts until P1-7b): title =
- * shortTitle, meta = the card's tool line, tags = card.tags, the thumbnail as a contained cover (the KDE figure, P-01/F-045),
+ * shortTitle, meta = the card's tool line, tags = card.tags, the thumbnail as a contained cover (the paper's Fig. 1,
+ * owner decision 2026-10-05: Fig. 1 is the cover (reverses F-045)),
  * an ORAL sticker for an oral paper.
  */
 export function toPaperCartridge(entry: CollectionEntry<'publications'>, lang: Lang, href: string | null): CartridgeProps {

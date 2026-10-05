@@ -156,6 +156,12 @@ describe('PublicationItem.astro', () => {
     expect(compact).toContain('pub__title');
   });
 
+  it('owner decision 2026-10-05 (Fig. 1 is the cover, reverses F-045): the thumbnail is contained in its 16:9 box, never cropped', () => {
+    const src = readSource('src/components/research/PublicationItem.astro');
+    expect(src).toMatch(/\.pub__media :global\(img\) \{[^}]*aspect-ratio: 16 \/ 9;[^}]*object-fit: contain;/);
+    expect(src).not.toMatch(/\.pub__media :global\(img\) \{[^}]*object-fit: cover;/);
+  });
+
   it('links the paper page only when href is set', async () => {
     const html = await render({ lang: 'ko', paper: ko });
     expect(html.match(/href="\/game\/research\/cog-2026-engagement\/"/g)).toHaveLength(2); // title + 논문 페이지 button

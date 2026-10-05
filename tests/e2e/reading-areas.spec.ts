@@ -184,21 +184,21 @@ test.describe('P1-6 / P2-23: cartridge labels and stickers', () => {
     });
   }
 
-  test('the chart labels (youth start-up, CoG KDE figure) are drawn whole (contain), never cropped', async ({ page }) => {
+  test('the chart labels (youth start-up, CoG paper Fig. 1) are drawn whole (contain), never cropped', async ({ page }) => {
     await openAt(page, '/game/projects/', 1440);
     const fits = await page.locator('img.cart__img--contain').evaluateAll((els) => els.map((el) => getComputedStyle(el).objectFit));
     expect(fits).toEqual(['contain', 'contain']);
   });
 
-  // P1-8 (F-045, owner decision 11 and the 2026-09-29 answer): the CoG label on home and /projects/ is the paper's
-  // KDE figure (kill-gap-kde), shown whole as a contained cover; the inline AUC chart is gone from the card.
+  // Owner decision 2026-10-05: Fig. 1 is the cover (reverses F-045). The CoG label on home and /projects/ is the paper's
+  // Fig. 1 (label-horizon), shown whole as a contained cover; the inline AUC chart is gone from the card (P1-8).
   for (const [route, width] of [['/game/', 320], ['/game/', 375], ['/en/game/', 768], ['/game/', 1068], ['/game/projects/', 1440], ['/en/game/projects/', 1920]] as const) {
-    test(`${route} ${width}px: the CoG label is the KDE figure: one visible image, whole in its label, no inline chart`, async ({ page }) => {
+    test(`${route} ${width}px: the CoG label is the paper Fig. 1: one visible image, whole in its label, no inline chart`, async ({ page }) => {
       await openAt(page, route, width);
       const cart = page.locator('.cart--wide').first();
       const img = cart.locator('img.cart__img').filter({ visible: true });
       await expect(img).toHaveCount(1);
-      await expect(img).toHaveAttribute('src', /kill-gap-kde/);
+      await expect(img).toHaveAttribute('src', /label-horizon/);
       await expect(cart.locator('.auc-label svg')).toHaveCount(0);
       const [i, label] = await Promise.all([box(img), box(cart.locator('.cart__label'))]);
       expect(i.x).toBeGreaterThanOrEqual(label.x - 0.5);
@@ -207,6 +207,16 @@ test.describe('P1-6 / P2-23: cartridge labels and stickers', () => {
       expect(i.y + i.height).toBeLessThanOrEqual(label.y + label.height + 0.5);
       // the figure is loaded and drawn whole (contain), not cropped
       expect(await img.evaluate((el) => (el as HTMLImageElement).naturalWidth > 0 && getComputedStyle(el).objectFit === 'contain')).toBe(true);
+      // Fig. 1 is a diagram with text: the srcset candidate the browser picked is never upscaled into the label
+      const fill = await img.evaluate((el) => {
+        const im = el as HTMLImageElement;
+        const cs = getComputedStyle(im);
+        const inner = im.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+        const innerH = im.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom);
+        const drawn = Math.min(inner, innerH * (im.naturalWidth / im.naturalHeight)); // contain: the width actually drawn
+        return { natural: im.naturalWidth, needed: drawn * devicePixelRatio };
+      });
+      expect(fill.natural).toBeGreaterThanOrEqual(Math.floor(fill.needed));
     });
   }
 });

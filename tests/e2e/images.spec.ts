@@ -2,9 +2,10 @@ import type { Page } from '@playwright/test';
 import { test, expect } from './helpers';
 
 // Batch 2 (DIAGNOSIS P2-39): LCP images load eagerly with high priority, everything below the fold stays lazy.
-// P1-8 (P-01/F-045, owner decision 11): the CoG cartridge on / shows the KDE figure (kill-gap-kde) as its cover instead
-// of the inline AUC chart; the research highlight keeps its inline AUC chart, so no research figure other than
-// kill-gap-kde (e.g. label-horizon) is fetched on / at any size.
+// Owner decision 2026-10-05: Fig. 1 is the cover (reverses F-045). The CoG cartridge on / shows the paper's Fig. 1
+// (label-horizon) as its cover instead of the inline AUC chart; the research highlight keeps its inline AUC chart, so no
+// research figure other than label-horizon (e.g. the kill-gap KDE of the /research/ interest row) is fetched on / at any
+// size.
 
 async function scrollThrough(page: Page): Promise<void> {
   await page.evaluate(async () => {
@@ -24,17 +25,17 @@ for (const device of [
   test.describe(`${device.name}`, () => {
     test.use({ viewport: device.viewport, deviceScaleFactor: device.deviceScaleFactor });
 
-    test('/game/ shows the KDE figure as the CoG cartridge cover: no other research figure image is fetched', async ({ page }) => {
+    test('/game/ shows the paper Fig. 1 as the CoG cartridge cover: no other research figure image is fetched', async ({ page }) => {
       const urls: string[] = [];
       page.on('request', (request) => {
         const figure = /\/_astro\/(label-horizon|kill-gap-kde)\./.exec(request.url());
-        if (figure && figure[1] !== 'kill-gap-kde') urls.push(request.url());
+        if (figure && figure[1] !== 'label-horizon') urls.push(request.url());
       });
       await page.goto('/game/', { waitUntil: 'networkidle' });
       await scrollThrough(page);
       expect(urls, urls.join('\n')).toEqual([]);
-      // one visible cover img whose src is the KDE figure, in a CoG cartridge that holds no inline .auc-label svg
-      await expect(page.locator('#featured-projects .cart--wide:not(:has(.auc-label svg)) img[src*="kill-gap-kde"]').filter({ visible: true })).toHaveCount(1);
+      // one visible cover img whose src is Fig. 1, in a CoG cartridge that holds no inline .auc-label svg
+      await expect(page.locator('#featured-projects .cart--wide:not(:has(.auc-label svg)) img[src*="label-horizon"]').filter({ visible: true })).toHaveCount(1);
     });
   });
 }
