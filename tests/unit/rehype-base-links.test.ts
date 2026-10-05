@@ -1,5 +1,6 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import { join, relative, sep } from 'node:path';
+import { pathToFileURL } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import rehypeBaseLinks, { baseLinksHastPlugin, langOfFile, markdownHref } from '../../scripts/markdown/rehype-base-links.mjs';
 
@@ -50,9 +51,10 @@ describe('rehypeBaseLinks', () => {
 });
 
 describe('baseLinksHastPlugin (Sätteri, the processor astro.config.mjs uses)', () => {
+  // The URL is built as Astro builds it (pathToFileURL of the entry path), so on Windows it carries a drive letter.
   const ctxFor = (path: string) => {
     const set: [unknown, string, unknown][] = [];
-    return { set, ctx: { fileURL: new URL(`file://${path}`), setProperty: (node: unknown, key: string, value: unknown) => set.push([node, key, value]) } };
+    return { set, ctx: { fileURL: pathToFileURL(path), setProperty: (node: unknown, key: string, value: unknown) => set.push([node, key, value]) } };
   };
 
   it('visits <a> only and rewrites a shared-page href in the language of the entry folder', () => {
