@@ -1,10 +1,11 @@
 import { test, expect, basePathOf, builtRoutes, dataPath, horizontalOverflow, settle } from './helpers';
 
-const NAVY = 'rgb(30, 58, 138)';
+// DS-2 (named change): the focus ring takes --ed-focus (v5.1: ink), no longer the P2 navy.
+const INK = 'rgb(20, 20, 20)';
 
 test.describe('general pages use the editorial layout (P2-2)', () => {
   for (const route of [dataPath('/'), dataPath('/records/', 'en')]) {
-    test(`${route}: light scheme, white body, navy focus ring, ink skip link, no mono file`, async ({ page }) => {
+    test(`${route}: light scheme, white body, ink focus ring, ink skip link, no mono file`, async ({ page }) => {
       const fonts: string[] = [];
       page.on('request', (req) => { if (req.url().includes('/_astro/') && req.url().endsWith('.woff2')) fonts.push(req.url()); });
       await page.goto(route, { waitUntil: 'networkidle' });
@@ -17,7 +18,7 @@ test.describe('general pages use the editorial layout (P2-2)', () => {
       await expect(skip).toBeFocused();
       expect(await skip.evaluate((el) => getComputedStyle(el).backgroundColor)).toBe('rgb(20, 20, 20)');
       await page.keyboard.press('Tab');
-      expect(await page.evaluate(() => getComputedStyle(document.activeElement as Element).outlineColor)).toBe(NAVY);
+      expect(await page.evaluate(() => getComputedStyle(document.activeElement as Element).outlineColor)).toBe(INK);
       expect(fonts.filter((url) => url.includes('jetbrains-mono'))).toEqual([]);
       // P1-9b root marker (binding, contract §1.8); AchievementHost and BgmToggle are .astro after P1-9b.
       await expect(page.locator('.crt, .bgm, [data-achievement-host], .ach-toast, .hud-nav')).toHaveCount(0);

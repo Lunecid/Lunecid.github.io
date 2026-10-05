@@ -69,7 +69,7 @@
   --ed-muted: #6B6B6B;          /*  5.3:1 on --ed-bg: secondary text */
   --ed-rule: #E5E5E5;           /* thin rules */
   --ed-rule-strong: var(--ed-ink);
-  --ed-accent: #1E3A8A;         /* 10.4:1 on --ed-bg: links and focus only (B-14); the one chart accent (§8) */
+  --ed-accent: #1E3A8A;         /* 10.4:1 on --ed-bg: the neutral pages' links and focus (B-14, --nt-accent); the one chart accent (§8). Data pages link with --ed-link (DS-2, v5.1) */
   --ed-fill: var(--ed-ink);
   --ed-fill-ink: #FFFFFF;
   --ed-rule-w: 1px;
@@ -81,6 +81,28 @@
   /* DS-1: Latin display words, numerals, section numbers and folios of the general version in "SB Display" (the
      build-time Archivo subset, width 112 %, weight 700–900; src/lib/fonts.ts); Hangul inside them falls to SB Sans. */
   --font-ed-display: "SB Display", var(--font-sans);
+  /* ── v5 (DS-2): hand-brushed Mondrian accents and museum-style ink links (v5.1). Pigments are paint only (fields,
+     the award badge, the best-model mark), never a link or control colour; text sits on them only where the v5
+     prototype puts it (white on red ≥ 4.5 at the lightest brush streak: scripts/paint/paint.mjs worstContrast). ── */
+  --ed-red: #CC281C;            /* the large field; award badge; best-model mark · white 5.40 flat */
+  --ed-blue: #1F3A93;           /* secondary field; research headline figure · white 10.07 */
+  --ed-yellow: #F5C400;         /* the small cell; 진행 중, 내 역할, pending note · ink 11.21 */
+  --ed-black: #111111;          /* chips, folios, list numbers, chart and metric bands · white 18.9 */
+  --ed-ink-2: var(--paper-muted); /* #4A4A4A: secondary text on data pages · 8.86 white, 7.6 on --ed-n-100 */
+  --ed-n-50: #F6F6F4;           /* zebra rows, footer bar, sidebar */
+  --ed-n-100: #EEEEEB;          /* label blocks, tinted bands */
+  --ed-line: #D6D6D1;           /* 1px gridlines (decoration) */
+  --ed-perf: rgba(20, 20, 20, .38); /* perforation dashes (decoration) */
+  --ed-wash: #F2F1EC;           /* hover wash only (v5.1, warm neutral) · ink 16.3 */
+  --ed-on-color: #FFFFFF;       /* text on red / blue / black */
+  --ed-link: var(--ed-ink);     /* v5.1: clickable text is ink (museum label), 18.1 on white */
+  --ed-link-line: var(--ed-ink); /* its underline */
+  --ed-link-hover: var(--ed-ink); /* hover keeps the ink; a yellow brush stroke marks it (editorial.css) */
+  --ed-focus: var(--ed-ink);    /* focus ring, 2px, 3px offset */
+  --ed-ul: 1px;                 /* link underline at rest */
+  --ed-ul-on: 2px;              /* … on hover and focus */
+  --ed-ul-off: .16em;           /* its distance below the baseline */
+  --ed-rw: 5px;                 /* white gap between painted fields (6px from 734, 8px from 1068) */
 
   /* ── neutral (chooser, shared pages, 404; §7): aliases of the editorial palette ── */
   --nt-bg: var(--ed-bg);
@@ -136,6 +158,12 @@
   --fs-caption: .8125rem;    /* 13px */
   --fs-label: .8125rem;      /* 13px */
   --fs-min: .75rem;          /* 12px; absolute minimum, only for exceptional micro-text */
+  /* the general version (DS-2): Latin display words, Korean h1, h2, big numbers; rem steps from the v5 prototype's
+     clamp() sizes at 375 / 768 / 1280 / 1600 px */
+  --fs-ed-display: 2.25rem;  /* 36px */
+  --fs-ed-h1: 2.25rem;       /* 36px */
+  --fs-ed-h2: 1.625rem;      /* 26px */
+  --fs-ed-num: 1.75rem;      /* 28px */
   --lh-display: 1.2;
   --lh-h2: 1.3;
   --lh-sub: 1.4;
@@ -163,6 +191,10 @@
   /* the achievement toast (values unchanged; src/scripts/achievement-host.ts OUT_MS matches --dur-toast-out) */
   --dur-toast-in: .3s;
   --dur-toast-out: .2s;
+  /* the general version's one-time reveal (src/scripts/data-reveal.ts) and its link stroke (v5.1) */
+  --dur-rise: .42s;      /* a section opener rises once */
+  --dur-stamp: .22s;     /* the award badge sets once */
+  --dur-stroke: .2s;     /* the brush stroke sweeps under a single-line control */
 
   /* ── layout ── */
   --container: 1180px;   /* includes gutters; the base width of every band's container */
@@ -188,20 +220,23 @@
   --page-fill: var(--nt-ink); --page-fill-ink: var(--nt-bg);
 }
 :root[data-variant="data"] {
-  --page-bg: var(--ed-bg); --page-ink: var(--ed-ink); --page-muted: var(--ed-muted); --page-focus: var(--ed-accent);
-  --page-link: var(--ed-accent); --page-rule: var(--ed-rule); --page-rule-strong: var(--ed-rule-strong);
+  --page-bg: var(--ed-bg); --page-ink: var(--ed-ink); --page-muted: var(--ed-ink-2); --page-focus: var(--ed-focus);
+  --page-link: var(--ed-link); --page-rule: var(--ed-rule); --page-rule-strong: var(--ed-rule-strong);
   --page-fill: var(--ed-fill); --page-fill-ink: var(--ed-fill-ink);
 }
 @media (min-width: 734px) {
-  :root { --fs-name: 3.75rem; --fs-display: 3rem; --fs-h2: 1.75rem; --fs-sub: 1.3125rem; --gutter: 32px; --section-pad-y: 44px; } /* type: 60 / 48 / 28 / 21px */
+  :root { --fs-name: 3.75rem; --fs-display: 3rem; --fs-h2: 1.75rem; --fs-sub: 1.3125rem; --gutter: 32px; --section-pad-y: 44px;
+    --fs-ed-display: 3.25rem; --fs-ed-h1: 2.875rem; --fs-ed-h2: 2rem; --fs-ed-num: 2rem; --ed-rw: 6px; } /* type: 60 / 48 / 28 / 21px */ /* general version: 52 / 46 / 32 / 32px */
 }
 @media (min-width: 1068px) {
-  :root { --fs-name: 4.75rem; --fs-display: 3.5rem; --fs-h2: 2rem; --fs-sub: 1.5rem; --gutter: 56px; } /* type: 76 / 56 / 32 / 24px */
+  :root { --fs-name: 4.75rem; --fs-display: 3.5rem; --fs-h2: 2rem; --fs-sub: 1.5rem; --gutter: 56px;
+    --fs-ed-display: 4.75rem; --fs-ed-h1: 4rem; --fs-ed-h2: 2.5rem; --fs-ed-num: 2.6875rem; --ed-rw: 8px; } /* type: 76 / 56 / 32 / 24px */ /* general version: 76 / 64 / 40 / 43px */
 }
 /* D-2 XL steps (the owner reviews at 2560 CSS px): wider HUD container, wider gutters, slightly larger display type.
    src/lib/images.ts and src/lib/characters.ts compute their `sizes` from these values: keep them in sync. */
 @media (min-width: 1600px) {
-  :root { --container-hud: 1360px; --gutter: 64px; --fs-name: 5.25rem; --fs-display: 3.75rem; --fs-h2: 2.125rem; --fs-sub: 1.5625rem; } /* type: 84 / 60 / 34 / 25px */
+  :root { --container-hud: 1360px; --gutter: 64px; --fs-name: 5.25rem; --fs-display: 3.75rem; --fs-h2: 2.125rem; --fs-sub: 1.5625rem;
+    --fs-ed-num: 2.875rem; } /* type: 84 / 60 / 34 / 25px */ /* general version: numbers 46px; display, h1, h2 keep their 1068 steps (the prototype maxima) */
 }
 @media (min-width: 1800px) {
   :root { --container-hud: 1440px; --gutter: 72px; --fs-name: 5.625rem; --fs-display: 4rem; --fs-h2: 2.25rem; --fs-sub: 1.625rem; } /* type: 90 / 64 / 36 / 26px */

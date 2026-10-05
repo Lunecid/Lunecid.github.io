@@ -14,10 +14,15 @@ describe('src/styles/editorial.css (P2-1, spec §8)', () => {
     expect(unscoped).toEqual([]);
   });
 
-  it('uses editorial (or paper) tokens only: no colour literal, no HUD, accent, gold or read token', () => {
+  it('uses editorial (or paper) tokens only: no colour literal, no HUD, accent, gold or read token; DS-2: the paint tokens of paint.css (--tex-*, --ed-paint-*, --ed-rag*) are allowed', () => {
     const css = read('src/styles/editorial.css').replace(/\/\*[\s\S]*?\*\//g, '');
     expect(css.match(/#[0-9a-fA-F]{3,8}\b|\brgba?\(|\bhsla?\(/g) ?? []).toEqual([]);
     expect(css.match(/var\(--(hud|accent|gold|read)[a-z0-9-]*\)/g) ?? []).toEqual([]);
+    const vars = [...css.matchAll(/var\((--[a-z0-9-]+)/g)].map((m) => m[1]!);
+    const allowed = /^--(ed-|font-|fs-|lh-|dur-|ease-|nav-h$|tap$|measure$|section-pad-y$|gutter$|container|paper-|tex-[rby][hv]$|scrim$)/;
+    expect(vars.filter((v) => !allowed.test(v))).toEqual([]);
+    // DS-2: links and focus rings take the link tokens on data pages; --ed-accent stays the neutral pages' navy
+    expect(css.match(/var\(--ed-accent\)/g) ?? []).toEqual([]);
   });
 
   it('defines the editorial building blocks and the [data-serif] face rule', () => {

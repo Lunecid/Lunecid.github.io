@@ -326,6 +326,75 @@ describe('editorial palette, neutral aliases and role tokens (P2-1, spec §8, co
     expect(d.get('--font-sans')).toMatch(/^"SB Sans",/);
   });
 
+  it('DS-2: v5 editorial tokens are exact', () => {
+    const d = declsOf(':root');
+    const expected: Record<string, string> = {
+      '--ed-red': '#CC281C',
+      '--ed-blue': '#1F3A93',
+      '--ed-yellow': '#F5C400',
+      '--ed-black': '#111111',
+      '--ed-ink-2': 'var(--paper-muted)',
+      '--ed-n-50': '#F6F6F4',
+      '--ed-n-100': '#EEEEEB',
+      '--ed-line': '#D6D6D1',
+      '--ed-perf': 'rgba(20, 20, 20, .38)',
+      '--ed-wash': '#F2F1EC',
+      '--ed-on-color': '#FFFFFF',
+      // v5.1 (final, owner 2026-10-05): museum-style ink links; colour belongs to the paint
+      '--ed-link': 'var(--ed-ink)',
+      '--ed-link-line': 'var(--ed-ink)',
+      '--ed-link-hover': 'var(--ed-ink)',
+      '--ed-focus': 'var(--ed-ink)',
+      '--ed-ul': '1px',
+      '--ed-ul-on': '2px',
+      '--ed-ul-off': '.16em',
+      '--ed-rw': '5px',
+    };
+    for (const [name, value] of Object.entries(expected)) expect(d.get(name), name).toBe(value);
+    expect(d.get('--paper-muted')).toBe('#4A4A4A');
+    // the neutral pages alias --ed-accent / --ed-muted / --ed-rule: unchanged
+    expect([d.get('--ed-accent'), d.get('--ed-muted'), d.get('--ed-rule')]).toEqual(['#1E3A8A', '#6B6B6B', '#E5E5E5']);
+    expect([rootDecls(TABLET).get('--ed-rw'), rootDecls(DESKTOP).get('--ed-rw')]).toEqual(['6px', '8px']);
+  });
+
+  it('DS-2: WCAG on white: --ed-link ≥ 7, --ed-ink-2 ≥ 7, focus ≥ 3, on-color pairs as listed', () => {
+    const d = declsOf(':root');
+    const hex = (name: string): string => {
+      const v = d.get(name) ?? '';
+      const ref = /^var\((--[\w-]+)\)$/.exec(v)?.[1];
+      return ref ? hex(ref) : v;
+    };
+    const [bg, n50, n100, wash] = ['--ed-bg', '--ed-n-50', '--ed-n-100', '--ed-wash'].map(hex);
+    for (const ground of [bg, n50, n100, wash]) {
+      expect(contrast(hex('--ed-link'), ground!), `link on ${ground}`).toBeGreaterThanOrEqual(7);
+      expect(contrast(hex('--ed-link-hover'), ground!), `hover on ${ground}`).toBeGreaterThanOrEqual(7);
+      expect(contrast(hex('--ed-focus'), ground!), `focus on ${ground}`).toBeGreaterThanOrEqual(3);
+    }
+    expect(contrast(hex('--ed-ink-2'), bg!)).toBeGreaterThanOrEqual(7);
+    expect(contrast(hex('--ed-ink-2'), n100!)).toBeGreaterThanOrEqual(7);
+    expect(contrast(hex('--ed-link'), hex('--ed-yellow'))).toBeGreaterThanOrEqual(7); // ink on the hover stroke
+    expect(contrast(hex('--ed-on-color'), hex('--ed-red'))).toBeGreaterThanOrEqual(5.4);
+    expect(contrast(hex('--ed-on-color'), hex('--ed-blue'))).toBeGreaterThanOrEqual(10);
+    expect(contrast(hex('--ed-on-color'), hex('--ed-black'))).toBeGreaterThanOrEqual(18);
+    expect(contrast(hex('--ed-ink'), hex('--ed-yellow'))).toBeGreaterThanOrEqual(11);
+  });
+
+  it('DS-2: --fs-ed-* rem steps per breakpoint; --dur-rise .42s, --dur-stamp .22s', () => {
+    const steps: Record<string, [string, string, string, string]> = {
+      '--fs-ed-display': ['2.25rem', '3.25rem', '4.75rem', '4.75rem'],
+      '--fs-ed-h1': ['2.25rem', '2.875rem', '4rem', '4rem'],
+      '--fs-ed-h2': ['1.625rem', '2rem', '2.5rem', '2.5rem'],
+      '--fs-ed-num': ['1.75rem', '2rem', '2.6875rem', '2.875rem'],
+    };
+    const [base, tablet, desktop, large] = [rootDecls(BASE), rootDecls(TABLET), rootDecls(DESKTOP), rootDecls('@media (min-width: 1600px)')];
+    for (const [name, [b, t, dk, lg]] of Object.entries(steps)) {
+      expect([base.get(name), tablet.get(name), desktop.get(name), large.get(name) ?? desktop.get(name)], name).toEqual([b, t, dk, lg]);
+    }
+    expect(base.get('--dur-rise')).toBe('.42s');
+    expect(base.get('--dur-stamp')).toBe('.22s');
+    expect(base.get('--dur-stroke')).toBe('.2s');
+  });
+
   it('neutral tokens alias the editorial palette', () => {
     const d = declsOf(':root');
     expect(['--nt-bg', '--nt-ink', '--nt-muted', '--nt-rule', '--nt-accent'].map((n) => d.get(n))).toEqual([
@@ -354,10 +423,11 @@ describe('editorial palette, neutral aliases and role tokens (P2-1, spec §8, co
     expect(contrast(fillInk!, ink!)).toBeGreaterThanOrEqual(7);
   });
 
-  it('P2-2: the general version\'s role tokens, set only with the layout flip (D-5)', () => {
+  it('P2-2 / DS-2: the general version\'s role tokens, set only with the layout flip (D-5)', () => {
     const ROLES = ['--page-bg', '--page-ink', '--page-muted', '--page-focus', '--page-link', '--page-rule', '--page-rule-strong', '--page-fill', '--page-fill-ink'];
     const data = declsOf(':root[data-variant="data"]');
-    expect(ROLES.map((r) => data.get(r))).toEqual(['var(--ed-bg)', 'var(--ed-ink)', 'var(--ed-muted)', 'var(--ed-accent)', 'var(--ed-accent)', 'var(--ed-rule)', 'var(--ed-rule-strong)', 'var(--ed-fill)', 'var(--ed-fill-ink)']);
+    // DS-2 (named change): muted, focus and link follow the v5 tokens (--ed-ink-2, --ed-focus, --ed-link); the rest as P2-2.
+    expect(ROLES.map((r) => data.get(r))).toEqual(['var(--ed-bg)', 'var(--ed-ink)', 'var(--ed-ink-2)', 'var(--ed-focus)', 'var(--ed-link)', 'var(--ed-rule)', 'var(--ed-rule-strong)', 'var(--ed-fill)', 'var(--ed-fill-ink)']);
     for (const name of data.keys()) expect(name, `data sets ${name}`).toMatch(/^--page-/);
   });
 

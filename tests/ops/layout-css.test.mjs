@@ -76,3 +76,16 @@ test('data pages inline neither hud.css nor read.css (P2-9: the D-7 transition i
     assert.deepEqual(READ_OWN.filter((c) => has(p.css, c)), [], `${p.path}: read.css leaked into a general page`);
   }
 });
+
+test('DS-2: data pages inline paint.css; game and neutral pages never contain --tex- or --ragbox', () => {
+  const data = ofVariant('data');
+  assert.ok(data.length >= 16, 'the general pages');
+  for (const p of data) {
+    for (const name of ['--tex-rh', '--tex-rv', '--tex-bh', '--tex-bv', '--tex-yh', '--tex-yv', '--ragbox', '--ed-paint-rh', '--ed-rag']) {
+      assert.ok(p.css.includes(`${name}:`), `${p.path}: ${name} is not inlined`);
+    }
+  }
+  for (const p of [...ofVariant('game'), ...ofVariant('neutral')]) {
+    assert.ok(!/--tex-|--ragbox|--ed-paint-/.test(p.css), `${p.path}: paint.css leaked`);
+  }
+});

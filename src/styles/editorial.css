@@ -13,7 +13,7 @@
 
 /* ── bands: white; sections are told apart by space and their head's heavy rule ── */
 :root[data-variant="data"] .ed-sec { padding-block: var(--section-pad-y); background: var(--ed-bg); color: var(--ed-ink); }
-:root[data-variant="data"] .ed-sec a:not(.ed-btn) { color: var(--ed-accent); }
+:root[data-variant="data"] .ed-sec a:not(.ed-btn) { color: var(--ed-link); }
 
 /* ── lists instead of cards ── */
 :root[data-variant="data"] .ed-list { margin-top: 8px; }
@@ -27,7 +27,7 @@
 :root[data-variant="data"] .ed-links { display: flex; flex-wrap: wrap; gap: 0 20px; }
 :root[data-variant="data"] .ed-link {
   display: inline-flex; align-items: center; gap: .35em; min-height: var(--tap);
-  color: var(--ed-accent); font-weight: 600;
+  color: var(--ed-link); font-weight: 600;
   text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: .2em;
   transition: text-decoration-color var(--dur-hover) linear;
 }
@@ -80,7 +80,7 @@
 :root[data-variant="data"] article.ed-prose ol { list-style: decimal; }
 :root[data-variant="data"] article.ed-prose li + li { margin-top: .35em; }
 :root[data-variant="data"] article.ed-prose li::marker { color: var(--ed-muted); }
-:root[data-variant="data"] .ed-prose a:not(.ed-btn) { color: var(--ed-accent); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: .18em; }
+:root[data-variant="data"] .ed-prose a:not(.ed-btn) { color: var(--ed-link); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: .18em; }
 :root[data-variant="data"] article.ed-prose strong { font-weight: 700; }
 :root[data-variant="data"] article.ed-prose blockquote { padding: 4px 0 4px 16px; border-left: var(--ed-rule-w-strong) solid var(--ed-rule-strong); color: var(--ed-muted); }
 :root[data-variant="data"] article.ed-prose code { padding: .1em .35em; border: var(--ed-rule-w) solid var(--paper-code-line); background: var(--paper-code-bg); color: var(--paper-ink); font-family: var(--font-mono); font-size: .9em; }
@@ -97,29 +97,29 @@
 :root[data-variant="data"] article.ed-prose .footnotes,
 :root[data-variant="data"] article.ed-prose [data-footnotes] { margin-top: 2.5em; padding-top: 1em; border-top: var(--ed-rule-w) solid var(--ed-rule); font-size: var(--fs-small); color: var(--ed-muted); }
 
-/* ── the version switch (P1-15) on general pages: a plain link in the accent (P2-2) ── */
-:root[data-variant="data"] .variant-switch { color: var(--ed-accent); }
+/* ── the version switch (P1-15) on general pages: a plain link in the link ink (P2-2; DS-2: v5.1) ── */
+:root[data-variant="data"] .variant-switch { color: var(--ed-link); }
 
 /* ── plain shared components (markup without HUD decoration): re-coloured here, never re-marked (P2-5) ──
    Specificity beats their scoped rules: [data-paper] is the paper sheet's own attribute. */
-:root[data-variant="data"] .paper[data-paper] a { color: var(--ed-accent); }
-:root[data-variant="data"] .paper[data-paper] :focus-visible { outline-color: var(--ed-accent); }
+:root[data-variant="data"] .paper[data-paper] a { color: var(--ed-link); }
+:root[data-variant="data"] .paper[data-paper] :focus-visible { outline-color: var(--ed-focus); }
 :root[data-variant="data"] .pub__btn,
 :root[data-variant="data"] .pub__pending,
 :root[data-variant="data"] .pub__panel-label,
 :root[data-variant="data"] .bib__copy { font-family: var(--font-sans); }
 :root[data-variant="data"] .pub__btn[aria-expanded="true"],
-:root[data-variant="data"] .bib__copy[data-state="done"] { color: var(--ed-accent); border-color: var(--ed-accent); }
+:root[data-variant="data"] .bib__copy[data-state="done"] { color: var(--ed-link); border-color: var(--ed-link); }
 /* colour hovers only on hover-capable pointers (N13; PaperLinks did the same in 54cf5a8) */
 @media (hover: hover) {
   :root[data-variant="data"] .pub__btn:hover,
-  :root[data-variant="data"] .bib__copy:hover { color: var(--ed-accent); border-color: var(--ed-accent); }
-  :root[data-variant="data"] .pub__title a:hover { color: var(--ed-accent); }
+  :root[data-variant="data"] .bib__copy:hover { color: var(--ed-link); border-color: var(--ed-link); }
+  :root[data-variant="data"] .pub__title a:hover { color: var(--ed-link); }
 }
 :root[data-variant="data"] .pub__btn:active,
-:root[data-variant="data"] .bib__copy:active { color: var(--ed-accent); border-color: var(--ed-accent); }
-:root[data-variant="data"] .pub__title a:active { color: var(--ed-accent); }
-:root[data-variant="data"] .bib__copy:focus-visible { outline-color: var(--ed-accent); }
+:root[data-variant="data"] .bib__copy:active { color: var(--ed-link); border-color: var(--ed-link); }
+:root[data-variant="data"] .pub__title a:active { color: var(--ed-link); }
+:root[data-variant="data"] .bib__copy:focus-visible { outline-color: var(--ed-focus); }
 /* F-065 (P-06): a cited figure lands below the sticky nav */
 :root[data-variant="data"] .ed-figure { scroll-margin-top: calc(var(--nav-h) + 16px); }
 
@@ -146,11 +146,11 @@
 :root[data-variant="data"] .image-viewer__nav::after { content: none; }
 :root[data-variant="data"] .image-viewer__nav[aria-disabled="true"] { color: var(--ed-muted); border-color: var(--ed-rule); }
 :root[data-variant="data"] .image-viewer__close:focus-visible,
-:root[data-variant="data"] .image-viewer__nav:focus-visible { outline-color: var(--ed-accent); }
+:root[data-variant="data"] .image-viewer__nav:focus-visible { outline-color: var(--ed-focus); }
 :root[data-variant="data"] .image-viewer__corner { display: none; }
 @media (hover: hover) {
   :root[data-variant="data"] .image-viewer__close:hover,
-  :root[data-variant="data"] .image-viewer__nav:hover { color: var(--ed-accent); }
+  :root[data-variant="data"] .image-viewer__nav:hover { color: var(--ed-link); }
 }
 :root[data-variant="data"] .image-viewer__close:active,
-:root[data-variant="data"] .image-viewer__nav:active { color: var(--ed-accent); }
+:root[data-variant="data"] .image-viewer__nav:active { color: var(--ed-link); }
