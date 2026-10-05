@@ -59,7 +59,9 @@ const altHref = altLangHref === undefined ? langSwitchHref(Astro.url.pathname, o
     <DataFooter lang={lang} notices={notices} builtAt={new Date()} />
     <script>
       import { initReveal } from '../scripts/data-reveal';
+      import { attachPaint } from '../scripts/data-paint';
       initReveal();
+      attachPaint();
     </script>
   </body>
 </html>

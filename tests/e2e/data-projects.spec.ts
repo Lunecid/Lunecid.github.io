@@ -166,3 +166,26 @@ test('DS-8: 375 px — figure data tables keep each value on one line and scroll
   }
   await context.close();
 });
+
+// DS-9: below 734 px the case study's overview (award rail, then the table) spans the column: the reset that
+// neutralises ProjectDetails' scoped grid areas also reset the full-width column, so the table sat in one 13 px track
+// (value cells 37 px wide, one character per line, the 내 역할 paint ~1,800 px tall).
+for (const width of [320, 375, 733]) {
+  test(`DS-9: ${width} px — the case-study overview table spans the column`, async ({ browser }) => {
+    const context = await browser.newContext({ viewport: { width, height: 900 } });
+    const page = await context.newPage();
+    for (const lang of ['ko', 'en'] as const) {
+      await page.goto(dataPath('/projects/school-zone-blindspots/', lang), { waitUntil: 'networkidle' });
+      const sizes = await page.locator('.pd-ed__ovw').evaluate((grid) => ({
+        grid: grid.getBoundingClientRect().width,
+        table: grid.querySelector('.pd-ed__table')!.getBoundingClientRect().width,
+        rail: grid.querySelector('.pd-ed__rail')!.getBoundingClientRect().width,
+        valueCell: grid.querySelector('.pd-ed__hl td')!.getBoundingClientRect().width,
+      }));
+      expect(sizes.table, `${lang}: table width vs the grid`).toBeGreaterThan(sizes.grid - 40);
+      expect(sizes.rail, `${lang}: rail width vs the grid`).toBeGreaterThan(sizes.grid - 40);
+      expect(sizes.valueCell, `${lang}: the 내 역할 value cell takes most of the row`).toBeGreaterThan(sizes.table * 0.5);
+    }
+    await context.close();
+  });
+}

@@ -87,6 +87,9 @@
   --ed-red: #CC281C;            /* the large field; award badge; best-model mark · white 5.40 flat */
   --ed-blue: #1F3A93;           /* secondary field; research headline figure · white 10.07 */
   --ed-yellow: #F5C400;         /* the small cell; 진행 중, 내 역할, pending note · ink 11.21 */
+  --ed-red-paint: #C9281C;      /* the flat paint under each brush tile = the tiles' mean colour (until they attach after load) */
+  --ed-blue-paint: #1F3A91;
+  --ed-yellow-paint: #F3C303;
   --ed-black: #111111;          /* chips, folios, list numbers, chart and metric bands · white 18.9 */
   --ed-ink-2: var(--paper-muted); /* #4A4A4A: secondary text on data pages · 8.86 white, 7.6 on --ed-n-100 */
   --ed-n-50: #F6F6F4;           /* zebra rows, footer bar, sidebar */

@@ -165,7 +165,7 @@
   color: var(--ed-link);
   text-decoration: underline var(--ed-ul) var(--ed-link-line); text-underline-offset: var(--ed-ul-off); text-decoration-skip-ink: auto;
   -webkit-box-decoration-break: clone; box-decoration-break: clone;
-  background: var(--tex-yh) 0 var(--ed-sk-y, .8em) / 520px .38em repeat-x, linear-gradient(var(--ed-yellow), var(--ed-yellow)) 0 var(--ed-sk-y, .8em) / 100% .38em no-repeat;
+  background: var(--ed-stroke-tex) 0 var(--ed-sk-y, .8em) / 520px .38em repeat-x, linear-gradient(var(--ed-yellow-paint), var(--ed-yellow-paint)) 0 var(--ed-sk-y, .8em) / 100% .38em no-repeat;
   background-size: 0 0, 0 0;
 }
 /* .ed-link is an inline-flex box (44 px tall): its band sits round the centred baseline */
@@ -297,7 +297,7 @@
   color: var(--ed-link);
   text-decoration: underline var(--ed-ul) var(--ed-link-line); text-underline-offset: var(--ed-ul-off); text-decoration-skip-ink: auto;
   -webkit-box-decoration-break: clone; box-decoration-break: clone;
-  background: var(--tex-yh) 0 .8em / 520px .38em repeat-x, linear-gradient(var(--ed-yellow), var(--ed-yellow)) 0 .8em / 100% .38em no-repeat;
+  background: var(--ed-stroke-tex) 0 .8em / 520px .38em repeat-x, linear-gradient(var(--ed-yellow-paint), var(--ed-yellow-paint)) 0 .8em / 100% .38em no-repeat;
   background-size: 0 0, 0 0;
 }
 :root[data-variant="data"] .ed-paper__link:focus-visible,
@@ -420,7 +420,7 @@
 :root[data-variant="data"] .pub__links { gap: 0 10px; margin-left: -4px; }
 :root[data-variant="data"] .pub__btn,
 :root[data-variant="data"] .chart.chart--editorial .chart__summary {
-  background: var(--tex-yh) 0 calc(50% + .39em) / 520px .38em repeat-x, linear-gradient(var(--ed-yellow), var(--ed-yellow)) 0 calc(50% + .39em) / 100% .38em no-repeat;
+  background: var(--ed-stroke-tex) 0 calc(50% + .39em) / 520px .38em repeat-x, linear-gradient(var(--ed-yellow-paint), var(--ed-yellow-paint)) 0 calc(50% + .39em) / 100% .38em no-repeat;
   background-size: 0 0, 0 0; background-origin: content-box; background-clip: content-box;
 }
 :root[data-variant="data"] .pub__btn { padding: 0 4px; border: 0; color: var(--ed-ink); font-size: var(--fs-meta); font-weight: 700; }
@@ -578,8 +578,9 @@
 :root[data-variant="data"] .ed-metric__row--hl .ed-metric__bar i { background: var(--ed-red); }
 /* the overview: the award badge in the rail; the table over an ink rule; 내 역할: a yellow painted head cell */
 :root[data-variant="data"] .pd-ed__ovw { padding-top: var(--section-pad-y); row-gap: 20px; }
-/* ProjectDetails' own scoped rules (P2-6 layout: grid areas, a capped tablet figure) are neutralised here */
-:root[data-variant="data"] .pd-ed__ovw > :is(.pd-ed__rail, .pd-ed__table) { grid-area: auto; }
+/* ProjectDetails' own scoped rules (P2-6 layout: grid areas, a capped tablet figure) are neutralised here; the reset
+   restores the full-width column (grid-area: auto alone left each in one 12th of a phone) */
+:root[data-variant="data"] .pd-ed__ovw > :is(.pd-ed__rail, .pd-ed__table) { grid-area: auto; grid-column: 1 / -1; }
 :root[data-variant="data"] .ed-case .pd-ed__fig { grid-area: auto; max-width: none; margin-inline: 0; }
 :root[data-variant="data"] .ed-case .pd-ed__fig img { max-height: none; object-fit: fill; }
 :root[data-variant="data"] .pd-ed__award { display: flex; flex-direction: column; align-items: flex-start; gap: 14px; }
@@ -662,7 +663,7 @@
 :root[data-variant="data"] .ed-toc a { position: relative; isolation: isolate; display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: var(--tap); border-bottom: 1px solid var(--ed-line); color: var(--ed-link); font-size: var(--fs-small); font-weight: 700; line-height: 1.2; text-decoration: none; }
 :root[data-variant="data"] .ed-toc__n { font-family: var(--font-ed-display); font-size: var(--fs-label); font-weight: 800; color: var(--ed-ink-2); font-variant-numeric: tabular-nums; }
 /* hover / focus paints the row's hairline: the stroke sweeps along the rule under the row */
-:root[data-variant="data"] .ed-toc a::after { content: ""; position: absolute; z-index: -1; left: 0; right: 0; bottom: -3px; height: 5px; background: var(--ed-paint-yh); -webkit-mask-box-image: var(--ed-rag-s); pointer-events: none; transform: scaleX(0); transform-origin: 0 50%; transition: transform var(--dur-stroke) var(--ease-out); }
+:root[data-variant="data"] .ed-toc a::after { content: ""; position: absolute; z-index: -1; left: 0; right: 0; bottom: -3px; height: 5px; background: var(--ed-paint-stroke); -webkit-mask-box-image: var(--ed-rag-s); pointer-events: none; transform: scaleX(0); transform-origin: 0 50%; transition: transform var(--dur-stroke) var(--ease-out); }
 :root[data-variant="data"] .ed-toc a:focus-visible::after { transform: none; }
 @media (hover: hover) {
   :root[data-variant="data"] .ed-toc a:hover::after { transform: none; }
@@ -775,3 +776,38 @@
    its own region instead. */
 :root[data-variant="data"] .chart__table--editorial th,
 :root[data-variant="data"] .chart__table--editorial td { overflow-wrap: normal; }
+
+/* ══ DS-9: forced colours (Windows High Contrast). Brush paint is decoration: no image (Firefox would keep url()
+   backgrounds under the forced text colour) and no frayed mask anywhere; text that sat on paint gets a 1 px system
+   frame, the decorative cells give up their place visibly (kept in the layout, so nothing moves); folios, chips and the
+   tag filter keep frames, the pressed filter takes Highlight, the current nav item an underline (its paint is gone). ══ */
+@media (forced-colors: active) {
+  :root[data-variant="data"] *,
+  :root[data-variant="data"] *::before,
+  :root[data-variant="data"] *::after { background-image: none !important; -webkit-mask-box-image-source: none !important; }
+  :root[data-variant="data"] [data-paint-text] { border: 1px solid CanvasText; }
+  :root[data-variant="data"] :is(.ed-mc, .ed-spread__y, .ed-spread__sq) { visibility: hidden; }
+  :root[data-variant="data"] :is(.ed-folio__n, .ed-chip) { border: 1px solid CanvasText; }
+  :root[data-variant="data"] .tag-filter__btn { border: 1px solid ButtonText; }
+  :root[data-variant="data"] .tag-filter__btn[aria-pressed="true"],
+  :root[data-variant="data"] .tag-filter__btn[aria-pressed="true"]::before { background: Highlight; color: HighlightText; }
+  :root[data-variant="data"] .tag-filter__btn[aria-pressed="true"] { border-color: Highlight; }
+  :root[data-variant="data"] .data-nav__list a[aria-current] { text-decoration: underline 2px; text-underline-offset: .3em; }
+}
+
+/* ══ DS-9: print — no brush paint at all (fields, strokes, sweeps; the folios and compositions are hidden above), text
+   that sat on paint prints as ink on the white paper, the nav is a static line without its menu button. ══ */
+@media print {
+  :root[data-variant="data"] *,
+  :root[data-variant="data"] *::before,
+  :root[data-variant="data"] *::after { background-image: none !important; -webkit-mask-box-image-source: none !important; }
+  :root[data-variant="data"] [data-paint-text],
+  :root[data-variant="data"] [data-paint-text] * { color: var(--ed-ink) !important; }
+  :root[data-variant="data"] body > .data-nav { position: static !important; }
+  :root[data-variant="data"] .data-nav__toggle { display: none !important; }
+  /* fills drop out of print by default (background graphics off): what was light text on ink prints as ink, boxed */
+  :root[data-variant="data"] :is(.ed-chip, .ed-btn--fill, .tag-filter__btn[aria-pressed="true"], .ed-metric__row--hl) { background: none !important; box-shadow: none !important; border: 1px solid var(--ed-ink); }
+  :root[data-variant="data"] :is(.ed-chip, .ed-btn--fill, .tag-filter__btn[aria-pressed="true"], .ed-metric__row--hl),
+  :root[data-variant="data"] :is(.ed-chip, .ed-btn--fill, .tag-filter__btn[aria-pressed="true"], .ed-metric__row--hl) *,
+  :root[data-variant="data"] .tag-filter__btn[aria-pressed="true"]::before { color: var(--ed-ink) !important; }
+}

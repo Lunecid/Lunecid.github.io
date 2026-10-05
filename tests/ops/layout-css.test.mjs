@@ -131,7 +131,9 @@ test('the brush textures are pre-rendered WebP tiles (1× and 2×) in /_astro/, 
   for (const p of data) assert.ok(!/feTurbulence|%3Cfilter|<filter/i.test(p.css), `${p.path}: SVG noise in the page CSS`);
   const css = data[0].css;
   for (const key of ['rh', 'rv', 'bh', 'bv', 'yh', 'yv']) {
-    const value = new RegExp(`--tex-${key}:([^;}]+)`).exec(css)?.[1] ?? '';
+    // Named change (deferred textures): --tex-* is none until [data-paint-tex] attaches the tiles after load
+    assert.match(css, new RegExp(`--tex-${key}:\\s*none`), `--tex-${key} defaults to none`);
+    const value = new RegExp(`--tex-${key}:\\s*(image-set[^;}]+)`).exec(css)?.[1] ?? '';
     const urls = [...value.matchAll(/url\(\s*["']?([^"')\s]+)["']?\s*\)\s*([\d.]+x)/g)].map((m) => [m[1], m[2]]);
     assert.equal(urls.length, 2, `--tex-${key}: ${value}`);
     assert.match(value.trim(), /^image-set\(/, `--tex-${key} is an image-set`);

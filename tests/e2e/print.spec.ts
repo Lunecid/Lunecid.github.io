@@ -208,4 +208,62 @@ test.describe('print (P-12)', () => {
       }
     });
   });
+
+  // DS-9: the v5 look on paper — no brush paint, folios or painted compositions; the nav static, the records sidebar
+  // unstuck; nothing left waiting for the reveal; text that sat on paint (the hero words, the badge, 진행 중, 내 역할)
+  // prints as ink on white; headings ≥ 4.5:1 on the paper.
+  test('DS-9: /data/ and /data/records/ print without paint, folios or sticky sidebar; headings ≥ 4.5:1', async ({ page }) => {
+    test.setTimeout(120_000);
+    for (const route of ['/data/', '/data/records/', '/en/data/', '/data/projects/', '/data/projects/school-zone-blindspots/', '/data/research/'] as const) {
+      await page.emulateMedia({ media: 'screen' });
+      await open(page, route); // on screen first: sections below the first screen are still waiting for the reveal
+      await page.emulateMedia({ media: 'print' });
+      await page.waitForTimeout(500); // colour transitions started by the media switch end (printing itself has none)
+      const found = await page.evaluate(() => {
+        const shown = (el: Element): boolean => (el as HTMLElement).checkVisibility({ opacityProperty: false, visibilityProperty: true });
+        const painted: string[] = [];
+        for (const el of document.querySelectorAll('body *')) {
+          for (const pseudo of [null, '::before', '::after'] as const) {
+            const s = getComputedStyle(el, pseudo);
+            if (/paint-[rby][hv]/.test(s.backgroundImage) && s.display !== 'none' && shown(el)) painted.push(`${el.tagName.toLowerCase()}.${el.className}${pseudo ?? ''}`);
+          }
+        }
+        const furniture = [...document.querySelectorAll('.ed-folio, .ed-mc, .ed-spread__y, .ed-spread__sq, .data-nav__toggle')].filter(shown).map((el) => el.className);
+        const stuck = [...document.querySelectorAll('body *')].filter((el) => ['sticky', 'fixed'].includes(getComputedStyle(el).position) && shown(el)).map((el) => `${el.tagName.toLowerCase()}.${el.className}`);
+        const faded = [...document.querySelectorAll('main *')].filter((el) => shown(el) && (parseFloat(getComputedStyle(el).opacity) < 1 || getComputedStyle(el).transform !== 'none') && el.closest('.ed-sh, .ed-stamp')).map((el) => el.className);
+        const lum = (c: number[]) => {
+          const [r, g, b] = c.map((v) => (v / 255 <= 0.03928 ? v / 255 / 12.92 : ((v / 255 + 0.055) / 1.055) ** 2.4));
+          return 0.2126 * r! + 0.7152 * g! + 0.0722 * b!;
+        };
+        const onPaint = [...document.querySelectorAll('[data-paint-text]')].filter(shown).map((el) => {
+          const s = getComputedStyle(el);
+          const ratio = 1.05 / (lum(s.color.match(/[\d.]+/g)!.slice(0, 3).map(Number)) + 0.05);
+          return { el: el.className || el.tagName, ratio: Math.round(ratio * 100) / 100, bg: s.backgroundImage };
+        });
+        // browsers print without background graphics by default: text drawn on a fill (chips, the filled button, the
+        // pressed filter, the F1 band) must read on the white paper by itself
+        const light: string[] = [];
+        const walker = document.createTreeWalker(document.querySelector('main')!, NodeFilter.SHOW_TEXT);
+        for (let n = walker.nextNode(); n; n = walker.nextNode()) {
+          const el = n.parentElement!;
+          if (!(n.textContent ?? '').trim() || !shown(el) || el.closest('.sr-only')) continue;
+          const c = getComputedStyle(el).color.match(/[\d.]+/g)!.map(Number);
+          const a = c[3] ?? 1;
+          if (1.05 / (lum(c.slice(0, 3).map((v) => v * a + 255 * (1 - a))) + 0.05) < 4.5) light.push(`${el.className || el.tagName} "${(n.textContent ?? '').trim().slice(0, 16)}"`);
+        }
+        return { painted: painted.slice(0, 8), furniture: furniture.slice(0, 8), stuck: stuck.slice(0, 8), faded: faded.slice(0, 8), onPaint, light: light.slice(0, 10) };
+      });
+      expect(found.light, `${route}: text that needs a printed background`).toEqual([]);
+      expect(found.painted, `${route}: brush paint prints`).toEqual([]);
+      expect(found.furniture, `${route}: folios, compositions or the menu button print`).toEqual([]);
+      expect(found.stuck, `${route}: sticky or fixed elements in print`).toEqual([]);
+      expect(found.faded, `${route}: revealed elements not fully there`).toEqual([]);
+      for (const h of found.onPaint) {
+        expect(h.bg, `${route} ${h.el}: no paint behind`).toBe('none');
+        expect(h.ratio, `${route} ${h.el}: ink on white`).toBeGreaterThanOrEqual(4.5);
+      }
+      for (const { text, ratio } of await inkContrastOnPaper(page, 'main :is(h1, h2)')) expect(ratio, `${route} "${text}"`).toBeGreaterThanOrEqual(4.5);
+    }
+  });
 });
+
