@@ -175,9 +175,12 @@ test.describe('P1-6 / P2-23: cartridge labels and stickers', () => {
       for (const cart of await page.locator('.cart').all()) {
         const sticker = cart.locator('.cart__sticker');
         if ((await sticker.count()) === 0) continue;
+        // Named change (GP-7): on the game palette the 28px sticker band sits on the image's <picture> (so the media
+        // frame is the image alone and can lean); the chart label keeps it on itself.
         const [s, c, img] = await Promise.all([box(sticker), box(cart), cart.locator('img.cart__img, .cart__chart').first().evaluate((el) => {
-          const r = el.getBoundingClientRect();
-          return { top: r.top + window.scrollY, pad: parseFloat(getComputedStyle(el).paddingTop) };
+          const band = el.matches('img') && el.parentElement?.tagName === 'PICTURE' ? el.parentElement : el;
+          const r = band.getBoundingClientRect();
+          return { top: r.top + window.scrollY, pad: parseFloat(getComputedStyle(band).paddingTop) };
         })]);
         // P2-23: the English award words stay inside the card (ORAL and the Korean stickers keep the mockup's 4px overhang)
         if (route.startsWith('/en/') && (await sticker.getAttribute('class'))?.includes('--award')) {

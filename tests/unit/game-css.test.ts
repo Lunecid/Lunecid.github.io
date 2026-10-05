@@ -66,8 +66,8 @@ describe('game.css (GP-2)', () => {
       expect(r.at.some((a) => /@media \(hover: hover\)/.test(a)), r.selector).toBe(true);
       const moves = [...r.decls.keys()].some((k) => /color|background|transform|text-shadow|box-shadow|text-decoration/.test(k));
       if (!moves || r.selector.includes(':focus')) continue;
-      // the tilt is a pointer-only lean (keyboard focus has its own rule); colour changes need a pressed twin
-      if ([...r.decls.keys()].every((k) => /^(transform|will-change)$/.test(k))) continue;
+      // the media tilt is a fine-pointer lean, not a press (keyboard focus has its own rule, touch never tilts)
+      if (r.at.some((a) => /pointer: fine/.test(a))) continue;
       for (const sel of splitSelectors(r.selector)) {
         const twin = sel.replace(/:hover/g, ':active');
         const found = rules.some((o) => splitSelectors(o.selector).includes(twin) && !o.at.some((a) => /hover/.test(a)));
@@ -110,5 +110,36 @@ describe('achievements in the game palette (GP-4)', () => {
     expect(medal).toMatch(/\.medal__ribbon \{ fill: var\(--ach-rim\); stroke: var\(--ach-rim\)/);
     expect(medal).toMatch(/\.medal__disc \{ fill: var\(--gold\)/);
     expect(read('src/islands/AccountLinks.css')).toMatch(/\.acct-dlg__rule \{[^}]*background: var\(--hl2\)/);
+  });
+});
+
+describe('media tilt (GP-7)', () => {
+  const tilt = () => rulesOf(css()).filter((r) => /cart__img|chart__scroll|interests__img/.test(r.selector) && !r.at.some((a) => /print|forced-colors/.test(a)));
+
+  it('GP-7: tilt transitions use --dur-tilt-in/--dur-panel-out and --ease-out; will-change only in hover/focus states', () => {
+    const rules = tilt();
+    const base = rules.find((r) => r.decls.get('transition'));
+    expect(base?.decls.get('transition')).toBe('transform var(--dur-panel-out) var(--ease-out)');
+    const active = rules.filter((r) => r.decls.has('transform') && r.decls.get('transform') !== 'none !important');
+    expect(active.length).toBe(2); // hover (fine pointer) and keyboard focus
+    for (const r of active) {
+      expect(r.decls.get('transition-duration'), r.selector).toBe('var(--dur-tilt-in)');
+      expect(r.decls.get('will-change'), r.selector).toBe('transform');
+      expect(r.decls.get('transform'), r.selector).toBe('translateY(var(--tilt-lift)) rotate(calc(var(--tilt-dir) * var(--tilt-deg))) scale(var(--tilt-scale))');
+      expect(/:hover|:focus-visible/.test(r.selector), r.selector).toBe(true);
+    }
+    const hover = active.find((r) => r.selector.includes(':hover'))!;
+    expect(hover.at).toContain('@media (hover: hover) and (pointer: fine)');
+    expect(active.find((r) => r.selector.includes(':focus-visible'))!.at).toEqual([]);
+    for (const r of rules) if (r.decls.has('will-change') && !r.decls.get('will-change')!.startsWith('auto')) expect(active).toContain(r);
+    // both reduce paths turn the lean off (the frame highlight stays: no outline or box-shadow reset there)
+    const reduce = rules.filter((r) => r.decls.get('transform') === 'none !important');
+    expect(reduce.some((r) => r.at.includes('@media (prefers-reduced-motion: reduce)'))).toBe(true);
+    expect(reduce.some((r) => r.selector.startsWith(':root[data-variant="game"][data-motion="reduce"]'))).toBe(true);
+    for (const r of reduce) expect(r.decls.has('box-shadow') || r.decls.has('outline-color'), r.selector).toBe(false);
+    // print and forced colours drop the transform / the glow
+    const all = rulesOf(css());
+    expect(all.some((r) => r.at.includes('@media print') && /cart__img/.test(r.selector) && r.decls.get('transform') === 'none !important')).toBe(true);
+    expect(all.some((r) => r.at.includes('@media (forced-colors: active)') && /cart__img/.test(r.selector) && r.decls.get('outline-color') === 'CanvasText !important')).toBe(true);
   });
 });

@@ -181,6 +181,63 @@
 :root[data-variant="game"] .jobfit__table .jobfit__status--partial { border-color: var(--gp-w-line-strong); color: var(--gp-w-ink); }
 :root[data-variant="game"] .jobfit__table .jobfit__status--in-progress { border: 1px dashed var(--gp-w-line-strong); color: var(--gp-w-ink-2); }
 
+/* ═══ MEDIA TILT ═══════════════════════════════════════════════════════════════════════════════════════════════
+   Research and project media lean slightly when pointed at or focused (palette v4, option A: a CSS rotate). Only the
+   media frame moves, never text: cartridge thumbnails (odd cards −, even +; the wide card less), the home research
+   chart and the research-interest figures. Hover only for a fine pointer; keyboard focus gets the same lean; reduced
+   motion (either path) keeps only the static frame highlight; touch never tilts. In-article figures, evidence
+   thumbnails, the ID photo and character art never move. Each frame has room inside its card, so nothing shifts. */
+:root[data-variant="game"] .cart__label > picture { padding: 8px 8px 12px; }
+/* the sticker band moves from the image onto the <picture>, so the frame is the image alone */
+:root[data-variant="game"] .cart__label > picture:has(.cart__img--stickered) { padding-top: 28px; }
+:root[data-variant="game"] .cart__label .cart__img--stickered { padding-top: 0; }
+:root[data-variant="game"] .cart__label .cart__img--contain.cart__img--stickered { padding: 6px 8px; }
+:root[data-variant="game"] :is(.cart__label .cart__img, .rh .paper__fig .chart__scroll, .interests__fig .interests__img, .interests__fig--chart .chart__scroll) {
+  --tilt-lift: -3px; --tilt-scale: 1.02; --tilt-dir: 1;
+  outline: 1px solid var(--gp-frame); outline-offset: 0;
+  transform-origin: 50% 50%;
+  transition: transform var(--dur-panel-out) var(--ease-out);
+}
+/* a chart or figure leans rather than tips (it has axis text): a smaller angle, lift and scale */
+:root[data-variant="game"] :is(.rh .paper__fig .chart__scroll, .interests__fig .interests__img, .interests__fig--chart .chart__scroll) {
+  outline-color: var(--read-line-strong); --tilt-deg: var(--tilt-deg-fig); --tilt-scale: 1.01; --tilt-lift: -2px; --tilt-dir: -1;
+}
+/* the figure gets a little more air above and below, so its leaning corners stay clear of the strip and the caption */
+:root[data-variant="game"] .rh .paper__strip { margin-bottom: 14px; }
+:root[data-variant="game"] .rh .paper__fig .chart__caption { margin-top: 14px; }
+:root[data-variant="game"] .cart:nth-child(odd) .cart__label .cart__img { --tilt-dir: -1; }
+:root[data-variant="game"] .cart.cart--wide .cart__label .cart__img { --tilt-deg: var(--tilt-deg-wide); --tilt-scale: 1.015; }
+@media (hover: hover) and (pointer: fine) {
+  :root[data-variant="game"] :is(.cart:not(.cart--static):hover .cart__img, .rh .paper__fig:hover .chart__scroll, .interests__fig:hover :is(.interests__img, .chart__scroll)) {
+    will-change: transform;
+    transform: translateY(var(--tilt-lift)) rotate(calc(var(--tilt-dir) * var(--tilt-deg))) scale(var(--tilt-scale));
+    transition-duration: var(--dur-tilt-in);
+    outline-color: var(--hl2);
+    box-shadow: 0 0 0 1px var(--hl2), 3px 3px 0 0 var(--accent), 0 4px 12px -4px var(--gp-cy-dim);
+  }
+}
+:root[data-variant="game"] :is(.cart:not(.cart--static):has(.cart__link:focus-visible) .cart__img, .rh .paper__fig:has(:focus-visible) .chart__scroll, .interests__fig:has(:focus-visible) :is(.interests__img, .chart__scroll)) {
+  will-change: transform;
+  transform: translateY(var(--tilt-lift)) rotate(calc(var(--tilt-dir) * var(--tilt-deg))) scale(var(--tilt-scale));
+  transition-duration: var(--dur-tilt-in);
+  outline-color: var(--hl2);
+  box-shadow: 0 0 0 1px var(--hl2), 3px 3px 0 0 var(--accent), 0 4px 12px -4px var(--gp-cy-dim);
+}
+/* reduced motion (the OS setting or the site's toggle): no lean, no lift; the frame highlight stays */
+@media (prefers-reduced-motion: reduce) {
+  :root[data-variant="game"] :is(.cart__label .cart__img, .rh .paper__fig .chart__scroll, .interests__fig .interests__img, .interests__fig--chart .chart__scroll) {
+    transform: none !important; will-change: auto !important; transition: none !important;
+  }
+}
+:root[data-variant="game"][data-motion="reduce"] :is(.cart__label .cart__img, .rh .paper__fig .chart__scroll, .interests__fig .interests__img, .interests__fig--chart .chart__scroll) {
+  transform: none !important; will-change: auto !important; transition: none !important;
+}
+@media (forced-colors: active) {
+  :root[data-variant="game"] :is(.cart__label .cart__img, .rh .paper__fig .chart__scroll, .interests__fig .interests__img, .interests__fig--chart .chart__scroll) {
+    box-shadow: none !important; outline-color: CanvasText !important;
+  }
+}
+
 /* ═══ PRINT ════════════════════════════════════════════════════════════════════════════════════════════════════
    Game pages print black on white (tokens.css print twin). The white panels re-point their own names, so they get the
    print values here: black ink on white paper, no yellow edge, no chamfer, no highlighter strip, no halo. */
@@ -196,5 +253,8 @@
   }
   :root[data-variant="game"] :is(.rh .paper, .rec__pubs, .psum, .creds__table, .skills__table, .jobfit__table, .pub__list, .paper-view__sheet, article.prose.read, .pd__table) :is(a:not([class]), .jobfit__ev, .creds__ev) {
     background: none; color: var(--gp-print-ink);
+  }
+  :root[data-variant="game"] :is(.cart__label .cart__img, .rh .paper__fig .chart__scroll, .interests__fig .interests__img, .interests__fig--chart .chart__scroll) {
+    transform: none !important; box-shadow: none !important;
   }
 }
