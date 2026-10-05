@@ -1,10 +1,10 @@
 ---
 title: Privacy Policy
 lang: en
-updated: '2026-09-30'
+updated: '2026-10-04'
 ---
 
-This site (https://lunecid.github.io) is a static website that Seongeun Baek runs as a personal portfolio. It has no sign-up, login, or comments, and there is nowhere for visitors to enter a name or contact details.
+This site (https://lunecid.github.io) is a static website that Seongeun Baek runs as a personal portfolio. It has no sign-up, login, or comments, and there is nowhere for visitors to enter a name or contact details. The Player Log has an account-link management screen that only the site owner uses. When the owner signs in with GitHub and Steam and saves game account IDs, those values and the sign-in information go from the owner's browser through a Cloudflare Worker (relay server) to GitHub and Steam only. Visitors' browsers never connect to this relay server.
 
 ## Visitor statistics
 
@@ -38,9 +38,17 @@ The following settings are stored only in your browser (localStorage and session
 
 ## Game account data
 
-The current version does not load any game account data, so the Player Log shows no account cards or game achievements.
+The account cards on the Player Log show only the site owner's own game accounts. The site does not collect visitors' account data.
 
-If account links are turned on later, the site will fetch only public information from the site owner's own accounts at build time. That data will not be committed to the repository, and it will stop being shown after a set period (30 days for NEXON data, 7 days for other platforms). Before any account link is turned on, this page will first be updated with each platform's data source and retention period.
+- Sources: Genshin Impact and Zenless Zone Zero data comes from Enka.Network, and Steam data from the Steam Web API. For League of Legends and TFT the site only links to op.gg and lolchess.gg and fetches no data. When you follow those links, that site's privacy policy applies.
+- What is stored: only the public profile information shown on the cards. For Steam: the SteamID used for the profile link, the nickname, avatar and level, and only when the owner turns it on, the number of owned games, playtime and the top games left after the owner's filter. Real name, country, account creation date and groups are never stored.
+- Where: the data is created in GitHub Actions when the site is built and served by GitHub Pages (GitHub, Inc., United States). It is not committed to the repository.
+- Retention: the account-data artifact is kept for 1 day, the build screenshot artifact for up to 14 days, the failed-test report for 7 days, and the build image cache until the cache evicts it. The owner's game account IDs and nicknames appear in the public build run logs and stay there for the repository's log retention period.
+- Refresh: daily at 03:30 KST and whenever the owner rebuilds the site. A card that has not been refreshed for 7 days is hidden.
+- Your browser never contacts the game services. The card images are served from this site.
+- Steam data is provided "as is" under the Steam Web API terms, without any guarantee of accuracy.
+
+Dungeon & Fighter is not linked.
 
 The site never collects visitors' game account information.
 
@@ -48,8 +56,13 @@ The site never collects visitors' game account information.
 
 - Fonts, music, images, and the visitor-count script are all served from this site. Visit data is sent only to GoatCounter's servers.
 - The numbers on the Visitor stats page are aggregates fetched from the GoatCounter API (read-only key) when the site is built. Only the running total is loaded by your browser directly from GoatCounter's public counter.
-- The list of GitHub repositories and the contribution graph are fetched from the GitHub API when the site is built. Your browser does not call the GitHub API.
+- The list of GitHub repositories and the contribution graph are fetched from the GitHub API when the site is built. Visitors' browsers do not call the GitHub API or the relay server.
 - When you follow an external link, such as GitHub or IEEE Xplore, that site's privacy policy applies.
+- The Player Log's outbound score links (op.gg, lolchess.gg) send no referrer (the previous page's address).
+- The account-link management, used only by the site owner, runs through a Cloudflare Workers relay server operated by Cloudflare, Inc. In this processing, Cloudflare is a processor that forwards requests on the owner's behalf. Cloudflare handles requests on its global network; where a request is handled depends on where the owner connects from.
+  - What passes through the relay server: the owner's GitHub sign-in information (an access token issued by GitHub; outside the relay server it exists only in encrypted form, it becomes unusable after at most 60 minutes, and signing out deletes the authorization on GitHub), the game account IDs and nicknames the owner saves, the owner's Steam sign-in confirmation (a response signed by Steam), and the owner's SteamID, Steam profile name and profile visibility.
+  - The relay server does not store these values and runs with request logging (invocation logs) turned off. Any records Cloudflare keeps separately to operate its service follow Cloudflare's policies. See the [Cloudflare Privacy Policy](https://www.cloudflare.com/privacypolicy/) for details.
+  - When the owner signs in, one cookie for the relay server's address (to verify the sign-in) is set in the owner's browser. It is deleted when the sign-in returns to the site and, if it never returns, expires after at most 10 minutes. No new cookie or storage entry is created for this site's address.
 
 ## Contact
 
@@ -59,4 +72,4 @@ todtjddms104204@pusan.ac.kr
 
 When this policy changes, the last-updated date on this page is changed as well. You can see what changed in the GitHub repository's history.
 
-Last updated: September 30, 2026
+Last updated: October 4, 2026

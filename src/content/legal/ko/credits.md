@@ -1,7 +1,7 @@
 ---
 title: 출처·고지
 lang: ko
-updated: '2026-09-30'
+updated: '2026-10-04'
 ---
 
 이 사이트에 쓴 이미지, 데이터, 음악, 글꼴의 출처와 권리 고지입니다. 게임 관련 이미지는 팬 콘텐츠로 사용하며, 각 게임사와 공식 제휴 관계가 없습니다.
@@ -35,14 +35,14 @@ updated: '2026-09-30'
 
 ## 게임 데이터
 
-현재 버전은 게임 계정 데이터를 불러오지 않습니다. 아래 고지는 해당 연동을 켤 때 이 페이지와 플레이 로그에 함께 표시합니다.
+플레이 로그의 계정 카드는 아래 출처에서 받은 데이터로 만듭니다. 아래 고지는 이 페이지와 플레이 로그에 함께 표시합니다.
 
 | 플랫폼 | 고지 | 상태 |
 |---|---|---|
 | 네오플 | 네오플 오픈 API 서비스를 이용한 데이터입니다. | 연동 시 표시 |
-| 라이엇 게임즈 | <span lang="en">Seongeun Baek's portfolio isn't endorsed by Riot Games and doesn't reflect the views or opinions of Riot Games or anyone officially involved in producing or managing Riot Games properties. Riot Games, and all associated properties are trademarks or registered trademarks of Riot Games, Inc.</span> | 연동 시 표시 |
-| Valve(Steam) | <span lang="en">Powered by Steam.</span> Steam 데이터는 Steam Web API에서 받아 있는 그대로(<span lang="en">as is</span>) 보여 주며 정확성을 보증하지 않습니다. 이 사이트는 Valve와 제휴하거나 Valve의 보증을 받지 않았습니다. <span lang="en">Valve, Steam, the Valve logo and the Steam logo are registered trademarks of Valve Corporation.</span> | 연동 시 표시 |
-| Enka.Network | 원신·젠레스 존 제로 계정 정보는 Enka.Network(<https://enka.network>)에서 받습니다. | 연동 시 표시 |
+| 라이엇 게임즈 | <span lang="en">Seongeun Baek's portfolio isn't endorsed by Riot Games and doesn't reflect the views or opinions of Riot Games or anyone officially involved in producing or managing Riot Games properties. Riot Games, and all associated properties are trademarks or registered trademarks of Riot Games, Inc.</span> | 외부 링크만 사용(API·에셋 미사용) |
+| Valve(Steam) | <span lang="en">Powered by Steam.</span> Steam 데이터는 Steam Web API에서 받아 있는 그대로(<span lang="en">as is</span>) 보여 주며 정확성을 보증하지 않습니다. 이 사이트는 Valve와 제휴하거나 Valve의 보증을 받지 않았습니다. <span lang="en">Valve, Steam, the Valve logo and the Steam logo are registered trademarks of Valve Corporation.</span> 주인 연동 관리 화면의 <span lang="en">“Sign in through Steam”</span> 버튼 이미지는 Valve의 것입니다. | 플레이 로그 계정 카드 |
+| Enka.Network | 원신·젠레스 존 제로 계정 정보는 Enka.Network(<https://enka.network>)에서 받습니다. | 플레이 로그 계정 카드 |
 
 ## 연구 데이터
 
@@ -83,4 +83,4 @@ CC0 자료는 출처 표기 의무가 없지만 만든 분을 밝혀 둡니다.
 
 권리 관련 문의: todtjddms104204@pusan.ac.kr
 
-최종 수정일: 2026년 9월 30일
+최종 수정일: 2026년 10월 4일
