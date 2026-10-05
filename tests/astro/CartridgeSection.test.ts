@@ -42,7 +42,7 @@ describe('CartridgeSection.astro', () => {
   it('general version (P2-6): an editorial list of the featured projects under 대표 프로젝트, and one underlined more link', async () => {
     const html = await renderAstro(CartridgeSection, { props: { variant: 'data', lang: 'ko', cartridges, moreHref: '/data/projects/', moreLabel: '프로젝트 전체 보기' } });
     expect(html).toMatch(/<section[^>]*id="featured-projects"[^>]*class="ed-sec featured"/);
-    expect(html).toMatch(/<h2[^>]*id="featured-projects-title"[^>]*class="ed-head__title" data-serif[^>]*>대표 프로젝트<\/h2>/);
+    expect(html).toMatch(/<h2[^>]*id="featured-projects-title"[^>]*class="ed-head__title"[^>]*>대표 프로젝트<\/h2>/);
     expect(html).toMatch(/<ol class="ed-list"/);
     expect(html.match(/<li class="pli ed-item/g)).toHaveLength(cartridges.length);
     expect(html).toMatch(/<a class="ed-link" href="\/data\/projects\/"[^>]*>프로젝트 전체 보기/);

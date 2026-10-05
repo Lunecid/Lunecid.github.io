@@ -51,8 +51,8 @@ describe('DocumentList.astro', () => {
   it('general version (P2-4): editorial head and links, still one #documents section', async () => {
     const html = await renderAstro(DocumentList, { props: { variant: 'data', lang: 'ko', documents: documentsFor('ko') } });
     expect(html).toMatch(/<section(?=[^>]*\bid="documents")[^>]*>/);
-    expect(html).toMatch(/<h2[^>]*class="ed-head__title" data-serif[^>]*>이력서 PDF<\/h2>/);
-    expect(html).toMatch(/<p class="ed-label"[^>]*>문서<\/p>/);
+    expect(html).toMatch(/<h2[^>]*class="ed-head__title"[^>]*>이력서 PDF<\/h2>/);
+    expect(html).toMatch(/<p class="ed-label ed-chip"[^>]*>문서<\/p>/);
     expect(html).not.toMatch(/hud-label|\bcut\b/);
   });
 });

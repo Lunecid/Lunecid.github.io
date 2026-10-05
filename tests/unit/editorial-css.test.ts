@@ -10,7 +10,10 @@ describe('src/styles/editorial.css (P2-1, spec §8)', () => {
 
   it('scopes every selector to the general version (defence in depth: a data rule must never style a game page)', () => {
     expect(rules.length).toBeGreaterThan(0);
-    const unscoped = rules.flatMap((r) => splitSelectors(r.selector)).filter((s) => s !== SCOPE && !s.startsWith(`${SCOPE} `));
+    // DS-3: the scope may be compounded on the root itself (html.js, the page's motion setting) — still the general version only
+    const unscoped = rules
+      .flatMap((r) => splitSelectors(r.selector))
+      .filter((s) => s !== SCOPE && !s.startsWith(`${SCOPE} `) && !/^:root\[data-variant="data"\](\.js|\[data-motion="reduce"\]) /.test(s));
     expect(unscoped).toEqual([]);
   });
 
@@ -25,13 +28,38 @@ describe('src/styles/editorial.css (P2-1, spec §8)', () => {
     expect(css.match(/var\(--ed-accent\)/g) ?? []).toEqual([]);
   });
 
-  it('defines the editorial building blocks and the [data-serif] face rule', () => {
+  it('defines the editorial building blocks and the [data-serif] face rule (DS-3: SB Sans 800 until DS-8 removes the last attribute)', () => {
     const selectors = rules.map((r) => r.selector).join('\n');
     const classes = ['ed-sec', 'ed-list', 'ed-item', 'ed-item__title', 'ed-meta', 'ed-body', 'ed-tag', 'ed-links', 'ed-link', 'ed-btn', 'ed-btn--fill', 'ed-figure', 'ed-figcap', 'ed-figcap__num', 'ed-table', 'ed-prose'];
     for (const c of classes) expect(selectors, `.${c}`).toMatch(new RegExp(`\\.${c}(?![\\w-])`));
     const serif = rules.find((r) => r.selector === `${SCOPE} [data-serif]`);
-    expect(serif?.decls.get('font-family')).toBe('var(--font-ed-head)');
-    expect(serif?.decls.get('font-weight')).toBe('700');
+    expect(serif?.decls.get('font-family')).toBe('var(--font-sans)');
+    expect(serif?.decls.get('font-weight')).toBe('800');
+  });
+
+  it('DS-3: the v5 frame — grid, rail and chip, page head, folio, paint marks, display face, one-time reveal with both reduce paths and print', () => {
+    const selectors = rules.flatMap((r) => splitSelectors(r.selector));
+    for (const c of ['ed-g', 'ed-rail', 'ed-rail__in', 'ed-rail__n', 'ed-chip', 'ed-sh', 'ed-phead', 'ed-tblock', 'ed-display', 'ed-folio', 'ed-folio__n', 'ed-mc', 'ed-mc--aline', 'ed-mc--fmark', 'ed-mc--hero', 'ed-mc--photo', 'ed-mc--cv', 'ed-mc--mosaic']) {
+      expect(selectors.join('\n'), `.${c}`).toMatch(new RegExp(`\\.${c}(?![\\w-])`));
+    }
+    // the cascade's answer: the last rule (in source order) for the selector that sets the property
+    const decl = (selector: string, prop: string, media: string | null = null): string | undefined =>
+      rules.filter((r) => r.media === media && splitSelectors(r.selector).includes(selector) && r.decls.has(prop)).at(-1)?.decls.get(prop);
+    expect(decl(`${SCOPE} [data-display]`, 'font-family')).toBe('var(--font-ed-display)');
+    expect(decl(`${SCOPE} .ed-rail__n::before`, 'content')).toBe('counter(ed-sec, decimal-leading-zero) / ""');
+    expect(decl(`${SCOPE} .ed-folio__n::before`, 'content')).toBe('"- " counter(ed-folio) " -" / ""');
+    // reveal: transform/opacity only, durations from tokens, both reduce paths drop the transform, print shows all
+    const waiting = rules.filter((r) => r.selector.includes('is-waiting')).flatMap((r) => [...r.decls.keys()]);
+    expect([...new Set(waiting)].sort()).toEqual(['opacity', 'transform']);
+    expect(rules.some((r) => r.selector.includes('.ed-sh.is-in') && r.decls.get('transition') === 'transform var(--dur-rise) var(--ease-out), opacity var(--dur-fade) linear')).toBe(true);
+    const reduceJs = rules.filter((r) => r.media === null && r.selector.includes('[data-motion="reduce"]'));
+    const reduceOs = rules.filter((r) => r.media === '@media (prefers-reduced-motion: reduce)' && r.selector.includes('.ed-sh'));
+    for (const set of [reduceJs, reduceOs]) expect(set.some((r) => r.decls.get('transform') === 'none !important' && r.selector.includes('.ed-stamp'))).toBe(true);
+    expect(rules.some((r) => r.media === '@media print' && r.selector.includes('.ed-sh') && r.decls.get('opacity') === '1 !important')).toBe(true);
+    expect(rules.some((r) => r.media === '@media print' && r.selector.includes('.ed-folio') && r.decls.get('display') === 'none !important')).toBe(true);
+    // links: v5.1 ink with the underline tokens; the stroke is paint
+    expect(decl(`${SCOPE} .ed-link`, 'color')).toBe('var(--ed-link)');
+    expect(decl(`${SCOPE} .ed-link`, 'text-underline-offset')).toBe('var(--ed-ul-off)');
   });
 
   it('gives the case-study body (article.ed-prose) a complete Markdown typography of its own; wide tables and code scroll in their own box (no read.css on general pages from Task 9)', () => {

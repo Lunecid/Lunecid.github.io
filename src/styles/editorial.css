@@ -5,7 +5,8 @@
 
 /* ── page ── */
 :root[data-variant="data"] body { font-variant-numeric: tabular-nums; }
-:root[data-variant="data"] [data-serif] { font-family: var(--font-ed-head); font-weight: 700; }
+/* DS-3: the general version's headings are SB Sans 800 (v5); the attribute goes with DS-8 (the chooser keeps its own). */
+:root[data-variant="data"] [data-serif] { font-family: var(--font-sans); font-weight: 800; }
 :root[data-variant="data"] .skip-link { background: var(--ed-fill); color: var(--ed-fill-ink); }
 /* The sticky nav keeps scroll-margin 0, like .hud-nav in base.css (focus inside it never scrolls the page). */
 :root[data-variant="data"] body > .data-nav,
@@ -27,9 +28,7 @@
 :root[data-variant="data"] .ed-links { display: flex; flex-wrap: wrap; gap: 0 20px; }
 :root[data-variant="data"] .ed-link {
   display: inline-flex; align-items: center; gap: .35em; min-height: var(--tap);
-  color: var(--ed-link); font-weight: 600;
-  text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: .2em;
-  transition: text-decoration-color var(--dur-hover) linear;
+  font-weight: 600; /* colour, underline and the hover stroke: the v5 frame block below (v5.1 links) */
 }
 :root[data-variant="data"] .ed-btn {
   display: inline-flex; align-items: center; justify-content: center; gap: .4em;
@@ -41,11 +40,9 @@
 :root[data-variant="data"] .ed-btn--fill { border-color: var(--ed-fill); background: var(--ed-fill); color: var(--ed-fill-ink); }
 /* colour hovers only where a pointer can hover (N13: no sticky hover on touch); press states for every device */
 @media (hover: hover) {
-  :root[data-variant="data"] .ed-link:hover { text-decoration-color: var(--ed-ink); }
   :root[data-variant="data"] .ed-btn:hover { background: var(--ed-rule); }
   :root[data-variant="data"] .ed-btn--fill:hover { background: var(--ed-fill); text-decoration: underline; }
 }
-:root[data-variant="data"] .ed-link:active { text-decoration-color: var(--ed-ink); }
 :root[data-variant="data"] .ed-btn:active { background: var(--ed-rule); }
 :root[data-variant="data"] .ed-btn--fill:active { background: var(--ed-fill); text-decoration: underline; }
 
@@ -80,7 +77,7 @@
 :root[data-variant="data"] article.ed-prose ol { list-style: decimal; }
 :root[data-variant="data"] article.ed-prose li + li { margin-top: .35em; }
 :root[data-variant="data"] article.ed-prose li::marker { color: var(--ed-muted); }
-:root[data-variant="data"] .ed-prose a:not(.ed-btn) { color: var(--ed-link); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: .18em; }
+:root[data-variant="data"] .ed-prose a:not(.ed-btn) { text-decoration: underline; } /* the v5.1 look: the frame block below */
 :root[data-variant="data"] article.ed-prose strong { font-weight: 700; }
 :root[data-variant="data"] article.ed-prose blockquote { padding: 4px 0 4px 16px; border-left: var(--ed-rule-w-strong) solid var(--ed-rule-strong); color: var(--ed-muted); }
 :root[data-variant="data"] article.ed-prose code { padding: .1em .35em; border: var(--ed-rule-w) solid var(--paper-code-line); background: var(--paper-code-bg); color: var(--paper-ink); font-family: var(--font-mono); font-size: .9em; }
@@ -154,3 +151,140 @@
 }
 :root[data-variant="data"] .image-viewer__close:active,
 :root[data-variant="data"] .image-viewer__nav:active { color: var(--ed-link); }
+
+/* ══ v5 frame (DS-3): report layout — 12-column grid with a narrow rail, painted accents, perforation folios ══
+   Type: Korean headings in SB Sans 800; Latin display words, numerals, section numbers and folios in "SB Display"
+   (--font-ed-display). Links (v5.1, museum labels): ink with a fine underline; hover (hover-capable pointers) and
+   keyboard focus paint a yellow brush stroke under the words — a transform sweep on single-line controls, a background
+   band at once on links that can wrap. Paint (--ed-paint-*, --ed-rag*) comes from paint.css (data pages only). */
+:root[data-variant="data"] body { counter-reset: ed-folio; }
+:root[data-variant="data"] #main { counter-reset: ed-sec; }
+:root[data-variant="data"] [data-display] { font-family: var(--font-ed-display); font-stretch: 112%; font-weight: 900; text-transform: uppercase; }
+
+/* ── links: ink, a fine underline a little below the baseline; the painted stroke on hover and focus ── */
+:root[data-variant="data"] .ed-link,
+:root[data-variant="data"] .ed-prose a:not(.ed-btn) {
+  color: var(--ed-link);
+  text-decoration: underline var(--ed-ul) var(--ed-link-line); text-underline-offset: var(--ed-ul-off); text-decoration-skip-ink: auto;
+  -webkit-box-decoration-break: clone; box-decoration-break: clone;
+  background: var(--tex-yh) 0 var(--ed-sk-y, .8em) / 520px .38em repeat-x, linear-gradient(var(--ed-yellow), var(--ed-yellow)) 0 var(--ed-sk-y, .8em) / 100% .38em no-repeat;
+  background-size: 0 0, 0 0;
+}
+/* .ed-link is an inline-flex box (44 px tall): its band sits round the centred baseline */
+:root[data-variant="data"] .ed-link { --ed-sk-y: calc(50% + .39em); }
+:root[data-variant="data"] .ed-link:focus-visible,
+:root[data-variant="data"] .ed-prose a:not(.ed-btn):focus-visible { background-size: 520px .38em, 100% .38em; text-decoration-thickness: var(--ed-ul-on); color: var(--ed-link-hover); }
+@media (hover: hover) {
+  :root[data-variant="data"] .ed-link:hover,
+  :root[data-variant="data"] .ed-prose a:not(.ed-btn):hover { background-size: 520px .38em, 100% .38em; text-decoration-thickness: var(--ed-ul-on); color: var(--ed-link-hover); }
+}
+:root[data-variant="data"] .ed-link:active,
+:root[data-variant="data"] .ed-prose a:not(.ed-btn):active { background-size: 520px .38em, 100% .38em; text-decoration-thickness: var(--ed-ul-on); color: var(--ed-link-hover); }
+
+/* ── the grid: 12 columns, the rail (1–3) and the main column (4–12) from 734 px ── */
+:root[data-variant="data"] .ed-g { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); column-gap: 16px; }
+:root[data-variant="data"] .ed-g > * { grid-column: 1 / -1; min-width: 0; }
+
+/* ── page head: a tinted label block in the rail, the accent line, the Latin display word, the h1, the lead ── */
+:root[data-variant="data"] .ed-phead { padding-block: 40px var(--section-pad-y); background: var(--ed-bg); color: var(--ed-ink); }
+:root[data-variant="data"] .ed-phead__grid { row-gap: 24px; }
+:root[data-variant="data"] .ed-tblock { align-self: start; padding: 18px 16px; background: var(--ed-n-100); }
+:root[data-variant="data"] .ed-tblock .ed-label { font-family: var(--font-sans); font-style: normal; font-weight: 600; color: var(--ed-ink); }
+:root[data-variant="data"] .ed-tblock__meta { display: flex; flex-direction: column; gap: 2px; margin-top: 10px; font-size: var(--fs-label); font-weight: 600; line-height: 1.5; color: var(--ed-ink-2); }
+:root[data-variant="data"] .ed-tblock__meta span { overflow-wrap: anywhere; }
+:root[data-variant="data"] .ed-display { margin-top: 22px; font-size: var(--fs-ed-display); line-height: .92; color: var(--ed-ink); overflow-wrap: break-word; }
+:root[data-variant="data"] .ed-phead__title { margin-top: 18px; font-size: var(--fs-ed-h1); font-weight: 800; line-height: 1.1; color: var(--ed-ink); }
+:root[data-variant="data"] .ed-phead__lead { margin-top: 18px; max-width: var(--measure); font-size: var(--fs-body); line-height: var(--lh-body); color: var(--ed-ink); }
+
+/* ── section openers: the rail holds the aria-hidden section number and the caption chip; the h2 starts the main
+      column. Any element whose child is an opener becomes the section grid (display: contents on the opener puts
+      its rail and title into it); everything else in it takes the main column. Below 734 px: number and chip over
+      the heading. ── */
+:root[data-variant="data"] .ed-sh { display: block; padding-top: 0; border-top: 0; }
+:root[data-variant="data"] .ed-rail { padding-bottom: 20px; }
+:root[data-variant="data"] .ed-rail__in { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+:root[data-variant="data"] .ed-rail__n { font-family: var(--font-ed-display); font-stretch: 112%; font-size: var(--fs-ed-num); font-weight: 900; line-height: .9; color: var(--ed-ink); font-variant-numeric: tabular-nums; }
+:root[data-variant="data"] .ed-rail__n::before { counter-increment: ed-sec; content: counter(ed-sec, decimal-leading-zero) / ""; }
+:root[data-variant="data"] .ed-chip { display: inline-flex; width: fit-content; align-items: center; min-height: 28px; padding: 3px 10px 2px; background: var(--ed-black); color: var(--ed-on-color); font-size: var(--fs-label); font-weight: 700; line-height: 1.3; }
+:root[data-variant="data"] .ed-chip:lang(en) { font-family: var(--font-sans); font-style: normal; letter-spacing: .08em; }
+:root[data-variant="data"] .ed-sh .ed-head__title { font-size: var(--fs-ed-h2); font-weight: 800; line-height: 1.2; color: var(--ed-ink); }
+:root[data-variant="data"] .ed-sh .ed-head__intro { margin-top: 14px; color: var(--ed-ink-2); }
+
+/* ── perforation and folio "- n -" between sections (n: a page-wide counter; the footer's is the last) ── */
+:root[data-variant="data"] .ed-folio { position: relative; display: flex; align-items: center; height: 40px; }
+:root[data-variant="data"] .ed-folio::before { content: ""; position: absolute; left: 0; right: 0; top: 50%; height: 1px; background: repeating-linear-gradient(to right, var(--ed-perf) 0 6px, transparent 6px 10px); }
+:root[data-variant="data"] .ed-folio__n { position: relative; display: inline-flex; align-items: center; min-height: 28px; padding: 0 10px; background: var(--ed-black); color: var(--ed-on-color); font-family: var(--font-ed-display); font-size: var(--fs-label); font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; }
+:root[data-variant="data"] .ed-folio__n::before { counter-increment: ed-folio; content: "- " counter(ed-folio) " -" / ""; }
+
+/* ── painted accents (PaintMark): cells parted by white gaps (--ed-rw), frayed edges where mask-box-image exists ── */
+:root[data-variant="data"] .ed-mc { display: grid; gap: var(--ed-rw); }
+:root[data-variant="data"] .ed-mc > i { display: block; min-width: 0; min-height: 0; }
+:root[data-variant="data"] .ed-mc__r { background: var(--ed-paint-rh); -webkit-mask-box-image: var(--ed-rag); }
+:root[data-variant="data"] .ed-mc__b { background: var(--ed-paint-bv); -webkit-mask-box-image: var(--ed-rag); }
+:root[data-variant="data"] .ed-mc__y { background: var(--ed-paint-yh); -webkit-mask-box-image: var(--ed-rag); }
+:root[data-variant="data"] .ed-mc--hero { grid-template-rows: 1.6fr 1fr; width: clamp(28px, 5.5vw, 76px); }
+:root[data-variant="data"] .ed-mc--hero > .ed-mc__y { background: var(--ed-paint-yv); }
+:root[data-variant="data"] .ed-mc--photo { margin-top: 10px; height: 52px; grid-template-columns: 1fr 22% 14%; grid-template-rows: 1fr 1fr; }
+:root[data-variant="data"] .ed-mc--cv { margin-top: 10px; height: 64px; grid-template-columns: 1fr 24% 16%; grid-template-rows: 1fr 1fr; }
+:root[data-variant="data"] .ed-mc--photo > .ed-mc__r,
+:root[data-variant="data"] .ed-mc--photo > .ed-mc__b,
+:root[data-variant="data"] .ed-mc--cv > .ed-mc__r { grid-row: 1 / 3; }
+:root[data-variant="data"] .ed-mc--cv > :last-child { grid-column: 2 / 4; }
+:root[data-variant="data"] .ed-mc--photo > .ed-mc__y,
+:root[data-variant="data"] .ed-mc--cv > .ed-mc__y { background: var(--ed-paint-yv); }
+:root[data-variant="data"] .ed-mc--mosaic { display: none; }
+:root[data-variant="data"] .ed-mc--aline { display: flex; gap: 4px; width: 84px; height: 12px; }
+:root[data-variant="data"] .ed-mc--aline > .ed-mc__r { flex: 0 0 58px; -webkit-mask-box-image: var(--ed-rag-s); }
+:root[data-variant="data"] .ed-mc--aline > .ed-mc__y { flex: 1 1 auto; background: var(--ed-paint-yv); -webkit-mask-box-image: var(--ed-rag-s); }
+:root[data-variant="data"] .ed-mc--fmark { display: inline-flex; flex: none; gap: 3px; width: 46px; height: 14px; }
+:root[data-variant="data"] .ed-mc--fmark > i { -webkit-mask-box-image: var(--ed-rag-s); }
+:root[data-variant="data"] .ed-mc--fmark > .ed-mc__r { flex: 0 0 24px; }
+:root[data-variant="data"] .ed-mc--fmark > .ed-mc__b { flex: 0 0 7px; }
+:root[data-variant="data"] .ed-mc--fmark > .ed-mc__y { flex: 1 1 auto; }
+
+@media (min-width: 734px) {
+  :root[data-variant="data"] .ed-g,
+  :root[data-variant="data"] :has(> .ed-sh) { column-gap: 24px; }
+  :root[data-variant="data"] .ed-phead__grid > .ed-tblock { grid-column: 1 / 4; min-height: 180px; }
+  :root[data-variant="data"] .ed-phead__grid > .ed-phead__main { grid-column: 4 / -1; }
+  :root[data-variant="data"] .ed-phead__main > .ed-mc--aline:first-child + .ed-display { margin-top: 22px; }
+  :root[data-variant="data"] :has(> .ed-sh) { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); align-items: start; }
+  :root[data-variant="data"] :has(> .ed-sh) > * { grid-column: 4 / -1; min-width: 0; }
+  :root[data-variant="data"] :has(> .ed-sh) > .ed-sh { display: contents; }
+  :root[data-variant="data"] .ed-sh > .ed-rail { grid-column: 1 / 4; grid-row: 1 / span 40; align-self: stretch; padding: 0 24px 0 0; border-right: 1px solid var(--ed-line); }
+  :root[data-variant="data"] .ed-sh > .ed-head__title,
+  :root[data-variant="data"] .ed-sh > .ed-head__intro { grid-column: 4 / -1; min-width: 0; }
+  :root[data-variant="data"] .ed-rail__in { position: sticky; top: calc(var(--nav-h) + 24px); flex-direction: column; align-items: flex-start; }
+}
+@media (min-width: 1068px) {
+  :root[data-variant="data"] .ed-g,
+  :root[data-variant="data"] :has(> .ed-sh) { column-gap: 32px; }
+  :root[data-variant="data"] .ed-sh > .ed-rail { padding-right: 32px; }
+  :root[data-variant="data"] .ed-mc--mosaic { display: grid; aspect-ratio: 1 / 1.02; grid-template-columns: 1.7fr 1fr .55fr; grid-template-rows: 1.5fr .9fr .6fr; }
+  :root[data-variant="data"] .ed-mc--mosaic > :nth-child(1) { grid-row: 1 / 3; background: var(--ed-paint-rv); }
+  :root[data-variant="data"] .ed-mc--mosaic > .ed-mc__b { background: var(--ed-paint-bh); }
+  :root[data-variant="data"] .ed-mc--mosaic > :nth-child(2),
+  :root[data-variant="data"] .ed-mc--mosaic > :nth-child(6) { grid-column: 2 / 4; }
+  :root[data-variant="data"] .ed-mc--mosaic > :nth-child(5) { grid-column: 1 / 2; }
+}
+
+/* ── the one-time reveal (src/scripts/data-reveal.ts): only below the first screen, once; transform/opacity ── */
+:root[data-variant="data"].js .ed-sh.is-waiting :is(.ed-rail__in, .ed-head__title, .ed-head__intro),
+:root[data-variant="data"].js .ed-stamp.is-waiting { opacity: 0; }
+:root[data-variant="data"].js .ed-sh.is-rise.is-waiting :is(.ed-rail__in, .ed-head__title, .ed-head__intro) { transform: translateY(18px); }
+:root[data-variant="data"].js .ed-stamp.is-rise.is-waiting { transform: scale(1.12); }
+:root[data-variant="data"] .ed-sh.is-in :is(.ed-rail__in, .ed-head__title, .ed-head__intro) { transition: transform var(--dur-rise) var(--ease-out), opacity var(--dur-fade) linear; }
+:root[data-variant="data"] .ed-stamp.is-in { transition: transform var(--dur-stamp) var(--ease-out), opacity var(--dur-fade) linear; }
+:root[data-variant="data"][data-motion="reduce"] .ed-sh :is(.ed-rail__in, .ed-head__title, .ed-head__intro),
+:root[data-variant="data"][data-motion="reduce"] .ed-stamp { transform: none !important; }
+@media (prefers-reduced-motion: reduce) {
+  :root[data-variant="data"] .ed-sh :is(.ed-rail__in, .ed-head__title, .ed-head__intro),
+  :root[data-variant="data"] .ed-stamp { transform: none !important; }
+}
+@media print {
+  :root[data-variant="data"] .ed-sh :is(.ed-rail__in, .ed-head__title, .ed-head__intro),
+  :root[data-variant="data"] .ed-stamp { opacity: 1 !important; transform: none !important; }
+  :root[data-variant="data"] .ed-folio,
+  :root[data-variant="data"] .ed-mc { display: none !important; }
+  :root[data-variant="data"] .ed-rail__in { position: static; }
+}

@@ -12,8 +12,8 @@ describe('NewsList.astro (P2-7)', () => {
   it('a dated list under the #patch-notes id, without version tags, pointers or HUD chips', async () => {
     const html = await renderAstro(NewsList, { props: { lang: 'ko', notes } });
     expect(html).toMatch(/<section id="patch-notes" class="news ed-sec"[^>]*aria-labelledby="pn-title"/);
-    expect(html).toMatch(/<p class="ed-label"[^>]*>소식<\/p>/);
-    expect(html).toMatch(/<h2 id="pn-title" class="ed-head__title" data-serif[^>]*>최근 소식<\/h2>/);
+    expect(html).toMatch(/<p class="ed-label ed-chip"[^>]*>소식<\/p>/);
+    expect(html).toMatch(/<h2 id="pn-title" class="ed-head__title"[^>]*>최근 소식<\/h2>/);
     expect(html.match(/<li class="ed-item news__item"/g)).toHaveLength(2);
     expect(html).toMatch(/<time datetime="2026-09-01"[^>]*>2026\.09\.01<\/time> · 연구/);
     expect(html).toMatch(/<a class="hit" href="\/data\/research\/cog-2026-engagement\/"[^>]*>구두 발표<\/a>/);

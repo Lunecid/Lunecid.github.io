@@ -46,7 +46,7 @@ const github = usableGitHub(generated.github());
 ---
 
 <Layout lang={lang} variant={variant} title={meta.title} description={meta.description} page="projects" section="projects" sectionIndex={true}>
-  <PageHeader lang={lang} variant={variant} label={captionFor(v, 'pageProjects', lang)} title={t(lang, 'projects.title')} intro={meta.description} />
+  <PageHeader lang={lang} variant={variant} label={captionFor(v, 'pageProjects', lang)} title={t(lang, 'projects.title')} display={t('en', 'projects.title')} intro={meta.description} />
   <section id="project-list" class:list={editorial ? 'ed-sec' : ['sec', 'hud-grid']} aria-labelledby="project-list-title">
     <div class:list={['container', { 'container--hud': !editorial }]}>
       <h2 id="project-list-title" class="sr-only">{t(lang, 'projects.listLabel')}</h2>

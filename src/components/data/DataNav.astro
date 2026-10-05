@@ -1,7 +1,9 @@
 ---
-// General-version nav (spec §5.5, §8): the name in the serif heading face → the general home, 연구 · 프로젝트 · 기록
-// (no numbers, no player log), the language switch and the version switch (bar ≥ 734px, panel below, contract §2.5),
-// the CV link (D-7: Academic CV on research pages) and the phone menu (src/scripts/nav-menu.ts).
+// General-version nav (spec §5.5, §8; v5 masthead): the name in SB Sans 800 → the general home, 01 연구 · 02 프로젝트 ·
+// 03 기록 (aria-hidden numbers in the display face, no player log; the current section carries a red painted
+// underline), the language switch and the version switch (bar ≥ 734px, panel below, contract §2.5), the CV link (D-7:
+// Academic CV on research pages) and the phone menu (src/scripts/nav-menu.ts). Clickables are ink (v5.1): hover on a
+// hover-capable pointer and keyboard focus sweep a yellow brush stroke under the label (transform only).
 import VariantSwitch from '../common/VariantSwitch.astro';
 import type { Lang } from '../../i18n/ui';
 import { languages } from '../../i18n/ui';
@@ -33,13 +35,13 @@ const currentValue = exact ? 'page' : 'true';
 <header class="data-nav" data-open="false" data-data-nav>
   <div class="data-nav__bar">
     <a class="data-nav__brand" href={homeHref(lang, 'data')}>
-      <span class="data-nav__name" data-serif aria-hidden="true">{person.name[lang]}</span>
+      <span class="data-nav__name" aria-hidden="true">{person.name[lang]}</span>
       <span class="sr-only">{t(lang, 'nav.brandSr')}</span>
     </a>
     <nav id="data-menu" class="data-nav__panel" aria-label={t(lang, 'nav.label')}>
       <ul class="data-nav__list" role="list">
-        {items.map((item) => (
-          <li><a href={item.href} aria-current={current === item.key ? currentValue : undefined}>{item.label}</a></li>
+        {items.map((item, i) => (
+          <li><a href={item.href} aria-current={current === item.key ? currentValue : undefined}><span class="data-nav__n" aria-hidden="true" data-display>{String(i + 1).padStart(2, '0')}</span>{item.label}</a></li>
         ))}
       </ul>
       {altLangHref !== null && (
@@ -85,7 +87,7 @@ const currentValue = exact ? 'page' : 'true';
     top: 0;
     z-index: 50;
     background: var(--ed-bg);
-    border-bottom: var(--ed-rule-w) solid var(--ed-rule);
+    border-bottom: var(--ed-rule-w) solid var(--ed-ink);
   }
   .data-nav__bar {
     position: relative;
@@ -109,42 +111,77 @@ const currentValue = exact ? 'page' : 'true';
     color: var(--ed-ink);
     text-decoration: none;
   }
-  .data-nav__name { font-size: 20px; }
-  .data-nav__list { display: flex; gap: 24px; }
-  .data-nav__list a {
-    display: inline-flex;
+  .data-nav__name { font-size: 20px; font-weight: 800; }
+  .data-nav__list { display: flex; gap: 4px; }
+  /* every control here is ink; its stroke (::before) is a painted yellow band that sweeps in from the left */
+  .data-nav__list a,
+  .data-nav__lang a,
+  .data-nav__cv,
+  .data-nav__tools :global(.variant-switch) {
+    position: relative;
+    isolation: isolate;
     align-items: center;
+    gap: 6px;
     min-height: var(--tap);
-    color: var(--ed-ink);
+    color: var(--ed-link);
     text-decoration: none;
-    text-decoration-thickness: 2px;
-    text-underline-offset: .35em;
-    transition: text-decoration-color var(--dur-hover) linear;
   }
+  /* (the version switch keeps its own display: VariantSwitch hides the bar copy below 734px) */
+  .data-nav__list a,
+  .data-nav__lang a,
+  .data-nav__cv { display: inline-flex; }
+  .data-nav__list a { padding-inline: 10px; font-weight: 700; }
+  .data-nav__n { font-size: var(--fs-label); font-weight: 800; color: var(--ed-ink-2); font-variant-numeric: tabular-nums; }
+  .data-nav__list a::before,
+  .data-nav__lang a::before,
+  .data-nav__cv::before,
+  .data-nav__tools :global(.variant-switch)::before {
+    content: "";
+    position: absolute;
+    z-index: -1;
+    left: 0;
+    right: 0;
+    top: calc(50% + .2em);
+    height: max(.38em, 6px);
+    background: var(--ed-paint-yh);
+    -webkit-mask-box-image: var(--ed-rag-s);
+    pointer-events: none;
+    transform: scaleX(0);
+    transform-origin: 0 50%;
+    transition: transform var(--dur-stroke) var(--ease-out);
+  }
+  .data-nav__list a::before { left: 10px; right: 10px; }
+  .data-nav__list a:focus-visible::before,
+  .data-nav__lang a:focus-visible::before,
+  .data-nav__cv:focus-visible::before,
+  .data-nav__tools :global(.variant-switch:focus-visible)::before,
+  .data-nav__list a:active::before,
+  .data-nav__lang a:active::before,
+  .data-nav__cv:active::before,
+  .data-nav__tools :global(.variant-switch:active)::before { transform: none; }
   @media (hover: hover) {
-    .data-nav__list a:hover { text-decoration: underline; text-decoration-color: var(--ed-rule); }
+    .data-nav__list a:hover::before,
+    .data-nav__lang a:hover::before,
+    .data-nav__cv:hover::before,
+    .data-nav__tools :global(.variant-switch:hover)::before { transform: none; }
   }
-  .data-nav__list a:active { text-decoration: underline; }
-  .data-nav__list a[aria-current] { text-decoration: underline; text-decoration-color: var(--ed-link); }
-  .data-nav__tools { display: flex; align-items: center; gap: 14px; }
-  .data-nav__lang { color: var(--ed-muted); }
-  .data-nav__lang a {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-height: var(--tap);
-    min-width: var(--tap);
-    color: var(--ed-link);
+  /* the current section: ink, a red painted underline */
+  .data-nav__list a[aria-current] { color: var(--ed-ink); }
+  .data-nav__list a[aria-current]::after {
+    content: "";
+    position: absolute;
+    left: 10px;
+    right: 10px;
+    bottom: 4px;
+    height: 4px;
+    background: var(--ed-paint-rh);
+    -webkit-mask-box-image: var(--ed-rag-s);
   }
-  .data-nav__cv {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-height: var(--tap);
-    min-width: var(--tap);
-    color: var(--ed-link);
-    font-weight: 600;
-  }
+  .data-nav__tools { display: flex; align-items: center; gap: 14px; font-size: var(--fs-label); font-weight: 700; }
+  .data-nav__lang { color: var(--ed-ink-2); }
+  .data-nav__lang-cur { color: var(--ed-ink); }
+  .data-nav__lang a { justify-content: center; min-width: var(--tap); }
+  .data-nav__cv { justify-content: center; min-width: var(--tap); }
   .data-nav__toggle {
     /* G-017 (HudNav, 29c19b8): one fixed width, so the open "×" and the closed 메뉴/Menu never move the bar. */
     box-sizing: border-box;
@@ -152,10 +189,10 @@ const currentValue = exact ? 'page' : 'true';
     min-height: var(--tap);
     min-width: 0;
     padding: 0;
-    border: var(--ed-rule-w) solid var(--ed-ink);
+    border: 2px solid var(--ed-ink);
     background: var(--ed-bg);
     color: var(--ed-ink);
-    font-weight: 600;
+    font-weight: 700;
     cursor: pointer;
   }
   .data-nav__toggle[aria-expanded="true"] { background: var(--ed-fill); color: var(--ed-fill-ink); }
@@ -194,7 +231,11 @@ const currentValue = exact ? 'page' : 'true';
       background: var(--scrim);
     }
     .data-nav__list { flex-direction: column; gap: 0; }
-    .data-nav__list a { width: 100%; min-height: 48px; font-size: var(--fs-body); }
+    .data-nav__list a { width: 100%; min-height: 48px; padding-inline: 4px; font-size: var(--fs-body); }
+    .data-nav__list a::before { left: 4px; right: auto; width: calc(100% - 8px); }
+    /* the current section's paint turns into a short vertical stroke at the row's left edge */
+    .data-nav__list a[aria-current]::after { left: -8px; right: auto; top: 12px; bottom: 12px; width: 4px; height: auto; background: var(--ed-paint-rv); }
+    .data-nav__lang--panel { margin-top: 4px; padding-top: 6px; border-top: 1px dashed var(--ed-perf); }
     .data-nav__lang--bar { display: none; }
     .data-nav__tools { gap: 6px; }
     :global(html:not(.js)) .data-nav { position: relative; }
@@ -202,6 +243,7 @@ const currentValue = exact ? 'page' : 'true';
   }
   @media (min-width: 734px) {
     .data-nav__toggle, .data-nav__lang--panel { display: none; }
+    .data-nav__bar { gap: 8px 24px; }
   }
   @media (min-width: 1068px) {
     .data-nav__bar { padding-inline: 28px; }
@@ -214,7 +256,10 @@ const currentValue = exact ? 'page' : 'true';
   @keyframes nav-scrim-in { from { opacity: 0; } }
   :global(:root[data-motion="reduce"]) .data-nav__panel,
   :global(:root[data-motion="reduce"]) .data-nav__scrim { animation: none !important; }
+  :global(:root[data-motion="reduce"]) .data-nav a::before,
+  :global(:root[data-motion="reduce"]) .data-nav__tools :global(.variant-switch)::before { transition: none; }
   @media (prefers-reduced-motion: reduce) {
     .data-nav__panel, .data-nav__scrim { animation: none !important; }
+    .data-nav a::before, .data-nav__tools :global(.variant-switch)::before { transition: none; }
   }
 </style>

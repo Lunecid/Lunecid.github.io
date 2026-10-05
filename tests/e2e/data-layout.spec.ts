@@ -84,3 +84,69 @@ test.describe('general case studies without read.css (P2-9, D-7)', () => {
     expect(await page.locator('main article.ed-prose td').first().evaluate((el) => getComputedStyle(el).hyphens)).toBe('manual');
   });
 });
+
+test.describe('DS-3: the v5 frame', () => {
+  test('DS-3: 1280 — rail and main columns line up on every data page (rail right edge = section numbers column)', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 900 });
+    let checked = 0;
+    for (const route of builtRoutes({ variant: 'data' })) {
+      await page.goto(route, { waitUntil: 'domcontentloaded' });
+      const geo = await page.evaluate(() => {
+        const box = (el: Element | null) => (el ? el.getBoundingClientRect() : null);
+        const rails = Array.from(document.querySelectorAll('main .ed-sh > .ed-rail')).map((rail) => {
+          const sh = rail.parentElement!;
+          const r = box(rail)!;
+          return { right: Math.round(r.right), left: Math.round(r.left), n: Math.round(box(rail.querySelector('.ed-rail__n'))!.left), title: Math.round(box(sh.querySelector(':scope > .ed-head__title'))!.left), id: sh.querySelector(':scope > .ed-head__title')?.id ?? '' };
+        });
+        const tblock = box(document.querySelector('main .ed-tblock'));
+        const main = box(document.querySelector('main .ed-phead__main'));
+        return { rails, tblock: tblock && { left: Math.round(tblock.left), right: Math.round(tblock.right) }, main: main && Math.round(main.left) };
+      });
+      if (geo.rails.length === 0 && !geo.tblock) continue;
+      checked += 1;
+      const lefts = [...geo.rails.map((r) => r.left), ...(geo.tblock ? [geo.tblock.left] : [])];
+      const rights = [...geo.rails.map((r) => r.right), ...(geo.tblock ? [geo.tblock.right] : [])];
+      const mains = [...geo.rails.map((r) => r.title), ...(geo.main !== null ? [geo.main] : [])];
+      expect(Math.max(...lefts) - Math.min(...lefts), `${route}: rail left edges ${lefts}`).toBeLessThanOrEqual(1);
+      expect(Math.max(...rights) - Math.min(...rights), `${route}: rail right edges ${rights}`).toBeLessThanOrEqual(1);
+      expect(Math.max(...mains) - Math.min(...mains), `${route}: main column ${mains}`).toBeLessThanOrEqual(1);
+      for (const r of geo.rails) {
+        expect(r.n, `${route} #${r.id}: the number sits in the rail`).toBe(r.left);
+        expect(r.title, `${route} #${r.id}: the title starts right of the rail`).toBeGreaterThan(r.right);
+      }
+    }
+    expect(checked).toBeGreaterThanOrEqual(12);
+  });
+
+  test('DS-3: no opener in the first viewport is hidden at load; scrolling reveals each once; JS off shows all', async ({ page, browser }) => {
+    await page.setViewportSize({ width: 1280, height: 720 });
+    await page.goto(dataPath('/records/'), { waitUntil: 'networkidle' });
+    const state = () =>
+      page.evaluate(() =>
+        Array.from(document.querySelectorAll('main .ed-sh')).map((sh) => {
+          const title = sh.querySelector(':scope > .ed-head__title')!;
+          return { id: title.id, top: title.getBoundingClientRect().top + scrollY, waiting: sh.classList.contains('is-waiting'), shown: sh.classList.contains('is-in'), opacity: Number(getComputedStyle(title).opacity) };
+        }),
+      );
+    const atLoad = await state();
+    expect(atLoad.length).toBeGreaterThan(4);
+    for (const s of atLoad) {
+      if (s.top < 720) expect(s.waiting || s.opacity < 1, `${s.id} on the first screen waits`).toBe(false);
+      else expect(s.waiting, `${s.id} below the first screen waits`).toBe(true);
+    }
+    // the sections' content itself never waits, only the opener's own boxes
+    expect(await page.locator('main .ed-sec .ed-list').first().evaluate((el) => getComputedStyle(el).opacity)).toBe('1');
+    for (const s of atLoad.filter((x) => x.top >= 720)) {
+      await page.locator(`#${s.id}`).scrollIntoViewIfNeeded();
+      await expect.poll(async () => (await state()).find((x) => x.id === s.id)?.opacity, s.id).toBe(1);
+    }
+    await page.evaluate(() => window.scrollTo(0, 0));
+    expect((await state()).filter((s) => s.waiting)).toEqual([]); // once: nothing hides again
+    const context = await browser.newContext({ javaScriptEnabled: false, viewport: { width: 1280, height: 720 } });
+    const nojs = await context.newPage();
+    await nojs.goto(dataPath('/records/'), { waitUntil: 'networkidle' });
+    const hidden = await nojs.evaluate(() => Array.from(document.querySelectorAll('main .ed-sh > *, main .ed-rail__in')).filter((el) => getComputedStyle(el).opacity !== '1' || document.querySelector('.is-waiting')).length);
+    expect(hidden).toBe(0);
+    await context.close();
+  });
+});

@@ -123,7 +123,7 @@ export function pyRandom(seed) {
     y ^= y >>> 18;
     return y >>> 0;
   };
-  const random = () => ((genrand() >>> 5) * 67108864 + (genrand() >>> 6)) / 9007199254740992;
+  const random = () => ((genrand() >>> 5) * 67108864 + (genrand() >>> 6)) / 2 ** 53;
   return { random, uniform: (/** @type {number} */ a, /** @type {number} */ b) => a + (b - a) * random() };
 }
 

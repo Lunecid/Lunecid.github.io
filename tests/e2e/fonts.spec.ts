@@ -147,15 +147,15 @@ test('DS-1: /data/ and /en/data/ never request the Korean heading face', async (
 });
 
 for (const route of builtRoutes({ variant: 'data' })) {
-  test(`${route}: every visible heading with Hangul carries data-serif (P2-3 rule)`, async ({ page }) => {
+  test(`DS-3 ${route}: every visible heading is set in SB Sans (the serif heading face left the general version; was the P2-3 data-serif sweep)`, async ({ page }) => {
     await page.goto(route, { waitUntil: 'domcontentloaded' });
-    const missing = await page.locator('main').evaluate((main) =>
+    const missing = await page.locator('main').evaluate((main, sans) =>
       Array.from(main.querySelectorAll('h1, h2, h3, h4'))
-        // exempt: visually hidden headings (no glyph drawn) and the paper sheet (its own "SB Serif KR" face)
+        // exempt: visually hidden headings (no glyph drawn) and the paper sheet (its own faces, D-15)
         .filter((h) => !h.closest('.sr-only, .paper'))
-        .filter((h) => /\p{Script=Hangul}/u.test(h.textContent ?? '') && !h.hasAttribute('data-serif'))
-        .map((h) => `${h.tagName.toLowerCase()}.${h.getAttribute('class') ?? ''}: ${(h.textContent ?? '').trim().slice(0, 24)}`),
-    );
+        .filter((h) => !getComputedStyle(h).fontFamily.startsWith(`"${sans}"`))
+        .map((h) => `${h.tagName.toLowerCase()}.${h.getAttribute('class') ?? ''}: ${getComputedStyle(h).fontFamily.slice(0, 30)}`),
+    SANS_FAMILY);
     expect(missing).toEqual([]);
   });
 }

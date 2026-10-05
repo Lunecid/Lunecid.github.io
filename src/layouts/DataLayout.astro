@@ -55,5 +55,9 @@ const altHref = altLangHref === undefined ? langSwitchHref(Astro.url.pathname, o
     <DataNav lang={lang} current={section} exact={sectionIndex} altLangHref={altHref} cvHref={cv.href} cvLabel={cv.label} />
     <main id="main" tabindex="-1"><slot /></main>
     <DataFooter lang={lang} notices={notices} builtAt={new Date()} />
+    <script>
+      import { initReveal } from '../scripts/data-reveal';
+      initReveal();
+    </script>
   </body>
 </html>

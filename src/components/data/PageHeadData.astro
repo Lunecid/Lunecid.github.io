@@ -1,0 +1,47 @@
+---
+/**
+ * The general version's page head (v5): in the rail a tinted label block with the caption and an aria-hidden job
+ * line (the page's canonical address in capitals and the last update; a case study passes its slug and period); in
+ * the main column the painted accent line, the Latin display word (aria-hidden, lang="en", data-display: the English
+ * page title on both languages), the page's one <h1> and the lead. Used by PageHeader's data branch and the case-study
+ * and records heads. No scoped <style> (shared components import it): editorial.css styles .ed-phead*.
+ */
+import type { Lang } from '../../i18n/ui';
+import { formatDate, t } from '../../i18n/utils';
+import { SITE } from '../../config';
+import { todayIso } from '../../lib/records';
+import PaintMark from './PaintMark.astro';
+
+interface Props {
+  lang: Lang;
+  /** The caption of the label block (captionFor(…, 'page*') in the page language). */
+  caption: string;
+  title: string;
+  /** The Latin display words: the English title of the page. */
+  display: string;
+  intro?: string;
+  /** id of the <h1> (the section's aria-labelledby target). */
+  titleId?: string;
+  /** The job line; default: the canonical address in capitals and the last update. */
+  job?: string[];
+}
+const { lang, caption, title, display, intro, titleId = 'page-head-title', job } = Astro.props;
+const address = new URL(Astro.url.pathname, SITE.url);
+const lines = job ?? [`${address.host}${address.pathname}`.toUpperCase(), `${t(lang, 'footer.lastUpdated')} ${formatDate(todayIso(new Date()), lang)}`];
+const hasSlot = Astro.slots.has('default');
+const hasRail = Astro.slots.has('rail');
+---
+<div class="ed-g ed-phead__grid">
+  <div class="ed-tblock">
+    {hasRail && <slot name="rail" />}
+    <p class="ed-label">{caption}</p>
+    <p class="ed-tblock__meta" aria-hidden="true">{lines.map((line, i) => <span lang={i === 0 && !job ? 'en' : undefined}>{line}</span>)}</p>
+  </div>
+  <div class="ed-phead__main">
+    <PaintMark kind="aline" />
+    <p class="ed-display" aria-hidden="true" lang="en" data-display>{display}</p>
+    <h1 id={titleId} class="ed-phead__title">{title}</h1>
+    {intro && <p class="ed-phead__lead">{intro}</p>}
+    {hasSlot && <slot />}
+  </div>
+</div>

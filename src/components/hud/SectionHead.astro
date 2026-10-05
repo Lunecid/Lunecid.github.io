@@ -1,9 +1,11 @@
 ---
 /**
  * One heading pattern for every section (D-8, P2-17). Game version: the "[ ■ ] CAPTION" HUD line over the title
- * (captionOnly: the caption alone, the title a visually hidden heading). General and neutral pages (P2-4, spec §8):
- * small caption + title + heavy top rule (.ed-head in base.css); the general version's title is set in the serif
- * heading face (data-serif, P2-3); neutral titles stay sans; captionOnly is a HUD choice and is ignored there.
+ * (captionOnly: the caption alone, the title a visually hidden heading). General version (DS-3, v5): a rail with the
+ * aria-hidden section number (a page-wide CSS counter, 01…n in DOM order) and the caption as a black chip, then the
+ * title; editorial.css turns the opener's parent into the rail + main grid from 734 px and reveals it once
+ * (data-reveal.ts). Neutral pages (P2-4): small caption + title + heavy top rule (.ed-head in base.css).
+ * captionOnly is a HUD choice and is ignored outside the game version.
  */
 import SectionLabel from './SectionLabel.astro';
 import type { PageVariant } from '../../variants';
@@ -39,10 +41,16 @@ const hasIntro = Astro.slots.has('default');
     )}
     {hasIntro && <div class="sec-head__intro"><slot /></div>}
   </header>
+) : variant === 'data' ? (
+  <header class:list={['ed-head', 'ed-sh', className]}>
+    <div class="ed-rail"><div class="ed-rail__in"><span class="ed-rail__n" aria-hidden="true"></span><SectionLabel variant="data" en={caption} /></div></div>
+    <Tag id={id} class="ed-head__title">{title}</Tag>
+    {hasIntro && <div class="ed-head__intro"><slot /></div>}
+  </header>
 ) : (
   <header class:list={['ed-head', className]}>
     <SectionLabel variant={variant} en={caption} />
-    <Tag id={id} class="ed-head__title" data-serif={variant === 'data' ? true : undefined}>{title}</Tag>
+    <Tag id={id} class="ed-head__title">{title}</Tag>
     {hasIntro && <div class="ed-head__intro"><slot /></div>}
   </header>
 )}

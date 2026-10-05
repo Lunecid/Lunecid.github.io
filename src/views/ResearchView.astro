@@ -38,7 +38,7 @@ const editorial = v.theme === 'editorial';
 const academicCv = DOCUMENTS[v.documents.academic];
 ---
 <Layout lang={lang} variant={variant} title={meta.title} description={meta.description} page="research" section="research" sectionIndex>
-  <PageHeader lang={lang} variant={variant} label={captionFor(v, 'pageResearch', lang)} title={t(lang, 'research.title')} intro={resolveFacts(researchPage.intro[lang], lang, facts)}>
+  <PageHeader lang={lang} variant={variant} label={captionFor(v, 'pageResearch', lang)} title={t(lang, 'research.title')} display={t('en', 'research.title')} intro={resolveFacts(researchPage.intro[lang], lang, facts)}>
     {/* D-7: professors reach the Academic CV from the research page header (and from #for-labs below). */}
     {editorial ? (
       <p class="research-cv"><a class="ed-link" href={academicCv} title={t(lang, 'nav.cvAcademic')} download>{t(lang, 'nav.cvAcademic')} <span aria-hidden="true">↓</span></a></p>
