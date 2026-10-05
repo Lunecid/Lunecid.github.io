@@ -1417,7 +1417,10 @@ test('verify: a valid assertion passes check_authentication and the profile XML 
   }
 });
 
-test('verify: every single rejection (spec order) → cancel or invalid, and nothing is fetched before check_authentication', async () => {
+test('verify: every single rejection (spec order) → cancel or invalid, and nothing is fetched before check_authentication', async (t) => {
+  // the clock stands still: the cases are built before the loop, and a second passing before the Worker reads the
+  // "301 s ahead" nonce would bring it inside the 300 s window
+  t.mock.timers.enable({ apis: ['Date'], now: Date.now() });
   const id = (x) => `https://steamcommunity.com/openid/id/${x}`;
   const cases = [
     ['mode cancel', { 'openid.mode': 'cancel' }, 'cancel'],
