@@ -4,6 +4,7 @@
   "checkFragments": true,
   "verbosity": "error",
   "skip": [
-    "^https?://(?!127\\.0\\.0\\.1[:/])"
+    "^https?://(?!127\\.0\\.0\\.1[:/])",
+    "/_astro/%23[\\w-]+$"
   ]
 }

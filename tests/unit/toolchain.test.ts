@@ -119,6 +119,21 @@ describe('toolchain', () => {
     expect(pkg.scripts['test:links:external']).toContain('--config linkinator.external.json');
   });
 
+  it('internal linkinator config skips only external URLs and SVG-internal refs inside data: URIs in /_astro/ sheets', () => {
+    const internal = JSON.parse(read('linkinator.config.json')) as { skip: string[]; checkCss: boolean; checkFragments: boolean };
+    expect(internal.checkCss).toBe(true);
+    expect(internal.checkFragments).toBe(true);
+    expect(internal.skip).toEqual(['^https?://(?!127\\.0\\.0\\.1[:/])', '/_astro/%23[\\w-]+$']);
+    const svgRef = new RegExp(internal.skip[1]!);
+    expect(svgRef.test('dist/_astro/%23p')).toBe(true);
+    for (const real of ['dist/_astro/chooser.c3zaItXL.css', 'dist/_astro/paint-rh.abc123.webp', 'dist/game/%23p', 'dist/_astro/%23p/x']) expect(svgRef.test(real), real).toBe(false);
+    // linkinator reads a filter's url(#id) inside an inline SVG data: URI as a relative link: every such ref in the
+    // chooser sheet sits inside a data: URI, so the skip hides no real link
+    const css = read('src/styles/chooser.css');
+    expect(css).toMatch(/url\(%23[\w-]+\)/);
+    expect(css.replace(/url\("data:image\/svg\+xml,[^"]*"\)/g, '')).not.toMatch(/%23/);
+  });
+
   it('tsconfig excludes .claude/worktrees and .gitignore lists it', () => {
     const tsconfig = JSON.parse(read('tsconfig.json')) as { extends: string; exclude: string[]; compilerOptions: Record<string, string> };
     expect(tsconfig.extends).toBe('astro/tsconfigs/strict');

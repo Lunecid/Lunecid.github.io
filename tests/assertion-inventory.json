@@ -246,7 +246,7 @@
   "tests/unit/style-rules.test.ts": 67,
   "tests/unit/target-cue.test.ts": 27,
   "tests/unit/tokens.test.ts": 169,
-  "tests/unit/toolchain.test.ts": 109,
+  "tests/unit/toolchain.test.ts": 116,
   "tests/unit/variants.test.ts": 74,
   "tests/unit/view-transitions-css.test.ts": 19,
   "tests/unit/yaml-loader.test.ts": 33
