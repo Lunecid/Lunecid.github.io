@@ -730,3 +730,57 @@ describe('a press that ends the opening (MO-41)', () => {
     expect(navigations).toEqual(['/data/']);
   });
 });
+
+describe('neon typing (MO-27)', () => {
+  const root = document.documentElement;
+  const mountLabels = () => {
+    document.body.innerHTML = `
+      <div class="desk" data-chooser data-desk>
+        <article class="file file--data"><div class="face"><a class="cta" href="/data/" data-choose-variant="data">D</a></div></article>
+        <article class="file file--game"><div class="dev"><div class="face">
+          <div class="bar"><span class="bar__name neon" lang="en">GAME_ANALYST.DOC</span><span class="bar__no neon--dim" lang="en">NO. 1</span></div>
+          <p class="cv__foot" aria-hidden="true"><span class="cv__foot-t">2026 · PORTFOLIO</span></p>
+          <h2 class="title">게임 데이터 분석가</h2>
+          <a class="cta" href="/game/" data-choose-variant="game">G</a>
+          <div class="ov" aria-hidden="true"><div class="ov__con"><p class="ov__hd"><span class="ov__t">TERMINAL</span></p><p class="ov__ln"><span class="ov__rq">&gt; 열람 요청</span></p></div><p class="ov__st">ACCESS GRANTED</p></div>
+        </div></div></article>
+      </div>`;
+  };
+  afterEach(() => {
+    root.removeAttribute('data-intro');
+  });
+
+  it('MO-27: while the opening plays the targets type in glyph spans (seeded variants, a start each); read labels keep an sr-only copy; the plain text is back at sb:intro-done', async () => {
+    const { typeNeon } = await import('../../src/scripts/chooser');
+    mountLabels();
+    root.setAttribute('data-intro', 'opening');
+    typeNeon(document);
+    const name = document.querySelector<HTMLElement>('.bar__name')!;
+    const glyphs = [...name.querySelectorAll<HTMLElement>('.ng')];
+    expect(glyphs.map((g) => g.textContent).join('')).toBe('GAME_ANALYST.DOC');
+    expect(glyphs[0]!.parentElement!.getAttribute('aria-hidden')).toBe('true');
+    expect(name.querySelector('.sr-only')!.textContent).toBe('GAME_ANALYST.DOC');
+    expect(glyphs.every((g) => /^-?[\d.]+ms$/.test(g.style.getPropertyValue('--d')))).toBe(true);
+    const ds = glyphs.map((g) => parseFloat(g.style.getPropertyValue('--d')));
+    for (let i = 1; i < ds.length; i++) expect(ds[i]! - ds[i - 1]!).toBeCloseTo(18, 6);
+    expect(glyphs.some((g) => g.classList.contains('ng--b'))).toBe(true);
+    // inside the aria-hidden overlay and the hidden foot line: no extra copy
+    expect(document.querySelector('.ov__t .sr-only')).toBeNull();
+    expect(document.querySelector('.cv__foot-t .sr-only')).toBeNull();
+    expect(document.querySelector('.ov__rq')!.querySelectorAll('.ng')).toHaveLength(7);
+    // never the title
+    expect(document.querySelector('.title .ng')).toBeNull();
+    window.dispatchEvent(new Event('sb:intro-done'));
+    expect(name.innerHTML).toBe('GAME_ANALYST.DOC');
+    expect(document.querySelector('.ov__rq')!.textContent).toBe('> 열람 요청');
+    expect(document.querySelectorAll('.ng')).toHaveLength(0);
+    expect(name.getAttribute('style')).toBeNull();
+  });
+
+  it('MO-27: without the opening nothing is split', async () => {
+    const { typeNeon } = await import('../../src/scripts/chooser');
+    mountLabels();
+    typeNeon(document);
+    expect(document.querySelectorAll('.ng')).toHaveLength(0);
+  });
+});

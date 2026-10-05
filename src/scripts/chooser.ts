@@ -7,6 +7,7 @@
 // file inks and strikes its "기밀 해제" stamp (MO-25), then plays its exit, the waveform (MO-38); entering the general
 // file turns its page (MO-39); then the link is followed.
 import exitSheet from '../styles/chooser-exit.css?url';
+import { NEON_TARGETS, NEON_WINDOWS, glyphVariant, lineStagger, splitGlyphs } from '../lib/neon';
 import { noiseBuffer, paperSound } from '../lib/paper-sound';
 import { SOUND_EVENT, audioContext, setSoundOn, soundMuted } from '../lib/sound';
 import { rememberVariant } from '../lib/variant-pref';
@@ -339,6 +340,55 @@ export function attachExitSheet(doc: Document = document, desk: HTMLElement | nu
   else window.addEventListener('load', add, { once: true });
 }
 
+/**
+ * Neon typing (MO-27): while the opening plays, its overlay lines and the game cover's small labels type in glyph by
+ * glyph. Each target becomes an aria-hidden run of glyph spans (.ng, seeded variant, its start in --d on the opening's
+ * clock, read from the device's rise so a late script still lands on time: past glyphs are simply lit) plus, outside
+ * an aria-hidden subtree, an sr-only copy of the text; the element's own plain fade is switched off. At sb:intro-done
+ * (end or skip) the plain text and the element's style are put back, so the page holds no glyph spans at rest.
+ */
+export function typeNeon(doc: Document = document): void {
+  if (doc.documentElement.dataset.intro !== 'opening') return;
+  const desk = doc.querySelector<HTMLElement>('[data-chooser][data-desk]');
+  if (!desk) return;
+  const rise = desk.querySelector<HTMLElement>('.file--game .dev')?.getAnimations?.().find((a) => (a as CSSAnimation).animationName === 'op-rise');
+  const now = Number(doc.timeline?.currentTime ?? 0);
+  const elapsed = typeof rise?.startTime === 'number' ? now - rise.startTime : 0;
+  const undo: (() => void)[] = [];
+  for (const t of NEON_TARGETS) {
+    for (const el of desk.querySelectorAll<HTMLElement>(t.sel)) {
+      const text = el.textContent ?? '';
+      const glyphs = splitGlyphs(text);
+      if (glyphs.length === 0) continue;
+      const stagger = lineStagger(glyphs.length, NEON_WINDOWS[t.window] - t.atMs);
+      const run = doc.createElement('span');
+      run.setAttribute('aria-hidden', 'true');
+      glyphs.forEach((g, i) => {
+        const span = doc.createElement('span');
+        span.className = glyphVariant(text, i) === 'b' ? 'ng ng--b' : 'ng';
+        span.textContent = g;
+        span.style.setProperty('--d', `${(t.atMs + i * stagger - elapsed).toFixed(1)}ms`);
+        run.append(span);
+      });
+      const style = el.getAttribute('style');
+      el.replaceChildren(run);
+      if (!el.closest('[aria-hidden="true"]')) {
+        const copy = doc.createElement('span');
+        copy.className = 'sr-only';
+        copy.textContent = text;
+        el.append(copy);
+      }
+      if (!t.own) el.style.animation = 'none';
+      undo.push(() => {
+        el.textContent = text;
+        if (style === null) el.removeAttribute('style');
+        else el.setAttribute('style', style);
+      });
+    }
+  }
+  window.addEventListener('sb:intro-done', () => { for (const fn of undo.splice(0)) fn(); }, { once: true });
+}
+
 export function initChooser(root: ParentNode = document, opts: { navigate?: (href: string) => void } = {}): void {
   const container = root.querySelector<HTMLElement>('[data-chooser]');
   if (!container) return;
@@ -359,6 +409,7 @@ export function initChooser(root: ParentNode = document, opts: { navigate?: (hre
     e.preventDefault();
     e.stopImmediatePropagation();
   }, { capture: true });
+  typeNeon(document);
   // the desk first: its first-tap rule must see the click before the memory does
   if (container.hasAttribute('data-desk')) initDesk(container, root.querySelector<HTMLElement>('.desk__hint'));
   container.addEventListener('keydown', (event) => {

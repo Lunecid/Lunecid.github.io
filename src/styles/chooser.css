@@ -31,6 +31,9 @@
   --at-op-toss: 1.548s;
   --at-op-rstamp: 2.178s;
   --dur-op-rstamp: .22s;
+  /* neon typing (MO-27): one glyph per step, each flickers for --dur-flicker (src/lib/neon.ts NEON) */
+  --dur-type-step: 18ms;
+  --dur-flicker: .15s;
 }
 
 /* ═══ the page and the desk (ChooserView) ═══ */
@@ -1133,7 +1136,14 @@
 :root[data-intro="opening"] .desk > .file--data::before { animation: op-out var(--dur-enter) var(--ease-in) var(--at-op-toss) both; }
 :root[data-intro="opening"] .desk > .file--game { animation: op-cx var(--dur-enter) var(--ease-wipe) var(--at-op-toss) both; }
 :root[data-intro="opening"] .file--data .rstamp__ink { animation: op-stamp var(--dur-op-rstamp) var(--ease-out) var(--at-op-rstamp) both; }
+/* neon typing (MO-27): chooser.ts splits the typed lines into glyph spans (.ng, a quarter of them .ng--a: lit once;
+   the rest dip and recover) with their start in --d, and puts the plain text back when the opening ends */
+:root[data-intro="opening"] .ng { animation: ng-a var(--dur-flicker) steps(1, end) var(--d, 0s) both; }
+:root[data-intro="opening"] .ng--b { animation-name: ng-b; }
+.ov__con, .ov__st { text-shadow: 0 0 7px var(--neon-halo); }
 
+@keyframes ng-a { 0% { opacity: 0; } 30% { opacity: 1; } 100% { opacity: 1; } }
+@keyframes ng-b { 0% { opacity: 0; } 20% { opacity: 1; } 45% { opacity: .3; } 65% { opacity: 1; } 100% { opacity: 1; } }
 /* the device fades from .01, not 0: text under an opacity-0 ancestor is not an LCP candidate when it is first painted, so
    the cover's text would only count when it is next repainted, after the opening (probe, MO-41 Step 2) */
 @keyframes op-rise { from { opacity: .01; transform: translateY(14px) scale(.985); } to { opacity: 1; transform: none; } }

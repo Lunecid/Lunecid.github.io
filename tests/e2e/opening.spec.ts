@@ -165,4 +165,39 @@ test.describe('MO-41: the opening', () => {
     await expect(page.locator('html')).toHaveAttribute('data-intro-played', '');
     await context.close();
   });
+
+  test('MO-27: neon glyphs animate opacity only, at most three cycles, staggered 10–30 ms; none animates after the opening or after a key press', async ({ browser }) => {
+    const { page, close } = await fresh(browser, 1280, 800);
+    await page.waitForSelector('.ng');
+    const info = await page.evaluate(() => {
+      const lines = [...document.querySelectorAll('.ng')].map((g) => g.parentElement!.parentElement!);
+      const uniq = [...new Set(lines)];
+      return {
+        props: [...new Set(document.querySelectorAll('.ng').length ? [...document.querySelectorAll('.ng')].flatMap((g) => g.getAnimations().flatMap((a) => (a.effect as KeyframeEffect).getKeyframes().flatMap((k) => Object.keys(k).filter((p) => !['offset', 'easing', 'composite', 'computedOffset'].includes(p))))) : [])],
+        rises: Math.max(...[...document.querySelectorAll('.ng')].map((g) => { const v = (g.getAnimations()[0]!.effect as KeyframeEffect).getKeyframes().map((k) => Number(k.opacity)); return v.filter((x, i) => i > 0 && x > v[i - 1]!).length; })),
+        steps: uniq.map((line) => { const d = [...line.querySelectorAll<HTMLElement>('.ng')].map((g) => parseFloat(g.style.getPropertyValue('--d'))); return d.length > 1 ? d[1]! - d[0]! : 18; }),
+        targets: uniq.map((l) => l.className),
+      };
+    });
+    expect(info.props).toEqual(['opacity']);
+    expect(info.rises).toBeLessThanOrEqual(3);
+    for (const st of info.steps) { expect(st).toBeGreaterThanOrEqual(10 - 0.1); expect(st).toBeLessThanOrEqual(30 + 0.1); }
+    expect(info.targets.length).toBeGreaterThanOrEqual(10);
+    await page.keyboard.press('Shift');
+    expect(await page.locator('.ng').count()).toBe(0);
+    expect(await page.locator('.bar__name').textContent()).toBe('GAME_ANALYST.DOC');
+    await close();
+  });
+
+  test('MO-27: neon never touches the h1, the h2s, display words, taglines, contents or CTAs; after the opening the labels are plain text and the DOM stays ≤ 800 nodes (375)', async ({ browser }) => {
+    const { page, close } = await fresh(browser, 375, 812);
+    await page.waitForSelector('.ng');
+    expect(await page.locator('h1 .ng, h2 .ng, .disp .ng, .intro .ng, .pr__intro .ng, .toc .ng, .cta .ng, .file--data .ng').count()).toBe(0);
+    const peak = await page.evaluate(() => document.getElementsByTagName('*').length);
+    expect(peak).toBeLessThanOrEqual(800);
+    await page.waitForFunction(() => !document.documentElement.hasAttribute('data-intro'));
+    expect(await page.locator('.ng, .file--game .sr-only').count()).toBe(0);
+    expect(await page.evaluate(() => document.getElementsByTagName('*').length)).toBeLessThanOrEqual(800);
+    await close();
+  });
 });
