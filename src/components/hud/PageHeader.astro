@@ -1,12 +1,14 @@
 ---
 /**
  * Header of every index page; it owns the page's only <h1>. Game version: the dark HUD header with the "[ ■ ] LABEL"
- * caption (D-8). General and neutral pages (P2-4): caption + title (serif on the general version) + intro over a heavy
- * rule, on the page background. The default slot (optional) sits under the intro.
+ * caption (D-8). General version (DS-3): the v5 page head (PageHeadData: label block, accent line, the English display
+ * word, h1, lead; styled by editorial.css). Neutral pages (P2-4): caption + title + intro over a heavy rule, on the page
+ * background. The default slot (optional) sits under the intro.
  */
 import type { Lang } from '../../i18n/ui';
 import type { PageVariant } from '../../variants';
 import SectionLabel from './SectionLabel.astro';
+import PageHeadData from '../data/PageHeadData.astro';
 
 interface Props {
   variant: PageVariant;
@@ -14,8 +16,12 @@ interface Props {
   label: string;
   title: string;
   intro?: string;
+  /** General version: the Latin display words over the title (the English page title); default: the title. */
+  display?: string;
+  /** General version (DS-5): the small painted mosaic beside the title (from 1068 px; decoration). */
+  mosaic?: boolean;
 }
-const { variant, label, title, intro } = Astro.props;
+const { variant, lang, label, title, intro, display, mosaic = false } = Astro.props;
 ---
 {variant === 'game' ? (
   <section class="page-head hud-grid" aria-labelledby="page-head-title">
@@ -26,12 +32,18 @@ const { variant, label, title, intro } = Astro.props;
       <slot />
     </div>
   </section>
+) : variant === 'data' ? (
+  <section class="ed-phead" aria-labelledby="page-head-title">
+    <div class="container">
+      <PageHeadData lang={lang} caption={label} title={title} display={display ?? title} intro={intro} mosaic={mosaic}><slot /></PageHeadData>
+    </div>
+  </section>
 ) : (
   <section class="ed-page-head" aria-labelledby="page-head-title">
     <div class="container">
       <div class="ed-page-head__box">
         <SectionLabel variant={variant} en={label} />
-        <h1 id="page-head-title" class="ed-page-head__title" data-serif={variant === 'data' ? true : undefined}>{title}</h1>
+        <h1 id="page-head-title" class="ed-page-head__title">{title}</h1>
         {intro && <p class="ed-page-head__intro">{intro}</p>}
         <slot />
       </div>

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import BaseLayout from '../../src/layouts/BaseLayout.astro';
 import DataLayout from '../../src/layouts/DataLayout.astro';
-import { FONT_URL, HANGUL_UNICODE_RANGE, MONO_FAMILY, SANS_FAMILY, SERIF_KO_HEAD_FAMILY } from '../../src/lib/fonts';
+import { DISPLAY_FAMILY, FONT_URL, MONO_FAMILY, SANS_FAMILY, SERIF_KO_HEAD_FAMILY } from '../../src/lib/fonts';
 import { HEAD_INIT_SCRIPT } from '../../src/lib/head-init';
 import { VIEWER_QUEUE_SCRIPT } from '../../src/lib/viewer-queue';
 import { renderAstro, type AstroComponent } from './helpers';
@@ -16,6 +16,7 @@ const metaTags = (head: string): string[] =>
     .replace(/<style[\s\S]*?<\/style>/g, '')
     .replace(/<script[\s\S]*?<\/script>/g, '')
     .replace(/<link rel="preload"[^>]*>/g, '')
+    .replace(/<link rel="stylesheet"[^>]*>/g, '') // DataLayout's own data sheet (tested below)
     .match(/<title>[^<]*<\/title>|<(?:meta|link)\b[^>]*>/g) ?? [];
 
 describe('DataLayout.astro (P2-1)', () => {
@@ -39,16 +40,24 @@ describe('DataLayout.astro (P2-1)', () => {
     expect(scripts[1]).toBe(VIEWER_QUEUE_SCRIPT);
   });
 
-  it('declares the sans face and the Korean heading face (Hangul range, weight 700), no mono face, and preloads only the sans core', async () => {
+  it('DS-1: declares sans and display, preloads both, declares no serif heading face', async () => {
     const head = headOf(await render(DataLayout));
     expect(head).toContain(`font-family:"${SANS_FAMILY}"`);
-    expect(head).toContain(`@font-face{font-family:"${SERIF_KO_HEAD_FAMILY}";font-style:normal;font-weight:700;font-display:swap;src:url(${FONT_URL.serifKoHead}) format("woff2");unicode-range:${HANGUL_UNICODE_RANGE}}`);
+    expect(head).toContain(`@font-face{font-family:"${DISPLAY_FAMILY}";font-style:normal;font-weight:700 900;font-stretch:112%;font-display:swap;src:url(${FONT_URL.display}) format("woff2")}`);
+    expect(head).not.toContain(SERIF_KO_HEAD_FAMILY);
+    expect(head).not.toContain(FONT_URL.serifKoHead);
     expect(head).not.toContain(MONO_FAMILY);
-    expect([...head.matchAll(/<link rel="preload" href="([^"]+)"/g)].map((m) => m[1])).toEqual([FONT_URL.sans]);
+    expect([...head.matchAll(/<link rel="preload" href="([^"]+)" as="font" type="font\/woff2" crossorigin>/g)].map((m) => m[1])).toEqual([FONT_URL.sans, FONT_URL.display]);
   });
 
   it('has the same meta, title, canonical, hreflang, Open Graph and icon tags as BaseLayout for the same page', async () => {
     const [data, base] = await Promise.all([render(DataLayout), render(BaseLayout)]);
     expect(metaTags(headOf(data))).toEqual(metaTags(headOf(base)));
+  });
+
+  it('links its one shared data stylesheet in <head>; BaseLayout links none', async () => {
+    const [data, base] = await Promise.all([render(DataLayout), render(BaseLayout)]);
+    expect(headOf(data).match(/<link rel="stylesheet"[^>]*>/g)).toHaveLength(1);
+    expect(headOf(base)).not.toMatch(/<link rel="stylesheet"/);
   });
 });

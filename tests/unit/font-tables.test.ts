@@ -3,14 +3,25 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { buildCmap4, buildName, cmapCodePoints, cmapGlyphs, parseName, sfntTables, woff2Tables } from '../../scripts/fonts/sfnt.mjs';
-import { buildFonts, renameSansRecord, subsetSans, subsetSerifKo } from '../../scripts/fonts/build.mjs';
+import { SOURCES, buildFonts, renameSansRecord, subsetDisplay, subsetSans, subsetSerifKo } from '../../scripts/fonts/build.mjs';
 import { FONT_URL, fontFaceCss } from '../../src/lib/fonts';
-import { htmlText, isIgnorable, paperSheetHtml, serifHeadHtml, shownText } from '../../scripts/fonts/glyphs.mjs';
+import { ALWAYS_SYMBOLS, DISPLAY_CHARACTERS, PRINTABLE_ASCII, htmlText, isIgnorable, paperSheetHtml, sansCharacters, serifHeadHtml, shownText } from '../../scripts/fonts/glyphs.mjs';
 
 type NameRecord = { platformID: number; encodingID: number; languageID: number; nameID: number; value: string };
 const table = (buf: Buffer, tag: string): Buffer => woff2Tables(buf).get(tag)!;
 const names = (buf: Buffer): NameRecord[] => parseName(table(buf, 'name'));
 const cp = (ch: string): number => ch.codePointAt(0)!;
+/** The fvar axes of a font: tag, min, default, max (16.16 fixed). */
+const fvarAxes = (buf: Buffer): { tag: string; min: number; def: number; max: number }[] => {
+  const fvar = woff2Tables(buf).get('fvar');
+  if (!fvar) return [];
+  const v = new DataView(fvar.buffer, fvar.byteOffset, fvar.byteLength);
+  const [offset, count, size] = [v.getUint16(4), v.getUint16(8), v.getUint16(10)];
+  return Array.from({ length: count }, (_, i) => {
+    const at = offset + i * size;
+    return { tag: fvar.subarray(at, at + 4).toString('latin1'), min: v.getInt32(at + 4) / 65536, def: v.getInt32(at + 8) / 65536, max: v.getInt32(at + 12) / 65536 };
+  });
+};
 
 describe('sfnt helpers', () => {
   it('a format 4 cmap round-trips', () => {
@@ -64,6 +75,29 @@ describe('subsets from the real font packages', () => {
     expect([...text].every((ch) => cps.has(cp(ch)))).toBe(true);
     expect(tables.has('fvar')).toBe(true); // stays variable (weights 200–900)
     expect(tables.has('GSUB')).toBe(false);
+  });
+
+  it('display: a WOFF2 subset of Archivo with printable ASCII and the symbol list, wdth pinned (no wdth axis left), wght 700–900, licence records 0/14 kept (the source has no 13)', async () => {
+    const font: Buffer = await subsetDisplay();
+    expect(font.subarray(0, 4).toString('latin1')).toBe('wOF2');
+    const source = readFileSync(SOURCES.display);
+    const sourceCps = cmapCodePoints(table(source, 'cmap'));
+    const cps = cmapCodePoints(table(font, 'cmap'));
+    expect(DISPLAY_CHARACTERS).toBe(PRINTABLE_ASCII + ALWAYS_SYMBOLS);
+    for (const ch of PRINTABLE_ASCII) expect(cps.has(cp(ch)), `ASCII ${ch}`).toBe(true);
+    // every listed symbol the source draws is kept; Archivo's own gaps (e.g. ♪) fall to SB Sans through the stack
+    const kept = [...ALWAYS_SYMBOLS].filter((ch) => sourceCps.has(cp(ch)));
+    expect(kept.length).toBeGreaterThan(10);
+    for (const ch of kept) expect(cps.has(cp(ch)), `symbol ${ch}`).toBe(true);
+    expect(cps.has(cp('가')) || cps.has(cp('é'))).toBe(false);
+    // the width axis is pinned at 112 % (no wdth axis left); the weight axis spans 700–900
+    expect(fvarAxes(source).map((a) => a.tag).sort()).toEqual(['wdth', 'wght']);
+    expect(fvarAxes(font)).toEqual([{ tag: 'wght', min: 700, def: expect.any(Number), max: 900 }]);
+    expect(font.length).toBeLessThan(source.length / 2);
+    const records = names(font);
+    expect(records.find((n) => n.nameID === 0)?.value).toMatch(/Copyright 2020 The Archivo Project Authors/);
+    expect(records.find((n) => n.nameID === 14)?.value).toMatch(/scripts\.sil\.org\/OFL|openfontlicense/);
+    expect(records.some((n) => n.nameID === 13)).toBe(names(source).some((n) => n.nameID === 13));
   });
 
   it('serif: characters Noto Serif KR lacks are reported, not fatal; the rest is still subset', async () => {
@@ -165,6 +199,60 @@ describe('buildFonts on a built page with characters the source fonts lack', () 
   });
 });
 
+describe('buildFonts: the general paper page preloads its Korean serif with font-display: optional', () => {
+  // A late swap of the paper serif rewrapped the Korean title gloss at 375 px (CLS 0.037): preloaded and optional, it
+  // is either there for the first render or not used on that view, never swapped in later.
+  it('keeps font-display: optional on the rewritten rule and points the preload at the hashed subset', async () => {
+    expect(fontFaceCss(['serifKo'], 'optional')).toBe(fontFaceCss(['serifKo']).replace('font-display:swap', 'font-display:optional'));
+    expect(fontFaceCss(['sans', 'display'])).not.toContain('optional');
+    const dist = mkdtempSync(join(tmpdir(), 'font-subsets-'));
+    mkdirSync(join(dist, '_astro'));
+    mkdirSync(join(dist, 'data', 'research', 'x'), { recursive: true });
+    const sansHead = `<style>${fontFaceCss(['sans'])}</style><link rel="preload" href="${FONT_URL.sans}" as="font" type="font/woff2" crossorigin>`;
+    writeFileSync(
+      join(dist, 'data', 'research', 'x', 'index.html'),
+      `<html lang="ko"><head>${sansHead}<style>${fontFaceCss(['serifKo'], 'optional')}</style><link rel="preload" href="${FONT_URL.serifKo}" as="font" type="font/woff2" crossorigin></head><body><article class="paper"><p>국문 초록</p></article></body></html>`,
+    );
+    try {
+      await buildFonts(dist, { warn: () => {} });
+      const page = readFileSync(join(dist, 'data', 'research', 'x', 'index.html'), 'utf8');
+      const url = /font-display:optional;src:url\((\/_astro\/sb-serif-kr\.[\w-]+\.woff2)\)/.exec(page)?.[1];
+      expect(url).toBeDefined();
+      expect(page).toContain(`<link rel="preload" href="${url}" as="font" type="font/woff2" crossorigin>`);
+      expect(page).not.toContain('/_fonts/');
+    } finally {
+      rmSync(dist, { recursive: true, force: true });
+    }
+  });
+});
+
+describe('buildFonts: the display face (Archivo subset)', () => {
+  it('writes the display subset only when a page declares it, and points its preload at the hashed file', async () => {
+    const dist = mkdtempSync(join(tmpdir(), 'font-subsets-'));
+    mkdirSync(join(dist, '_astro'));
+    mkdirSync(join(dist, 'data'), { recursive: true });
+    const sansHead = `<style>${fontFaceCss(['sans'])}</style><link rel="preload" href="${FONT_URL.sans}" as="font" type="font/woff2" crossorigin>`;
+    writeFileSync(join(dist, 'index.html'), `<html lang="ko"><head>${sansHead}</head><body><p>선택</p></body></html>`);
+    try {
+      expect((await buildFonts(dist, { warn: () => {} })).some((r: { face: string }) => r.face === 'display')).toBe(false);
+      const displayHead = `<style>${fontFaceCss(['sans', 'display'])}</style><link rel="preload" href="${FONT_URL.sans}" as="font" type="font/woff2" crossorigin><link rel="preload" href="${FONT_URL.display}" as="font" type="font/woff2" crossorigin>`;
+      writeFileSync(join(dist, 'data', 'index.html'), `<html lang="ko"><head>${displayHead}</head><body><p data-display>DATA ANALYST</p></body></html>`);
+      const results = await buildFonts(dist, { warn: () => {} });
+      const display = results.filter((r: { face: string }) => r.face === 'display');
+      expect(display).toHaveLength(1);
+      expect(display[0].url).toMatch(/^\/_astro\/sb-display\.[\w-]+\.woff2$/);
+      expect(display[0].pages).toBe(1);
+      const page = readFileSync(join(dist, 'data', 'index.html'), 'utf8');
+      expect(page).toContain(`src:url(${display[0].url}) format("woff2")`);
+      expect(page).toContain(`<link rel="preload" href="${display[0].url}" as="font" type="font/woff2" crossorigin>`);
+      expect(page).not.toContain('/_fonts/');
+      expect(readFileSync(join(dist, 'index.html'), 'utf8')).not.toContain('sb-display');
+    } finally {
+      rmSync(dist, { recursive: true, force: true });
+    }
+  });
+});
+
 describe('glyph collection', () => {
   it('reads text, attributes, island props and stylesheet strings, but not JSON-LD', () => {
     const html =
@@ -177,6 +265,19 @@ describe('glyph collection', () => {
     expect(shown).toContain('본문');
     expect(shown).not.toContain('토스트');
     expect(shown).not.toContain('툴팁');
+  });
+
+  it('the sans set also reads the strings of the linked stylesheets (dist/_astro/*.css: the data pages\' shared sheet)', () => {
+    const dist = mkdtempSync(join(tmpdir(), 'font-glyphs-'));
+    try {
+      mkdirSync(join(dist, '_astro'));
+      writeFileSync(join(dist, 'index.html'), '<html><head><link rel="stylesheet" href="/_astro/data-site.x.css"></head><body>본문</body></html>');
+      writeFileSync(join(dist, '_astro', 'data-site.x.css'), '.a::before{content:"\\2605 똠"}');
+      const set: Set<string> = sansCharacters(dist);
+      for (const ch of ['본', '★', '똠']) expect(set.has(ch)).toBe(true);
+    } finally {
+      rmSync(dist, { recursive: true, force: true });
+    }
   });
 
   it('finds the paper sheet and leaves emoji and invisible characters to other fonts', () => {

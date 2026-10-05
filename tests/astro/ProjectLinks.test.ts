@@ -32,9 +32,12 @@ describe('ProjectLinks.astro', () => {
     expect(enEmpty).toContain('Private repository');
   });
 
-  it('general version (P2-6): underlined links with ↗ in the reading column; the private note without a HUD tag', async () => {
+  // DS-6 (named): #links is a v5 section (rail opener) with the links as rows over an ink rule.
+  it('general version (DS-6): underlined links with ↗ in a rail section; the private note without a HUD tag', async () => {
     const html = await renderAstro(ProjectLinks, { props: { variant: 'data', lang: 'ko', links: { github: 'https://github.com/Lunecid/x' } } });
-    expect(html).toMatch(/<section id="links" class="ed-prose"/);
+    expect(html).toMatch(/<section id="links" class="ed-sec plinks-ed"/);
+    expect(html).toMatch(/<header class="ed-head ed-sh"[\s\S]*?<h2 id="links-title" class="ed-head__title"/);
+    expect(html).toMatch(/<ul class="ed-links plinks__list" role="list"/);
     expect(html).toMatch(/<a class="ed-link" href="https:\/\/github\.com\/Lunecid\/x"[^>]*>[^<]+ <span aria-hidden="true"[^>]*>↗<\/span><\/a>/);
     expect(html).not.toMatch(/\bbtn\b|\bcut\b|read-section/);
     const none = await renderAstro(ProjectLinks, { props: { variant: 'data', lang: 'ko', links: {} } });

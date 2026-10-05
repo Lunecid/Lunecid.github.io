@@ -21,8 +21,9 @@ test.describe('identity, CV link and evidence within two screens', () => {
       test.skip(testInfo.project.name === 'mobile-320', 'the two-screen rule is asserted at 375 px and wider');
       const { lang, variant } = basePathOf(route);
       const cv = DOCUMENTS[getVariant(variant!).documents.resume[lang]];
-      // P2-7: the general home's evidence is the hero figure (그림 1, the school-zone heatmap) and the featured project list.
-      const evidence = variant === 'data' ? '.dhero__fig, #featured-projects li.pli' : '.player-card, .cart';
+      // P2-7: the general home's evidence is the hero figure (그림 1, the school-zone heatmap) and the featured projects
+      // (DS-4, named: the map spread and the project cards).
+      const evidence = variant === 'data' ? '.ed-spread, #featured-projects li.ed-card' : '.player-card, .cart';
       await page.goto(route, { waitUntil: 'networkidle' });
       await settle(page);
       await page.evaluate(() => window.scrollTo(0, 0));

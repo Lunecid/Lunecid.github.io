@@ -3,10 +3,16 @@
 // AUC dot plot, in one bracketed light-HUD panel (P1-9) instead of the unreadable 160px diagram thumbnail; then the
 // NOW PLAYING aside. Emphasis (ORAL) is used for the CoG paper only.
 // P2-7: the general version tells the paper as plain text beside the same chart as "그림 2 —" (editorial tone), with the
-// §10.2 sentence under the title and 진행 중 as a plain label; the game markup is unchanged.
+// §10.2 sentence under the title and 진행 중 as a plain label; the game markup is unchanged. DS-4 (v5): the paper's
+// numbers as figure tiles (the first on blue paint), the oral badge (.ed-stamp: real text on a red painted field, one per
+// view), the chart with its LightGBM band, and 진행 중 as a yellow painted label cell beside a neutral text cell. Its
+// look lives in editorial.css (the scoped rh-ed rules below are no longer used by this markup; they stay so the game
+// pages' inlined CSS is unchanged).
 import SectionHead from '../hud/SectionHead.astro';
 import AucOverallChart from '../research/AucOverallChart.astro';
 import PaperLinks from '../research/PaperLinks.astro';
+import StatTiles from '../data/StatTiles.astro';
+import type { StatDef } from '../../data/copy/data/home';
 import { figureCopy, overallAuc } from '../../data/research/cog-2026';
 import type { Lang } from '../../i18n/ui';
 import { t } from '../../i18n/utils';
@@ -24,9 +30,12 @@ interface Props {
   intro?: string;
   /** General version only: the chart's figure number on the page. */
   figureNumber?: number;
+  /** General version only (DS-4): the paper's headline numbers as figure tiles, and the line naming their source. */
+  stats?: StatDef[];
+  statsSource?: string;
 }
 
-const { lang, variant, paper, nowPlaying, figureLabel = '', intro, figureNumber } = Astro.props;
+const { lang, variant, paper, nowPlaying, figureLabel = '', intro, figureNumber, stats, statsSource } = Astro.props;
 const [figTag, ...figRest] = figureLabel.split(' · ');
 ---
 
@@ -75,12 +84,15 @@ const [figTag, ...figRest] = figureLabel.split(' · ');
 <section id="research-highlight" class="rh-ed ed-sec" aria-labelledby="rh-title">
   <div class="container">
     <SectionHead variant={variant} id="rh-title" caption={captionFor(getVariant(variant), 'research', lang)} title={t(lang, 'hero.researchHighlight')}>{intro}</SectionHead>
-    <div class="rh-ed__grid">
-      <article class="rh-ed__paper">
-        <p class="ed-meta"><span lang="en">{paper.venue}</span>{paper.oral && <Fragment> · {t(lang, 'research.oralPresentation')}</Fragment>}</p>
-        <h3 class="rh-ed__title" lang="en">{paper.href ? <a class="hit" href={paper.href}>{paper.title}</a> : paper.title}</h3>
+    {stats && stats.length > 0 && (
+      <div class="ed-rh__figures"><StatTiles items={stats} tone="figure" />{statsSource && <p class="ed-stats__src">{statsSource}</p>}</div>
+    )}
+    <div class="ed-rh__grid">
+      <article class="ed-paper">
+        <p class="ed-paper__venue"><span class="ed-label"><span lang="en">{paper.venue}</span></span>{paper.oral && <span class="ed-stamp"><span class="ed-stamp__ink" data-paint-text>{t(lang, 'research.oralPresentation')}</span></span>}</p>
+        <h3 class="ed-paper__title" lang="en">{paper.href ? <a class="ed-paper__link" href={paper.href}>{paper.title}</a> : paper.title}</h3>
         {paper.titleGloss && <p class="ed-meta">{paper.titleGloss} ({t(lang, 'research.gloss')})</p>}
-        <p class="ed-meta" lang="en">
+        <p class="ed-meta ed-paper__authors" lang="en">
           {paper.authors.map((author, i) => (
             <>{i > 0 && ', '}{author.me ? <strong>{author.name}</strong> : author.name}</>
           ))}
@@ -89,10 +101,7 @@ const [figTag, ...figRest] = figureLabel.split(' · ');
         <PaperLinks lang={lang} paper={paper} idBase="rh" />
       </article>
       <AucOverallChart lang={lang} rows={overallAuc} caption={figureCopy.aucOverall.caption[lang]} alt={figureCopy.aucOverall.alt[lang]} idPrefix="rh-auc" tone="editorial" figureNumber={figureNumber} />
-    </div>
-    <div class="rh-ed__now">
-      <p class="ed-label">{captionFor(getVariant(variant), 'nowPlaying', lang)}</p>
-      <p class="ed-body">{nowPlaying}</p>
+      <div class="ed-now"><p class="ed-now__label" data-paint-text>{captionFor(getVariant(variant), 'nowPlaying', lang)}</p><p class="ed-now__text">{nowPlaying}</p></div>
     </div>
   </div>
 </section>

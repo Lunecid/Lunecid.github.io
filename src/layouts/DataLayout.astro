@@ -1,11 +1,14 @@
 ---
-// General-version layout (spec §5.2, §8; contract §1.1, §4): the common <head> (HeadMeta), the sans face (only its
-// core preloaded; no mono) and the Korean heading face (P2-3: swap, never preloaded), the editorial sheet, DataNav and
-// DataFooter. No game module: no CRT intro, AchievementHost, BGM or data-sfx (§4.3), and no GhostArt (the game's Miku
+// General-version layout (spec §5.2, §8; contract §1.1, §4): the common <head> (HeadMeta), the sans face (its core
+// preloaded; no mono) and the Latin display face "SB Display" (preloaded; DS-1: the Korean heading serif is no longer
+// declared here, only the chooser keeps it), the editorial sheet, DataNav and DataFooter. No game module: no CRT intro, AchievementHost, BGM or data-sfx (§4.3), and no GhostArt (the game's Miku
 // watermark; the shared components render it on the game version only).
 import '../styles/tokens.css';
 import '../styles/base.css';
-import '../styles/editorial.css';
+// The editorial layer and the brush-paint textures (scripts/paint/paint.mjs) ship as ONE external, content-hashed
+// stylesheet linked from <head> (data-site.css imports both): every data page shares the cached file instead of
+// inlining it, and no game or neutral page loads it (tests/ops/layout-css.test.mjs).
+import dataSiteCss from '../styles/data-site.css?url';
 import type { ComponentProps } from 'astro/types';
 import type BaseLayout from './BaseLayout.astro';
 import HeadMeta from './partials/HeadMeta.astro';
@@ -41,10 +44,12 @@ const altHref = altLangHref === undefined ? langSwitchHref(Astro.url.pathname, o
     <script is:inline set:html={VIEWER_QUEUE_SCRIPT} />
     <HeadMeta lang={lang} title={title} description={description} siteName={siteTitle} ogSlug={ogSlug} noindex={noindex} alternates={altHref !== null} jsonLd={jsonLd} analytics="always">
       <Fragment slot="fonts">
-        <style is:inline set:html={fontFaceCss(['sans', 'serifKoHead'])}></style>
+        <style is:inline set:html={fontFaceCss(['sans', 'display'])}></style>
         <link rel="preload" href={FONT_URL.sans} as="font" type="font/woff2" crossorigin />
+        <link rel="preload" href={FONT_URL.display} as="font" type="font/woff2" crossorigin />
       </Fragment>
     </HeadMeta>
+    <link rel="stylesheet" href={dataSiteCss} />
     <slot name="head" />
   </head>
   <body>
@@ -52,5 +57,11 @@ const altHref = altLangHref === undefined ? langSwitchHref(Astro.url.pathname, o
     <DataNav lang={lang} current={section} exact={sectionIndex} altLangHref={altHref} cvHref={cv.href} cvLabel={cv.label} />
     <main id="main" tabindex="-1"><slot /></main>
     <DataFooter lang={lang} notices={notices} builtAt={new Date()} />
+    <script>
+      import { initReveal } from '../scripts/data-reveal';
+      import { attachPaint } from '../scripts/data-paint';
+      initReveal();
+      attachPaint();
+    </script>
   </body>
 </html>

@@ -3,6 +3,8 @@
 // Asia/Seoul, the motion toggle (contract A-29: it stays on version pages) and any rights-holder notice the page
 // passes (e.g. the Riot notice on the paper page when Q19 enables it). Editorial colours only; no mono type.
 // P-04: a contact row (mailto + GitHub profile, the values getPerson() returns) and aria-current on the current footer link.
+// v5 (DS-3): a grey bar opened by the page's last perforation folio (the counter makes it the number of folios + 1),
+// a painted sign-off before the copyright (aria-hidden), ink links and a boxed motion switch; order and texts unchanged.
 import type { Lang } from '../../i18n/ui';
 import { formatDate, t } from '../../i18n/utils';
 import { isCurrentPath } from '../../lib/footer-nav';
@@ -12,6 +14,8 @@ import { SITE } from '../../config';
 import { todayIso } from '../../lib/records';
 import type { NoticeKey } from '../../types';
 import { SHARED_NAV } from '../../variants/neutral';
+import Folio from './Folio.astro';
+import PaintMark from './PaintMark.astro';
 
 interface Props {
   lang: Lang;
@@ -35,7 +39,8 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
 ---
 <footer class="data-footer">
   <div class="container data-footer__inner">
-    <p class="data-footer__copy">{t(lang, 'footer.copyright', { year: builtIso.slice(0, 4) })}</p>
+    <Folio />
+    <p class="data-footer__copy"><PaintMark kind="fmark" />{t(lang, 'footer.copyright', { year: builtIso.slice(0, 4) })}</p>
     <ul class="data-footer__contact" role="list">
       <li><a class="ed-link" href={`mailto:${person.email}`}>{person.email}</a></li>
       <li><a class="ed-link" href={person.github} lang="en">{t(lang, 'action.github')} <span aria-hidden="true">↗</span></a></li>
@@ -46,7 +51,7 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
       </ul>
     </nav>
     <p class="data-footer__updated">{t(lang, 'footer.lastUpdated')} <time datetime={builtIso}>{formatDate(builtIso, lang)}</time></p>
-    <button type="button" class="data-footer__motion" aria-pressed="false" data-motion-toggle>{t(lang, 'action.reduceMotion')} <span class="data-footer__motion-chip" lang="en" aria-hidden="true" data-motion-chip>OFF</span></button>
+    <button type="button" class="data-footer__motion" aria-pressed="false" data-motion-toggle>{t(lang, 'action.reduceMotion')} <span class="data-footer__motion-chip" lang="en" aria-hidden="true" data-motion-chip data-display>OFF</span></button>
     <p id="motion-os-note" class="data-footer__motion-note" data-motion-os-note hidden>{t(lang, 'action.motionOsOff')}</p>
     {lines.length > 0 && (
       <div class="data-footer__notices">
@@ -65,40 +70,81 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
 <style>
   .data-footer {
     margin-top: var(--section-pad-y);
-    padding-block: 20px 28px;
-    border-top: var(--ed-rule-w-strong) solid var(--ed-rule-strong);
-    background: var(--ed-bg);
+    padding-block: 8px 28px;
+    border-top: var(--ed-rule-w) solid var(--ed-line);
+    background: var(--ed-n-50);
     font-size: var(--fs-caption);
     line-height: 1.6;
-    color: var(--ed-muted);
+    color: var(--ed-ink-2);
   }
   .data-footer__inner { display: grid; gap: 8px; }
-  .data-footer__links { display: flex; flex-wrap: wrap; gap: 0 16px; }
-  .data-footer__links a { display: inline-flex; align-items: center; min-height: var(--tap); color: var(--ed-accent); }
-  .data-footer__links a[aria-current] { color: var(--ed-ink); text-decoration-thickness: 2px; }
+  .data-footer__copy { display: inline-flex; align-items: center; gap: 10px; font-weight: 600; color: var(--ed-ink); }
+  .data-footer__links { display: flex; flex-wrap: wrap; gap: 0 20px; }
+  /* site links: ink, underlined, the brush stroke sweeps in under the label on hover and focus (v5.1) */
+  .data-footer__links a {
+    position: relative;
+    isolation: isolate;
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--tap);
+    color: var(--ed-link);
+    font-weight: 700;
+    text-decoration: underline var(--ed-ul) var(--ed-link-line);
+    text-underline-offset: var(--ed-ul-off);
+  }
+  .data-footer__links a::after {
+    content: "";
+    position: absolute;
+    z-index: -1;
+    left: 0;
+    right: 0;
+    top: calc(50% + .2em);
+    height: max(.38em, 6px);
+    background: var(--ed-paint-stroke);
+    -webkit-mask-box-image: var(--ed-rag-s);
+    pointer-events: none;
+    transform: scaleX(0);
+    transform-origin: 0 50%;
+    transition: transform var(--dur-stroke) var(--ease-out);
+  }
+  .data-footer__links a:focus-visible::after,
+  .data-footer__links a:active::after { transform: none; }
+  @media (hover: hover) {
+    .data-footer__links a:hover::after { transform: none; }
+  }
+  .data-footer__links a[aria-current] { text-decoration-thickness: var(--ed-ul-on); }
   .data-footer__contact { display: flex; flex-wrap: wrap; gap: 0 20px; }
   .data-footer__motion {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
     justify-self: start;
     min-height: var(--tap);
     padding: 0 12px;
-    border: var(--ed-rule-w) solid var(--ed-rule);
-    background: none;
+    border: var(--ed-rule-w) solid var(--ed-ink);
+    background: var(--ed-bg);
     color: var(--ed-ink);
+    font-weight: 700;
     cursor: pointer;
-    transition: border-color var(--dur-hover) linear;
   }
-  .data-footer__motion[aria-pressed="true"] { border-color: var(--ed-ink); }
-  .data-footer__motion-chip { margin-left: .4em; font-weight: 700; }
+  .data-footer__motion[aria-pressed="true"] { border-width: 2px; }
+  .data-footer__motion-chip { padding: 2px 5px; border: var(--ed-rule-w) solid currentColor; font-size: var(--fs-label); font-weight: 800; line-height: 1; text-transform: none; }
   .data-footer__notice { max-width: var(--measure); }
   /* G-026 (P-12): print-only; display:none keeps it out of the screen layout and the accessibility tree. */
   .data-footer__canonical { display: none; }
+  :global(:root[data-motion="reduce"]) .data-footer__links a::after { transition: none; }
+  @media (prefers-reduced-motion: reduce) {
+    .data-footer__links a::after { transition: none; }
+  }
   @media print {
+    .data-footer { background: none; }
     .data-footer__canonical { display: block; grid-column: 1 / -1; overflow-wrap: anywhere; }
   }
   @media (min-width: 1068px) {
     .data-footer__inner { grid-template-columns: auto 1fr auto auto; align-items: center; column-gap: 24px; }
+    .data-footer__inner > :global(.ed-folio) { grid-column: 1 / -1; }
     /* P-04: the contact row gets its own row under copy, links, updated and the motion toggle. */
-    .data-footer__contact { grid-column: 1 / -1; grid-row: 2; }
+    .data-footer__contact { grid-column: 1 / -1; grid-row: 3; }
     .data-footer__notices, .data-footer__motion-note { grid-column: 1 / -1; }
   }
 </style>

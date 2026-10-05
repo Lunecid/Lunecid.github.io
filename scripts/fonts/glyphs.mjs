@@ -15,6 +15,10 @@ export const PRINTABLE_ASCII = String.fromCharCode(...Array.from({ length: 0x7f 
 /** Punctuation and symbols the site uses (or is likely to add), kept even when no page uses them today. */
 export const ALWAYS_SYMBOLS = ' ·—–…‘’“”→←↑↓↗×©°₩▶◆›‹★♪↻≤≥•';
 
+/** The characters of the display face (DS-1): Latin letters, numbers and the symbol list; Hangul inside a display
+ * element is drawn by SB Sans through --font-ed-display. */
+export const DISPLAY_CHARACTERS = PRINTABLE_ASCII + ALWAYS_SYMBOLS;
+
 /** The Hangul blocks (Jamo, Compatibility Jamo, Jamo Extended-A/B, Syllables). */
 export const HANGUL_RANGES = /** @type {const} */ ([
   [0x1100, 0x11ff],
@@ -145,6 +149,11 @@ export function clientScripts(distDir) {
   return walk(astro).filter((f) => f.endsWith('.js'));
 }
 
+/** Linked stylesheets (the data pages' shared data-site sheet). @param {string} distDir */
+export function clientStyles(distDir) {
+  return walk(join(distDir, '_astro')).filter((f) => f.endsWith('.css'));
+}
+
 /**
  * Non-ASCII characters of a client bundle. Vite writes non-ASCII string literals as UTF-8, so every character
  * an island can render from its own code appears literally; taking every non-ASCII character of the file
@@ -163,8 +172,8 @@ export function charSet(texts) {
 }
 
 /**
- * The characters the sans face must cover: printable ASCII, the fixed symbol list, every site page and every
- * client bundle.
+ * The characters the sans face must cover: printable ASCII, the fixed symbol list, every site page, every
+ * client bundle and the strings of every linked stylesheet.
  * @param {string} distDir
  */
 export function sansCharacters(distDir) {
@@ -173,6 +182,7 @@ export function sansCharacters(distDir) {
     ALWAYS_SYMBOLS,
     ...sitePages(distDir).map((p) => htmlText(readFileSync(p.file, 'utf8'))),
     ...clientScripts(distDir).map((f) => scriptText(readFileSync(f, 'utf8'))),
+    ...clientStyles(distDir).map((f) => cssStringText(readFileSync(f, 'utf8'))),
   ]);
 }
 

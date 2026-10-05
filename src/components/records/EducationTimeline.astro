@@ -29,15 +29,15 @@ const rows = items.map((e) => ({
   <div class="container">
     <SectionHead variant={variant} id="education-title" caption={captionFor(getVariant(variant), 'questLog', lang)} title={t(lang, 'records.education')} />
     {variant === 'data' ? (
-      <ol class="ed-list" role="list">
+      <ol class="ed-tl" role="list">
         {rows.map((row) => (
-          <li class="ed-item" data-education={row.id}>
-            <p class="ed-meta tnum">{row.period}</p>
-            <h3 class="ed-item__title" data-serif>{row.school}</h3>
-            <p class="ed-body">{row.degree}</p>
-            <p class="ed-meta">{t(lang, 'records.gpa')} <span class="tnum">{row.gpa}</span></p>
-            {row.lab && <p class="ed-meta">{t(lang, 'records.lab')} · <a class="hit" href={row.lab.href}>{row.lab.text}</a></p>}
-            {row.thesis && <p class="ed-meta">{t(lang, 'records.thesis')} · {row.thesis}</p>}
+          <li class="ed-tl__item" data-education={row.id}>
+            <p class="ed-tl__when tnum">{row.period}</p>
+            <h3 class="ed-tl__title">{row.school}</h3>
+            <p class="ed-tl__body">{row.degree}</p>
+            <p class="ed-tl__meta">{t(lang, 'records.gpa')} <span class="tnum">{row.gpa}</span></p>
+            {row.lab && <p class="ed-tl__meta">{t(lang, 'records.lab')} · <a class="hit" href={row.lab.href}>{row.lab.text}</a></p>}
+            {row.thesis && <p class="ed-tl__meta">{t(lang, 'records.thesis')} · {row.thesis}</p>}
           </li>
         ))}
       </ol>

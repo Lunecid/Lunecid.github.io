@@ -21,16 +21,15 @@ const { lang, variant, awards } = Astro.props;
   <div class="container">
     <SectionHead variant={variant} id="awards-title" caption={captionFor(getVariant(variant), 'achievements', lang)} title={t(lang, 'records.awards')} />
     {variant === 'data' ? (
-      <ul class="ed-list" role="list">
+      <ul class="ed-certs" role="list">
         {awards.map((award) => (
-          <li class="ed-item award-ed" data-award={award.id}>
-            <p class="ed-tag">{award.medal.label}</p>
-            <h3 class="ed-item__title" data-serif>{award.title}</h3>
-            <p class="ed-body">{award.contest}</p>
-            <p class="ed-meta">{award.org} · <time datetime={award.dateIso}>{award.date}</time></p>
-            {award.redactionNote && <p class="ed-meta">{award.redactionNote}</p>}
+          <li class="ed-cert award-ed" data-award={award.id}>
+            <p class="ed-cert__top"><span class="ed-tbox">{award.medal.label}</span><span>{award.org} · <time datetime={award.dateIso}>{award.date}</time></span></p>
+            <h3 class="ed-cert__name">{award.title}</h3>
+            <p class="ed-cert__body">{award.contest}</p>
+            {award.redactionNote && <p class="ed-cert__note">{award.redactionNote}</p>}
             {(award.certHref || award.projectHref) && (
-              <ul class="ed-links" role="list">
+              <ul class="ed-links ed-cert__links" role="list">
                 {award.certHref && <li><a class="ed-link award__cert" href={award.certHref} data-cert-id={award.id} data-viewer="certificates" data-viewer-w={award.certWidth ?? undefined} data-viewer-h={award.certHeight ?? undefined} data-viewer-srcset={award.certSrcSet ?? undefined} data-viewer-sizes={award.certSizes ?? undefined} data-viewer-label={t(lang, 'modal.certificate')} data-viewer-caption={award.certCaption ?? undefined} data-viewer-alt={award.certAlt ?? undefined} aria-haspopup="dialog">{t(lang, 'action.viewCertificate')}<span class="sr-only"> · {award.contest}</span></a></li>}
                 {award.projectHref && <li><a class="ed-link award__project" href={award.projectHref}>{t(lang, 'action.viewProject')}<span class="sr-only"> · {award.contest}</span> <span aria-hidden="true">→</span></a></li>}
               </ul>

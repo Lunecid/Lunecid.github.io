@@ -1,73 +1,75 @@
 ---
-// The general version's hero (spec §8 히어로, §10.2, B-10, B-12): the name in the serif heading face, the headline, the
-// one-line intro, the status, the evidence line, the projects button (the page's one filled button) and the CV link;
-// the school-zone risk heatmap as "그림 1 —" beside the text from 1068px (below it on phones).
+// The general version's hero (spec §8 히어로, §10.2, B-10, B-12; DS-4, v5): in the rail a tinted label block (the caption
+// and an aria-hidden job line: the canonical address in capitals and the last update); in the main column the painted
+// English job title (identity headline en, aria-hidden, white on the red field, a yellow cell beside it), the name (the
+// page's h1), the headline, the tagline, three stat tiles (the status and evidence facts, in their sentences' order),
+// the projects button (the page's one filled button) and the CV link. Below, the map spread: the school-zone risk
+// heatmap as "그림 1 —" in a white frame over a neutral tint block and a blue painted field with a yellow cell.
 import type { ImageMetadata } from 'astro';
 import { Picture } from 'astro:assets';
 import type { Lang } from '../../i18n/ui';
+import { formatDate, t } from '../../i18n/utils';
+import { SITE } from '../../config';
+import type { StatDef } from '../../data/copy/data/home';
+import { splitTagline } from '../../data/copy/hero';
 import { editorialFigureLabel } from '../../lib/figures';
 import { fitWidths, sourceSize } from '../../lib/images';
+import { todayIso } from '../../lib/records';
+import PaintMark from './PaintMark.astro';
+import StatTiles from './StatTiles.astro';
 
 interface Props {
   lang: Lang;
   caption: string;
   name: string;
   headline: string;
+  /** The Latin display words: the identity headline in English (both languages), one painted line per word. */
+  display: string;
   tagline: string;
-  status: string;
-  evidence: string;
+  /** The status and evidence facts as tiles (dataHomeCopy.heroStats, resolved). */
+  stats: StatDef[];
   projects: { label: string; href: string };
   /** docLabel names the PDF (D-7): the link's title and, visually hidden, part of its name. */
   cv: { label: string; href: string; docLabel: string };
   /** projectTitle: the linked project's title, visually hidden in the link's name (the button beside it may carry the same label). */
   figure: { src: ImageMetadata; alt: string; caption: string; href: string; linkLabel: string; projectTitle: string };
 }
-const { lang, caption, name, headline, tagline, status, evidence, projects, cv, figure } = Astro.props;
+const { lang, caption, name, headline, display, tagline, stats, projects, cv, figure } = Astro.props;
+const address = new URL(Astro.url.pathname, SITE.url);
+const job = [`${address.host}${address.pathname}`.toUpperCase(), `${t(lang, 'footer.lastUpdated')} ${formatDate(todayIso(new Date()), lang)}`];
+const [taglineA, taglineB] = splitTagline(tagline);
+const figureLabel = editorialFigureLabel(lang, 1);
+const figureTab = figureLabel.replace(/\s*—$/, '');
 ---
-<section class="dhero ed-sec" aria-labelledby="hero-name">
-  <div class="container dhero__grid">
-    <div class="dhero__copy">
-      <p class="dhero__caption">{caption}</p>
-      <h1 id="hero-name" class="dhero__name" data-serif>{name}</h1>
+<section class="ed-hero dhero" aria-labelledby="hero-name">
+  <div class="container ed-g ed-hero__grid">
+    <div class="ed-tblock"><p class="ed-label">{caption}</p><p class="ed-tblock__meta" aria-hidden="true"><span lang="en">{job[0]}</span><span>{job[1]}</span></p></div>
+    <div class="ed-hero__panel">
+      <div class="ed-hero__mark" aria-hidden="true"><p class="ed-hero__bars" lang="en" data-display data-paint-text>{display.split(/\s+/).map((word) => <span>{word}</span>)}</p><PaintMark kind="hero" /></div>
+      <h1 id="hero-name" class="ed-hero__name">{name}</h1>
       <p class="dhero__headline">{headline}</p>
-      <p class="dhero__tagline">{tagline}</p>
-      <p class="dhero__status">{status}</p>
-      <p class="dhero__evidence">{evidence}</p>
-      <ul class="dhero__actions" role="list">
+      <p class="dhero__tagline">{taglineB ? <Fragment><span class="ed-cl">{taglineA}</span> <span class="ed-cl">{taglineB}</span></Fragment> : taglineA}</p>
+      <StatTiles items={stats} tone="plain" />
+      <ul class="ed-hero__actions" role="list">
         <li><a class="ed-btn ed-btn--fill" href={projects.href}>{projects.label} <span aria-hidden="true">→</span></a></li>
         <li><a class="ed-link" href={cv.href} title={cv.docLabel} download>{cv.label} <span aria-hidden="true">↓</span><span class="sr-only"> — {cv.docLabel}</span></a></li>
       </ul>
     </div>
-    <figure class="ed-figure dhero__fig">
-      <Picture
-        src={figure.src}
-        alt={figure.alt}
-        formats={['avif', 'webp']}
-        fallbackFormat="webp"
-        widths={fitWidths([480, 720, 1040], sourceSize(figure.src).width)}
-        sizes="(min-width: 1068px) 520px, (min-width: 734px) calc(100vw - 64px), calc(100vw - 32px)"
-        priority
-      />
-      <figcaption class="ed-figcap"><span class="ed-figcap__num">{editorialFigureLabel(lang, 1)}</span> {figure.caption} <a class="hit dhero__figlink" href={figure.href}>{figure.linkLabel}<span class="sr-only"> — {figure.projectTitle}</span> <span aria-hidden="true">→</span></a></figcaption>
+    <figure class="ed-figure ed-spread">
+      <i class="ed-spread__y" aria-hidden="true"></i>
+      <div class="ed-spread__img">
+        <Picture
+          src={figure.src}
+          alt={figure.alt}
+          formats={['avif', 'webp']}
+          fallbackFormat="webp"
+          widths={fitWidths([480, 720, 1040], sourceSize(figure.src).width)}
+          sizes="(min-width: 1248px) 790px, (min-width: 1068px) calc(68vw - 60px), (min-width: 734px) calc(82vw - 70px), calc(100vw - 66px)"
+          priority
+        />
+        <span class="ed-chip ed-spread__tab" aria-hidden="true">{figureTab}</span>
+      </div>
+      <figcaption class="ed-figcap ed-spread__cap"><span class="ed-figcap__num">{figureLabel}</span> {figure.caption} <a class="ed-link dhero__figlink" href={figure.href}>{figure.linkLabel}<span class="sr-only"> — {figure.projectTitle}</span> <span aria-hidden="true">→</span></a></figcaption>
     </figure>
   </div>
 </section>
-
-<style>
-  .dhero { padding-block: 40px 32px; }
-  .dhero__grid { display: grid; gap: 32px; }
-  .dhero__caption { font-size: var(--fs-caption); line-height: var(--lh-caption); color: var(--ed-muted); }
-  .dhero__caption:lang(en) { font-family: var(--font-ed-serif); font-style: italic; }
-  .dhero__name { margin-top: 8px; font-size: var(--fs-name); line-height: var(--lh-display); color: var(--ed-ink); }
-  .dhero__headline { margin-top: 10px; font-size: var(--fs-sub); font-weight: 700; line-height: var(--lh-sub); }
-  .dhero__tagline { margin-top: 16px; max-width: var(--measure); font-size: var(--fs-sub); line-height: var(--lh-sub); }
-  .dhero__status { margin-top: 10px; color: var(--ed-muted); }
-  .dhero__evidence { margin-top: 4px; font-weight: 600; }
-  /* A link inside the grey caption text is told apart by its underline, not its colour alone (axe link-in-text-block). */
-  .dhero__figlink { text-decoration: underline; text-underline-offset: .2em; }
-  .dhero__actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 24px; margin-top: 24px; }
-  @media (min-width: 1068px) {
-    .dhero { padding-block: 64px 48px; }
-    .dhero__grid { grid-template-columns: minmax(0, 1fr) 520px; align-items: start; column-gap: 56px; }
-  }
-</style>

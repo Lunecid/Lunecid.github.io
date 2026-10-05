@@ -4,7 +4,7 @@
 // A sheet's "own" classes are the classes it defines that no other stylesheet in src/ names (other src/**/*.css files,
 // <style> blocks of src/**/*.astro); they reach a page's inlined CSS only through that sheet.
 import assert from 'node:assert/strict';
-import { readdirSync, readFileSync } from 'node:fs';
+import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, relative, sep } from 'node:path';
 import { test } from 'node:test';
 
@@ -26,11 +26,16 @@ function ownClasses(sheet) {
 const HUD_OWN = ownClasses('src/styles/hud.css');
 const ED_OWN = ownClasses('src/styles/editorial.css');
 const has = (css, cls) => new RegExp(`\\.${cls}(?![\\w-])`).test(css);
+// A page's CSS = its inline <style> blocks + the stylesheets it links (only data pages link one: data-site.css).
+const sheetHrefs = (html) => [...html.matchAll(/<link\b[^>]*\brel="stylesheet"[^>]*>/g)].map((m) => /\bhref="([^"]+)"/.exec(m[0])?.[1] ?? '');
 const pages = walk('dist')
   .filter((f) => f.endsWith('.html'))
   .map((f) => {
     const html = readFileSync(f, 'utf8');
-    return { path: posix(relative('dist', f)), variant: html.match(/<html\b[^>]*\bdata-variant="([a-z]+)"/)?.[1] ?? null, css: styleText(html) };
+    const links = sheetHrefs(html);
+    const inline = styleText(html);
+    const linked = links.map((href) => readFileSync(join('dist', ...href.split('/').filter(Boolean)), 'utf8')).join('\n');
+    return { path: posix(relative('dist', f)), variant: html.match(/<html\b[^>]*\bdata-variant="([a-z]+)"/)?.[1] ?? null, html, links, inline, css: `${inline}\n${linked}` };
   });
 const ofVariant = (v) => pages.filter((p) => p.variant === v);
 
@@ -57,11 +62,37 @@ test('neutral pages (chooser, shared pages, 404) inline neither version sheet', 
   }
 });
 
-test('data pages inline editorial.css (P2-2)', () => {
+// Named change (data CSS external): editorial.css and paint.css are no longer inlined per data page; they reach every
+// data page through one shared, content-hashed stylesheet.
+test('data pages load editorial.css (P2-2) from the shared data stylesheet, not inline', () => {
   const data = ofVariant('data');
   assert.ok(data.length > 0, 'no data page in dist');
   for (const p of data) {
-    assert.deepEqual(ED_OWN.filter((c) => !has(p.css, c)), [], `${p.path}: editorial.css is not inlined`);
+    assert.deepEqual(ED_OWN.filter((c) => !has(p.css, c)), [], `${p.path}: editorial.css is not loaded`);
+    assert.deepEqual(ED_OWN.filter((c) => has(p.inline, c)), [], `${p.path}: editorial.css is inlined again`);
+  }
+});
+
+test('the data CSS is one external, content-hashed stylesheet that every data page shares', () => {
+  const data = ofVariant('data');
+  assert.ok(data.length >= 16, 'the general pages');
+  const hrefs = new Set(data.flatMap((p) => p.links));
+  assert.equal(hrefs.size, 1, `data pages link ${[...hrefs].join(', ') || 'no stylesheet'}`);
+  const [href] = hrefs;
+  assert.match(href, /^\/_astro\/data-site\.[\w-]{6,}\.css$/, 'a hashed, cacheable /_astro/ file');
+  for (const p of data) {
+    assert.deepEqual(p.links, [href], `${p.path}: exactly one data stylesheet link`);
+    const head = /<head[^>]*>([\s\S]*?)<\/head>/.exec(p.html)?.[1] ?? '';
+    assert.ok(head.includes(`href="${href}"`), `${p.path}: the link sits in <head> (no flash of unstyled content)`);
+  }
+});
+
+test('game and neutral pages link no stylesheet and never name the data sheet', () => {
+  const others = [...ofVariant('game'), ...ofVariant('neutral')];
+  assert.ok(others.length > 0, 'no game or neutral page in dist');
+  for (const p of others) {
+    assert.deepEqual(p.links, [], `${p.path}: links a stylesheet`);
+    assert.ok(!/_astro\/data-site\./.test(p.html), `${p.path}: names the data sheet`);
   }
 });
 
@@ -74,5 +105,42 @@ test('data pages inline neither hud.css nor read.css (P2-9: the D-7 transition i
   for (const p of data) {
     assert.deepEqual(HUD_OWN.filter((c) => has(p.css, c)), [], `${p.path}: hud.css leaked into a general page`);
     assert.deepEqual(READ_OWN.filter((c) => has(p.css, c)), [], `${p.path}: read.css leaked into a general page`);
+  }
+});
+
+// Named change (data CSS external): "inline" → "load" (through the shared data sheet); the inline CSS holds no paint.
+test('DS-2: data pages load paint.css; game and neutral pages never contain --tex- or --ragbox', () => {
+  const data = ofVariant('data');
+  assert.ok(data.length >= 16, 'the general pages');
+  for (const p of data) {
+    for (const name of ['--tex-rh', '--tex-rv', '--tex-bh', '--tex-bv', '--tex-yh', '--tex-yv', '--ragbox', '--ed-paint-rh', '--ed-rag']) {
+      assert.ok(p.css.includes(`${name}:`), `${p.path}: ${name} is not loaded`);
+    }
+    assert.ok(!/--tex-|--ragbox/.test(p.inline), `${p.path}: paint.css is inlined again`);
+  }
+  for (const p of [...ofVariant('game'), ...ofVariant('neutral')]) {
+    assert.ok(!/--tex-|--ragbox|--ed-paint-/.test(p.css), `${p.path}: paint.css leaked`);
+  }
+});
+
+// Live SVG feTurbulence cost 0.6–1.2 s of main-thread rasterising per data page on phones (TBT up to 685 ms): the six
+// brush tiles ship pre-rendered (scripts/paint/paint.mjs), as hashed, cacheable WebP files next to the data sheet.
+test('the brush textures are pre-rendered WebP tiles (1× and 2×) in /_astro/, never SVG noise', () => {
+  const data = ofVariant('data');
+  assert.ok(data.length >= 16, 'the general pages');
+  for (const p of data) assert.ok(!/feTurbulence|%3Cfilter|<filter/i.test(p.css), `${p.path}: SVG noise in the page CSS`);
+  const css = data[0].css;
+  for (const key of ['rh', 'rv', 'bh', 'bv', 'yh', 'yv']) {
+    // Named change (deferred textures): --tex-* is none until [data-paint-tex] attaches the tiles after load
+    assert.match(css, new RegExp(`--tex-${key}:\\s*none`), `--tex-${key} defaults to none`);
+    const value = new RegExp(`--tex-${key}:\\s*(image-set[^;}]+)`).exec(css)?.[1] ?? '';
+    const urls = [...value.matchAll(/url\(\s*["']?([^"')\s]+)["']?\s*\)\s*([\d.]+x)/g)].map((m) => [m[1], m[2]]);
+    assert.equal(urls.length, 2, `--tex-${key}: ${value}`);
+    assert.match(value.trim(), /^image-set\(/, `--tex-${key} is an image-set`);
+    const [[one, s1], [two, s2]] = urls;
+    assert.deepEqual([s1, s2], ['1x', '2x'], `--tex-${key} scales`);
+    assert.match(one, new RegExp(`^/_astro/paint-${key}\\.[\\w-]{6,}\\.webp$`), `--tex-${key} 1x`);
+    assert.match(two, new RegExp(`^/_astro/paint-${key}-2x\\.[\\w-]{6,}\\.webp$`), `--tex-${key} 2x`);
+    for (const href of [one, two]) assert.ok(statSync(join('dist', ...href.split('/').filter(Boolean))).size > 0, `${href} exists`);
   }
 });

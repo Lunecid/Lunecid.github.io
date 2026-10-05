@@ -2,7 +2,8 @@
 // P-07 F-005: after a case study's links, the next case study in the version's projectsOrder (ProjectView picks it:
 // projects with a page; after the last one, the first). Game: one "NEXT PROJECT ▶" cartridge in the centred reading
 // column (one left edge per page, P1-7), no wider than a card of the /projects/ shelf, under a visually hidden heading.
-// General: one underlined "다음 프로젝트 →" link on white, which names the project to screen readers.
+// General: one underlined "다음 프로젝트 →" link on white, which names the project to screen readers (DS-6: in the main
+// column of the grid, right-aligned under the links).
 import SectionHead from '../hud/SectionHead.astro';
 import ProjectCartridge from './ProjectCartridge.astro';
 import type { Lang } from '../../i18n/ui';
@@ -28,9 +29,11 @@ const { lang, variant, next } = Astro.props;
     </div>
   </section>
 ) : (
-  <p class="pnext-ed">
-    <a class="ed-link" href={next.href}>{t(lang, 'project.next')} <span aria-hidden="true">→</span><span class="sr-only"> · {next.title}</span></a>
-  </p>
+  <div class="container ed-g ed-pnext">
+    <p class="ed-pnext__p">
+      <a class="ed-link" href={next.href}>{t(lang, 'project.next')} <span aria-hidden="true">→</span><span class="sr-only"> · {next.title}</span></a>
+    </p>
+  </div>
 )}
 
 <style>

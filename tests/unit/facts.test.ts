@@ -95,3 +95,29 @@ describe('fact tokens (R-4, contract §3)', () => {
     expect(() => graduationEntry([])).toThrow();
   });
 });
+
+describe('DS-4: the research figure facts of the CoG paper', () => {
+  it("DS-4: pub.cog-2026-engagement.fact.matches/bestAuc/neuralRange resolve ko/en and appear in the paper's abstract or cog-2026.ts", async () => {
+    const { readFileSync } = await import('node:fs');
+    const { overallAuc } = await import('../../src/data/research/cog-2026');
+    const md = readFileSync('src/content/publications/cog-2026-engagement.md', 'utf8');
+    const block = (key: string): string => (new RegExp(`^${key}: >-\\n((?:  .*\\n?)+)`, 'm').exec(md)?.[1] ?? '').replace(/\s+/g, ' ');
+    const abstract = { ko: block('abstractKo'), en: block('abstract') };
+    expect(abstract.ko.length).toBeGreaterThan(100);
+    expect(abstract.en.length).toBeGreaterThan(100);
+    expect(both('{pub.cog-2026-engagement.fact.matches}')).toEqual(['206,442', '206,442']);
+    expect(both('{pub.cog-2026-engagement.fact.bestAuc}')).toEqual(['0.675', '0.675']);
+    expect(both('{pub.cog-2026-engagement.fact.neuralRange}')).toEqual(['0.569–0.581', '0.569–0.581']);
+    for (const lang of ['ko', 'en'] as const) {
+      expect(abstract[lang]).toContain(resolveFacts('{pub.cog-2026-engagement.fact.matches}', lang, src));
+      expect(abstract[lang]).toContain(`AUC ${resolveFacts('{pub.cog-2026-engagement.fact.bestAuc}', lang, src)}`);
+      // the range's two ends are the abstract's own numbers
+      for (const end of resolveFacts('{pub.cog-2026-engagement.fact.neuralRange}', lang, src).split('–')) expect(abstract[lang]).toContain(end);
+    }
+    // ... and the best and the neural range are exactly the paper's table (cog-2026.ts), not rounded values
+    const best = overallAuc.find((row) => row.highlight);
+    expect(best?.auc.toFixed(3)).toBe('0.675');
+    const neural = overallAuc.filter((row) => row.group === 'neural').map((row) => row.auc);
+    expect(`${Math.min(...neural).toFixed(3)}–${Math.max(...neural).toFixed(3)}`).toBe('0.569–0.581');
+  });
+});

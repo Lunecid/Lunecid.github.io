@@ -10,7 +10,11 @@
 //   serifKo Noto Serif KR (fontsource ships it in ~120 unicode-range slices) → the Hangul inside the paper sheet
 //           of the pages that load it (the Korean paper page). The needed slices are subset and merged into one
 //           file. OFL 1.1 without a Reserved Font Name (fontsource LICENSE: "Google Inc."; name ID 0: Adobe).
-//   serifKoHead  Noto Serif KR, static wght 700 → the Hangul inside [data-serif] on the general version's pages (P2-3).
+//   serifKoHead  Noto Serif KR, static wght 700 → the Hangul inside [data-serif] of the pages that declare it (since
+//           DS-1 the chooser only).
+//   display Archivo (fontsource latin wdth file) → "SB Display": printable ASCII + ALWAYS_SYMBOLS, width pinned at
+//           112 %, weight 700–900, for the general version's Latin display words and numerals (DS-1). OFL 1.1 without
+//           a Reserved Font Name, so the name table is kept as is (copyright 0 and license URL 14; the source has no 13).
 import { createHash } from 'node:crypto';
 import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
@@ -26,6 +30,7 @@ import {
   isIgnorable,
   paperHangul,
   paperSheetHtml,
+  DISPLAY_CHARACTERS,
   sansCharacters,
   scriptText,
   serifHeadHangul,
@@ -43,6 +48,7 @@ export const SOURCES = {
   sans: require.resolve('pretendard/dist/web/variable/woff2/PretendardVariable.woff2'),
   mono: require.resolve('@fontsource-variable/jetbrains-mono/files/jetbrains-mono-latin-wght-normal.woff2'),
   serifKoDir: dirname(require.resolve('@fontsource-variable/noto-serif-kr/files/noto-serif-kr-0-wght-normal.woff2')),
+  display: require.resolve('@fontsource-variable/archivo/files/archivo-latin-wdth-normal.woff2'),
 };
 
 /** OpenType features the pages can trigger (kerning, ligatures, marks, tabular figures, Hangul jamo). */
@@ -95,6 +101,23 @@ export async function subsetSans(text) {
   ]);
   // A second harfbuzz pass that keeps every glyph only re-encodes the renamed font as WOFF2.
   return subsetFont(renamed, null, { keepAllGlyphs: true, targetFormat: 'woff2', preserveNameIds: SANS_NAME_IDS });
+}
+
+/** Features the display words and numerals can trigger. */
+const DISPLAY_FEATURES = ['kern', 'liga', 'tnum', 'case', 'lnum'];
+
+/**
+ * The display face: Archivo with the width axis pinned at 112 % and the weight axis cut to 700–900, over printable
+ * ASCII and the symbol list (a fixed set: the display words are Latin, so the file does not depend on the pages).
+ * @param {string} [text]
+ */
+export async function subsetDisplay(text = DISPLAY_CHARACTERS) {
+  return subsetFont(readFileSync(SOURCES.display), text, {
+    targetFormat: 'woff2',
+    variationAxes: { wdth: 112, wght: { min: 700, max: 900 } },
+    keepFeatures: DISPLAY_FEATURES,
+    preserveNameIds: [0, 1, 2, 3, 4, 5, 6, 13, 14],
+  });
 }
 
 /** @type {Map<string, Set<number>> | null} */
@@ -300,7 +323,10 @@ export async function buildFonts(distDir, { warn = (message) => console.warn(mes
       replace.set(FONT_URL.serifKo, write('serifKo', 'sb-serif-kr', data, serif.size - missing.length));
     } else {
       // Nothing to subset: drop the rule, the stack after "SB Serif KR" draws the text.
+      // (the general paper page declares the face font-display: optional and preloads it: both go too)
       replace.set(fontFaceRule('serifKo'), '');
+      replace.set(fontFaceRule('serifKo').replace('font-display:swap', 'font-display:optional'), '');
+      replace.set(preloadTag(FONT_URL.serifKo), '');
       warn(`font-subsets: no Noto Serif KR subset was built (none of the paper's Hangul is in the font); ${serifPages.map((p) => p.route).join(', ')} fall back to the system serif`);
     }
   }
@@ -316,6 +342,13 @@ export async function buildFonts(distDir, { warn = (message) => console.warn(mes
     }
     if (data) replace.set(FONT_URL.serifKoHead, write('serifKoHead', 'sb-serif-kr-head', data, head.size - missing.length));
     else replace.set(fontFaceRule('serifKoHead'), ''); // no Hangul heading at all: the Times stack and the system serif draw them
+  }
+
+  // ── Latin display face (general version, DS-1): one fixed subset, written only when some page declares it; its
+  //    preload is rewritten with the URL below. ──
+  if (pages.some((p) => p.html.includes(FONT_URL.display))) {
+    const display = await step('subsetting Archivo (display)', () => subsetDisplay());
+    replace.set(FONT_URL.display, write('display', 'sb-display', display, DISPLAY_CHARACTERS.length));
   }
 
   // ── pages ──
@@ -364,6 +397,7 @@ export async function devFont(url) {
   if (url === FONT_URL.mono) return readFileSync(SOURCES.mono);
   if (url === FONT_URL.serifKo) return (devSerif ??= subsetSerifKo(sourceHangul()).then((r) => r.data));
   if (url === FONT_URL.serifKoHead) return (devSerifHead ??= subsetSerifKo(sourceHangul(), { wght: 700 }).then((r) => r.data));
+  if (url === FONT_URL.display) return subsetDisplay();
   return null;
 }
 

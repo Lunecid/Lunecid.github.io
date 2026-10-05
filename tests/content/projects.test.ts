@@ -419,4 +419,54 @@ describe('project case-study files', () => {
     expect(en.replace('(held-out R² 0.897)', '')).not.toMatch(/R²|0\.897/);
     expect(ko.includes('0.897')).toBe(en.includes('0.897'));
   });
+
+  // DS-6: the case-study band's numbers are the project's own facts; an English body may spell a number as a word
+  // (a sentence starting "Sixteen public datasets"), which counts as the same fact (as NUMBER_WORDS above).
+  const SPELLED: Record<string, string> = { ...Object.fromEntries(Object.entries(NUMBER_WORDS).map(([n, w]) => [n, w])), 16: 'sixteen' };
+  const factTokens = (text: string): string[] => [...text.matchAll(/\{fact\.([A-Za-z0-9-]+)\}/g)].map((m) => m[1] ?? '');
+
+  it('DS-6: every facts value of a project appears verbatim in the same-language body; keyFigures and metrics reference facts only', () => {
+    let checked = 0;
+    for (const slug of PROJECT_SLUGS) {
+      for (const lang of LANGS) {
+        const d = data(lang, slug);
+        const body = readBody(fileOf(lang, slug));
+        for (const [key, value] of Object.entries(d.facts ?? {})) {
+          const v = value[lang];
+          const found = body.includes(v) || (lang === 'en' && SPELLED[v] !== undefined && body.toLowerCase().includes(`${SPELLED[v]} `));
+          expect(found, `${lang}/${slug}: fact ${key} = ${v}`).toBe(true);
+          checked += 1;
+        }
+        const keys = new Set(Object.keys(d.facts ?? {}));
+        for (const fig of d.keyFigures ?? []) {
+          for (const k of [...factTokens(fig.value), ...factTokens(fig.label), ...(fig.bar ?? [])]) expect(keys.has(k), `${lang}/${slug}: ${k}`).toBe(true);
+          expect(fig.value.replace(/\{fact\.[^}]+\}/g, ''), `${lang}/${slug}: no number outside a fact`).not.toMatch(/\d/);
+          expect(fig.label.replace(/\{fact\.[^}]+\}/g, ''), `${lang}/${slug}: no number outside a fact`).not.toMatch(/\d/);
+        }
+        for (const row of d.metrics?.rows ?? []) expect(keys.has(row.fact), `${lang}/${slug}: metric ${row.key}`).toBe(true);
+        // the metric block's accessible sentence is the body's own result sentence, word for word
+        if (d.metrics) expect(body.replace(/\s+/g, ' '), `${lang}/${slug}: metric sentence`).toContain(d.metrics.label);
+      }
+    }
+    expect(checked).toBeGreaterThanOrEqual(16); // school-zone: 8 facts × 2 languages
+    expect(data('ko', 'school-zone-blindspots').keyFigures?.length).toBe(4);
+  });
+
+  it('DS-6: ko and en keyFigures have the same shape and the same numbers', () => {
+    for (const slug of PROJECT_SLUGS) {
+      const ko = data('ko', slug);
+      const en = data('en', slug);
+      expect((en.keyFigures ?? []).length, slug).toBe((ko.keyFigures ?? []).length);
+      (ko.keyFigures ?? []).forEach((fig, i) => {
+        const other = en.keyFigures?.[i];
+        expect(factTokens(other?.value ?? ''), `${slug}[${i}] value`).toEqual(factTokens(fig.value));
+        expect(factTokens(other?.label ?? ''), `${slug}[${i}] label`).toEqual(factTokens(fig.label));
+        expect(other?.bar, `${slug}[${i}] bar`).toEqual(fig.bar);
+      });
+      expect(en.metrics?.rows.map((r) => [r.fact, r.highlight ?? false]), slug).toEqual(ko.metrics?.rows.map((r) => [r.fact, r.highlight ?? false]));
+    }
+    const ko = data('ko', 'school-zone-blindspots');
+    expect(ko.facts).toMatchObject({ points: { ko: '240,064' }, positives: { ko: '61,848' }, sources: { ko: '16' }, features: { ko: '32' }, blocks: { ko: '10' }, recall: { ko: '0.87' }, precision: { ko: '0.62' }, f1: { ko: '0.72' } });
+    expect(ko.metrics?.rows.filter((r) => r.highlight).map((r) => r.fact)).toEqual(['f1']);
+  });
 });

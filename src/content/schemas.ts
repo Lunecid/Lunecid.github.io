@@ -65,9 +65,32 @@ export function projectSchema<TImage extends z.ZodType>(image: TImage) {
       .refine((a) => a.game !== undefined || a.research !== undefined, { message: 'audience needs game or research' })
       .optional(),
     facts: facts.optional(),
+    // DS-6: the case-study key-figures band (optional). Values and labels may hold {fact.<key>} tokens of this project's
+    // own facts (no other number: tests/content/projects.test.ts); bar = [part, whole] fact keys (the bar width is part
+    // / whole of the parsed facts); labelFirst = the sentence names the label first. metrics: the metric bars, each row
+    // one fact; label = the body's own result sentence (the block's accessible name).
+    keyFigures: z
+      .array(z.object({ value: z.string().min(1), unit: z.string().min(1).optional(), label: z.string().min(1), labelFirst: z.boolean().optional(), bar: z.tuple([factKey, factKey]).optional() }))
+      .min(1)
+      .optional(),
+    metrics: z
+      .object({ title: z.string().min(1), label: z.string().min(1), rows: z.array(z.object({ key: z.string().min(1), fact: factKey, highlight: z.boolean().optional() })).min(1) })
+      .optional(),
     // published/summary: a case-study page at /projects/<slug>/. card: no page, only a short link-less card on
     // /projects/ and a line on /records/ (D-4); a card file has no Markdown body.
     status: z.enum(['published', 'summary', 'card']),
+  })
+  .superRefine((d, ctx) => {
+    // DS-6: keyFigures and metrics reference this project's facts only
+    const keys = new Set(Object.keys(d.facts ?? {}));
+    const check = (key: string, path: (string | number)[]): void => {
+      if (!keys.has(key)) ctx.addIssue({ code: 'custom', path, message: `unknown fact "${key}" (not in facts)` });
+    };
+    (d.keyFigures ?? []).forEach((fig, i) => {
+      for (const field of ['value', 'label'] as const) for (const m of fig[field].matchAll(/\{fact\.([A-Za-z0-9-]+)\}/g)) check(m[1] ?? '', ['keyFigures', i, field]);
+      (fig.bar ?? []).forEach((key, j) => check(key, ['keyFigures', i, 'bar', j]));
+    });
+    (d.metrics?.rows ?? []).forEach((row, i) => check(row.fact, ['metrics', 'rows', i, 'fact']));
   });
 }
 

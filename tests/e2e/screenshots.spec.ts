@@ -14,6 +14,12 @@ const PAGES = [
   { route: '/data/', name: 'data-home' },
   { route: '/data/projects/', name: 'data-projects' },
   { route: '/data/records/', name: 'data-records' },
+  // DS-9: the four prototyped general pages in both languages
+  { route: '/data/projects/school-zone-blindspots/', name: 'data-case' },
+  { route: '/en/data/', name: 'data-home-en' },
+  { route: '/en/data/projects/', name: 'data-projects-en' },
+  { route: '/en/data/projects/school-zone-blindspots/', name: 'data-case-en' },
+  { route: '/en/data/records/', name: 'data-records-en' },
 ] as const;
 
 /** Scrolls the whole page once so lazy images load and client:visible islands hydrate, then returns to the top. */

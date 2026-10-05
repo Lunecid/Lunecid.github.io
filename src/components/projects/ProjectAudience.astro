@@ -2,9 +2,10 @@
 // "게임 팀에게 | 연구 기여" / "For game teams | Research contribution" after a case-study body (spec §3 case-study
 // order, §6 audience{game, research}; P1-8). Two light-HUD panels (square, corner marks, "[ ■ ] CAPTION" over the
 // title, P1-9) on the light reading band, in the same centred text column as the body above.
-// P2-6: the general version draws plain blocks under a heavy rule with serif labels (the for-game-teams block never
-// reaches a general page, P1-9).
+// P2-6: the general version draws plain blocks (the for-game-teams block never reaches a general page, P1-9); DS-6
+// (v5): each block opens with the section rail (number + chip) like every general section.
 import SectionLabel from '../hud/SectionLabel.astro';
+import SectionHead from '../hud/SectionHead.astro';
 import type { Lang } from '../../i18n/ui';
 import { t } from '../../i18n/utils';
 import { captionFor, getVariant, type VariantId } from '../../variants';
@@ -35,12 +36,13 @@ const blocks = [
   </div>
 </div>
 ) : (
-<div class="ed-prose audience-ed">
+<div class="audience-ed">
   {blocks.map((block) => (
-    <section id={block.id} class="audience-ed__block" aria-labelledby={`${block.id}-title`}>
-      <SectionLabel variant={variant} en={block.caption} />
-      <h2 id={`${block.id}-title`} class="ed-item__title" data-serif>{block.label}</h2>
-      <p class="ed-body">{block.text}</p>
+    <section id={block.id} class="ed-sec audience-ed__block" aria-labelledby={`${block.id}-title`}>
+      <div class="container">
+        <SectionHead variant={variant} id={`${block.id}-title`} caption={block.caption} title={block.label} />
+        <p class="ed-body">{block.text}</p>
+      </div>
     </section>
   ))}
 </div>

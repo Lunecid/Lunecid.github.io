@@ -16,7 +16,7 @@ import { dirname, join, relative, sep } from 'node:path';
 import { JSDOM } from 'jsdom';
 import { isHangul } from '../../scripts/fonts/glyphs.mjs';
 import { cmapCodePoints, parseName, woff2Tables } from '../../scripts/fonts/sfnt.mjs';
-import { SANS_FAMILY, SERIF_KO_FAMILY, SERIF_KO_HEAD_FAMILY } from '../../src/lib/fonts.ts';
+import { DISPLAY_FAMILY, SANS_FAMILY, SERIF_KO_FAMILY, SERIF_KO_HEAD_FAMILY } from '../../src/lib/fonts.ts';
 
 const DIST = process.env.DIST_DIR ?? 'dist';
 
@@ -171,6 +171,14 @@ function clientScriptText() {
     .join('');
 }
 
+/** Text of the stylesheets a page links (the data pages' shared data-site sheet), CSS escapes decoded. @param {string} html */
+function linkedStyleText(html) {
+  return [...html.matchAll(/<link\b[^>]*rel="stylesheet"[^>]*href="(\/_astro\/[^"]+\.css)"/g)]
+    .map((m) => readFileSync(join(DIST, ...m[1].split('/').filter(Boolean)), 'utf8'))
+    .join('')
+    .replace(/\\([0-9a-fA-F]{1,6})\s?/g, (_, hex) => String.fromCodePoint(parseInt(hex, 16)));
+}
+
 /**
  * Checks one page's HTML: the sans face must draw every renderable character (plus the client bundles'), the
  * Korean serif (where declared) every Hangul syllable of the paper sheet — each as far as its source font can.
@@ -203,6 +211,17 @@ export function checkPage(html, scriptText) {
       .join('');
     check(hangul, faces, SERIF_KO_HEAD_FAMILY, problems, warnings);
   }
+  const display = [...doc.querySelectorAll('[data-display]')];
+  if (display.length > 0 && !faces.some((f) => f.family === DISPLAY_FAMILY)) problems.push(`[data-display] text but no @font-face for "${DISPLAY_FAMILY}"`);
+  if (faces.some((f) => f.family === DISPLAY_FAMILY)) {
+    // DS-1: the Latin display face draws [data-display] text; Hangul inside it falls to SB Sans through
+    // --font-ed-display (checked above with the rest of the page). Anything else must be in the display subset.
+    const latin = display
+      .map((el) => [...(el.textContent ?? '')].filter((ch) => !isHangul(/** @type {number} */ (ch.codePointAt(0))) && ch.trim() !== '').join(''))
+      .join('');
+    const missing = uncoveredBy(latin, faces, DISPLAY_FAMILY);
+    if (missing.length > 0) problems.push(`"${DISPLAY_FAMILY}" lacks ${describe(missing)} (a [data-display] element shows it)`);
+  }
   if (/\/_fonts\//.test(html)) problems.push('an unresolved /_fonts/ placeholder is left in the page');
   return { problems, warnings };
 }
@@ -212,7 +231,8 @@ test('every character a built page can render is in the subset font file that pa
   /** @type {string[]} */
   const failures = [];
   for (const p of builtPages()) {
-    const { problems, warnings } = checkPage(readFileSync(p.file, 'utf8'), scripts);
+    const html = readFileSync(p.file, 'utf8');
+    const { problems, warnings } = checkPage(html, scripts + linkedStyleText(html));
     failures.push(...problems.map((msg) => `${p.route}: ${msg}`));
     for (const msg of warnings) console.warn(`warning: ${p.route}: ${msg}`);
   }
@@ -226,14 +246,14 @@ test('the Korean paper page loads the Korean serif and no other page does', () =
   assert.deepEqual(withSerif.sort(), ['/data/research/cog-2026-engagement/', '/game/research/cog-2026-engagement/']);
 });
 
-test('general-version pages and the chooser declare the Korean heading face, no other page does, and no page preloads it (P2-3, P2-10)', () => {
+test('the chooser declares the Korean heading face; data pages no longer do (DS-1); no page preloads it', () => {
   /** @type {string[]} */
   const wrong = [];
   for (const p of builtPages()) {
     const html = readFileSync(p.file, 'utf8');
     const declares = fontFaces(new JSDOM(html).window.document).some((f) => f.family === SERIF_KO_HEAD_FAMILY);
-    const general = /^\/(en\/)?data\//.test(p.route) || p.route === '/' || p.route === '/en/';
-    if (declares !== general) wrong.push(`${p.route}: declares=${declares}`);
+    const chooser = p.route === '/' || p.route === '/en/';
+    if (declares !== chooser) wrong.push(`${p.route}: declares=${declares}`);
     if (/<link rel="preload"[^>]*sb-serif-kr-head/.test(html)) wrong.push(`${p.route}: preloads the heading face`);
   }
   assert.deepEqual(wrong, []);
@@ -256,7 +276,7 @@ test('the Korean heading face ships as one static file (no fvar), weight 700, wi
 });
 
 test('self-test: the heading face fails on a [data-serif] Hangul it lacks, and only there', () => {
-  const html = readFileSync(join(DIST, 'data', 'index.html'), 'utf8');
+  const html = readFileSync(join(DIST, 'index.html'), 'utf8'); // the chooser: the one page that declares the face since DS-1
   const cmapOf = (/** @type {RegExp} */ re) => {
     const file = walk(join(DIST, '_astro')).find((f) => re.test(f));
     assert.ok(file, String(re));
@@ -313,6 +333,69 @@ test('self-test: the Korean serif fails on a syllable Noto Serif KR has, warns o
   const absent = checkPage(inSheet(jamo), '');
   assert.deepEqual(absent.problems, []);
   assert.ok(absent.warnings.some((w) => /Noto Serif KR has no glyph for ᄀ \(U\+1100\)/.test(w)), absent.warnings.join('\n'));
+});
+
+test('DS-1: data pages declare and preload the display face; no game or neutral page declares it', () => {
+  /** @type {string[]} */
+  const wrong = [];
+  let data = 0;
+  for (const p of builtPages()) {
+    const html = readFileSync(p.file, 'utf8');
+    const face = fontFaces(new JSDOM(html).window.document).filter((f) => f.family === DISPLAY_FAMILY);
+    const isData = /^\/(en\/)?data\//.test(p.route);
+    const preloads = [...html.matchAll(/<link rel="preload" href="([^"]+)"[^>]*as="font"/g)].map((m) => m[1]);
+    if (isData) {
+      data++;
+      if (face.length !== 1) wrong.push(`${p.route}: ${face.length} display faces`);
+      else if (!preloads.includes(face[0].url)) wrong.push(`${p.route}: the display face ${face[0].url} is not preloaded`);
+      if (!/\/_astro\/sb-display\.[\w-]+\.woff2$/.test(face[0]?.url ?? '')) wrong.push(`${p.route}: display url ${face[0]?.url}`);
+    } else {
+      if (face.length > 0) wrong.push(`${p.route}: declares the display face`);
+      if (preloads.some((u) => /sb-display/.test(u))) wrong.push(`${p.route}: preloads the display face`);
+    }
+  }
+  assert.equal(data, 16, 'the 16 general-version pages');
+  assert.deepEqual(wrong, []);
+});
+
+test('DS-1: every character inside an element whose computed family starts with SB Display is in the display subset or is Hangul (drawn by SB Sans)', () => {
+  // Static form: [data-display] marks the elements set in --font-ed-display (editorial.css); checkPage checks their
+  // non-Hangul characters against the page's display file. Self-test on /data/: a planted Latin word passes, a
+  // character the subset lacks fails named, Hangul inside the element is left to SB Sans.
+  const html = readFileSync(join(DIST, 'data', 'index.html'), 'utf8');
+  const plant = (/** @type {string} */ text) => checkPage(html.replace('</main>', `<p data-display>${text}</p></main>`), '');
+  assert.deepEqual(plant('DATA ANALYST 2026 · RECORDS &amp; CV').problems, []);
+  assert.deepEqual(plant('2027년 2월').problems, []);
+  // a probe the page's sans files draw (so only the display check can fail) that the display subset lacks
+  const faces = fontFaces(new JSDOM(html).window.document);
+  const display = fontCmap(/** @type {string} */ (faces.find((f) => f.family === DISPLAY_FAMILY)?.url));
+  const sans = faces.filter((f) => f.family === SANS_FAMILY).flatMap((f) => [...fontCmap(f.url)]);
+  const cp = sans.filter((c) => c > 0x7f && !isHangul(c) && !display.has(c) && !ignorable(String.fromCodePoint(c))).sort((a, b) => a - b)[0];
+  assert.ok(cp !== undefined, 'a probe character');
+  const probe = String.fromCodePoint(cp);
+  const bug = plant(`DATA${probe}`);
+  assert.equal(bug.problems.length, 1, bug.problems.join('\n'));
+  assert.ok(bug.problems[0].startsWith(`"${DISPLAY_FAMILY}" lacks ${probe} (U+`), bug.problems[0]);
+  // a page that shows [data-display] text must declare the face
+  const game = readFileSync(join(DIST, 'game', 'index.html'), 'utf8');
+  assert.match(checkPage(game.replace('</main>', '<p data-display>DATA</p></main>'), '').problems.join('\n'), /no @font-face for "SB Display"/);
+});
+
+test('DS-1: the display subset is one Archivo file with its copyright and licence URL, width pinned, weight 700–900', () => {
+  const files = walk(join(DIST, '_astro')).filter((f) => /[\\/]sb-display\.[\w-]+\.woff2$/.test(f));
+  assert.equal(files.length, 1);
+  const tables = woff2Tables(readFileSync(files[0]));
+  const fvar = tables.get('fvar');
+  assert.ok(fvar, 'fvar');
+  const v = new DataView(fvar.buffer, fvar.byteOffset, fvar.byteLength);
+  assert.equal(v.getUint16(8), 1, 'one axis left');
+  const at = v.getUint16(4);
+  assert.equal(fvar.subarray(at, at + 4).toString('latin1'), 'wght');
+  assert.deepEqual([v.getInt32(at + 4) / 65536, v.getInt32(at + 12) / 65536], [700, 900]);
+  const records = parseName(/** @type {Buffer} */ (tables.get('name')));
+  assert.match(records.find((r) => r.nameID === 0)?.value ?? '', /The Archivo Project Authors/);
+  assert.match(records.find((r) => r.nameID === 14)?.value ?? '', /scripts\.sil\.org\/OFL|openfontlicense/i);
+  assert.ok(readFileSync(files[0]).length < 24 * 1024, `display subset ${readFileSync(files[0]).length} B`);
 });
 
 // ── OFL: the Pretendard subset is a Modified Version and must not be published under the Reserved Font Name ──

@@ -1,7 +1,7 @@
 ---
 // Home "[ ■ ] SELECT YOUR PROJECT / 프로젝트 고르기": CoG wide card + 2 featured projects, one row (spec §3, §5, D-3).
-// P2-6: the general version lists the featured projects as editorial rows (ProjectListItem) under 대표 프로젝트, with
-// one underlined more link; the game markup is unchanged.
+// P2-6: the general version lists the featured projects under 대표 프로젝트, with one underlined more link; DS-4 (v5):
+// as numbered image cards (ProjectListItem variant card) on the grid; the game markup is unchanged.
 import SectionHead from '../hud/SectionHead.astro';
 import ProjectCartridge from '../projects/ProjectCartridge.astro';
 import ProjectListItem from '../data/ProjectListItem.astro';
@@ -41,9 +41,10 @@ const firstImage = cartridges.findIndex((cartridge) => cartridge.cover !== undef
   <section id="featured-projects" class="ed-sec featured" aria-labelledby="featured-projects-title">
     <div class="container">
       <SectionHead variant={variant} id="featured-projects-title" caption={captionFor(getVariant(variant), 'selectProject', lang)} title={t(lang, 'projects.featured')} />
-      <ol class="ed-list" role="list">
-        {/* P2-7: the general home's hero (DataHero) already loads the school-zone heatmap with priority, so the list loads lazily. */}
-        {cartridges.map((cartridge) => <ProjectListItem {...cartridge} />)}
+      <ol class="ed-cards ed-cards--tiles" role="list">
+        {/* P2-7: the general home's hero (DataHero) already loads the school-zone heatmap with priority, so the cards load lazily.
+            DS-4: image cards, one / two / three columns (sizes to match). */}
+        {cartridges.map((cartridge, i) => <ProjectListItem {...cartridge} variant="card" n={i + 1} sizes="(min-width: 1068px) 290px, (min-width: 734px) calc(37vw - 36px), (min-width: 560px) calc(50vw - 28px), calc(100vw - 32px)" />)}
       </ol>
       <p class="featured__more"><a class="ed-link" href={moreHref}>{moreLabel} <span aria-hidden="true">→</span></a></p>
     </div>

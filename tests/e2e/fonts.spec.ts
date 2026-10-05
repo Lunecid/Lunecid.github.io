@@ -2,7 +2,7 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import type { Page } from '@playwright/test';
 import { test, expect, builtRoutes, dataPath } from './helpers';
-import { MONO_FAMILY, SANS_FAMILY, SERIF_KO_FAMILY, SERIF_KO_HEAD_FAMILY } from '../../src/lib/fonts';
+import { DISPLAY_FAMILY, MONO_FAMILY, SANS_FAMILY, SERIF_KO_FAMILY } from '../../src/lib/fonts';
 import { cmapCodePoints, woff2Tables } from '../../scripts/fonts/sfnt.mjs';
 
 // Batch 2: the page fonts are build-time subsets. Body text renders in the sans subset, HUD labels in the mono
@@ -103,37 +103,59 @@ test('the Korean paper page sets its Korean text in the Korean serif; the Englis
   expect(await faceStatus(page, SERIF_KO_FAMILY)).toEqual([]);
 });
 
-test(`general home: [data-serif] text is set in the Times stack with "${SERIF_KO_HEAD_FAMILY}" for Hangul; the face loads, nothing falls back, nothing preloads it`, async ({ page }) => {
+test(`DS-1 /data/: the display face loads and is used by the hero display; nothing visible falls back`, async ({ page }) => {
+  const fetched: string[] = [];
+  page.on('requestfinished', (request) => {
+    if (request.url().includes('/sb-display.')) fetched.push(request.url());
+  });
   await open(page, dataPath('/'));
-  const serif = page.locator('[data-serif]');
-  const family = await serif.first().evaluate((el) => getComputedStyle(el).fontFamily);
-  expect(family).toMatch(/^"Times New Roman"/);
-  expect(family).toContain(SERIF_KO_HEAD_FAMILY);
-  const hangul = [...(await serif.allTextContents()).join('')].filter((ch) => /\p{Script=Hangul}/u.test(ch)).join('');
-  expect(hangul.length).toBeGreaterThan(0);
-  expect(await faceStatus(page, SERIF_KO_HEAD_FAMILY)).toContain('loaded');
-  expect(await fallbackChars(page, SERIF_KO_HEAD_FAMILY, inSource(hangul, NOTO_SERIF_KR))).toEqual([]);
-  await expect(page.locator('link[rel="preload"][href*="sb-serif-kr-head"]')).toHaveCount(0);
+  // preloaded once from the build's hashed file, and that request is the one the face uses (no second fetch)
+  const preload = page.locator('link[rel="preload"][as="font"][href*="/sb-display."]');
+  await expect(preload).toHaveCount(1);
+  const href = await preload.getAttribute('href');
+  expect(href).toMatch(/^\/_astro\/sb-display\.[\w-]+\.woff2$/);
+  await page.evaluate((f) => document.fonts.load(`900 48px "${f}"`, 'DATA ANALYST'), DISPLAY_FAMILY);
+  expect(await faceStatus(page, DISPLAY_FAMILY)).toEqual(['loaded']);
+  expect(fetched.map((u) => new URL(u).pathname)).toEqual([href]);
+  // every character the built display file maps is drawn by the face (Archivo's own gaps, e.g. the arrows, are not in
+  // it and fall to SB Sans by the stack)
+  const file = join(process.cwd(), 'dist', ...(href ?? '').split('/').filter(Boolean));
+  const mapped = [...cmapOf(file)].map((cp) => String.fromCodePoint(cp)).join('');
+  for (const run of ['ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz', '0123456789']) expect(mapped).toContain(run);
+  expect(await fallbackChars(page, DISPLAY_FAMILY, mapped)).toEqual([]);
+  expect(await fallbackChars(page, DISPLAY_FAMILY, '가'), 'control: Hangul is not in the display face').toEqual(['가']);
+  // the display words ([data-display], DS-3 onwards) are set in it, Hangul inside them in SB Sans
+  for (const el of await page.locator('[data-display]').all()) {
+    const family = await el.evaluate((node) => getComputedStyle(node).fontFamily);
+    expect(family.startsWith(`"${DISPLAY_FAMILY}"`), family).toBe(true);
+    expect(family).toContain(SANS_FAMILY);
+    const text = (await el.textContent()) ?? '';
+    expect(await fallbackChars(page, DISPLAY_FAMILY, text.replace(/[\p{Script=Hangul}\s]/gu, ''))).toEqual([]);
+  }
 });
 
-test('English general home: the heading face is declared but never downloaded (its headings hold no Hangul)', async ({ page }) => {
+test('DS-1: /data/ and /en/data/ never request the Korean heading face', async ({ page }) => {
   const requested: string[] = [];
   page.on('request', (request) => requested.push(request.url()));
-  await open(page, dataPath('/', 'en'));
-  expect(await faceStatus(page, SERIF_KO_HEAD_FAMILY)).toEqual(['unloaded']); // declared once, not loaded (red before Step 6)
+  for (const lang of ['ko', 'en'] as const) {
+    await open(page, dataPath('/', lang));
+    expect(await faceStatus(page, 'SB Serif KR Head'), lang).toEqual([]); // not declared on data pages
+    await expect(page.locator('link[rel="preload"][href*="sb-serif-kr-head"]')).toHaveCount(0);
+  }
   expect(requested.filter((url) => url.includes('sb-serif-kr-head'))).toEqual([]);
+  expect(requested.some((url) => url.includes('/sb-display.'))).toBe(true);
 });
 
 for (const route of builtRoutes({ variant: 'data' })) {
-  test(`${route}: every visible heading with Hangul carries data-serif (P2-3 rule)`, async ({ page }) => {
+  test(`DS-3 ${route}: every visible heading is set in SB Sans (the serif heading face left the general version; was the P2-3 data-serif sweep)`, async ({ page }) => {
     await page.goto(route, { waitUntil: 'domcontentloaded' });
-    const missing = await page.locator('main').evaluate((main) =>
+    const missing = await page.locator('main').evaluate((main, sans) =>
       Array.from(main.querySelectorAll('h1, h2, h3, h4'))
-        // exempt: visually hidden headings (no glyph drawn) and the paper sheet (its own "SB Serif KR" face)
+        // exempt: visually hidden headings (no glyph drawn) and the paper sheet (its own faces, D-15)
         .filter((h) => !h.closest('.sr-only, .paper'))
-        .filter((h) => /\p{Script=Hangul}/u.test(h.textContent ?? '') && !h.hasAttribute('data-serif'))
-        .map((h) => `${h.tagName.toLowerCase()}.${h.getAttribute('class') ?? ''}: ${(h.textContent ?? '').trim().slice(0, 24)}`),
-    );
+        .filter((h) => !getComputedStyle(h).fontFamily.startsWith(`"${sans}"`))
+        .map((h) => `${h.tagName.toLowerCase()}.${h.getAttribute('class') ?? ''}: ${getComputedStyle(h).fontFamily.slice(0, 30)}`),
+    SANS_FAMILY);
     expect(missing).toEqual([]);
   });
 }

@@ -1,3 +1,4 @@
+import sharp from 'sharp';
 import { test, expect, dataPath } from './helpers';
 import { dataVariant } from '../../src/variants/data';
 
@@ -9,7 +10,7 @@ test.describe('general projects page (P2-6)', () => {
     const items = page.locator('#project-grid > li[data-tags]');
     await expect(items).toHaveCount(ITEMS);
     await expect(page.locator('#project-grid .cart, #project-grid .cart__sticker')).toHaveCount(0);
-    const first = await items.first().locator('.pli__title').textContent();
+    const first = await items.first().locator('.ed-card__title').textContent(); // DS-5 (named): cards
     expect(first?.trim()).toBe('사각지대를 예측하다'); // projectsOrder starts with school-zone-blindspots (contract §1.7)
     await page.locator('[data-tag-filter] [data-tag="ml"]').click();
     const hidden = await items.evaluateAll((els) => els.filter((el) => (el as HTMLElement).hidden).length);
@@ -20,6 +21,37 @@ test.describe('general projects page (P2-6)', () => {
     expect(shown).toBe(ITEMS - hidden);
     // The button's background animates over --dur-hover: a retrying assertion reads it after the transition.
     await expect(page.locator('[data-tag="ml"]')).toHaveCSS('background-color', 'rgb(20, 20, 20)');
+  });
+
+  test('DS-5: lead card full width at 1280, two columns at 768, one at 375; filtering keeps the lead first; status line counts', async ({ page }) => {
+    for (const [width, columns] of [[1280, 2], [768, 2], [375, 1]] as const) {
+      await page.setViewportSize({ width, height: 900 });
+      await page.goto(dataPath('/projects/'), { waitUntil: 'networkidle' });
+      const geo = await page.locator('#project-grid > li').evaluateAll((els) => els.map((el) => { const r = el.getBoundingClientRect(); return { x: Math.round(r.x), w: Math.round(r.width), lead: el.classList.contains('ed-card--lead') }; }));
+      const grid = await page.locator('#project-grid').evaluate((el) => el.getBoundingClientRect().width);
+      expect(geo[0]?.lead, `${width}: card 01 is the lead`).toBe(true);
+      expect(geo.filter((g) => g.lead)).toHaveLength(1);
+      expect(Math.abs((geo[0]?.w ?? 0) - grid), `${width}: the lead spans the grid`).toBeLessThanOrEqual(1);
+      const xs = new Set(geo.slice(1).map((g) => g.x));
+      expect(xs.size, `${width}: ${columns} column(s) below the lead`).toBe(columns);
+      expect(await page.evaluate(() => document.documentElement.scrollWidth), `${width}: no horizontal scroll`).toBeLessThanOrEqual(width);
+      if (width === 1280) {
+        await expect(page.locator('.ed-phead .ed-mc--mosaic')).toBeVisible();
+        const lcp = page.locator('#project-grid > li').first().locator('img');
+        await expect(lcp).toHaveAttribute('fetchpriority', 'high');
+      } else if (width === 375) {
+        await expect(page.locator('.ed-phead .ed-mc--mosaic')).toBeHidden();
+      }
+    }
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await page.goto(dataPath('/projects/'), { waitUntil: 'networkidle' });
+    await page.locator('[data-tag-filter] [data-tag="ml"]').click();
+    const visible = page.locator('#project-grid > li:not([hidden])');
+    await expect(visible.first()).toHaveClass(/ed-card--lead/); // school-zone carries ml: the lead stays first
+    const count = await visible.count();
+    await expect(page.locator('[data-tag-filter-status]')).toContainText(String(count));
+    await expect(page.locator('[data-tag="ml"]')).toHaveText(/머신러닝/);
+    expect(await page.locator('[data-tag="ml"]').evaluate((el) => getComputedStyle(el, '::before').content)).toContain('[x]');
   });
 
   test('without JavaScript every item is listed and the filter is hidden', async ({ browser }) => {
@@ -33,7 +65,7 @@ test.describe('general projects page (P2-6)', () => {
 
   test('a general case study: editorial head, no game-team block, the certificate viewer on white, Back-safe', async ({ page }) => {
     await page.goto(dataPath('/projects/school-zone-blindspots/'), { waitUntil: 'networkidle' });
-    await expect(page.locator('#details.pd-ed h1[data-serif]')).toHaveCount(1);
+    await expect(page.locator('#details.pd-ed h1#pd-title:not([data-serif])')).toHaveCount(1); // DS-6 (named): SB Sans, no data-serif
     await expect(page.locator('#for-game-teams')).toHaveCount(0);
     // ImageViewer (0b2d199): only an a[data-viewer] is intercepted; the dialog is dialog.image-viewer, with #view-<id> history.
     await page.locator('#details [data-viewer="certificates"]').click();
@@ -46,4 +78,114 @@ test.describe('general projects page (P2-6)', () => {
     await page.keyboard.press('Escape');
     await expect(page).not.toHaveURL(/#view-/);
   });
+
+  test('DS-6: school-zone at 375/1280 — band, metric, badge, hanging numbers; no overflow; the certificate viewer opens and returns focus', async ({ page }) => {
+    for (const width of [375, 1280]) {
+      await page.setViewportSize({ width, height: 900 });
+      await page.goto(dataPath('/projects/school-zone-blindspots/'), { waitUntil: 'networkidle' });
+      await expect(page.locator('#details .ed-band .ed-stat')).toHaveCount(4);
+      await expect(page.locator('#details .ed-band .ed-stat__bar')).toHaveCount(1);
+      await expect(page.locator('#details .ed-metric[role="img"]')).toHaveAttribute('aria-label', /재현율은 0\.87, 정밀도는 0\.62, F1은 0\.72/);
+      await expect(page.locator('#details .ed-metric__row--hl .ed-metric__k')).toHaveText('F1');
+      await expect(page.locator('#details .ed-stamp__ink')).toContainText('최우수상');
+      await expect(page.locator('#details tr.pd-ed__hl th')).toHaveText('내 역할');
+      // the band sits between the spread and the overview table
+      const order = await page.evaluate(() => ['.ed-spread', '.ed-band', '.pd-ed__table'].map((sel) => document.querySelector(sel)!.getBoundingClientRect().top));
+      expect(order[0]).toBeLessThan(order[1]!);
+      expect(order[1]).toBeLessThan(order[2]!);
+      // the body's section numbers: one per h2, in the rail from 734 px (left of the column), above the title on phones
+      const hn = await page.locator('article.ed-prose--case h2').evaluateAll((hs) =>
+        hs.map((h) => { const r = h.getBoundingClientRect(); const b = getComputedStyle(h, '::before'); return { pos: b.position, display: b.display, left: r.left, content: b.content }; }),
+      );
+      expect(hn.length).toBe(7);
+      for (const h of hn) {
+        expect(h.content).toMatch(/counter\(ed-sec/);
+        if (width === 1280) expect(h.pos).toBe('absolute');
+        else expect(h.pos).toBe('static');
+      }
+      // the sections after the body continue the count (08, 09 in the prototype): two more openers
+      await expect(page.locator('#research-contribution .ed-rail__n, #links .ed-rail__n')).toHaveCount(2);
+      expect(await page.evaluate(() => document.documentElement.scrollWidth), `${width}: no horizontal scroll`).toBeLessThanOrEqual(width);
+    }
+    const trigger = page.locator('#details [data-viewer="certificates"]');
+    await trigger.focus();
+    await page.keyboard.press('Enter');
+    const dialog = page.locator('dialog.image-viewer[open]');
+    await expect(dialog).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(dialog).toHaveCount(0);
+    await expect(trigger).toBeFocused();
+  });
 });
+
+// DS-8: the youth-startup cover carries a data table ("표로 보기"); opened, it reads on its own white ground above the
+// spread's blue painted field (the field ran to the bottom of the figure, under the table's ink text).
+for (const slug of ['youth-startup-location']) {
+  test(`DS-8: ${slug} — the cover's data table opens on white, never on the painted field`, async ({ page }) => {
+    await page.goto(dataPath(`/projects/${slug}/`), { waitUntil: 'networkidle' });
+    const table = page.locator('.ed-spread > .chart__table');
+    await expect(table).toHaveCount(1);
+    await table.locator('summary').click();
+    await expect(table.locator('table')).toBeVisible();
+    expect(await table.evaluate((el) => getComputedStyle(el).backgroundColor)).toBe('rgb(255, 255, 255)');
+    // pixels: no blue paint shows inside the opened table (pseudo-element fields are invisible to elementFromPoint)
+    const { data, info } = await sharp(await table.screenshot()).removeAlpha().raw().toBuffer({ resolveWithObject: true });
+    // a paint run = 20+ consecutive pixels near the blue pigment (#1F3A93 and its streaks); text edges are 1–2 px
+    const paintLike = (i: number): boolean => data[i]! < 80 && data[i + 1]! < 100 && data[i + 2]! > 90 && data[i + 2]! - data[i]! > 50;
+    let runs = 0;
+    for (let y = 0; y < info.height; y++) {
+      let run = 0;
+      for (let x = 0; x < info.width; x++) {
+        run = paintLike((y * info.width + x) * 3) ? run + 1 : 0;
+        if (run === 20) runs++;
+      }
+    }
+    expect(runs, 'rows of the opened table with blue paint showing').toBe(0);
+  });
+}
+
+// DS-8: on a phone a figure's data table keeps each value whole ("-0.13", not "-0 / .1 / 3": the body's
+// overflow-wrap: anywhere squeezed the auto-layout columns) and scrolls inside its own region, as the game tone does.
+test('DS-8: 375 px — figure data tables keep each value on one line and scroll in their own region', async ({ browser }) => {
+  const context = await browser.newContext({ viewport: { width: 375, height: 812 } });
+  const page = await context.newPage();
+  for (const slug of ['youth-startup-location', 'kickick-park']) {
+    await page.goto(dataPath(`/projects/${slug}/`), { waitUntil: 'networkidle' });
+    const table = page.locator('main .chart__table--editorial').first();
+    await table.locator('summary').click();
+    const broken = await table.evaluate((el) =>
+      [...el.querySelectorAll('tbody td')].filter((td) => {
+        const range = document.createRange();
+        range.selectNodeContents(td);
+        return new Set([...range.getClientRects()].map((r) => Math.round(r.top))).size > 1 && !/\s/.test(td.textContent!.trim());
+      }).map((td) => td.textContent!.trim()),
+    );
+    expect(broken, `${slug}: values broken across lines`).toEqual([]);
+    const scroll = await table.locator('[data-table-scroll]').evaluate((el) => getComputedStyle(el).overflowX);
+    expect(scroll).toBe('auto');
+  }
+  await context.close();
+});
+
+// DS-9: below 734 px the case study's overview (award rail, then the table) spans the column: the reset that
+// neutralises ProjectDetails' scoped grid areas also reset the full-width column, so the table sat in one 13 px track
+// (value cells 37 px wide, one character per line, the 내 역할 paint ~1,800 px tall).
+for (const width of [320, 375, 733]) {
+  test(`DS-9: ${width} px — the case-study overview table spans the column`, async ({ browser }) => {
+    const context = await browser.newContext({ viewport: { width, height: 900 } });
+    const page = await context.newPage();
+    for (const lang of ['ko', 'en'] as const) {
+      await page.goto(dataPath('/projects/school-zone-blindspots/', lang), { waitUntil: 'networkidle' });
+      const sizes = await page.locator('.pd-ed__ovw').evaluate((grid) => ({
+        grid: grid.getBoundingClientRect().width,
+        table: grid.querySelector('.pd-ed__table')!.getBoundingClientRect().width,
+        rail: grid.querySelector('.pd-ed__rail')!.getBoundingClientRect().width,
+        valueCell: grid.querySelector('.pd-ed__hl td')!.getBoundingClientRect().width,
+      }));
+      expect(sizes.table, `${lang}: table width vs the grid`).toBeGreaterThan(sizes.grid - 40);
+      expect(sizes.rail, `${lang}: rail width vs the grid`).toBeGreaterThan(sizes.grid - 40);
+      expect(sizes.valueCell, `${lang}: the 내 역할 value cell takes most of the row`).toBeGreaterThan(sizes.table * 0.5);
+    }
+    await context.close();
+  });
+}

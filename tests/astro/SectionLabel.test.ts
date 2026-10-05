@@ -63,11 +63,12 @@ describe('SectionHead.astro (one pattern for every section heading, D-8)', () =>
 });
 
 describe('SectionLabel / SectionHead on light pages (P2-4)', () => {
-  it('general version: a plain caption in the page language, then a serif title (data-serif), no [ ■ ] mark, no mono label', async () => {
+  it('DS-3 general version: a rail with the aria-hidden section number and the caption chip, then the sans title; no [ ■ ] mark, no mono label', async () => {
     const html = await renderAstro(SectionHead, { props: { variant: 'data', caption: '소식', title: '최근 소식', id: 'pn-title' } });
-    expect(html).toMatch(/<header class="ed-head"/);
-    expect(html).toMatch(/<p class="ed-label"[^>]*>소식<\/p>/);
-    expect(html).toMatch(/<h2 id="pn-title" class="ed-head__title" data-serif[^>]*>최근 소식<\/h2>/);
+    expect(html).toMatch(/<header class="ed-head ed-sh"/);
+    expect(html).toMatch(/<div class="ed-rail"[^>]*><div class="ed-rail__in"[^>]*><span class="ed-rail__n" aria-hidden="true"[^>]*><\/span><p class="ed-label ed-chip"[^>]*>소식<\/p><\/div><\/div>/);
+    expect(html).toMatch(/<h2 id="pn-title" class="ed-head__title"[^>]*>최근 소식<\/h2>/);
+    expect(html).not.toContain('data-serif');
     expect(html).not.toMatch(/hud-label|sec-head|lang="en"/);
     expect(html.indexOf('소식')).toBeLessThan(html.indexOf('최근 소식'));
   });
@@ -80,13 +81,14 @@ describe('SectionLabel / SectionHead on light pages (P2-4)', () => {
 
   it('captionOnly is a HUD choice: the general version still shows the title', async () => {
     const html = await renderAstro(SectionHead, { props: { variant: 'data', caption: '작업', title: '대표 프로젝트', id: 'f-title', captionOnly: true } });
-    expect(html).toMatch(/<h2 id="f-title" class="ed-head__title" data-serif[^>]*>대표 프로젝트<\/h2>/);
+    expect(html).toMatch(/<h2 id="f-title" class="ed-head__title"[^>]*>대표 프로젝트<\/h2>/);
     expect(html).not.toContain('sr-only');
   });
 
   it('the intro slot keeps working', async () => {
     const html = await renderAstro(SectionHead, { props: { variant: 'data', caption: 'Role fit', title: 'Job requirements fit', as: 'h3' }, slots: { default: 'Short intro.' } });
-    expect(html).toMatch(/<h3 class="ed-head__title" data-serif[^>]*>Job requirements fit<\/h3>/);
+    expect(html).toMatch(/<h3 class="ed-head__title"[^>]*>Job requirements fit<\/h3>/);
+    expect(html).toMatch(/<p class="ed-label ed-chip"[^>]*>Role fit<\/p>/);
     expect(html).toMatch(/<div class="ed-head__intro"[^>]*>Short intro\.<\/div>/);
   });
 });

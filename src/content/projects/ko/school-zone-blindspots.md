@@ -48,6 +48,28 @@ audience:
   game: '게임으로 옮기면, 이탈 예측에서 "떠날 것 같지만 아직 남아 있는" 플레이어를 오류가 아니라 먼저 살펴볼 대상 목록으로 읽는 것과 같은 구조입니다.'
   research: '부산 도로망 위 30m마다 둔 약 24만 개 지점에 두 가지 반경(300m·50m)의 피처 32개를 만들고, 10개 지리 블록으로 나눈 공간 교차검증으로 XGBoost를 평가했습니다. 사고 기록은 없지만 고위험으로 예측된 지점은 오류로 버리지 않고 보호구역 지정 여부로 나눠, 보호구역이 아닌 곳을 정책 사각지대 후보로 정리했습니다.'
 status: 'published'
+facts:
+  points: { ko: '240,064', en: '240,064' }
+  positives: { ko: '61,848', en: '61,848' }
+  sources: { ko: '16', en: '16' }
+  features: { ko: '32', en: '32' }
+  blocks: { ko: '10', en: '10' }
+  recall: { ko: '0.87', en: '0.87' }
+  precision: { ko: '0.62', en: '0.62' }
+  f1: { ko: '0.72', en: '0.72' }
+# DS-6: the general case study's key-figures band (every number a fact above; labels are fragments of this body).
+keyFigures:
+  - { value: '{fact.points}', unit: '개 지점', label: '중 {fact.positives}개에 사고 라벨', bar: [positives, points] }
+  - { label: '공공데이터', value: '{fact.sources}', unit: '종', labelFirst: true }
+  - { label: '피처', value: '{fact.features}', unit: '개', labelFirst: true }
+  - { value: '{fact.blocks}', unit: '개', label: '지리 블록' }
+metrics:
+  title: '공간 블록 교차검증'
+  label: '공간 블록 교차검증에서 사고 지역의 재현율은 0.87, 정밀도는 0.62, F1은 0.72였습니다.'
+  rows:
+    - { key: '재현율', fact: recall }
+    - { key: '정밀도', fact: precision }
+    - { key: 'F1', fact: f1, highlight: true }
 ---
 
 ## 질문

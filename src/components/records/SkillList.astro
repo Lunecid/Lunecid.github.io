@@ -34,7 +34,7 @@ const title = t(lang, 'records.skills');
         </thead>
         {groups.map((group) => (
           <tbody data-group={group.key}>
-            <tr><th colspan="2" scope="rowgroup" class="skills-ed__group">{group.title}</th></tr>
+            <tr><th colspan="2" scope="rowgroup" class="skills-ed__group"><span class="ed-chip">{group.title}</span></th></tr>
             {group.items.map((skill) => (
               <tr>
                 <th scope="row" lang="en">{skill.name}</th>

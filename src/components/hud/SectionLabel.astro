@@ -3,7 +3,7 @@
  * The small caption over a heading. Game version: the "[ ■ ] ENGLISH" HUD caption (mockup-port §1.4, D-8) — the
  * numberless square mark drawn in CSS (hud.css .hud-label__sq). General and neutral pages (P2-4): a plain caption in the
  * page language (`en` then carries that caption, e.g. captionFor(variant, key, lang)), styled by .ed-label in base.css
- * (italic only on English pages). No scoped <style> here, so game markup carries no extra attribute.
+ * (italic only on English pages); on the general version it is the black chip of the section rail (.ed-chip, DS-3). No scoped <style> here, so game markup carries no extra attribute.
  */
 import type { PageVariant } from '../../variants';
 
@@ -23,5 +23,5 @@ const { variant, ko, en, as: Tag = 'p', id, mark = true, ariaHidden = false } = 
 {variant === 'game' ? (
 <Tag id={id} class="hud-label" aria-hidden={ariaHidden ? 'true' : undefined}>{mark && <span class="hud-label__mark" aria-hidden="true" lang="en">[<i class="hud-label__sq"></i>]</span>}{ko && <span class="hud-label__ko">{ko}</span>}<span class="hud-label__en" lang="en">{en}</span></Tag>
 ) : (
-<Tag id={id} class="ed-label" aria-hidden={ariaHidden ? 'true' : undefined}>{en}</Tag>
+<Tag id={id} class:list={['ed-label', { 'ed-chip': variant === 'data' }]} aria-hidden={ariaHidden ? 'true' : undefined}>{en}</Tag>
 )}

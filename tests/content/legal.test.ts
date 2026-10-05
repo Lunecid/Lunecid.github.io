@@ -172,6 +172,19 @@ describe('legal content', () => {
     expect(en).toMatch(/^\| Valve \(Steam\) \| Powered by Steam\. /);
   });
 
+  it('DS-1: credits list Archivo with its OFL licence and the SB Display subset sentence (ko, en)', () => {
+    const row = (lang: L) => raw(lang, 'credits').split('\n').find((l) => l.startsWith('| [Archivo](https://github.com/Omnibus-Type/Archivo) |')) ?? '';
+    expect(row('ko')).toBe('| [Archivo](https://github.com/Omnibus-Type/Archivo) | <span lang="en">The Archivo Project Authors (Omnibus-Type)</span> | <span lang="en">SIL Open Font License 1.1</span> |');
+    expect(row('en')).toBe('| [Archivo](https://github.com/Omnibus-Type/Archivo) | The Archivo Project Authors (Omnibus-Type) | SIL Open Font License 1.1 |');
+    expect(raw('ko', 'credits')).toContain('“SB Display”는 이 사이트를 위해 Archivo(<span lang="en">SIL Open Font License 1.1</span>)에서 라틴 문자와 숫자만 추려 만든 서브셋이며, 원본의 저작권·라이선스 기록은 글꼴 파일 안에 그대로 두었습니다.');
+    expect(raw('en', 'credits')).toContain('“SB Display”, the face of the general version\'s large English titles and numbers, is a subset of Archivo (SIL Open Font License 1.1) made for this site with Latin letters and numbers only; the original copyright and license records stay inside the font file.');
+    // the Korean heading serif now serves the paper page and the chooser only (DS-1: data pages left it)
+    expect(raw('ko', 'credits')).toContain('논문 페이지의 한글과 선택 화면 제목의 한글에 쓰는 Noto Serif KR');
+    expect(raw('ko', 'credits')).not.toContain('일반 버전 제목의 한글');
+    expect(raw('en', 'credits')).not.toContain('Korean headings of the general version');
+    for (const lang of ['ko', 'en'] as const) expect(legalSchema.parse(readFrontmatter(file(lang, 'credits'))).updated >= '2026-10-05', lang).toBe(true);
+  });
+
   it('privacy never mentions browser language collection', () => {
     expect(body('ko', 'privacy')).not.toContain('브라우저 언어');
     expect(body('en', 'privacy').toLowerCase()).not.toContain('browser language');

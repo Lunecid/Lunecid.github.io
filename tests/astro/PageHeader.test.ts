@@ -29,14 +29,15 @@ describe('PageHeader.astro', () => {
     expect(html).toMatch(/<h1[^>]*>Records<\/h1>/);
   });
 
-  it('general version (P2-4): one serif h1, a plain caption, the intro, no HUD grid or mark', async () => {
-    const html = await renderAstro(PageHeader, { props: { variant: 'data', lang: 'ko', label: '포트폴리오', title: '프로젝트', intro: '소개 문장입니다.' } });
+  it('DS-3 general version: the v5 page head (PageHeadData) — one sans h1, the caption in the label block, the English display word, the intro; no HUD grid or mark', async () => {
+    const html = await renderAstro(PageHeader, { props: { variant: 'data', lang: 'ko', label: '포트폴리오', title: '프로젝트', display: 'Projects', intro: '소개 문장입니다.' }, url: '/data/projects/' });
     expect(html.match(/<h1[\s>]/g)).toHaveLength(1);
-    expect(html).toMatch(/<section[^>]*class="ed-page-head"[^>]*aria-labelledby="page-head-title"/);
-    expect(html).toMatch(/<h1 id="page-head-title" class="ed-page-head__title" data-serif[^>]*>프로젝트<\/h1>/);
+    expect(html).toMatch(/<section[^>]*class="ed-phead"[^>]*aria-labelledby="page-head-title"/);
+    expect(html).toMatch(/<h1 id="page-head-title" class="ed-phead__title"[^>]*>프로젝트<\/h1>/);
     expect(html).toMatch(/<p class="ed-label"[^>]*>포트폴리오<\/p>/);
-    expect(html).toMatch(/<p class="ed-page-head__intro"[^>]*>소개 문장입니다\.<\/p>/);
-    expect(html).not.toMatch(/hud-grid|hud-label/);
+    expect(html).toMatch(/<p class="ed-display" aria-hidden="true" lang="en" data-display[^>]*>Projects<\/p>/);
+    expect(html).toMatch(/<p class="ed-phead__lead"[^>]*>소개 문장입니다\.<\/p>/);
+    expect(html).not.toMatch(/hud-grid|hud-label|data-serif/);
   });
 
   it('neutral pages (P2-4): the same head in sans (no data-serif)', async () => {

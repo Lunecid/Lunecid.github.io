@@ -5,8 +5,9 @@
 // P1-17: one list (pinned first, then recent; excluded repositories dropped; the CoG code first; site-side
 // descriptions from src/data/github-repos.ts so /en/ shows no Korean), star counts only above 0, and the list title
 // before the profile link.
-// P2-6: the general version draws editorial rows without the mono index, the calendar in black and grey, serif sub-heads
-// and the profile as an underlined link with ↗; it never draws the ghost art (the gate below stays in the game branch).
+// P2-6: the general version draws the calendar in black and grey, no mono index, and the profile as an underlined link
+// with ↗; it never draws the ghost art (the gate below stays in the game branch). DS-5 (v5, DS-OQ8): the repositories
+// are the projects page's numbered cards; the sub-heads are SB Sans.
 import GhostArt from '../hud/GhostArt.astro';
 import SectionHead from '../hud/SectionHead.astro';
 import type { Lang } from '../../i18n/ui';
@@ -104,13 +105,15 @@ const repoMeta = (language: string | null, stars: number): string =>
         <SectionHead variant={variant} id="github-title" caption={captionFor(getVariant(variant), 'github', lang)} title={t(lang, 'section.github.title')} />
         {repos.length > 0 && (
           <>
-            <h3 class="gh__h" data-serif>{t(lang, 'github.repos')}</h3>
-            <ol class="ed-list" role="list">
-              {repos.map((r) => (
-                <li class="ed-item gh-ed__repo">
-                  <a class="gh-ed__name" href={r.url} lang="en">{r.name}</a>
-                  {r.description && <p class="ed-body">{r.description}</p>}
-                  {repoMeta(r.language, r.stars) && <p class="ed-meta">{repoMeta(r.language, r.stars)}</p>}
+            <h3 class="gh__h">{t(lang, 'github.repos')}</h3>
+            <ol class="ed-cards ed-cards--repos" role="list">
+              {repos.map((r, i) => (
+                <li class="ed-card gh-ed__repo">
+                  <div class="ed-card__body">
+                    <p class="ed-card__top"><span class="ed-card__n" aria-hidden="true">{String(i + 1).padStart(2, '0')}</span>{repoMeta(r.language, r.stars) && <span>{repoMeta(r.language, r.stars)}</span>}</p>
+                    <p class="ed-card__title"><a class="gh-ed__name hit" href={r.url} lang="en">{r.name}</a></p>
+                    {r.description && <p class="ed-card__text">{r.description}</p>}
+                  </div>
                 </li>
               ))}
             </ol>
@@ -118,7 +121,7 @@ const repoMeta = (language: string | null, stars: number): string =>
         )}
         {gh.calendar && (
           <>
-            <h3 class="gh__h" data-serif>{t(lang, 'github.contributions')}</h3>
+            <h3 class="gh__h">{t(lang, 'github.contributions')}</h3>
             <figure class="ed-figure gh-ed__cal">
               <p class="gh__total">{totalLabel}</p>
               <div class="gh__cal-scroll" tabindex="0" role="region" aria-label={t(lang, 'github.contributions')}>

@@ -1,7 +1,7 @@
 ---
 title: 출처·고지
 lang: ko
-updated: '2026-10-04'
+updated: '2026-10-05'
 ---
 
 이 사이트에 쓴 이미지, 데이터, 음악, 글꼴의 출처와 권리 고지입니다. 게임 관련 이미지는 팬 콘텐츠로 사용하며, 각 게임사와 공식 제휴 관계가 없습니다.
@@ -63,8 +63,9 @@ CC0 자료는 출처 표기 의무가 없지만 만든 분을 밝혀 둡니다.
 | [JetBrains Mono](https://github.com/JetBrains/JetBrainsMono) | <span lang="en">The JetBrains Mono Project Authors</span> | <span lang="en">SIL Open Font License 1.1</span> |
 | [Anton](https://github.com/googlefonts/AntonFont) | <span lang="en">The Anton Project Authors</span> | <span lang="en">SIL Open Font License 1.1</span> |
 | [Noto Serif KR](https://github.com/notofonts/noto-cjk) | <span lang="en">Adobe, Google</span> | <span lang="en">SIL Open Font License 1.1</span> |
+| [Archivo](https://github.com/Omnibus-Type/Archivo) | <span lang="en">The Archivo Project Authors (Omnibus-Type)</span> | <span lang="en">SIL Open Font License 1.1</span> |
 
-본문 글꼴 “SB Sans”는 이 사이트를 위해 Pretendard(<span lang="en">SIL Open Font License 1.1</span>)에서 사이트에 쓰는 글자만 추려 만든 서브셋입니다. “Pretendard”는 예약 글꼴 이름(<span lang="en">Reserved Font Name</span>)이라 서브셋에는 다른 이름을 붙였고, 원본의 저작권·라이선스 고지는 글꼴 파일 안에 그대로 두었습니다. 논문 페이지의 한글과 일반 버전 제목의 한글에 쓰는 Noto Serif KR도 같은 방식으로 필요한 글자만 추려 씁니다.
+본문 글꼴 “SB Sans”는 이 사이트를 위해 Pretendard(<span lang="en">SIL Open Font License 1.1</span>)에서 사이트에 쓰는 글자만 추려 만든 서브셋입니다. “Pretendard”는 예약 글꼴 이름(<span lang="en">Reserved Font Name</span>)이라 서브셋에는 다른 이름을 붙였고, 원본의 저작권·라이선스 고지는 글꼴 파일 안에 그대로 두었습니다. 논문 페이지의 한글과 선택 화면 제목의 한글에 쓰는 Noto Serif KR도 같은 방식으로 필요한 글자만 추려 씁니다. 일반 버전의 큰 영문 제목과 숫자에 쓰는 “SB Display”는 이 사이트를 위해 Archivo(<span lang="en">SIL Open Font License 1.1</span>)에서 라틴 문자와 숫자만 추려 만든 서브셋이며, 원본의 저작권·라이선스 기록은 글꼴 파일 안에 그대로 두었습니다.
 
 ## 사진·그림·상장
 
@@ -83,4 +84,4 @@ CC0 자료는 출처 표기 의무가 없지만 만든 분을 밝혀 둡니다.
 
 권리 관련 문의: todtjddms104204@pusan.ac.kr
 
-최종 수정일: 2026년 10월 4일
+최종 수정일: 2026년 10월 5일

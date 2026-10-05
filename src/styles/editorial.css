@@ -1,11 +1,10 @@
-/* src/styles/editorial.css — the general version's editorial layer (spec §8, contract §4.2). Imported only by
-   DataLayout, which only the data page modules import (Task 2a); every selector is still scoped, as defence in depth,
-   to :root[data-variant="data"] (tests/unit/editorial-css.test.ts). Colours only through tokens.css (--ed-*). Editorial
+/* src/styles/editorial.css — the general version's editorial layer (spec §8, contract §4.2). Bundled with paint.css
+   into data-site.css, the one external stylesheet DataLayout links (only the data page modules import it, Task 2a);
+   every selector is still scoped, as defence in depth, to :root[data-variant="data"] (tests/unit/editorial-css.test.ts). Colours only through tokens.css (--ed-*). Editorial
    markup uses these ed-* blocks and never a HUD (hud.css) or light-HUD (read.css) class. */
 
 /* ── page ── */
 :root[data-variant="data"] body { font-variant-numeric: tabular-nums; }
-:root[data-variant="data"] [data-serif] { font-family: var(--font-ed-head); font-weight: 700; }
 :root[data-variant="data"] .skip-link { background: var(--ed-fill); color: var(--ed-fill-ink); }
 /* The sticky nav keeps scroll-margin 0, like .hud-nav in base.css (focus inside it never scrolls the page). */
 :root[data-variant="data"] body > .data-nav,
@@ -13,7 +12,7 @@
 
 /* ── bands: white; sections are told apart by space and their head's heavy rule ── */
 :root[data-variant="data"] .ed-sec { padding-block: var(--section-pad-y); background: var(--ed-bg); color: var(--ed-ink); }
-:root[data-variant="data"] .ed-sec a:not(.ed-btn) { color: var(--ed-accent); }
+:root[data-variant="data"] .ed-sec a:not(.ed-btn) { color: var(--ed-link); }
 
 /* ── lists instead of cards ── */
 :root[data-variant="data"] .ed-list { margin-top: 8px; }
@@ -27,9 +26,7 @@
 :root[data-variant="data"] .ed-links { display: flex; flex-wrap: wrap; gap: 0 20px; }
 :root[data-variant="data"] .ed-link {
   display: inline-flex; align-items: center; gap: .35em; min-height: var(--tap);
-  color: var(--ed-accent); font-weight: 600;
-  text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: .2em;
-  transition: text-decoration-color var(--dur-hover) linear;
+  font-weight: 600; /* colour, underline and the hover stroke: the v5 frame block below (v5.1 links) */
 }
 :root[data-variant="data"] .ed-btn {
   display: inline-flex; align-items: center; justify-content: center; gap: .4em;
@@ -41,11 +38,9 @@
 :root[data-variant="data"] .ed-btn--fill { border-color: var(--ed-fill); background: var(--ed-fill); color: var(--ed-fill-ink); }
 /* colour hovers only where a pointer can hover (N13: no sticky hover on touch); press states for every device */
 @media (hover: hover) {
-  :root[data-variant="data"] .ed-link:hover { text-decoration-color: var(--ed-ink); }
   :root[data-variant="data"] .ed-btn:hover { background: var(--ed-rule); }
   :root[data-variant="data"] .ed-btn--fill:hover { background: var(--ed-fill); text-decoration: underline; }
 }
-:root[data-variant="data"] .ed-link:active { text-decoration-color: var(--ed-ink); }
 :root[data-variant="data"] .ed-btn:active { background: var(--ed-rule); }
 :root[data-variant="data"] .ed-btn--fill:active { background: var(--ed-fill); text-decoration: underline; }
 
@@ -80,7 +75,7 @@
 :root[data-variant="data"] article.ed-prose ol { list-style: decimal; }
 :root[data-variant="data"] article.ed-prose li + li { margin-top: .35em; }
 :root[data-variant="data"] article.ed-prose li::marker { color: var(--ed-muted); }
-:root[data-variant="data"] .ed-prose a:not(.ed-btn) { color: var(--ed-accent); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: .18em; }
+:root[data-variant="data"] .ed-prose a:not(.ed-btn) { text-decoration: underline; } /* the v5.1 look: the frame block below */
 :root[data-variant="data"] article.ed-prose strong { font-weight: 700; }
 :root[data-variant="data"] article.ed-prose blockquote { padding: 4px 0 4px 16px; border-left: var(--ed-rule-w-strong) solid var(--ed-rule-strong); color: var(--ed-muted); }
 :root[data-variant="data"] article.ed-prose code { padding: .1em .35em; border: var(--ed-rule-w) solid var(--paper-code-line); background: var(--paper-code-bg); color: var(--paper-ink); font-family: var(--font-mono); font-size: .9em; }
@@ -97,29 +92,29 @@
 :root[data-variant="data"] article.ed-prose .footnotes,
 :root[data-variant="data"] article.ed-prose [data-footnotes] { margin-top: 2.5em; padding-top: 1em; border-top: var(--ed-rule-w) solid var(--ed-rule); font-size: var(--fs-small); color: var(--ed-muted); }
 
-/* ── the version switch (P1-15) on general pages: a plain link in the accent (P2-2) ── */
-:root[data-variant="data"] .variant-switch { color: var(--ed-accent); }
+/* ── the version switch (P1-15) on general pages: a plain link in the link ink (P2-2; DS-2: v5.1) ── */
+:root[data-variant="data"] .variant-switch { color: var(--ed-link); }
 
 /* ── plain shared components (markup without HUD decoration): re-coloured here, never re-marked (P2-5) ──
    Specificity beats their scoped rules: [data-paper] is the paper sheet's own attribute. */
-:root[data-variant="data"] .paper[data-paper] a { color: var(--ed-accent); }
-:root[data-variant="data"] .paper[data-paper] :focus-visible { outline-color: var(--ed-accent); }
+:root[data-variant="data"] .paper[data-paper] a { color: var(--ed-link); }
+:root[data-variant="data"] .paper[data-paper] :focus-visible { outline-color: var(--ed-focus); }
 :root[data-variant="data"] .pub__btn,
 :root[data-variant="data"] .pub__pending,
 :root[data-variant="data"] .pub__panel-label,
 :root[data-variant="data"] .bib__copy { font-family: var(--font-sans); }
 :root[data-variant="data"] .pub__btn[aria-expanded="true"],
-:root[data-variant="data"] .bib__copy[data-state="done"] { color: var(--ed-accent); border-color: var(--ed-accent); }
+:root[data-variant="data"] .bib__copy[data-state="done"] { color: var(--ed-link); border-color: var(--ed-link); }
 /* colour hovers only on hover-capable pointers (N13; PaperLinks did the same in 54cf5a8) */
 @media (hover: hover) {
   :root[data-variant="data"] .pub__btn:hover,
-  :root[data-variant="data"] .bib__copy:hover { color: var(--ed-accent); border-color: var(--ed-accent); }
-  :root[data-variant="data"] .pub__title a:hover { color: var(--ed-accent); }
+  :root[data-variant="data"] .bib__copy:hover { color: var(--ed-link); border-color: var(--ed-link); }
+  :root[data-variant="data"] .pub__title a:hover { color: var(--ed-link); }
 }
 :root[data-variant="data"] .pub__btn:active,
-:root[data-variant="data"] .bib__copy:active { color: var(--ed-accent); border-color: var(--ed-accent); }
-:root[data-variant="data"] .pub__title a:active { color: var(--ed-accent); }
-:root[data-variant="data"] .bib__copy:focus-visible { outline-color: var(--ed-accent); }
+:root[data-variant="data"] .bib__copy:active { color: var(--ed-link); border-color: var(--ed-link); }
+:root[data-variant="data"] .pub__title a:active { color: var(--ed-link); }
+:root[data-variant="data"] .bib__copy:focus-visible { outline-color: var(--ed-focus); }
 /* F-065 (P-06): a cited figure lands below the sticky nav */
 :root[data-variant="data"] .ed-figure { scroll-margin-top: calc(var(--nav-h) + 16px); }
 
@@ -146,11 +141,673 @@
 :root[data-variant="data"] .image-viewer__nav::after { content: none; }
 :root[data-variant="data"] .image-viewer__nav[aria-disabled="true"] { color: var(--ed-muted); border-color: var(--ed-rule); }
 :root[data-variant="data"] .image-viewer__close:focus-visible,
-:root[data-variant="data"] .image-viewer__nav:focus-visible { outline-color: var(--ed-accent); }
+:root[data-variant="data"] .image-viewer__nav:focus-visible { outline-color: var(--ed-focus); }
 :root[data-variant="data"] .image-viewer__corner { display: none; }
 @media (hover: hover) {
   :root[data-variant="data"] .image-viewer__close:hover,
-  :root[data-variant="data"] .image-viewer__nav:hover { color: var(--ed-accent); }
+  :root[data-variant="data"] .image-viewer__nav:hover { color: var(--ed-link); }
 }
 :root[data-variant="data"] .image-viewer__close:active,
-:root[data-variant="data"] .image-viewer__nav:active { color: var(--ed-accent); }
+:root[data-variant="data"] .image-viewer__nav:active { color: var(--ed-link); }
+
+/* ══ v5 frame (DS-3): report layout — 12-column grid with a narrow rail, painted accents, perforation folios ══
+   Type: Korean headings in SB Sans 800; Latin display words, numerals, section numbers and folios in "SB Display"
+   (--font-ed-display). Links (v5.1, museum labels): ink with a fine underline; hover (hover-capable pointers) and
+   keyboard focus paint a yellow brush stroke under the words — a transform sweep on single-line controls, a background
+   band at once on links that can wrap. Paint (--ed-paint-*, --ed-rag*) comes from paint.css (data pages only). */
+:root[data-variant="data"] body { counter-reset: ed-folio; }
+:root[data-variant="data"] #main { counter-reset: ed-sec; }
+:root[data-variant="data"] [data-display] { font-family: var(--font-ed-display); font-stretch: 112%; font-weight: 900; text-transform: uppercase; }
+
+/* ── links: ink, a fine underline a little below the baseline; the painted stroke on hover and focus ── */
+:root[data-variant="data"] .ed-link,
+:root[data-variant="data"] .ed-prose a:not(.ed-btn) {
+  color: var(--ed-link);
+  text-decoration: underline var(--ed-ul) var(--ed-link-line); text-underline-offset: var(--ed-ul-off); text-decoration-skip-ink: auto;
+  -webkit-box-decoration-break: clone; box-decoration-break: clone;
+  background: var(--ed-stroke-tex) 0 var(--ed-sk-y, .8em) / 520px .38em repeat-x, linear-gradient(var(--ed-yellow-paint), var(--ed-yellow-paint)) 0 var(--ed-sk-y, .8em) / 100% .38em no-repeat;
+  background-size: 0 0, 0 0;
+}
+/* .ed-link is an inline-flex box (44 px tall): its band sits round the centred baseline */
+:root[data-variant="data"] .ed-link { --ed-sk-y: calc(50% + .39em); }
+:root[data-variant="data"] .ed-link:focus-visible,
+:root[data-variant="data"] .ed-prose a:not(.ed-btn):focus-visible { background-size: 520px .38em, 100% .38em; text-decoration-thickness: var(--ed-ul-on); color: var(--ed-link-hover); }
+@media (hover: hover) {
+  :root[data-variant="data"] .ed-link:hover,
+  :root[data-variant="data"] .ed-prose a:not(.ed-btn):hover { background-size: 520px .38em, 100% .38em; text-decoration-thickness: var(--ed-ul-on); color: var(--ed-link-hover); }
+}
+:root[data-variant="data"] .ed-link:active,
+:root[data-variant="data"] .ed-prose a:not(.ed-btn):active { background-size: 520px .38em, 100% .38em; text-decoration-thickness: var(--ed-ul-on); color: var(--ed-link-hover); }
+
+/* ── the grid: 12 columns, the rail (1–3) and the main column (4–12) from 734 px ── */
+:root[data-variant="data"] .ed-g { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); column-gap: 16px; }
+:root[data-variant="data"] .ed-g > * { grid-column: 1 / -1; min-width: 0; }
+
+/* ── page head: a tinted label block in the rail, the accent line, the Latin display word, the h1, the lead ── */
+:root[data-variant="data"] .ed-phead { padding-block: 40px var(--section-pad-y); background: var(--ed-bg); color: var(--ed-ink); }
+:root[data-variant="data"] .ed-phead__grid { row-gap: 24px; }
+:root[data-variant="data"] .ed-tblock { align-self: start; padding: 18px 16px; background: var(--ed-n-100); }
+:root[data-variant="data"] .ed-tblock .ed-label { font-family: var(--font-sans); font-style: normal; font-weight: 600; color: var(--ed-ink); }
+:root[data-variant="data"] .ed-tblock__meta { display: flex; flex-direction: column; gap: 2px; margin-top: 10px; font-size: var(--fs-label); font-weight: 600; line-height: 1.5; color: var(--ed-ink-2); }
+:root[data-variant="data"] .ed-tblock__meta span { overflow-wrap: anywhere; }
+:root[data-variant="data"] .ed-display { margin-top: 22px; font-size: var(--fs-ed-display); line-height: .92; color: var(--ed-ink); overflow-wrap: break-word; }
+:root[data-variant="data"] .ed-phead__title { margin-top: 18px; font-size: var(--fs-ed-h1); font-weight: 800; line-height: 1.1; color: var(--ed-ink); }
+:root[data-variant="data"] .ed-phead__lead { margin-top: 18px; max-width: var(--measure); font-size: var(--fs-body); line-height: var(--lh-body); color: var(--ed-ink); }
+
+/* ── section openers: the rail holds the aria-hidden section number and the caption chip; the h2 starts the main
+      column. Any element whose child is an opener becomes the section grid (display: contents on the opener puts
+      its rail and title into it); everything else in it takes the main column. Below 734 px: number and chip over
+      the heading. ── */
+:root[data-variant="data"] .ed-sh { display: block; padding-top: 0; border-top: 0; }
+:root[data-variant="data"] .ed-rail { padding-bottom: 20px; }
+:root[data-variant="data"] .ed-rail__in { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+:root[data-variant="data"] .ed-rail__n { font-family: var(--font-ed-display); font-stretch: 112%; font-size: var(--fs-ed-num); font-weight: 900; line-height: .9; color: var(--ed-ink); font-variant-numeric: tabular-nums; }
+:root[data-variant="data"] .ed-rail__n::before { counter-increment: ed-sec; content: counter(ed-sec, decimal-leading-zero) / ""; }
+:root[data-variant="data"] .ed-chip { display: inline-flex; width: fit-content; align-items: center; min-height: 28px; padding: 3px 10px 2px; background: var(--ed-black); color: var(--ed-on-color); font-size: var(--fs-label); font-weight: 700; line-height: 1.3; }
+:root[data-variant="data"] .ed-chip:lang(en) { font-family: var(--font-sans); font-style: normal; letter-spacing: .08em; }
+:root[data-variant="data"] .ed-sh .ed-head__title { font-size: var(--fs-ed-h2); font-weight: 800; line-height: 1.2; color: var(--ed-ink); }
+:root[data-variant="data"] .ed-sh .ed-head__intro { margin-top: 14px; color: var(--ed-ink-2); }
+
+/* ── perforation and folio "- n -" between sections (n: a page-wide counter; the footer's is the last) ── */
+:root[data-variant="data"] .ed-folio { position: relative; display: flex; align-items: center; height: 40px; }
+:root[data-variant="data"] .ed-folio::before { content: ""; position: absolute; left: 0; right: 0; top: 50%; height: 1px; background: repeating-linear-gradient(to right, var(--ed-perf) 0 6px, transparent 6px 10px); }
+:root[data-variant="data"] .ed-folio__n { position: relative; display: inline-flex; align-items: center; min-height: 28px; padding: 0 10px; background: var(--ed-black); color: var(--ed-on-color); font-family: var(--font-ed-display); font-size: var(--fs-label); font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; }
+:root[data-variant="data"] .ed-folio__n::before { counter-increment: ed-folio; content: "- " counter(ed-folio) " -" / ""; }
+
+/* ── painted accents (PaintMark): cells parted by white gaps (--ed-rw), frayed edges where mask-box-image exists ── */
+:root[data-variant="data"] .ed-mc { display: grid; gap: var(--ed-rw); }
+:root[data-variant="data"] .ed-mc > i { display: block; min-width: 0; min-height: 0; }
+:root[data-variant="data"] .ed-mc__r { background: var(--ed-paint-rh); -webkit-mask-box-image: var(--ed-rag); }
+:root[data-variant="data"] .ed-mc__b { background: var(--ed-paint-bv); -webkit-mask-box-image: var(--ed-rag); }
+:root[data-variant="data"] .ed-mc__y { background: var(--ed-paint-yh); -webkit-mask-box-image: var(--ed-rag); }
+:root[data-variant="data"] .ed-mc--hero { grid-template-rows: 1.6fr 1fr; width: clamp(28px, 5.5vw, 76px); }
+:root[data-variant="data"] .ed-mc--hero > .ed-mc__y { background: var(--ed-paint-yv); }
+:root[data-variant="data"] .ed-mc--photo { margin-top: 10px; height: 52px; grid-template-columns: 1fr 22% 14%; grid-template-rows: 1fr 1fr; }
+:root[data-variant="data"] .ed-mc--cv { margin-top: 10px; height: 64px; grid-template-columns: 1fr 24% 16%; grid-template-rows: 1fr 1fr; }
+:root[data-variant="data"] .ed-mc--photo > .ed-mc__r,
+:root[data-variant="data"] .ed-mc--photo > .ed-mc__b,
+:root[data-variant="data"] .ed-mc--cv > .ed-mc__r { grid-row: 1 / 3; }
+:root[data-variant="data"] .ed-mc--cv > :last-child { grid-column: 2 / 4; }
+:root[data-variant="data"] .ed-mc--photo > .ed-mc__y,
+:root[data-variant="data"] .ed-mc--cv > .ed-mc__y { background: var(--ed-paint-yv); }
+:root[data-variant="data"] .ed-mc--mosaic { display: none; }
+:root[data-variant="data"] .ed-mc--aline { display: flex; gap: 4px; width: 84px; height: 12px; }
+:root[data-variant="data"] .ed-mc--aline > .ed-mc__r { flex: 0 0 58px; -webkit-mask-box-image: var(--ed-rag-s); }
+:root[data-variant="data"] .ed-mc--aline > .ed-mc__y { flex: 1 1 auto; background: var(--ed-paint-yv); -webkit-mask-box-image: var(--ed-rag-s); }
+:root[data-variant="data"] .ed-mc--fmark { display: inline-flex; flex: none; gap: 3px; width: 46px; height: 14px; }
+:root[data-variant="data"] .ed-mc--fmark > i { -webkit-mask-box-image: var(--ed-rag-s); }
+:root[data-variant="data"] .ed-mc--fmark > .ed-mc__r { flex: 0 0 24px; }
+:root[data-variant="data"] .ed-mc--fmark > .ed-mc__b { flex: 0 0 7px; }
+:root[data-variant="data"] .ed-mc--fmark > .ed-mc__y { flex: 1 1 auto; }
+
+@media (min-width: 734px) {
+  :root[data-variant="data"] .ed-g,
+  :root[data-variant="data"] :has(> .ed-sh) { column-gap: 24px; }
+  :root[data-variant="data"] .ed-phead__grid > .ed-tblock { grid-column: 1 / 4; min-height: 180px; }
+  :root[data-variant="data"] .ed-phead__grid > .ed-phead__main { grid-column: 4 / -1; }
+  :root[data-variant="data"] .ed-phead__main > .ed-mc--aline:first-child + .ed-display { margin-top: 22px; }
+  :root[data-variant="data"] :has(> .ed-sh) { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); align-items: start; }
+  :root[data-variant="data"] :has(> .ed-sh) > * { grid-column: 4 / -1; min-width: 0; }
+  :root[data-variant="data"] :has(> .ed-sh) > .ed-sh { display: contents; }
+  :root[data-variant="data"] .ed-sh > .ed-rail { grid-column: 1 / 4; grid-row: 1 / span 40; align-self: stretch; padding: 0 24px 0 0; border-right: 1px solid var(--ed-line); }
+  :root[data-variant="data"] .ed-sh > .ed-head__title,
+  :root[data-variant="data"] .ed-sh > .ed-head__intro { grid-column: 4 / -1; min-width: 0; }
+  :root[data-variant="data"] .ed-rail__in { position: sticky; top: calc(var(--nav-h) + 24px); flex-direction: column; align-items: flex-start; }
+}
+@media (min-width: 1068px) {
+  :root[data-variant="data"] .ed-g,
+  :root[data-variant="data"] :has(> .ed-sh) { column-gap: 32px; }
+  :root[data-variant="data"] .ed-sh > .ed-rail { padding-right: 32px; }
+  :root[data-variant="data"] .ed-mc--mosaic { display: grid; aspect-ratio: 1 / 1.02; grid-template-columns: 1.7fr 1fr .55fr; grid-template-rows: 1.5fr .9fr .6fr; }
+  :root[data-variant="data"] .ed-mc--mosaic > :nth-child(1) { grid-row: 1 / 3; background: var(--ed-paint-rv); }
+  :root[data-variant="data"] .ed-mc--mosaic > .ed-mc__b { background: var(--ed-paint-bh); }
+  :root[data-variant="data"] .ed-mc--mosaic > :nth-child(2),
+  :root[data-variant="data"] .ed-mc--mosaic > :nth-child(6) { grid-column: 2 / 4; }
+  :root[data-variant="data"] .ed-mc--mosaic > :nth-child(5) { grid-column: 1 / 2; }
+}
+
+/* ── the one-time reveal (src/scripts/data-reveal.ts): only below the first screen, once; transform/opacity ── */
+:root[data-variant="data"].js .ed-sh.is-waiting :is(.ed-rail__in, .ed-head__title, .ed-head__intro),
+:root[data-variant="data"].js .ed-stamp.is-waiting { opacity: 0; }
+:root[data-variant="data"].js .ed-sh.is-rise.is-waiting :is(.ed-rail__in, .ed-head__title, .ed-head__intro) { transform: translateY(18px); }
+:root[data-variant="data"].js .ed-stamp.is-rise.is-waiting { transform: scale(1.12); }
+:root[data-variant="data"] .ed-sh.is-in :is(.ed-rail__in, .ed-head__title, .ed-head__intro) { transition: transform var(--dur-rise) var(--ease-out), opacity var(--dur-fade) linear; }
+:root[data-variant="data"] .ed-stamp.is-in { transition: transform var(--dur-stamp) var(--ease-out), opacity var(--dur-fade) linear; }
+:root[data-variant="data"][data-motion="reduce"] .ed-sh :is(.ed-rail__in, .ed-head__title, .ed-head__intro),
+:root[data-variant="data"][data-motion="reduce"] .ed-stamp { transform: none !important; }
+@media (prefers-reduced-motion: reduce) {
+  :root[data-variant="data"] .ed-sh :is(.ed-rail__in, .ed-head__title, .ed-head__intro),
+  :root[data-variant="data"] .ed-stamp { transform: none !important; }
+}
+@media print {
+  :root[data-variant="data"] .ed-sh :is(.ed-rail__in, .ed-head__title, .ed-head__intro),
+  :root[data-variant="data"] .ed-stamp { opacity: 1 !important; transform: none !important; }
+  :root[data-variant="data"] .ed-folio,
+  :root[data-variant="data"] .ed-mc { display: none !important; }
+  :root[data-variant="data"] .ed-rail__in { position: static; }
+}
+
+/* ══ v5 home (DS-4): hero with the painted job title and stat tiles, the map spread, image cards, research figures and
+   the oral badge, the AUC chart's LightGBM band, the 진행 중 band, dated news rows, the framed profile photo ══ */
+
+/* ── titles that link (cards, the paper, news): ink with the fine underline; the painted band on hover / focus ── */
+:root[data-variant="data"] .ed-card__title a,
+:root[data-variant="data"] .ed-paper__link,
+:root[data-variant="data"] .ed-news__title a {
+  color: var(--ed-link);
+  text-decoration: underline var(--ed-ul) var(--ed-link-line); text-underline-offset: var(--ed-ul-off); text-decoration-skip-ink: auto;
+  -webkit-box-decoration-break: clone; box-decoration-break: clone;
+  background: var(--ed-stroke-tex) 0 .8em / 520px .38em repeat-x, linear-gradient(var(--ed-yellow-paint), var(--ed-yellow-paint)) 0 .8em / 100% .38em no-repeat;
+  background-size: 0 0, 0 0;
+}
+:root[data-variant="data"] .ed-paper__link:focus-visible,
+:root[data-variant="data"] .ed-card:has(.hit:focus-visible) .ed-card__title a,
+:root[data-variant="data"] .ed-news__item:has(.hit:focus-visible) .ed-news__title a { background-size: 520px .38em, 100% .38em; text-decoration-thickness: var(--ed-ul-on); }
+@media (hover: hover) {
+  :root[data-variant="data"] .ed-paper__link:hover,
+  :root[data-variant="data"] .ed-card:has(.hit):hover .ed-card__title a,
+  :root[data-variant="data"] .ed-news__item:has(.hit):hover .ed-news__title a { background-size: 520px .38em, 100% .38em; text-decoration-thickness: var(--ed-ul-on); }
+}
+:root[data-variant="data"] .ed-paper__link:active,
+:root[data-variant="data"] .ed-card:has(.hit:active) .ed-card__title a,
+:root[data-variant="data"] .ed-news__item:has(.hit:active) .ed-news__title a { background-size: 520px .38em, 100% .38em; text-decoration-thickness: var(--ed-ul-on); }
+
+/* ── stat tiles (StatTiles): big numbers in SB Display with small captions; DOM order = the sentence's order ── */
+:root[data-variant="data"] .ed-stats { display: flex; flex-wrap: wrap; gap: 1px; margin-top: 26px; background: var(--ed-line); border: 1px solid var(--ed-line); }
+:root[data-variant="data"] .ed-stat { flex: 1 1 auto; min-width: min(100%, 120px); display: flex; flex-direction: column; gap: 4px; padding: 16px 16px 18px; background: var(--ed-n-50); }
+:root[data-variant="data"] .ed-stat__v { font-family: var(--font-ed-display); font-stretch: 112%; font-size: var(--fs-ed-num); font-weight: 900; line-height: 1.05; color: var(--ed-ink); font-variant-numeric: tabular-nums; }
+:root[data-variant="data"] .ed-stat__v small { margin-inline: .12em; font-family: var(--font-sans); font-stretch: normal; font-size: var(--fs-small); font-weight: 700; }
+:root[data-variant="data"] .ed-stat__k { font-size: var(--fs-label); font-weight: 600; line-height: 1.45; color: var(--ed-ink-2); }
+:root[data-variant="data"] .ed-stats--plain .ed-stat,
+:root[data-variant="data"] .ed-stats--band .ed-stat { background: var(--ed-bg); }
+/* the research figures: the headline number on a blue painted field (white text), the others neutral, white gaps */
+:root[data-variant="data"] .ed-stats--plain .ed-stat { padding: 14px 16px 16px; }
+:root[data-variant="data"] .ed-stats--figure { gap: var(--ed-rw); background: none; border: 0; }
+:root[data-variant="data"] .ed-stats--figure > .ed-stat:first-child { flex-grow: 2; background: var(--ed-paint-bh); -webkit-mask-box-image: var(--ed-rag); }
+:root[data-variant="data"] .ed-stats--figure > .ed-stat:first-child :is(.ed-stat__v, .ed-stat__k) { color: var(--ed-on-color); }
+:root[data-variant="data"] .ed-stats__src { margin-top: 8px; font-size: var(--fs-min); font-weight: 600; line-height: 1.5; color: var(--ed-ink-2); }
+
+/* ── hero: label block in the rail; the job title in white on the red field with a yellow cell beside it ── */
+:root[data-variant="data"] .ed-hero { padding-block: 24px 0; background: var(--ed-bg); color: var(--ed-ink); }
+:root[data-variant="data"] .ed-hero__grid { row-gap: 24px; }
+:root[data-variant="data"] .ed-hero__panel { position: relative; z-index: 1; background: var(--ed-bg); }
+:root[data-variant="data"] .ed-hero__mark { display: inline-grid; grid-template-columns: auto auto; gap: var(--ed-rw); max-width: 100%; vertical-align: top; }
+:root[data-variant="data"] .ed-hero__bars { display: flex; flex-direction: column; align-items: flex-start; min-width: 0; padding: .16em .24em .14em .2em; background: var(--ed-paint-rh); -webkit-mask-box-image: var(--ed-rag); color: var(--ed-on-color); font-size: var(--fs-ed-display); line-height: .9; }
+:root[data-variant="data"] .ed-hero__bars span { display: block; }
+:root[data-variant="data"] .ed-hero__name { margin-top: 18px; font-size: var(--fs-ed-h1); font-weight: 800; line-height: 1.1; color: var(--ed-ink); }
+:root[data-variant="data"] .ed-hero .dhero__headline { margin-top: 8px; font-size: var(--fs-sub); font-weight: 700; line-height: var(--lh-sub); }
+:root[data-variant="data"] .ed-hero .dhero__tagline { margin-top: 6px; max-width: 24em; font-size: var(--fs-sub); line-height: 1.5; color: var(--ed-ink-2); }
+:root[data-variant="data"] .ed-cl { display: inline-block; }
+:root[data-variant="data"] .ed-hero__actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 22px; margin-top: 20px; }
+
+/* ── the map spread: the image in a white frame over a neutral tint block (left) and a blue painted field (right,
+      its top-right corner left white with a yellow cell); a "그림 1" tab on the image edge; the caption on white ── */
+:root[data-variant="data"] .ed-spread { --ed-ycw: clamp(24px, 4.2vw, 56px); --ed-ych: clamp(36px, 6vw, 88px); --ed-sft: 64px; position: relative; isolation: isolate; padding: 28px 0 0; border-top: 0; }
+:root[data-variant="data"] .ed-spread::before { content: ""; position: absolute; z-index: -1; left: 0; top: 0; width: 46%; bottom: 40%; background: var(--ed-n-100); }
+:root[data-variant="data"] .ed-spread::after { content: ""; position: absolute; z-index: -1; right: 0; top: var(--ed-sft); width: 58%; bottom: 0;
+  background: linear-gradient(var(--ed-bg), var(--ed-bg)) 100% 0 / calc(var(--ed-ycw) + var(--ed-rw)) calc(var(--ed-ych) + var(--ed-rw)) no-repeat, var(--ed-paint-bv);
+  -webkit-mask-box-image: var(--ed-rag); }
+:root[data-variant="data"] .ed-spread__y { position: absolute; z-index: 0; right: 0; top: var(--ed-sft); width: var(--ed-ycw); height: var(--ed-ych); background: var(--ed-paint-yh); -webkit-mask-box-image: var(--ed-rag); }
+:root[data-variant="data"] .ed-spread__img { position: relative; margin-inline: 16px; padding: 8px; background: var(--ed-bg); border: 1px solid var(--ed-line); }
+:root[data-variant="data"] .ed-spread__tab { position: absolute; left: 24px; bottom: -14px; z-index: 1; }
+:root[data-variant="data"] .ed-spread__cap { position: relative; margin: 26px 0 0 auto; max-width: 30rem; padding: 16px 18px 18px; background: var(--ed-bg); }
+:root[data-variant="data"] .ed-spread__cap .ed-link { white-space: nowrap; }
+
+/* ── image cards (ProjectListItem card / lead): the whole card is the link (.hit stretched), the ring round the card ── */
+:root[data-variant="data"] .ed-cards { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; margin-top: 28px; }
+:root[data-variant="data"] .ed-card { position: relative; isolation: isolate; display: flex; flex-direction: column; min-width: 0; background: var(--ed-bg); border: 1px solid var(--ed-line); }
+:root[data-variant="data"] .ed-card[hidden] { display: none; }
+:root[data-variant="data"] .ed-card::before { content: ""; position: absolute; inset: 0; z-index: -1; background: var(--ed-wash); opacity: 0; transition: opacity var(--dur-hover) linear; pointer-events: none; }
+:root[data-variant="data"] .ed-card .hit { position: static; }
+:root[data-variant="data"] .ed-card .hit::after { z-index: 2; }
+:root[data-variant="data"] .ed-card .hit:focus-visible { outline: none; }
+:root[data-variant="data"] .ed-card:has(.hit:focus-visible) { outline: 2px solid var(--ed-focus); outline-offset: 3px; }
+@media (hover: hover) {
+  :root[data-variant="data"] .ed-card:has(.hit):hover::before { opacity: .7; }
+}
+:root[data-variant="data"] .ed-card:has(.hit:active)::before { opacity: .7; }
+:root[data-variant="data"] .ed-card__img { aspect-ratio: 4 / 3; overflow: hidden; background: var(--ed-n-50); border-bottom: 1px solid var(--ed-line); }
+:root[data-variant="data"] .ed-card__img img { display: block; width: 100%; height: 100%; object-fit: cover; }
+:root[data-variant="data"] .ed-card__img--contain img { object-fit: contain; background: var(--ed-bg); }
+:root[data-variant="data"] .ed-card__img--chart { aspect-ratio: auto; padding: 12px; background: var(--ed-bg); }
+:root[data-variant="data"] .ed-card__body { display: flex; flex-direction: column; gap: 8px; padding: 16px 18px 20px; }
+:root[data-variant="data"] .ed-card__top { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; font-size: var(--fs-label); font-weight: 600; line-height: 1.5; color: var(--ed-ink-2); }
+:root[data-variant="data"] .ed-card__n { font-family: var(--font-ed-display); font-stretch: 112%; font-size: 1.5rem; font-weight: 900; line-height: 1; color: var(--ed-ink); font-variant-numeric: tabular-nums; }
+:root[data-variant="data"] .ed-card__title { font-size: var(--fs-sub); font-weight: 800; line-height: 1.4; color: var(--ed-ink); }
+:root[data-variant="data"] .ed-card__text { font-size: var(--fs-small); line-height: 1.65; }
+:root[data-variant="data"] .ed-card__tags { display: flex; flex-wrap: wrap; gap: 0 4px; }
+:root[data-variant="data"] .ed-card__tags .ed-tag { font-size: var(--fs-label); font-weight: 600; color: var(--ed-ink-2); }
+:root[data-variant="data"] .ed-card__tags li + li::before { content: "/ " / ""; }
+:root[data-variant="data"] .ed-card--plain { background: var(--ed-n-50); }
+
+/* ── research: the figure tiles, the paper with the oral badge beside the chart, the 진행 중 band ── */
+:root[data-variant="data"] .ed-rh__figures { margin-top: 28px; }
+:root[data-variant="data"] .ed-rh__figures .ed-stats { margin-top: 0; }
+:root[data-variant="data"] .ed-rh__grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 36px; margin-top: 28px; }
+:root[data-variant="data"] .ed-paper { position: relative; min-width: 0; }
+:root[data-variant="data"] .ed-paper__venue { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; }
+:root[data-variant="data"] .ed-paper__venue .ed-label { font-family: var(--font-sans); font-style: normal; font-size: var(--fs-label); font-weight: 600; color: var(--ed-ink); }
+:root[data-variant="data"] .ed-paper__venue .ed-stamp { margin-left: auto; margin-right: 6px; }
+:root[data-variant="data"] .ed-paper__title { margin-top: 14px; font-size: var(--fs-sub); font-weight: 700; line-height: 1.4; }
+:root[data-variant="data"] .ed-paper__authors strong { color: var(--ed-ink); }
+/* the award badge (one per view): real text on a red painted field with a yellow cell, a white gap; no rotation */
+:root[data-variant="data"] .ed-stamp { display: inline-block; }
+:root[data-variant="data"] .ed-stamp__ink { position: relative; isolation: isolate; display: inline-block; padding: .55em calc(.9em + 18px) .5em .9em; font-size: var(--fs-body); font-weight: 800; line-height: 1.25; color: var(--ed-on-color); }
+:root[data-variant="data"] .ed-stamp__ink::before { content: ""; position: absolute; z-index: -1; left: 0; top: 0; bottom: 0; right: 18px; background: var(--ed-paint-rh); -webkit-mask-box-image: var(--ed-rag); }
+:root[data-variant="data"] .ed-stamp__ink::after { content: ""; position: absolute; z-index: -1; right: 0; top: 0; bottom: 0; width: 14px; background: var(--ed-paint-yv); -webkit-mask-box-image: var(--ed-rag-s); }
+/* 진행 중: a yellow painted label cell and a neutral text cell, a white gap between */
+:root[data-variant="data"] .ed-now { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: var(--ed-rw); }
+:root[data-variant="data"] .ed-now > p { display: flex; align-items: center; min-width: 0; margin: 0; padding: 12px 16px; background: var(--ed-n-50); }
+:root[data-variant="data"] .ed-now > .ed-now__label { min-width: 5.5em; font-size: var(--fs-label); font-weight: 800; color: var(--ed-ink); background: var(--ed-paint-yv); -webkit-mask-box-image: var(--ed-rag); }
+:root[data-variant="data"] .ed-now > .ed-now__text { font-size: var(--fs-small); }
+/* the AUC dot plot (SVG kept, DV-5): the paper's model on a flat black band with a red mark in a white ring; ticks and
+   values in SB Display; "표로 보기" as a bracket toggle. .chart.chart--editorial outranks the chart's own scoped
+   .chart--editorial rules (this sheet is linked before the inlined component CSS, so a tie would lose). */
+:root[data-variant="data"] .chart.chart--editorial .chart__band { fill: var(--ed-black); }
+:root[data-variant="data"] .chart.chart--editorial .chart__dot { fill: var(--ed-bg); stroke: var(--ed-black); stroke-width: 1.5px; }
+:root[data-variant="data"] .chart.chart--editorial .chart__dot--hl { fill: var(--ed-red); stroke: none; }
+:root[data-variant="data"] .chart.chart--editorial .chart__ring { stroke: var(--ed-on-color); }
+:root[data-variant="data"] .chart.chart--editorial .chart__label--hl,
+:root[data-variant="data"] .chart.chart--editorial .chart__value--hl { fill: var(--ed-on-color); }
+:root[data-variant="data"] .chart.chart--editorial :is(.chart__tick, .chart__value) { font-family: var(--font-ed-display); font-stretch: 112%; }
+:root[data-variant="data"] .chart.chart--editorial .chart__summary { border: 0; padding-inline: 4px; color: var(--ed-ink); font-weight: 700; }
+:root[data-variant="data"] .chart.chart--editorial .chart__summary::before { content: "[" / ""; margin-right: .35em; color: var(--ed-ink-2); }
+:root[data-variant="data"] .chart.chart--editorial .chart__summary::after { content: "]" / ""; margin-left: .35em; color: var(--ed-ink-2); }
+:root[data-variant="data"] .chart.chart--editorial .chart__table[open] .chart__summary { text-decoration: underline var(--ed-ul-on); text-underline-offset: .3em; }
+
+/* ── paper links (PaperLinks, every data page): bracket toggles [ 초록 ] [ BibTeX ] in ink; open = 2px underline;
+      the painted band under the label on hover and focus; the pending note as plain grey text ── */
+:root[data-variant="data"] .pub__links { gap: 0 10px; margin-left: -4px; }
+:root[data-variant="data"] .pub__btn,
+:root[data-variant="data"] .chart.chart--editorial .chart__summary {
+  background: var(--ed-stroke-tex) 0 calc(50% + .39em) / 520px .38em repeat-x, linear-gradient(var(--ed-yellow-paint), var(--ed-yellow-paint)) 0 calc(50% + .39em) / 100% .38em no-repeat;
+  background-size: 0 0, 0 0; background-origin: content-box; background-clip: content-box;
+}
+:root[data-variant="data"] .pub__btn { padding: 0 4px; border: 0; color: var(--ed-ink); font-size: var(--fs-meta); font-weight: 700; }
+:root[data-variant="data"] .pub__btn::before { content: "[" / ""; margin-right: .35em; color: var(--ed-ink-2); }
+:root[data-variant="data"] .pub__btn::after { content: "]" / ""; margin-left: .35em; color: var(--ed-ink-2); }
+:root[data-variant="data"] .pub__btn[aria-expanded="true"] { text-decoration: underline var(--ed-ul-on); text-underline-offset: .3em; }
+:root[data-variant="data"] .pub__btn[aria-expanded="true"]::before,
+:root[data-variant="data"] .pub__btn[aria-expanded="true"]::after { color: var(--ed-ink); }
+:root[data-variant="data"] .pub__btn:focus-visible,
+:root[data-variant="data"] .chart.chart--editorial .chart__summary:focus-visible { background-size: 520px .38em, 100% .38em; }
+@media (hover: hover) {
+  :root[data-variant="data"] .pub__btn:hover,
+  :root[data-variant="data"] .chart.chart--editorial .chart__summary:hover { background-size: 520px .38em, 100% .38em; color: var(--ed-ink); }
+}
+:root[data-variant="data"] .pub__btn:active,
+:root[data-variant="data"] .chart.chart--editorial .chart__summary:active { background-size: 520px .38em, 100% .38em; color: var(--ed-ink); }
+:root[data-variant="data"] .pub__pending { padding: 0 6px; border: 0; font-size: var(--fs-min); font-weight: 600; color: var(--ed-ink-2); }
+:root[data-variant="data"] .pub__abstract { background: var(--ed-n-50); border-left: 3px solid var(--ed-black); }
+
+/* ── news: dated rows; the row is the link (stretched), the ring round the row, a wash on hover ── */
+:root[data-variant="data"] .ed-news { margin-top: 24px; }
+:root[data-variant="data"] .ed-news__item { position: relative; isolation: isolate; display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px 24px; padding-block: 18px; border-top: 1px solid var(--ed-line); }
+:root[data-variant="data"] .ed-news__item:last-child { border-bottom: 1px solid var(--ed-line); }
+:root[data-variant="data"] .ed-news__item::before { content: ""; position: absolute; inset: 0; z-index: -1; background: var(--ed-wash); opacity: 0; transition: opacity var(--dur-hover) linear; pointer-events: none; }
+:root[data-variant="data"] .ed-news__item .hit { position: static; }
+:root[data-variant="data"] .ed-news__item .hit:focus-visible { outline: none; }
+:root[data-variant="data"] .ed-news__item:has(.hit:focus-visible) { outline: 2px solid var(--ed-focus); outline-offset: 3px; }
+@media (hover: hover) {
+  :root[data-variant="data"] .ed-news__item:has(.hit):hover::before { opacity: .7; }
+}
+:root[data-variant="data"] .ed-news__item:has(.hit:active)::before { opacity: .7; }
+:root[data-variant="data"] .ed-news__date { display: flex; flex-wrap: wrap; gap: 0 8px; padding-top: 4px; font-size: var(--fs-label); font-weight: 600; line-height: 1.5; color: var(--ed-ink-2); }
+:root[data-variant="data"] .ed-news__date time { font-family: var(--font-ed-display); font-weight: 800; color: var(--ed-ink); font-variant-numeric: tabular-nums; }
+:root[data-variant="data"] .ed-news__title { font-size: var(--fs-sub); font-weight: 800; line-height: 1.4; }
+:root[data-variant="data"] .ed-news__body { margin-top: 4px; max-width: var(--measure); }
+
+/* ── profile: the photo in a white frame, the painted composition directly below it; facts lists over an ink rule ── */
+:root[data-variant="data"] .ed-hello { display: grid; grid-template-columns: minmax(0, 1fr); gap: 28px; margin-top: 28px; }
+:root[data-variant="data"] .ed-hello > * { min-width: 0; }
+:root[data-variant="data"] .hello-ed__frame { width: 160px; }
+:root[data-variant="data"] .hello-ed__frame img { display: block; width: 100%; height: auto; aspect-ratio: 3 / 4; object-fit: cover; padding: 6px; background: var(--ed-bg); border: 2px solid var(--ed-black); }
+:root[data-variant="data"] .hello-ed__facts .hello-ed__h { font-size: var(--fs-body); font-weight: 800; }
+:root[data-variant="data"] .hello-ed__facts .hello-ed__list { gap: 0; border-top: 2px solid var(--ed-ink); }
+:root[data-variant="data"] .hello-ed__list li { padding: 6px 0; font-size: var(--fs-small); line-height: 1.6; border-bottom: 1px solid var(--ed-line); }
+
+@media (min-width: 560px) {
+  :root[data-variant="data"] .ed-cards--tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (min-width: 734px) {
+  :root[data-variant="data"] .ed-cards { gap: 24px; }
+  :root[data-variant="data"] .ed-hero__grid > .ed-tblock { grid-column: 1 / 4; grid-row: 1; min-height: 180px; }
+  :root[data-variant="data"] .ed-hero__grid > .ed-hero__panel { grid-column: 4 / -1; grid-row: 1; }
+  :root[data-variant="data"] .ed-spread { padding-top: 40px; }
+  :root[data-variant="data"] .ed-spread__img { margin-inline: 8% 10%; padding: 10px; }
+  :root[data-variant="data"] .ed-spread__cap { margin-right: 6%; margin-top: 30px; }
+  :root[data-variant="data"] .ed-news__item { grid-template-columns: 10.5em minmax(0, 1fr); }
+  :root[data-variant="data"] .ed-hello { grid-template-columns: 180px minmax(0, 1fr); }
+  :root[data-variant="data"] .hello-ed__frame { width: 180px; }
+  :root[data-variant="data"] .ed-hello > .hello-ed__facts { grid-column: 2; }
+}
+@media (min-width: 1068px) {
+  :root[data-variant="data"] .ed-cards { gap: 32px; }
+  :root[data-variant="data"] .ed-cards--tiles { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  :root[data-variant="data"] .ed-hero__grid > .ed-hero__panel { grid-column: 4 / 11; }
+  /* the spread rises under the stat tiles; its image is narrower than on tablets so the first project card stays within
+     two screens at 1280 × 720 in both languages (success criterion 1; English tiles wrap to two rows) */
+  :root[data-variant="data"] .ed-hero .ed-spread { --ed-sft: 0px; margin-top: -96px; padding-top: 112px; }
+  :root[data-variant="data"] .ed-hero .ed-spread__img { margin-inline: 15% 17%; }
+  :root[data-variant="data"] .ed-hero .ed-spread__cap { margin-top: 18px; }
+  :root[data-variant="data"] .ed-rh__grid { grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); column-gap: 40px; }
+  :root[data-variant="data"] .ed-rh__grid > .ed-now { grid-column: 1 / -1; }
+  :root[data-variant="data"] .ed-hello { grid-template-columns: 190px minmax(0, 1.2fr) minmax(0, 1fr); column-gap: 32px; }
+  :root[data-variant="data"] .hello-ed__frame { width: 190px; }
+  :root[data-variant="data"] .ed-hello > .hello-ed__facts { grid-column: 3; }
+}
+@media print {
+  :root[data-variant="data"] .ed-spread::before,
+  :root[data-variant="data"] .ed-spread::after,
+  :root[data-variant="data"] .ed-spread__y { display: none !important; }
+}
+
+/* ══ v5 projects (DS-5): the mosaic beside the title, the tag filter as bracket buttons, the card grid with the lead
+   card on paint, the GitHub repositories as the same cards ══ */
+/* the list section: an empty rail (the vertical gridline) and the main column, as every section */
+:root[data-variant="data"] .ed-plist__grid { row-gap: 0; }
+/* tag filter: white buttons in a 1px ink box with an aria-hidden [ ] mark; pressed = ink fill, [x] (v5.1, DS-OQ7) */
+:root[data-variant="data"] #project-list .tag-filter { gap: 8px; margin-bottom: 26px; }
+:root[data-variant="data"] .tag-filter__btn { display: inline-flex; align-items: center; gap: 6px; padding: 0 12px; border: 0; border-radius: 0; background: var(--ed-bg); box-shadow: inset 0 0 0 1px var(--ed-ink); color: var(--ed-ink); font-size: var(--fs-label); font-weight: 700; }
+:root[data-variant="data"] .tag-filter__btn::before { content: "[ ]" / ""; color: var(--ed-ink-2); }
+:root[data-variant="data"] .tag-filter__btn[aria-pressed="true"] { background: var(--ed-fill); color: var(--ed-fill-ink); box-shadow: inset 0 0 0 1px var(--ed-fill); }
+:root[data-variant="data"] .tag-filter__btn[aria-pressed="true"]::before { content: "[x]" / ""; color: var(--ed-fill-ink); }
+@media (hover: hover) {
+  :root[data-variant="data"] .tag-filter__btn[aria-pressed="false"]:hover { box-shadow: inset 0 0 0 2px var(--ed-ink); }
+}
+:root[data-variant="data"] .tag-filter__btn[aria-pressed="false"]:active { box-shadow: inset 0 0 0 2px var(--ed-ink); }
+/* the lead card: the page's big image over a blue painted field with a white notch and a red cell, the text beside it */
+:root[data-variant="data"] .ed-card--lead { border: 0; background: transparent; }
+:root[data-variant="data"] .ed-card--lead::before { inset: -8px; }
+:root[data-variant="data"] .ed-card--lead .ed-card__img { position: relative; isolation: isolate; aspect-ratio: auto; overflow: visible; padding: 0 0 26px 26px; border: 0; background: transparent; }
+:root[data-variant="data"] .ed-card--lead .ed-card__img::before { content: ""; position: absolute; z-index: -1; left: 0; bottom: 0; width: 70%; top: 30%;
+  background: linear-gradient(var(--ed-bg), var(--ed-bg)) 0 100% / calc(18% + var(--ed-rw)) calc(34% + var(--ed-rw)) no-repeat, var(--ed-paint-bh);
+  -webkit-mask-box-image: var(--ed-rag); }
+:root[data-variant="data"] .ed-card--lead .ed-card__img::after { content: ""; position: absolute; z-index: -1; left: 0; bottom: 0; width: calc(70% * .18); height: calc(70% * .34); background: var(--ed-paint-rv); -webkit-mask-box-image: var(--ed-rag); }
+:root[data-variant="data"] .ed-card--lead .ed-card__img img { height: auto; box-shadow: 0 0 0 8px var(--ed-bg); }
+:root[data-variant="data"] .ed-card--lead .ed-card__body { padding: 20px 0 0; }
+:root[data-variant="data"] .ed-card--lead .ed-card__title { font-size: var(--fs-ed-h2); line-height: 1.25; }
+/* GitHub repositories: the same cards, text only */
+:root[data-variant="data"] .gh .gh__h { margin-top: 28px; font-size: var(--fs-body); font-weight: 800; }
+
+@media (min-width: 734px) {
+  :root[data-variant="data"] .ed-plist__grid > * { grid-column: 4 / -1; }
+  :root[data-variant="data"] .ed-plist__grid > .ed-plist__rail { grid-column: 1 / 4; grid-row: 1 / span 3; border-right: 1px solid var(--ed-line); }
+  :root[data-variant="data"] .ed-cards--grid,
+  :root[data-variant="data"] .ed-cards--repos { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  :root[data-variant="data"] .ed-cards--grid { margin-top: 0; }
+  :root[data-variant="data"] .ed-card--lead { grid-column: 1 / -1; display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 0 24px; align-items: end; }
+  :root[data-variant="data"] .ed-card--lead[hidden] { display: none; }
+}
+@media (min-width: 1068px) {
+  :root[data-variant="data"] .ed-card--lead { column-gap: 32px; }
+  :root[data-variant="data"] .ed-phead__grid--mosaic > .ed-phead__main { grid-column: 4 / 10; }
+  :root[data-variant="data"] .ed-phead__grid--mosaic > .ed-mc--mosaic { grid-column: 10 / -1; align-self: start; margin-top: 10px; }
+}
+@media print {
+  :root[data-variant="data"] .ed-card--lead .ed-card__img::before,
+  :root[data-variant="data"] .ed-card--lead .ed-card__img::after { display: none !important; }
+}
+
+/* ══ v5 case study (DS-6): the head and the map spread, the key-figures band with the metric bars, the overview table with
+   the 내 역할 row on yellow paint and the award badge in the rail, the body with hanging section numbers ══ */
+:root[data-variant="data"] .ed-case { padding-block: 40px 0; }
+:root[data-variant="data"] .ed-case .ed-display { font-size: var(--fs-ed-h1); }
+:root[data-variant="data"] .pd-ed__back { margin: -12px 0 2px; }
+:root[data-variant="data"] .ed-case .pd-ed__lead p { margin: 0; }
+:root[data-variant="data"] .ed-case .ed-spread { margin-top: 32px; }
+/* the one red painted square at the frame corner, half outside so the map stays readable */
+:root[data-variant="data"] .ed-spread__sq { position: absolute; left: -14px; bottom: 28px; width: 32px; height: 32px; background: var(--ed-paint-rh); -webkit-mask-box-image: var(--ed-rag); pointer-events: none; }
+/* the band: a full-width neutral band; the tiles (white) and the metric bars beside them */
+:root[data-variant="data"] .ed-band { margin-top: var(--section-pad-y); background: var(--ed-n-100); }
+:root[data-variant="data"] .ed-band__grid { padding-block: 40px; row-gap: 24px; }
+:root[data-variant="data"] .ed-band .ed-stats { margin-top: 0; }
+:root[data-variant="data"] .ed-stat__bar { position: relative; display: block; height: 8px; margin-top: 8px; background: var(--ed-line); }
+:root[data-variant="data"] .ed-stat__bar i { position: absolute; left: 0; top: 0; bottom: 0; width: var(--ed-p); background: var(--ed-black); }
+:root[data-variant="data"] .ed-metric { padding: 16px 18px 14px; background: var(--ed-bg); border: 1px solid var(--ed-line); }
+:root[data-variant="data"] .ed-metric__title { font-size: var(--fs-label); font-weight: 600; line-height: 1.5; color: var(--ed-ink); }
+:root[data-variant="data"] .ed-metric ol { margin-top: 10px; }
+:root[data-variant="data"] .ed-metric__row { display: grid; grid-template-columns: 4.6em minmax(0, 1fr) 3em; align-items: center; gap: 0 10px; min-height: 34px; padding-inline: 8px; }
+:root[data-variant="data"] .ed-metric__k { font-size: var(--fs-label); font-weight: 700; line-height: 1; color: var(--ed-ink); }
+:root[data-variant="data"] .ed-metric__v { text-align: right; font-family: var(--font-ed-display); font-size: var(--fs-body); font-weight: 900; line-height: 1; color: var(--ed-ink); font-variant-numeric: tabular-nums; }
+:root[data-variant="data"] .ed-metric__bar { position: relative; height: 12px; background: var(--ed-n-100); }
+:root[data-variant="data"] .ed-metric__bar i { position: absolute; left: 0; top: 0; bottom: 0; width: var(--ed-p); background: var(--ed-ink-2); }
+:root[data-variant="data"] .ed-metric__row--hl { background: var(--ed-black); }
+:root[data-variant="data"] .ed-metric__row--hl :is(.ed-metric__k, .ed-metric__v) { color: var(--ed-on-color); }
+:root[data-variant="data"] .ed-metric__row--hl .ed-metric__bar { background: var(--ed-ink-2); }
+:root[data-variant="data"] .ed-metric__row--hl .ed-metric__bar i { background: var(--ed-red); }
+/* the overview: the award badge in the rail; the table over an ink rule; 내 역할: a yellow painted head cell */
+:root[data-variant="data"] .pd-ed__ovw { padding-top: var(--section-pad-y); row-gap: 20px; }
+/* ProjectDetails' own scoped rules (P2-6 layout: grid areas, a capped tablet figure) are neutralised here; the reset
+   restores the full-width column (grid-area: auto alone left each in one 12th of a phone) */
+:root[data-variant="data"] .pd-ed__ovw > :is(.pd-ed__rail, .pd-ed__table) { grid-area: auto; grid-column: 1 / -1; }
+:root[data-variant="data"] .ed-case .pd-ed__fig { grid-area: auto; max-width: none; margin-inline: 0; }
+:root[data-variant="data"] .ed-case .pd-ed__fig img { max-height: none; object-fit: fill; }
+:root[data-variant="data"] .pd-ed__award { display: flex; flex-direction: column; align-items: flex-start; gap: 14px; }
+:root[data-variant="data"] .pd-ed__award .ed-stamp__ink { font-size: var(--fs-sub); }
+:root[data-variant="data"] .ed-stamp__small { display: block; font-size: var(--fs-small); font-weight: 700; }
+:root[data-variant="data"] .pd-ed__table { border-top: 2px solid var(--ed-ink); }
+:root[data-variant="data"] .pd-ed__table th,
+:root[data-variant="data"] .pd-ed__table td { padding: 10px 12px; }
+:root[data-variant="data"] .pd-ed__table tbody th[scope="row"] { width: 7em; font-size: var(--fs-label); font-weight: 700; line-height: 1.7; color: var(--ed-ink); white-space: nowrap; }
+:root[data-variant="data"] .pd-ed__table td { font-size: var(--fs-small); line-height: 1.6; }
+:root[data-variant="data"] .pd-ed__hl th[scope="row"] { background: var(--ed-paint-yh); -webkit-mask-box-image: var(--ed-rag); }
+/* the body: the reading column in the main column; each h2 carries the next section number (a page-wide counter, as
+   the section rails after it), hanging in the rail from 734 px; list markers in ink; inline figures framed */
+:root[data-variant="data"] .ed-case__body { padding-top: 40px; }
+:root[data-variant="data"] article.ed-prose--case { max-width: var(--measure); padding: 8px 0 var(--section-pad-y); background: none; }
+:root[data-variant="data"] article.ed-prose--case h2 { position: relative; margin-top: 64px; font-size: var(--fs-ed-h2); font-weight: 800; line-height: 1.2; }
+:root[data-variant="data"] article.ed-prose--case > h2:first-child { margin-top: 0; }
+:root[data-variant="data"] article.ed-prose--case h2::before { counter-increment: ed-sec; content: counter(ed-sec, decimal-leading-zero) / ""; display: block; margin-bottom: 8px; white-space: nowrap; font-family: var(--font-ed-display); font-stretch: 112%; font-size: var(--fs-sub); font-weight: 900; line-height: 1; color: var(--ed-ink); font-variant-numeric: tabular-nums; }
+:root[data-variant="data"] article.ed-prose--case ul,
+:root[data-variant="data"] article.ed-prose--case ol { padding-left: 0; list-style: none; }
+:root[data-variant="data"] article.ed-prose--case li { position: relative; padding-left: 1.6em; }
+:root[data-variant="data"] article.ed-prose--case li + li { margin-top: 10px; }
+:root[data-variant="data"] article.ed-prose--case ul > li::before { content: "" / ""; position: absolute; left: .2em; top: .78em; width: .5em; height: 2px; background: var(--ed-black); }
+:root[data-variant="data"] article.ed-prose--case ol { counter-reset: ed-li; }
+:root[data-variant="data"] article.ed-prose--case ol > li { counter-increment: ed-li; padding-left: 2.4em; }
+:root[data-variant="data"] article.ed-prose--case ol > li::before { content: counter(ed-li, decimal-leading-zero) / ""; position: absolute; left: 0; top: .2em; min-width: 1.9em; text-align: center; font-family: var(--font-ed-display); font-size: var(--fs-label); font-weight: 800; line-height: 1.65; color: var(--ed-on-color); background: var(--ed-black); font-variant-numeric: tabular-nums; }
+:root[data-variant="data"] article.ed-prose--case .ed-figure { margin-block: 36px; padding-top: 0; border-top: 0; }
+:root[data-variant="data"] article.ed-prose--case .ed-figure img { padding: 8px; border: 1px solid var(--ed-line); background: var(--ed-bg); }
+/* contribution, links, next: section rails like every section; the links over an ink rule */
+:root[data-variant="data"] .plinks-ed .plinks__list { display: block; max-width: var(--measure); margin-top: 18px; border-top: 2px solid var(--ed-ink); }
+:root[data-variant="data"] .plinks-ed .plinks__list li { display: flex; align-items: center; min-height: 52px; border-bottom: 1px solid var(--ed-line); }
+:root[data-variant="data"] .ed-pnext { padding-block: 24px var(--section-pad-y); }
+:root[data-variant="data"] .ed-pnext__p { display: flex; justify-content: flex-end; max-width: var(--measure); }
+
+@media (min-width: 734px) {
+  :root[data-variant="data"] .pd-ed__ovw > .pd-ed__rail { grid-column: 1 / 4; }
+  :root[data-variant="data"] .pd-ed__ovw > .pd-ed__table { grid-column: 4 / -1; }
+  :root[data-variant="data"] .ed-band__grid > .ed-band__rail { grid-column: 1 / 4; grid-row: 1 / span 2; }
+  :root[data-variant="data"] .ed-band__grid > :not(.ed-band__rail) { grid-column: 4 / -1; }
+  :root[data-variant="data"] .ed-case__body > article.ed-prose--case { grid-column: 4 / -1; }
+  :root[data-variant="data"] article.ed-prose--case h2::before { position: absolute; right: calc(100% + 48px); top: .1em; margin: 0; font-size: var(--fs-ed-h2); }
+  :root[data-variant="data"] .ed-pnext > .ed-pnext__p { grid-column: 4 / -1; }
+}
+@media (min-width: 1068px) {
+  :root[data-variant="data"] .ed-band__grid > .ed-stats { grid-column: 4 / 10; }
+  :root[data-variant="data"] .ed-band__grid > .ed-metric { grid-column: 10 / -1; align-self: stretch; }
+  :root[data-variant="data"] article.ed-prose--case h2::before { right: calc(100% + 64px); }
+}
+@media print {
+  :root[data-variant="data"] .ed-spread__sq { display: none !important; }
+}
+
+/* ══ v5 records (DS-7): the CV head (photo + painted composition below it), the sidebar (contents with section numbers,
+   주요 기록 tiles, contacts) beside the sections, timelines with square marks, certificates with corner marks,
+   ink-boxed tags, tables with black group chips, the pending note on a yellow painted strip ══ */
+/* the CV head */
+:root[data-variant="data"] .rhead-ed { padding-block: 8px 20px; }
+:root[data-variant="data"] .rhead-ed__grid { row-gap: 22px; }
+:root[data-variant="data"] .rhead-ed__photo { width: 150px; }
+:root[data-variant="data"] .rhead-ed__photo img { display: block; width: 100%; height: auto; aspect-ratio: 3 / 4; object-fit: cover; padding: 6px; background: var(--ed-bg); border: 2px solid var(--ed-black); }
+:root[data-variant="data"] .rhead-ed__name { margin-top: 6px; font-size: var(--fs-sub); font-weight: 700; line-height: 1.4; }
+:root[data-variant="data"] .rhead-ed__status { margin-top: 8px; font-size: var(--fs-label); font-weight: 600; color: var(--ed-ink-2); }
+:root[data-variant="data"] .rhead-ed__tag { margin-top: 10px; max-width: var(--measure); color: var(--ed-ink-2); }
+:root[data-variant="data"] .rhead-ed__docs { margin-top: 20px; }
+:root[data-variant="data"] .ed-docs__kind { font-family: var(--font-ed-display); font-size: var(--fs-min); font-weight: 800; }
+/* openers inside the CV head and the CV column: the number and the chip on one line over the title (no rail grid) */
+:root[data-variant="data"] .rhead-ed__text,
+:root[data-variant="data"] .ed-cv > .ed-sec > .container { display: block; max-width: none; padding-inline: 0; }
+:root[data-variant="data"] .rhead-ed__text > .ed-sh,
+:root[data-variant="data"] .ed-cv > .ed-sec > .container > .ed-sh { display: block; }
+:root[data-variant="data"] :is(.rhead-ed__text, .ed-cv) .ed-rail { padding: 0 0 12px; border: 0; }
+:root[data-variant="data"] :is(.rhead-ed__text, .ed-cv) .ed-rail__in { position: static; flex-direction: row; align-items: center; gap: 0; }
+:root[data-variant="data"] :is(.rhead-ed__text, .ed-cv) .ed-rail__n { display: inline-flex; align-items: center; min-height: 28px; padding: 3px 0 2px 10px; background: var(--ed-black); color: var(--ed-on-color); font-size: var(--fs-label); font-weight: 800; line-height: 1.3; }
+:root[data-variant="data"] :is(.rhead-ed__text, .ed-cv) .ed-rail__n + .ed-chip { padding-left: 6px; }
+/* the CV grid: the sidebar beside the sections (one rail-wide column; sticky from 734 px) */
+:root[data-variant="data"] .ed-cv { padding-block: 40px var(--section-pad-y); row-gap: 0; }
+:root[data-variant="data"] .ed-cv > .ed-sec { padding-block: 8px 0; }
+:root[data-variant="data"] .ed-cv > .ed-folio { margin-block: 32px; }
+:root[data-variant="data"] .ed-side { align-self: start; margin-bottom: 32px; padding: 20px 18px; background: var(--ed-n-50); }
+:root[data-variant="data"] .ed-toc a { position: relative; isolation: isolate; display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: var(--tap); border-bottom: 1px solid var(--ed-line); color: var(--ed-link); font-size: var(--fs-small); font-weight: 700; line-height: 1.2; text-decoration: none; }
+:root[data-variant="data"] .ed-toc__n { font-family: var(--font-ed-display); font-size: var(--fs-label); font-weight: 800; color: var(--ed-ink-2); font-variant-numeric: tabular-nums; }
+/* hover / focus paints the row's hairline: the stroke sweeps along the rule under the row */
+:root[data-variant="data"] .ed-toc a::after { content: ""; position: absolute; z-index: -1; left: 0; right: 0; bottom: -3px; height: 5px; background: var(--ed-paint-stroke); -webkit-mask-box-image: var(--ed-rag-s); pointer-events: none; transform: scaleX(0); transform-origin: 0 50%; transition: transform var(--dur-stroke) var(--ease-out); }
+:root[data-variant="data"] .ed-toc a:focus-visible::after { transform: none; }
+@media (hover: hover) {
+  :root[data-variant="data"] .ed-toc a:hover::after { transform: none; }
+}
+:root[data-variant="data"] .ed-toc a:active::after { transform: none; }
+:root[data-variant="data"][data-motion="reduce"] .ed-toc a::after { transition: none; }
+@media (prefers-reduced-motion: reduce) {
+  :root[data-variant="data"] .ed-toc a::after { transition: none; }
+}
+:root[data-variant="data"] .ed-side__h { margin-top: 24px; font-size: var(--fs-label); font-weight: 700; line-height: 1.3; color: var(--ed-ink); }
+:root[data-variant="data"] .ed-side .ed-stats { flex-direction: column; margin-top: 10px; }
+:root[data-variant="data"] .ed-side .ed-stat { padding: 12px 14px; }
+:root[data-variant="data"] .ed-side .ed-stat__v { font-size: var(--fs-ed-h2); }
+:root[data-variant="data"] .ed-side__links { display: flex; flex-direction: column; margin-top: 16px; }
+:root[data-variant="data"] .ed-side__links .ed-link { overflow-wrap: anywhere; }
+/* timelines: square black marks on a grey line */
+:root[data-variant="data"] .ed-tl { position: relative; margin-top: 24px; padding-left: 26px; }
+:root[data-variant="data"] .ed-tl::before { content: ""; position: absolute; left: 5px; top: 8px; bottom: 8px; width: 2px; background: var(--ed-line); }
+:root[data-variant="data"] .ed-tl__item { position: relative; padding-bottom: 26px; }
+:root[data-variant="data"] .ed-tl__item:last-child { padding-bottom: 0; }
+:root[data-variant="data"] .ed-tl__item::before { content: ""; position: absolute; left: -26px; top: 5px; width: 12px; height: 12px; background: var(--ed-black); }
+:root[data-variant="data"] .ed-tl__when { font-size: var(--fs-label); font-weight: 600; line-height: 1.5; color: var(--ed-ink); }
+:root[data-variant="data"] .ed-tl__title { margin-top: 4px; font-size: var(--fs-sub); font-weight: 800; line-height: 1.4; }
+:root[data-variant="data"] .ed-tl__body { margin-top: 4px; max-width: var(--measure); }
+:root[data-variant="data"] .ed-tl__meta { margin-top: 4px; font-size: var(--fs-label); font-weight: 600; line-height: 1.6; color: var(--ed-ink-2); }
+/* the projects timeline: each row with a page is one link (stretched), the ring round the row */
+:root[data-variant="data"] .ed-tl--links .ed-tl__item:has(.hit) { isolation: isolate; }
+:root[data-variant="data"] .ed-tl--links .hit { position: static; color: var(--ed-link); text-decoration: underline var(--ed-ul) var(--ed-link-line); text-underline-offset: var(--ed-ul-off); }
+:root[data-variant="data"] .ed-tl--links .hit::after { z-index: 1; }
+:root[data-variant="data"] .ed-tl--links .hit:focus-visible { outline: none; }
+:root[data-variant="data"] .ed-tl--links .ed-tl__item:has(.hit:focus-visible) { outline: 2px solid var(--ed-focus); outline-offset: 3px; }
+@media (hover: hover) {
+  :root[data-variant="data"] .ed-tl--links .hit:hover { text-decoration-thickness: var(--ed-ul-on); }
+}
+:root[data-variant="data"] .ed-tl--links .hit:active { text-decoration-thickness: var(--ed-ul-on); }
+/* the ink-boxed tag (one badge per view: records tags instead) */
+:root[data-variant="data"] .ed-tbox { display: inline-flex; align-items: center; padding: 1px 8px; box-shadow: inset 0 0 0 2px var(--ed-ink); color: var(--ed-ink); font-size: var(--fs-label); font-weight: 700; line-height: 1.5; }
+:root[data-variant="data"] .pub--ed .pub__oral-ed.ed-tbox { margin-left: .5em; }
+/* award certificates: corner marks, the level in an ink box, the name large */
+:root[data-variant="data"] .ed-certs { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; margin-top: 24px; }
+:root[data-variant="data"] .ed-cert { position: relative; padding: 22px 20px 16px; background: var(--ed-bg); border: 1px solid var(--ed-line); }
+:root[data-variant="data"] .ed-cert::after { content: ""; position: absolute; inset: 6px; pointer-events: none;
+  background:
+    linear-gradient(var(--ed-black), var(--ed-black)) 0 0 / 14px 2px, linear-gradient(var(--ed-black), var(--ed-black)) 0 0 / 2px 14px,
+    linear-gradient(var(--ed-black), var(--ed-black)) 100% 0 / 14px 2px, linear-gradient(var(--ed-black), var(--ed-black)) 100% 0 / 2px 14px,
+    linear-gradient(var(--ed-black), var(--ed-black)) 0 100% / 14px 2px, linear-gradient(var(--ed-black), var(--ed-black)) 0 100% / 2px 14px,
+    linear-gradient(var(--ed-black), var(--ed-black)) 100% 100% / 14px 2px, linear-gradient(var(--ed-black), var(--ed-black)) 100% 100% / 2px 14px;
+  background-repeat: no-repeat; }
+:root[data-variant="data"] .ed-cert__top { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; font-size: var(--fs-label); font-weight: 600; line-height: 1.5; color: var(--ed-ink-2); }
+:root[data-variant="data"] .ed-cert__name { margin-top: 14px; font-size: 1.5rem; font-weight: 800; line-height: 1.25; }
+:root[data-variant="data"] .ed-cert__body { margin-top: 6px; font-size: var(--fs-small); }
+:root[data-variant="data"] .ed-cert__note { margin-top: 6px; font-size: var(--fs-label); font-weight: 600; color: var(--ed-ink-2); }
+:root[data-variant="data"] .ed-cert__links { position: relative; z-index: 1; gap: 0 18px; margin-top: 8px; }
+/* tables: neutral zebra, label heads over an ink rule, the group rows as black chips */
+:root[data-variant="data"] .ed-cv .ed-table thead th { font-size: var(--fs-label); border-bottom: 2px solid var(--ed-ink); }
+:root[data-variant="data"] .ed-cv .ed-table tbody tr:nth-child(even) { background: var(--ed-n-50); }
+:root[data-variant="data"] .ed-cv :is(.creds-ed__group, .skills-ed__group) { padding-top: 20px; border-bottom: 2px solid var(--ed-ink); background: var(--ed-bg); }
+:root[data-variant="data"] .ed-cv :is(.creds-ed__group, .skills-ed__group) .ed-chip { letter-spacing: 0; }
+/* the pending note: a yellow painted strip, a white gap, then the neutral text cell */
+:root[data-variant="data"] .ed-pending { position: relative; max-width: none; margin-top: 16px; padding: 14px 16px 14px calc(28px + var(--ed-rw) + 16px); color: var(--ed-ink); background: linear-gradient(to right, transparent 0 calc(28px + var(--ed-rw)), var(--ed-n-50) 0); }
+:root[data-variant="data"] .ed-pending::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 28px; background: var(--ed-paint-yv); -webkit-mask-box-image: var(--ed-rag); }
+
+@media (min-width: 734px) {
+  :root[data-variant="data"] .rhead-ed__grid > .rhead-ed__photo { grid-column: 1 / 4; width: auto; max-width: 220px; }
+  :root[data-variant="data"] .rhead-ed__grid > .rhead-ed__text { grid-column: 4 / -1; padding-top: 18px; }
+  :root[data-variant="data"] .ed-cv > * { grid-column: 4 / -1; }
+  :root[data-variant="data"] .ed-cv > .ed-side { grid-column: 1 / 4; grid-row: 1 / span 40; position: sticky; top: calc(var(--nav-h) + 16px); margin-bottom: 0; }
+}
+@media (max-width: 733.98px) {
+  :root[data-variant="data"] .rhead-ed__grid > .rhead-ed__text { order: -1; }
+}
+@media (min-width: 1068px) {
+  :root[data-variant="data"] .ed-certs { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media print {
+  :root[data-variant="data"] .ed-pending::before { display: none !important; }
+  :root[data-variant="data"] .ed-cv > .ed-side { position: static; }
+}
+
+/* ══ DS-8: the research index — the interests as plain numbered cards (text, then its figure; side by side from
+   1068 px), the ongoing work as 진행 중 bands (the home band's yellow label cell with the status, the text cell beside
+   it; stacked on phones). Item titles keep the v5 heading weight. ══ */
+:root[data-variant="data"] .ed-icards { display: grid; gap: 16px; margin-top: 24px; }
+:root[data-variant="data"] .ed-icard { display: grid; gap: 20px; min-width: 0; padding: 18px 18px 22px; background: var(--ed-n-50); border: 1px solid var(--ed-line); }
+:root[data-variant="data"] .ed-icard__text { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+:root[data-variant="data"] .ed-icard__n { font-family: var(--font-ed-display); font-stretch: 112%; font-size: 1.5rem; font-weight: 900; line-height: 1; color: var(--ed-ink); font-variant-numeric: tabular-nums; }
+:root[data-variant="data"] .ed-icard .ed-item__title,
+:root[data-variant="data"] .ed-now--row .ed-item__title { font-weight: 800; }
+:root[data-variant="data"] .ed-icard .ed-figure { margin: 0; min-width: 0; background: var(--ed-bg); }
+/* phones: the dot plot's box runs to the card's edges (it needs 280 px for 12 px text; a 320 px screen leaves 250
+   inside the card's padding); its caption stays inset */
+@media (max-width: 733.98px) {
+  :root[data-variant="data"] .ed-icard .chart--editorial .chart__scroll { width: calc(100% + 38px); max-width: none; margin-inline: -19px; }
+}
+@media (min-width: 1068px) {
+  :root[data-variant="data"] .ed-icard { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); column-gap: 32px; align-items: start; padding: 24px; }
+}
+:root[data-variant="data"] .ed-nows { display: grid; gap: var(--ed-rw); margin-top: 24px; }
+:root[data-variant="data"] .ed-now--row { position: relative; grid-template-columns: minmax(0, 1fr); }
+:root[data-variant="data"] .ed-now--row > .ed-now__label { align-self: start; align-items: center; min-height: 44px; }
+:root[data-variant="data"] .ed-now--row > .ed-now__text { display: flex; flex-direction: column; gap: 6px; min-width: 0; padding: 14px 16px 16px; background: var(--ed-n-50); font-size: inherit; }
+@media (min-width: 734px) {
+  :root[data-variant="data"] .ed-now--row { grid-template-columns: 13rem minmax(0, 1fr); }
+}
+/* A cover with a data table (youth-startup): the table is part of the spread figure, so it reads on its own white
+   ground above the blue field (which runs to the figure's bottom); collapsed, only its toggle row is white. */
+:root[data-variant="data"] .ed-spread > .chart__table { position: relative; margin-top: 24px; background: var(--ed-bg); }
+/* Figure data tables (FigureTable, editorial tone): cells wrap only between words, as the game tone's do — the body's
+   overflow-wrap: anywhere let the auto layout squeeze value columns to one character on phones; the table scrolls in
+   its own region instead. */
+:root[data-variant="data"] .chart__table--editorial th,
+:root[data-variant="data"] .chart__table--editorial td { overflow-wrap: normal; }
+
+/* ══ DS-9: forced colours (Windows High Contrast). Brush paint is decoration: no image (Firefox would keep url()
+   backgrounds under the forced text colour) and no frayed mask anywhere; text that sat on paint gets a 1 px system
+   frame, the decorative cells give up their place visibly (kept in the layout, so nothing moves); folios, chips and the
+   tag filter keep frames, the pressed filter takes Highlight, the current nav item an underline (its paint is gone). ══ */
+@media (forced-colors: active) {
+  :root[data-variant="data"] *,
+  :root[data-variant="data"] *::before,
+  :root[data-variant="data"] *::after { background-image: none !important; -webkit-mask-box-image-source: none !important; }
+  :root[data-variant="data"] [data-paint-text] { border: 1px solid CanvasText; }
+  :root[data-variant="data"] :is(.ed-mc, .ed-spread__y, .ed-spread__sq) { visibility: hidden; }
+  :root[data-variant="data"] :is(.ed-folio__n, .ed-chip) { border: 1px solid CanvasText; }
+  :root[data-variant="data"] .tag-filter__btn { border: 1px solid ButtonText; }
+  :root[data-variant="data"] .tag-filter__btn[aria-pressed="true"],
+  :root[data-variant="data"] .tag-filter__btn[aria-pressed="true"]::before { background: Highlight; color: HighlightText; }
+  :root[data-variant="data"] .tag-filter__btn[aria-pressed="true"] { border-color: Highlight; }
+  :root[data-variant="data"] .data-nav__list a[aria-current] { text-decoration: underline 2px; text-underline-offset: .3em; }
+}
+
+/* ══ DS-9: print — no brush paint at all (fields, strokes, sweeps; the folios and compositions are hidden above), text
+   that sat on paint prints as ink on the white paper, the nav is a static line without its menu button. ══ */
+@media print {
+  :root[data-variant="data"] *,
+  :root[data-variant="data"] *::before,
+  :root[data-variant="data"] *::after { background-image: none !important; -webkit-mask-box-image-source: none !important; }
+  :root[data-variant="data"] [data-paint-text],
+  :root[data-variant="data"] [data-paint-text] * { color: var(--ed-ink) !important; }
+  :root[data-variant="data"] body > .data-nav { position: static !important; }
+  :root[data-variant="data"] .data-nav__toggle { display: none !important; }
+  /* fills drop out of print by default (background graphics off): what was light text on ink prints as ink, boxed */
+  :root[data-variant="data"] :is(.ed-chip, .ed-btn--fill, .tag-filter__btn[aria-pressed="true"], .ed-metric__row--hl) { background: none !important; box-shadow: none !important; border: 1px solid var(--ed-ink); }
+  :root[data-variant="data"] :is(.ed-chip, .ed-btn--fill, .tag-filter__btn[aria-pressed="true"], .ed-metric__row--hl),
+  :root[data-variant="data"] :is(.ed-chip, .ed-btn--fill, .tag-filter__btn[aria-pressed="true"], .ed-metric__row--hl) *,
+  :root[data-variant="data"] .tag-filter__btn[aria-pressed="true"]::before { color: var(--ed-ink) !important; }
+}

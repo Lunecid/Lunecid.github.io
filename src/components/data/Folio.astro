@@ -1,0 +1,8 @@
+---
+/**
+ * The perforation rule between sections with its folio "- n -" (v5): page furniture, aria-hidden, hidden in print.
+ * n is a CSS counter (editorial.css, ed-folio) counted in DOM order over the page, so the footer's folio, the last
+ * one, reads the number of folios on the page + 1 without any page passing a number.
+ */
+---
+<div class="ed-folio" aria-hidden="true"><span class="ed-folio__n"></span></div>

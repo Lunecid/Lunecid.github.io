@@ -107,7 +107,39 @@ describe('ResearchHighlight.astro', () => {
     expect(html).toContain('구두 발표');
     expect(html).toMatch(/<figure class="chart chart--overall chart--editorial ed-figure"/);
     expect(html).toMatch(/<span class="ed-figcap__num"[^>]*>그림 2 —<\/span>/);
-    expect(html).toMatch(/<p class="ed-label"[^>]*>진행 중<\/p>/);
+    // DS-4 (named change): 진행 중 is the label of the painted band (yellow cell + neutral text cell)
+    expect(html).toMatch(/<div class="ed-now"[^>]*><p class="ed-now__label" data-paint-text[^>]*>진행 중<\/p><p class="ed-now__text"[^>]*>준비 중: 석사 학위논문<\/p><\/div>/);
     expect(html).not.toMatch(/NOW PLAYING|bracket|lh-frame|FIG ·|ORAL/);
+  });
+
+  const stats = [
+    { label: '한국 서버 마스터 이상 솔로 랭크', value: '206,442', unit: '경기', labelFirst: true },
+    { label: 'LightGBM', prefix: 'AUC', value: '0.675', labelFirst: true },
+    { label: '비표 형식 신경망 기준선', value: '0.569–0.581', labelFirst: true },
+  ];
+
+  it('DS-4: the oral badge is real text with data-paint-text', async () => {
+    const html = await renderAstro(ResearchHighlight, {
+      props: { variant: 'data', lang: 'ko', paper, nowPlaying: '진행 중 문장', intro: '연구입니다.', figureNumber: 2, stats, statsSource: '논문에 보고된 값' },
+    });
+    expect(html).toMatch(/<p class="ed-paper__venue"[^>]*><span class="ed-label"[^>]*><span lang="en"[^>]*>IEEE Conference on Games \(CoG 2026\)<\/span><\/span><span class="ed-stamp"[^>]*><span class="ed-stamp__ink" data-paint-text[^>]*>구두 발표<\/span><\/span><\/p>/);
+    expect(html.match(/class="ed-stamp"/g)).toHaveLength(1);
+    const noOral = await renderAstro(ResearchHighlight, { props: { variant: 'data', lang: 'ko', paper: { ...paper, oral: false }, nowPlaying: 'x', stats } });
+    expect(noOral).not.toMatch(/ed-stamp/);
+  });
+
+  it('DS-4: the figure tiles (first on paint) come before the paper; the source line follows them; the chart, links and band stay', async () => {
+    const html = await renderAstro(ResearchHighlight, {
+      props: { variant: 'data', lang: 'ko', paper, nowPlaying: '준비 중', intro: '연구입니다.', figureNumber: 2, stats, statsSource: '논문에 보고된 값' },
+    });
+    const at = (needle: string): number => html.indexOf(needle);
+    expect(html).toMatch(/<ul class="ed-stats ed-stats--figure" role="list"/);
+    expect(html.match(/<li class="ed-stat/g)).toHaveLength(3);
+    expect(html).toMatch(/<\/ul><p class="ed-stats__src"[^>]*>논문에 보고된 값<\/p>/);
+    expect(at('ed-stats--figure')).toBeLessThan(at('ed-paper__venue'));
+    expect(at('ed-paper__venue')).toBeLessThan(at('chart--editorial'));
+    expect(at('chart--editorial')).toBeLessThan(at('class="ed-now"'));
+    expect(html).toMatch(/<h3 class="ed-paper__title" lang="en"[^>]*><a class="ed-paper__link" href="\/game\/research\/cog-2026-engagement\/"/);
+    expect(html).toContain('data-disclosure');
   });
 });

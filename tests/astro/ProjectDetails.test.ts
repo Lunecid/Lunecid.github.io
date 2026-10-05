@@ -144,7 +144,8 @@ describe('ProjectDetails.astro', () => {
     const html = await renderAstro(ProjectDetails, {
       props: { lang: 'ko', variant: 'data', title: 't', rows: [], figure: { src: cover, alt: 'alt', label: 'RISK HEATMAP', number: 1, caption: 'cap', table } },
     });
-    expect(html).toMatch(/<figure id="figure-1" class="ed-figure pd-ed__fig"[\s\S]*<\/figcaption>\s*<details class="chart__table chart__table--editorial"[^>]*>\s*<summary class="chart__summary" id="figure-1-table"/);
+    // DS-6 (named): the cover is the map spread (ed-spread)
+    expect(html).toMatch(/<figure id="figure-1" class="ed-figure ed-spread pd-ed__fig"[\s\S]*<\/figcaption>\s*<details class="chart__table chart__table--editorial"[^>]*>\s*<summary class="chart__summary" id="figure-1-table"/);
     expect(html).toMatch(/<table class="ed-table"[\s\S]*<td class="num"[^>]*>-0\.13<\/td>/);
   });
 
@@ -157,26 +158,50 @@ describe('ProjectDetails.astro', () => {
     expect(html).not.toMatch(/<b[^>]*>그림/);
   });
 
-  it('general version (P2-6): serif h1, an editorial table, the award as text with an underlined certificate link, the cited cover numbered', async () => {
+  // DS-6 (named rewrite of the P2-6 test): the v5 head (PageHeadData: label block with the back link, slug + period
+  // job line, the English display title, the h1 pd-title), the cover as the map spread with its painted square, the
+  // overview table with the 내 역할 row marked for paint, the award as a badge (real text) beside it.
+  it('general version (DS-6): v5 head, map spread, overview rows unchanged in text, 내 역할 row marked, award badge text, certificate trigger unchanged', async () => {
     const html = await renderAstro(ProjectDetails, {
       props: {
-        variant: 'data', lang: 'ko', title: '사각지대를 예측하다', rows,
+        variant: 'data', lang: 'ko', title: '사각지대를 예측하다', rows, display: 'Predicting the Blind Spots', job: ['school-zone-blindspots', '2025.05 – 2025.07'],
         figure: { src: cover, alt: '히트맵', label: 'RISK HEATMAP', number: 1, caption: '사고 위험도 지도.' },
         award: { name: '최우수상(부산광역시장상)', certificateId: 'busan-mayor-award', certificateHref: '/_astro/cert.webp', certificateWidth: 1280, certificateHeight: 1810, certificateSrcSet: '/_astro/cert-640.webp 640w', certificateSizes: '100vw', certificateAlt: '상장', certificateCaption: '상장 캡션' },
       },
+      url: '/data/projects/school-zone-blindspots/',
     });
-    expect(html).toMatch(/<section[^>]*id="details"[^>]*class="pd-ed ed-sec"/);
-    expect(html).toMatch(/<h1 id="pd-title" class="pd-ed__title" data-serif[^>]*>사각지대를 예측하다<\/h1>/);
+    expect(html).toMatch(/<section[^>]*id="details"[^>]*class="pd-ed ed-sec ed-case"/);
+    expect(html).toMatch(/<h1 id="pd-title" class="ed-phead__title"[^>]*>사각지대를 예측하다<\/h1>/);
+    expect(html).toMatch(/<p class="ed-display" aria-hidden="true" lang="en" data-display[^>]*>Predicting the Blind Spots<\/p>/);
+    expect(html).toMatch(/<span[^>]*>school-zone-blindspots<\/span><span[^>]*>2025\.05 – 2025\.07<\/span>/);
+    expect(html).not.toMatch(/data-serif/);
     expect(html).toMatch(/<table class="ed-table pd-ed__table"/);
     expect(html.match(/<th scope="row"/g)).toHaveLength(rows.length);
+    for (const row of rows) expect(html).toContain(`>${row.value}</td>`);
+    expect(html).toMatch(/<tr class="pd-ed__hl"[^>]*><th scope="row" data-paint-text[^>]*>내 역할<\/th>/);
+    expect(html.match(/pd-ed__hl/g)).toHaveLength(1);
+    expect(html).toMatch(/<p class="ed-stamp"[^>]*><span class="ed-stamp__ink" data-paint-text[^>]*>최우수상<span class="ed-stamp__small"[^>]*>\(부산광역시장상\)<\/span><\/span><\/p>/);
     // The viewer trigger contract (0b2d199): a link with only data-cert-id is not intercepted.
     expect(html).toMatch(/<a class="ed-link" href="\/_astro\/cert\.webp"[^>]*data-cert-id="busan-mayor-award"[^>]*data-viewer="certificates"[^>]*aria-haspopup="dialog"/);
     expect(html).toMatch(/data-viewer-w="1280"[^>]*data-viewer-h="1810"/);
+    expect(html).toMatch(/>상장 보기<span class="sr-only"[^>]*> · 최우수상\(부산광역시장상\)<\/span><\/a>/);
     // F-065 (P-06): the id sits on the <figure>, not the figcaption.
-    expect(html).toMatch(/<figure id="figure-1" class="ed-figure pd-ed__fig"/);
-    expect(html).toMatch(/<figcaption class="ed-figcap"[^>]*><span class="ed-figcap__num"[^>]*>그림 1 —<\/span> 사고 위험도 지도\.<\/figcaption>/);
+    expect(html).toMatch(/<figure id="figure-1" class="ed-figure ed-spread pd-ed__fig"/);
+    expect(html).toMatch(/<i class="ed-spread__sq" aria-hidden="true"/);
+    expect(html).toMatch(/<figcaption class="ed-figcap ed-spread__cap"[^>]*><span class="ed-figcap__num"[^>]*>그림 1 —<\/span> 사고 위험도 지도\.<\/figcaption>/);
     expect(html).toMatch(/<img[^>]*fetchpriority="high"/);
     expect(html).not.toMatch(/badge|◆|FIG|RISK HEATMAP|hud-grid|bracket|\bcut\b/);
+  });
+
+  it('DS-6: the band slot sits between the head and the overview; en splits the award name the same way', async () => {
+    const html = await renderAstro(ProjectDetails, {
+      props: { variant: 'data', lang: 'en', title: 'Predicting the Blind Spots', rows, display: 'Predicting the Blind Spots', award: { name: 'Top Excellence Award (Mayor of Busan Award)' } },
+      slots: { band: '<div class="band-probe"></div>' },
+      url: '/en/data/projects/school-zone-blindspots/',
+    });
+    expect(html.indexOf('band-probe')).toBeGreaterThan(html.indexOf('pd-title'));
+    expect(html.indexOf('band-probe')).toBeLessThan(html.indexOf('pd-ed__table'));
+    expect(html).toMatch(/<span class="ed-stamp__ink" data-paint-text[^>]*>Top Excellence Award<span class="ed-stamp__small"[^>]*>\(Mayor of Busan Award\)<\/span>/);
   });
 
   it('P-07 F-005: the back link to the project list; the game numbers it as its nav does, the general version is a plain underlined link', async () => {
@@ -185,7 +210,7 @@ describe('ProjectDetails.astro', () => {
     const gameEn = await renderAstro(ProjectDetails, { props: { variant: 'game', lang: 'en', title: 't', rows } });
     expect(gameEn).toMatch(/<a class="pd__back" href="\/en\/game\/projects\/"[^>]*>[\s\S]*?PROJECTS<\/a>/);
     const data = await renderAstro(ProjectDetails, { props: { variant: 'data', lang: 'ko', title: 't', rows } });
-    expect(data).toMatch(/<a class="ed-link" href="\/data\/projects\/"[^>]*><span aria-hidden="true"[^>]*>←<\/span> 프로젝트<\/a>/);
+    expect(data).toMatch(/<a class="ed-link pd-ed__back" href="\/data\/projects\/"[^>]*><span aria-hidden="true"[^>]*>←<\/span> 프로젝트<\/a>/); // DS-6 (named): + class
     expect(data).not.toMatch(/pd__back/);
   });
 
@@ -193,7 +218,7 @@ describe('ProjectDetails.astro', () => {
     const html = await renderAstro(ProjectDetails, {
       props: { variant: 'data', lang: 'ko', title: 't', rows, figure: { src: cover, alt: '히트맵', label: 'RISK HEATMAP', caption: '사고 위험도 지도.' } },
     });
-    expect(html).toMatch(/<figure class="ed-figure pd-ed__fig"[\s\S]*<figcaption class="ed-figcap"[^>]*>사고 위험도 지도\.<\/figcaption>/);
+    expect(html).toMatch(/<figure class="ed-figure ed-spread pd-ed__fig"[\s\S]*<figcaption class="ed-figcap ed-spread__cap"[^>]*>사고 위험도 지도\.<\/figcaption>/); // DS-6 (named): the spread
     expect(html).not.toMatch(/ed-figcap__num|id="figure-/);
   });
 });

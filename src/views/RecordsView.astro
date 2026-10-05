@@ -14,12 +14,16 @@ import SkillList from '../components/records/SkillList.astro';
 import JobFitTable from '../components/records/JobFitTable.astro';
 import DocumentList from '../components/records/DocumentList.astro';
 import ViewerMount from '../components/common/ViewerMount.astro';
+import Folio from '../components/data/Folio.astro';
+import StatTiles from '../components/data/StatTiles.astro';
+import { dataRecordsCopy } from '../data/copy/data/records';
+import { resolveDeep } from '../lib/facts';
 import { buildCertificate } from '../lib/certificates';
 import type { Certificate } from '../lib/certificates';
 import { getAwards, getDocuments, getFactSource, getJobfit, getProjects, getPublications, getResume } from '../lib/portfolio';
 import { projectSlug } from '../lib/projects';
 import { toPaperCard } from '../lib/publications';
-import { awardItems, credentialItems, projectSummaryItems, skillGroups, todayIso, type AwardCertMeta } from '../lib/records';
+import { awardItems, credentialItems, projectSummaryItems, recordJumps, skillGroups, todayIso, type AwardCertMeta } from '../lib/records';
 import { SITE } from '../config';
 import type { Lang } from '../i18n/ui';
 import { t } from '../i18n/utils';
@@ -87,9 +91,21 @@ const documents = v.documents.list.map((id) => {
   return { id: d.id, label: d.label[lang], href: d.href };
 });
 const meta = pageMetaFor('records', lang, variant, facts);
+// DS-7 (v5): the general version's sidebar — the contents (the jump list, each with its target's section number: the
+// page-wide section counter runs over the sections in this order), the 주요 기록 tiles (fact tokens) and the contacts.
+const SECTION_ORDER = ['#profile', '#education', '#publications', '#projects', '#awards', '#inventory', '#skills', '#job-fit', '#documents'];
+// The wrapper below is, on the general version, the CV grid: the sidebar (aside, the rail columns, sticky from 734 px)
+// beside the sections, a folio between each two (written on the neighbouring lines so the game markup gains no
+// whitespace).
+const contents = recordJumps(lang).map((jump) => ({ ...jump, n: String(SECTION_ORDER.indexOf(jump.href) + 1).padStart(2, '0') }));
+const sidebarStats = resolveDeep(dataRecordsCopy[lang].sidebarStats, lang, facts);
+const researcherLinks = [
+  resume.researchIds?.scholar ? { label: 'Google Scholar', href: resume.researchIds.scholar } : null,
+  resume.researchIds?.orcid ? { label: 'ORCID', href: resume.researchIds.orcid } : null,
+].filter((link): link is { label: string; href: string } => link !== null);
 ---
 <Layout lang={lang} variant={variant} title={meta.title} description={meta.description} page="records" section="records" sectionIndex>
-  <PageHeader lang={lang} variant={variant} label={captionFor(v, 'pageRecords', lang)} title={t(lang, 'records.title')} />
+  <PageHeader lang={lang} variant={variant} label={captionFor(v, 'pageRecords', lang)} title={t(lang, 'records.title')} display={t('en', 'records.title')} />
   {/* P2-19: a short head (photo, name, status, one line, the three PDFs, an in-page bar), not the home profile again */}
   <RecordsHead
     lang={lang}
@@ -103,8 +119,24 @@ const meta = pageMetaFor('records', lang, variant, facts);
     contact={{ email: SITE.email, github: SITE.githubUrl, dacon: SITE.daconUrl }}
     ids={resume.researchIds}
   />
-  <div class={editorial ? 'records-ed' : 'read'}>
-    <EducationTimeline lang={lang} variant={variant} items={resume.education} />
+  {editorial && <div class="container"><Folio /></div>}<div class={editorial ? 'container ed-g ed-cv records-ed' : 'read'}>{editorial && (
+      <aside class="ed-side" aria-label={t(lang, 'records.jump')}>
+        <nav class="ed-toc" aria-label={t(lang, 'records.jump')}>
+          <ol role="list">
+            {contents.map((item) => <li><a href={item.href}>{item.label}<span class="ed-toc__n" aria-hidden="true">{item.n}</span></a></li>)}
+          </ol>
+        </nav>
+        <p class="ed-side__h">{t(lang, 'hello.highlights')}</p>
+        <StatTiles items={sidebarStats} tone="plain" />
+        <ul class="ed-side__links" role="list">
+          <li><a class="ed-link" href={`mailto:${SITE.email}`}>{SITE.email}</a></li>
+          <li><a class="ed-link" href={SITE.githubUrl}>GitHub <span aria-hidden="true">↗</span></a></li>
+          <li><a class="ed-link" href={SITE.daconUrl}>DACON <span aria-hidden="true">↗</span></a></li>
+          {researcherLinks.map((link) => <li><a class="ed-link" href={link.href}>{link.label} <span aria-hidden="true">↗</span></a></li>)}
+        </ul>
+      </aside>
+    )}
+    <EducationTimeline lang={lang} variant={variant} items={resume.education} />{editorial && <Folio />}
     <section id="publications" class:list={['rec', editorial ? 'ed-sec' : 'read-sec']} aria-labelledby="publications-title">
       <div class="container">
         <SectionHead variant={variant} id="publications-title" caption={captionFor(getVariant(variant), 'publications', lang)} title={t(lang, 'records.publications')} />
@@ -114,9 +146,9 @@ const meta = pageMetaFor('records', lang, variant, facts);
           ))}
         </ol>
       </div>
-    </section>
-    <ProjectSummaryList lang={lang} variant={variant} items={projectSummaryItems(v.orders.recordsProjectsOrder.map((item) => ({ ref: item.slice('project:'.length) })), projects, ctx)} />
-    <AwardList lang={lang} variant={variant} awards={awardItems(resume.awards, awards, ctx, certMeta)} />
+    </section>{editorial && <Folio />}
+    <ProjectSummaryList lang={lang} variant={variant} items={projectSummaryItems(v.orders.recordsProjectsOrder.map((item) => ({ ref: item.slice('project:'.length) })), projects, ctx)} />{editorial && <Folio />}
+    <AwardList lang={lang} variant={variant} awards={awardItems(resume.awards, awards, ctx, certMeta)} />{editorial && <Folio />}
     <CredentialList
       lang={lang}
       variant={variant}
@@ -126,9 +158,9 @@ const meta = pageMetaFor('records', lang, variant, facts);
         { id: 'languages', title: t(lang, 'records.languages'), items: credentials.languages },
         { id: 'training', title: t(lang, 'records.training'), items: credentials.training },
       ]}
-    />
-    <SkillList lang={lang} variant={variant} primary={skills.primary} familiar={skills.familiar} />
-    <JobFitTable lang={lang} variant={variant} data={jobfit} facts={facts} />
+    />{editorial && <Folio />}
+    <SkillList lang={lang} variant={variant} primary={skills.primary} familiar={skills.familiar} />{editorial && <Folio />}
+    <JobFitTable lang={lang} variant={variant} data={jobfit} facts={facts} />{editorial && <Folio />}
     <DocumentList lang={lang} variant={variant} documents={documents} />
   </div>
   <ViewerMount lang={lang} />

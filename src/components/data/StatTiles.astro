@@ -1,0 +1,27 @@
+---
+/**
+ * Stat tiles (v5): big numbers with small captions — only facts the site already states (StatDef values are resolved
+ * fact tokens, labels fragments of the site's own sentences). DOM order = the order of the sentence the facts come
+ * from (labelFirst puts the label before the value). Tones: plain (white tiles, the home hero), figure (the research
+ * figures: the first tile on blue paint with white text, the others neutral), band (white tiles on the case-study
+ * band). No scoped <style>: editorial.css styles .ed-stats.
+ */
+import type { StatDef } from '../../data/copy/data/home';
+
+interface Props {
+  /** bar (DS-6): a share 0–1 drawn as an aria-hidden proportion bar under the tile (computed from facts, never typed). */
+  items: (StatDef & { bar?: number })[];
+  tone: 'plain' | 'figure' | 'band';
+  class?: string;
+}
+const { items, tone, class: className } = Astro.props;
+---
+<ul class:list={['ed-stats', `ed-stats--${tone}`, className]} role="list">
+  {items.map((item, i) => {
+    const value = <span class="ed-stat__v">{item.prefix && <small>{item.prefix}</small>}{item.value}{item.unit && <small>{item.unit}</small>}</span>;
+    const label = <span class="ed-stat__k">{item.label}</span>;
+    return (
+      <li class="ed-stat" data-paint-text={tone === 'figure' && i === 0 ? '' : undefined}>{item.labelFirst ? <Fragment>{label}{value}</Fragment> : <Fragment>{value}{label}</Fragment>}{item.bar !== undefined && <span class="ed-stat__bar" aria-hidden="true"><i style={`--ed-p: ${(item.bar * 100).toFixed(2)}%`}></i></span>}</li>
+    );
+  })}
+</ul>

@@ -33,8 +33,11 @@ const HUD_CLASSES = [
 // ImageViewer's buttons carry `cut cut--line` only while open (src/islands/ImageViewer.tsx). On general pages editorial.css
 // (Task 6) removes the cut pseudo-elements and draws an ink border, so the viewer does not depend on hud.css. The class
 // itself stays until P-11 touches the island. The sweep below checks closed pages; the open viewer has its own test.
+// DS-2 (named change): links and focus rings take the v5.1 link tokens — ink, like the text (museum labels); the
+// P2 navy (--ed-accent) stays only on the neutral pages.
+const INK = 'rgb(20, 20, 20)';
 const NAVY = 'rgb(30, 58, 138)';
-const LINK_COLOURS = [NAVY, 'rgb(20, 20, 20)', 'rgb(255, 255, 255)']; // accent, ink, text on the filled button
+const LINK_COLOURS = [INK, 'rgb(255, 255, 255)']; // the link tokens (ink); text on the filled button
 
 const routes = builtRoutes({ variant: 'data' });
 
@@ -123,7 +126,7 @@ for (const route of routes) {
     expect(small).toEqual([]);
   });
 
-  test(`${route}: no HUD class, a light scheme, links in navy or ink, focus rings in navy`, async ({ page }) => {
+  test(`${route}: no HUD class, a light scheme, links in ink (never navy), focus rings in ink`, async ({ page }) => {
     await page.goto(route, { waitUntil: 'networkidle' });
     const classes = await page.evaluate((hud) => {
       const hits = new Set<string>();
@@ -149,7 +152,8 @@ for (const route of routes) {
         const el = document.activeElement as HTMLElement | null;
         return el && el !== document.body ? getComputedStyle(el).outlineColor : null;
       });
-      if (outline !== null) expect(outline, `focus stop ${i + 1}`).toBe(NAVY);
+      if (outline !== null) expect(outline, `focus stop ${i + 1}`).toBe(INK);
+      expect(outline, `focus stop ${i + 1}`).not.toBe(NAVY);
     }
   });
 }

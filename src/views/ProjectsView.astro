@@ -1,13 +1,15 @@
 ---
 // /projects/ (spec §3): SELECT YOUR PROJECT grid in the version's projectsOrder (game: CoG wide card first),
 // a tag filter, and the GitHub section when build-time GitHub data is usable. P2-6: the general version lists the
-// projects as editorial rows (ProjectListItem) in an <ol>; TagFilter is unchanged.
+// projects in an <ol> (ProjectListItem); TagFilter is unchanged. DS-5 (v5): the head carries the painted mosaic (from
+// 1068 px), a folio follows it, and the list is a card grid whose first image card is the lead card on paint.
 import type { PageLayout } from '../layouts/page-layout';
 import PageHeader from '../components/hud/PageHeader.astro';
 import TagFilter from '../components/projects/TagFilter.astro';
 import ProjectCartridge from '../components/projects/ProjectCartridge.astro';
 import ProjectListItem from '../components/data/ProjectListItem.astro';
 import GitHubSection from '../components/github/GitHubSection.astro';
+import Folio from '../components/data/Folio.astro';
 import type { Lang } from '../i18n/ui';
 import { t } from '../i18n/utils';
 import { pageHref } from '../lib/links';
@@ -44,17 +46,30 @@ const filterKeys = TAG_KEYS.filter((key) => (tagCounts.get(key) ?? 0) >= 2);
 // owner decision 2026-10-05: Fig. 1 is the cover (reverses F-045)).
 const firstImage = cards.findIndex((card) => card.cover !== undefined);
 const github = usableGitHub(generated.github());
+// DS-5 (v5): the lead card (the page's LCP image) spans the grid at 3/5 of its width from 734 px; the others take one
+// of two columns (one on phones). sizes follow the main column (columns 4–12 of the 12-column grid).
+const LEAD_SIZES = '(min-width: 1248px) 520px, (min-width: 734px) calc(45vw - 30px), calc(100vw - 58px)';
+const CARD_SIZES = '(min-width: 1248px) 430px, (min-width: 734px) calc(37vw - 36px), calc(100vw - 32px)';
 ---
 
 <Layout lang={lang} variant={variant} title={meta.title} description={meta.description} page="projects" section="projects" sectionIndex={true}>
-  <PageHeader lang={lang} variant={variant} label={captionFor(v, 'pageProjects', lang)} title={t(lang, 'projects.title')} intro={meta.description} />
-  <section id="project-list" class:list={editorial ? 'ed-sec' : ['sec', 'hud-grid']} aria-labelledby="project-list-title">
-    <div class:list={['container', { 'container--hud': !editorial }]}>
+  <PageHeader lang={lang} variant={variant} label={captionFor(v, 'pageProjects', lang)} title={t(lang, 'projects.title')} display={t('en', 'projects.title')} intro={meta.description} mosaic />
+  {editorial && <div class="container"><Folio /></div>}
+  <section id="project-list" class:list={editorial ? 'ed-sec ed-plist' : ['sec', 'hud-grid']} aria-labelledby="project-list-title">
+    <div class:list={['container', { 'container--hud': !editorial, 'ed-g ed-plist__grid': editorial }]}>{editorial && <div class="ed-plist__rail" aria-hidden="true"></div>}
       <h2 id="project-list-title" class="sr-only">{t(lang, 'projects.listLabel')}</h2>
       <TagFilter lang={lang} keys={filterKeys} controls="project-grid" />
       {editorial ? (
-        <ol id="project-grid" class="ed-list" role="list">
-          {cards.map((card, i) => <ProjectListItem {...card} priority={i === firstImage} />)}
+        <ol id="project-grid" class="ed-cards ed-cards--grid" role="list">
+          {cards.map((card, i) => (
+            <ProjectListItem
+              {...card}
+              variant={i === firstImage ? 'lead' : 'card'}
+              n={i + 1}
+              priority={i === firstImage}
+              sizes={i === firstImage ? LEAD_SIZES : CARD_SIZES}
+            />
+          ))}
         </ol>
       ) : (
         <div id="project-grid" class="cart-grid">

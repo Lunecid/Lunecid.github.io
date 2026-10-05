@@ -28,6 +28,7 @@
     "@astrojs/markdown-satteri": "^0.4.2",
     "@astrojs/react": "^7.0.0",
     "@astrojs/sitemap": "^3.7.4",
+    "@fontsource-variable/archivo": "5.3.0",
     "@fontsource-variable/jetbrains-mono": "^5.3.0",
     "@fontsource-variable/noto-serif-kr": "^5.3.0",
     "@fontsource/anton": "^5.3.0",

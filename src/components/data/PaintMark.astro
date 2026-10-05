@@ -1,0 +1,23 @@
+---
+/**
+ * A small hand-painted Mondrian composition (v5): painted red / blue / yellow cells parted by white gaps, never a black
+ * rule. Pure decoration: aria-hidden, no text, no focusable element; colour and the frayed edge come from paint.css
+ * through editorial.css (.ed-mc). Kinds: hero (the white and yellow cells beside the hero's painted words), photo / cv
+ * (under the profile photo, never behind it), mosaic (beside the projects title, from 1068 px), aline (the red stroke
+ * and yellow dab over a page title), fmark (the footer sign-off). No scoped <style>: shared components import this.
+ */
+interface Props {
+  kind: 'hero' | 'photo' | 'cv' | 'mosaic' | 'aline' | 'fmark';
+}
+const { kind } = Astro.props;
+/** The cells of each kind in DOM order: r / b / y = a painted cell, '' = white space. */
+const CELLS: Record<Props['kind'], ('r' | 'b' | 'y' | '')[]> = {
+  hero: ['', 'y'],
+  photo: ['r', 'b', 'y', ''],
+  cv: ['r', 'b', 'y', ''],
+  mosaic: ['r', '', 'b', 'y', '', ''],
+  aline: ['r', 'y'],
+  fmark: ['r', 'b', 'y'],
+};
+---
+<span class={`ed-mc ed-mc--${kind}`} aria-hidden="true">{CELLS[kind].map((c) => <i class={c ? `ed-mc__${c}` : 'ed-mc__w'}></i>)}</span>

@@ -42,6 +42,18 @@ describe('DataFooter.astro (P2-1)', () => {
     expect(riot).toMatch(/<p class="data-footer__notice" lang="en"[^>]*>/);
   });
 
+  it('DS-3: folio, painted sign-off (aria-hidden), contact, motion switch, shared links, update line — same order and texts as before', async () => {
+    const ko = await renderAstro(DataFooter, { props: { lang: 'ko', notices: [], builtAt }, url: '/data/' });
+    expect(ko).toMatch(/<div class="container data-footer__inner"[^>]*>\s*<div class="ed-folio" aria-hidden="true"/);
+    expect(ko).toMatch(/<p class="data-footer__copy"[^>]*><span class="ed-mc ed-mc--fmark" aria-hidden="true"[^>]*>(<i class="ed-mc__[rby]"[^>]*><\/i>){3}<\/span>© 2026 백성은<\/p>/);
+    const order = ['ed-folio', 'data-footer__copy', 'data-footer__contact', 'data-footer__links', 'data-footer__updated', 'data-footer__motion"', 'motion-os-note', 'data-footer__canonical'].map((c) => ko.indexOf(c));
+    expect(order.every((i) => i >= 0)).toBe(true);
+    expect([...order].sort((a, b) => a - b)).toEqual(order);
+    const text = ko.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ');
+    for (const s of ['© 2026 백성은', '방문 통계', '개인정보 처리방침', '출처·고지', '선택 화면으로', '마지막 업데이트 2026.09.26', '모션 줄이기 OFF']) expect(text).toContain(s);
+    expect(ko).not.toMatch(/var\(--ed-accent\)/);
+  });
+
   it('P-04: a contact row (mailto + GitHub profile) outside the links list, and aria-current on the current footer link', async () => {
     const ko = await renderAstro(DataFooter, { props: { lang: 'ko', notices: [], builtAt }, url: '/data/' });
     expect(hrefs(ko)).toEqual(['/stats/', '/privacy/', '/credits/', '/?choose']);

@@ -1,7 +1,7 @@
 ---
 title: Credits
 lang: en
-updated: '2026-10-04'
+updated: '2026-10-05'
 ---
 
 Sources and rights notices for the images, data, music, and fonts used on this site. Game-related images are used as fan content, and this site is not officially affiliated with any game company.
@@ -55,8 +55,9 @@ CC0 works do not require attribution, but the creators are credited here.
 | [JetBrains Mono](https://github.com/JetBrains/JetBrainsMono) | The JetBrains Mono Project Authors | SIL Open Font License 1.1 |
 | [Anton](https://github.com/googlefonts/AntonFont) | The Anton Project Authors | SIL Open Font License 1.1 |
 | [Noto Serif KR](https://github.com/notofonts/noto-cjk) | Adobe, Google | SIL Open Font License 1.1 |
+| [Archivo](https://github.com/Omnibus-Type/Archivo) | The Archivo Project Authors (Omnibus-Type) | SIL Open Font License 1.1 |
 
-The body font, “SB Sans”, is a subset of Pretendard (SIL Open Font License 1.1) made for this site: it keeps only the characters the site uses. “Pretendard” is a Reserved Font Name, so the subset carries a different name; the original copyright and license notices stay inside the font file. Noto Serif KR, used for the Korean text of the paper page and the Korean headings of the general version, is subset the same way to the characters they need.
+The body font, “SB Sans”, is a subset of Pretendard (SIL Open Font License 1.1) made for this site: it keeps only the characters the site uses. “Pretendard” is a Reserved Font Name, so the subset carries a different name; the original copyright and license notices stay inside the font file. Noto Serif KR, used for the Korean text of the paper page and the Korean titles of the page where you choose a portfolio, is subset the same way to the characters they need. “SB Display”, the face of the general version's large English titles and numbers, is a subset of Archivo (SIL Open Font License 1.1) made for this site with Latin letters and numbers only; the original copyright and license records stay inside the font file.
 
 ## Photos, figures, and certificates
 
@@ -75,4 +76,4 @@ The text, photos, and design of this site are © Seongeun Baek. The source code 
 
 Questions about rights: todtjddms104204@pusan.ac.kr
 
-Last updated: October 4, 2026
+Last updated: October 5, 2026

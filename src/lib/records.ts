@@ -8,6 +8,21 @@ import type { CertificateId } from '../types';
 import { kstIsoDate } from './kst';
 import { pageHref, paperBase, projectBase, type HrefContext } from './links';
 
+/**
+ * The in-page jumps of /records/ (P2-19, F-098 (b): one Publications jump for PhD readers, the five recruiter links):
+ * the game's bar under the head and, DS-7, the general version's sidebar contents.
+ */
+export function recordJumps(lang: Lang): { href: string; label: string }[] {
+  return [
+    { href: '#education', label: t(lang, 'records.education') },
+    { href: '#publications', label: lang === 'ko' ? '논문' : 'Publications' },
+    { href: '#awards', label: t(lang, 'records.awards') },
+    { href: '#skills', label: t(lang, 'records.skills') },
+    { href: '#job-fit', label: t(lang, 'jobfit.title') },
+    { href: '#documents', label: 'PDF' },
+  ];
+}
+
 /** Today's date as YYYY-MM-DD in Asia/Seoul (the build date: drives the TOEIC expiry badge and the PDFs). */
 export function todayIso(now: Date = new Date()): string {
   return kstIsoDate(now);

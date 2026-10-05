@@ -36,3 +36,69 @@ test('general research: the lab block has the neutral title and the Academic CV 
   await expect(page.locator('#for-labs-title')).toHaveText('연구실 안내');
   await expect(page.locator('#for-labs a[href$="seongeun-baek-cv-academic.pdf"]')).toHaveCount(1);
 });
+
+test('DS-7: sidebar sticky ≥ 734, stacked on phones; contents links land below the nav; the résumé is the one filled button', async ({ page }) => {
+  for (const [lang, file] of [['ko', 'ko'], ['en', 'en']] as const) {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await page.goto(dataPath('/records/', lang), { waitUntil: 'networkidle' });
+    await expect(page.locator('main .ed-btn--fill')).toHaveCount(1);
+    await expect(page.locator('#profile .ed-btn--fill')).toHaveAttribute('href', new RegExp(`seongeun-baek-resume-data-${file}\\.pdf$`));
+    const side = page.locator('main aside.ed-side');
+    await expect(side).toHaveCount(1);
+    expect(await side.evaluate((el) => getComputedStyle(el).position)).toBe('sticky');
+    // the sidebar sits left of the main column; the stats are the three award / publication tiles
+    const [sideBox, mainBox] = [await side.boundingBox(), await page.locator('#education').boundingBox()];
+    expect(sideBox!.x + sideBox!.width).toBeLessThanOrEqual(mainBox!.x + 1);
+    await expect(side.locator('.ed-stat')).toHaveCount(3);
+    // each contents number equals the section number its target shows in its rail (the page-wide CSS counter counts
+    // the openers in DOM order, so the target's number is its opener's position among them)
+    const pairs = await side.locator('.ed-toc a').evaluateAll((links) => {
+      const openers = Array.from(document.querySelectorAll('main .ed-rail__n'));
+      return links.map((a) => {
+        const target = document.querySelector((a as HTMLAnchorElement).hash);
+        const n = target?.querySelector('.ed-rail__n');
+        return { href: (a as HTMLAnchorElement).hash, toc: a.querySelector('.ed-toc__n')?.textContent ?? '', shown: n ? String(openers.indexOf(n) + 1).padStart(2, '0') : 'none' };
+      });
+    });
+    expect(pairs.map((p) => p.href)).toEqual(['#education', '#publications', '#awards', '#skills', '#job-fit', '#documents']);
+    for (const p of pairs) expect(p.toc, p.href).toBe(p.shown);
+    const navH = await page.locator('.data-nav').evaluate((el) => el.getBoundingClientRect().height);
+    for (const href of ['#awards', '#documents']) {
+      await side.locator(`.ed-toc a[href="${href}"]`).click();
+      await expect.poll(() => page.locator(`${href} .ed-head__title`).evaluate((el) => Math.round(el.getBoundingClientRect().top))).toBeGreaterThanOrEqual(Math.floor(navH));
+    }
+  }
+  await page.setViewportSize({ width: 375, height: 812 });
+  await page.goto(dataPath('/records/'), { waitUntil: 'networkidle' });
+  const side = page.locator('main aside.ed-side');
+  expect(await side.evaluate((el) => getComputedStyle(el).position)).not.toBe('sticky');
+  const [sideBox, mainBox] = [await side.boundingBox(), await page.locator('#education').boundingBox()];
+  expect(sideBox!.y + sideBox!.height).toBeLessThanOrEqual(mainBox!.y + 1); // stacked: the sidebar above the main column
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(375);
+});
+
+// DS-8: the research index in the v5 frame — folios after the head and between the sections, a rail per section,
+// the interests as plain cards, the ongoing work as 진행 중 bands (status on yellow paint, text cell beside it).
+for (const lang of ['ko', 'en'] as const) {
+  test(`DS-8 ${lang}: /data/research/ — folios between the sections, four rails, interest cards, 진행 중 bands on paint`, async ({ page }) => {
+    await page.goto(dataPath('/research/', lang), { waitUntil: 'networkidle' });
+    await expect(page.locator('main .ed-folio')).toHaveCount(4);
+    await expect(page.locator('footer .ed-folio')).toHaveCount(1);
+    await expect(page.locator('main .ed-rail')).toHaveCount(4);
+    for (const id of ['interests', 'publications', 'in-progress', 'for-labs']) {
+      // each section follows a folio (the first one closes the page head)
+      const prev = await page.locator(`#${id}`).evaluate((el) => el.previousElementSibling?.querySelector('.ed-folio') !== null || el.previousElementSibling?.classList.contains('ed-folio'));
+      expect(prev, `#${id} follows a folio`).toBe(true);
+    }
+    const cards = page.locator('#interests .ed-icard');
+    await expect(cards).toHaveCount(3);
+    const bands = page.locator('#in-progress .ed-now--row');
+    await expect(bands).toHaveCount(3);
+    for (const label of await page.locator('#in-progress .ed-now__label').all()) {
+      const bg = await label.evaluate((el) => getComputedStyle(el).backgroundImage);
+      expect(bg, 'the status sits on the yellow brush tile').toMatch(/paint-yv/);
+      expect(await label.getAttribute('data-paint-text')).toBe('');
+    }
+    await expect(page.locator('main [data-serif]')).toHaveCount(0);
+  });
+}

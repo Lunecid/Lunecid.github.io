@@ -20,12 +20,12 @@ const { lang, variant, items } = Astro.props;
   <div class="container">
     <SectionHead variant={variant} id="projects-title" caption={captionFor(getVariant(variant), 'projects', lang)} title={t(lang, 'records.projects')} />
     {variant === 'data' ? (
-      <ol class="ed-list" role="list">
+      <ol class="ed-tl ed-tl--links" role="list">
         {items.map((item) => (
-          <li class="ed-item">
-            <h3 class="ed-item__title" data-serif>{item.href ? <a class="hit" href={item.href}>{item.title}</a> : item.title}</h3>
-            <p class="ed-meta"><span class="tnum">{item.period}</span> · {item.org} · {item.team}</p>
-            <p class="ed-body">{item.summary}</p>
+          <li class="ed-tl__item">
+            <p class="ed-tl__when"><span class="tnum">{item.period}</span> · {item.org} · {item.team}</p>
+            <h3 class="ed-tl__title">{item.href ? <a class="hit" href={item.href}>{item.title}</a> : item.title}</h3>
+            <p class="ed-tl__body">{item.summary}</p>
           </li>
         ))}
       </ol>
