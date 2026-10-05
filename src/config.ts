@@ -47,7 +47,7 @@ export const ACCOUNT_ADMIN = {
   workflow: 'deploy.yml',
   ref: 'main',
   relay: null as string | null,
-  etaMinutes: 22,
+  etaMinutes: 15,
   idleWarnMinutes: 2,
   capWarnMinutes: 5,
 } as const;

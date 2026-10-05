@@ -16,6 +16,7 @@ const EXPECTED_ACTIONS = [
   'actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346',
   'actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131',
   'actions/setup-node@820762786026740c76f36085b0efc47a31fe5020',
+  'actions/upload-artifact/merge@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a',
   'actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a',
   'actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9',
   'gitleaks/gitleaks-action@e0c47f4f8be36e29cdc102c57e68cb5cbf0e8d1e',
@@ -60,6 +61,44 @@ function dependents(wf, target) {
   return Object.keys(wf.jobs).filter((job) => reaches(job));
 }
 
+/** The deploy waits for every check job; each is read by its result, so a failed account job alone never blocks it. */
+const DEPLOY_NEEDS = ['build', 'secrets-scan', 'e2e', 'lighthouse'];
+const DEPLOY_IF =
+  "${{ !cancelled() && needs.build.result == 'success' && needs.secrets-scan.result == 'success' && needs.e2e.result == 'success' && needs.lighthouse.result == 'success' }}";
+const PINNED = {
+  checkout: 'actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1',
+  setupNode: 'actions/setup-node@820762786026740c76f36085b0efc47a31fe5020',
+  download: 'actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131',
+  upload: 'actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a',
+};
+/** The three directories the build job hands to the check jobs (dist/ carries the CV PDFs). */
+const SITE_BUILDS = 'dist/\ndist-no-art/\ndist-e2e-accounts/\n';
+
+/** Shared shape of a check job that runs on the built site: checkout without credentials, Node 24 + npm cache, npm ci, then the site builds. */
+function assertCheckJob(wf, name) {
+  const job = wf.jobs[name];
+  assert.ok(job, `job ${name} exists`);
+  assert.deepEqual(job.needs, ['build'], `${name} waits for the build only`);
+  assert.equal(job.if, "${{ !cancelled() && needs.build.result == 'success' }}", `${name}: result-based, so a failed account job does not skip it`);
+  assert.deepEqual(job.permissions, { contents: 'read' });
+  assert.equal(job['runs-on'], 'ubuntu-latest');
+  const steps = job.steps;
+  assert.equal(steps[0].uses, PINNED.checkout);
+  assert.equal(steps[0].with['persist-credentials'], false);
+  assert.equal(steps[1].uses, PINNED.setupNode);
+  assert.deepEqual(steps[1].with, { 'node-version': 24, cache: 'npm' });
+  assert.equal(steps[2].run, 'npm ci');
+  const downloads = steps.filter((s) => String(s.uses ?? '').startsWith('actions/download-artifact@'));
+  assert.equal(downloads.length, 1, `${name}: one download`);
+  assert.equal(downloads[0].uses, PINNED.download);
+  assert.deepEqual(downloads[0].with, { name: 'site-builds', path: '.' }, `${name}: the prebuilt directories land where the build put them`);
+  assert.equal('continue-on-error' in downloads[0], false, `${name}: no site, no check`);
+  assert.equal(steps.indexOf(downloads[0]), 3, `${name}: right after npm ci`);
+  for (const step of steps) assert.doesNotMatch(String(step.run ?? ''), /npm run build|astro build/, `${name} never rebuilds the site`);
+  assert.deepEqual(secretPaths(job), [], `${name} sees no secret`);
+  return job;
+}
+
 function fixtureDir(files) {
   const dir = mkdtempSync(join(tmpdir(), 'fetch-status-'));
   for (const [rel, content] of Object.entries(files)) {
@@ -79,8 +118,12 @@ function runScript(args, env = {}) {
 test('every uses: is pinned to a 40-hex SHA', () => {
   const { wf } = readWorkflow();
   const uses = allSteps(wf).map(({ step }) => step.uses).filter(Boolean);
-  for (const ref of uses) assert.match(ref, /^[\w.-]+\/[\w.-]+@[0-9a-f]{40}$/, ref);
-  assert.deepEqual([...new Set(uses)].sort(), EXPECTED_ACTIONS, 'exactly the stack-ops §1 actions (download-artifact v7.0.0 for the account feeds)');
+  for (const ref of uses) assert.match(ref, /^[\w.-]+\/[\w.-]+(?:\/[\w.-]+)?@[0-9a-f]{40}$/, ref);
+  assert.deepEqual(
+    [...new Set(uses)].sort(),
+    EXPECTED_ACTIONS,
+    'exactly the stack-ops §1 actions (download-artifact v7.0.0 for the account feeds and the site builds; upload-artifact\'s merge at the same SHA)',
+  );
 });
 
 test('secrets.* appear only in the fetch step, the ops-test PII_DENYLIST env, the gitleaks step and the fetch-accounts step', () => {
@@ -198,19 +241,79 @@ test('account-link AL-7: build waits for fetch-accounts but runs unless cancelle
 
 test('account-link AL-7: deploy and fetch-health use result-based conditions; every job after fetch-accounts survives its failure', () => {
   const { wf } = readWorkflow();
-  assert.equal(wf.jobs.deploy.if, "${{ !cancelled() && needs.build.result == 'success' && needs.secrets-scan.result == 'success' }}");
-  assert.deepEqual(wf.jobs.deploy.needs, ['build', 'secrets-scan']);
+  assert.equal(wf.jobs.deploy.if, DEPLOY_IF);
+  assert.deepEqual(wf.jobs.deploy.needs, DEPLOY_NEEDS);
   assert.equal(
     wf.jobs['fetch-health'].if,
     "${{ !cancelled() && needs.deploy.result == 'success' && needs.build.outputs.auth_failed == 'true' }}",
   );
   const after = dependents(wf, 'fetch-accounts').sort();
-  assert.deepEqual(after, ['build', 'deploy', 'fetch-health']);
+  assert.deepEqual(after, ['build', 'deploy', 'e2e', 'e2e-reports', 'fetch-health', 'lighthouse']);
   for (const job of after) {
     const cond = String(wf.jobs[job].if ?? '');
     assert.match(cond, /!cancelled\(\)/, `${job}: !cancelled()`);
-    if (job !== 'build') assert.match(cond, /needs\.[\w-]+\.result == 'success'/, `${job}: result-based needs check`);
+    if (job !== 'build') assert.match(cond, /needs\.[\w-]+\.result [!=]= '\w+'/, `${job}: result-based needs check`);
   }
+});
+
+test('ci-shard: the build uploads dist/ (PDFs included), dist-no-art/ and dist-e2e-accounts/ once, after building the two test sites', () => {
+  const { wf } = readWorkflow();
+  const steps = wf.jobs.build.steps;
+  const upload = steps.find((s) => s.with?.name === 'site-builds');
+  assert.ok(upload, 'site-builds upload exists');
+  assert.equal(upload.uses, PINNED.upload);
+  assert.deepEqual(upload.with, { name: 'site-builds', path: SITE_BUILDS, 'retention-days': 1, 'if-no-files-found': 'error', 'include-hidden-files': true });
+  const index = steps.indexOf(upload);
+  assert.ok(index > steps.findIndex((s) => s.run === 'npm run build:pdf'), 'after the PDFs are written into dist/');
+  assert.ok(index > steps.findIndex((s) => s.run === 'npm run build:e2e'), 'after the two test-only builds');
+  assert.equal(steps.some((s) => /test:e2e|test:lh|playwright test/.test(String(s.run ?? ''))), false, 'e2e and Lighthouse left the build job');
+  const pages = steps.at(-1);
+  assert.ok(String(pages.uses).startsWith('actions/upload-pages-artifact@'));
+  assert.deepEqual(pages.with, { path: 'dist/' }, 'Pages still gets dist/ alone');
+});
+
+test('ci-shard: package.json build:e2e builds the two test-only sites, so the workflow never names their switches', () => {
+  const pkg = JSON.parse(readFileSync('package.json', 'utf8'));
+  assert.equal(pkg.scripts['build:e2e'], 'node scripts/e2e-dists.mjs');
+  assert.equal(pkg.scripts['test:e2e'], 'playwright test', 'local npm run test:e2e unchanged');
+  const { text } = readWorkflow();
+  for (const name of ['SB_NO_ART', 'SB_E2E_ACCOUNTS']) assert.equal(text.includes(name), false, name);
+});
+
+test('ci-shard: e2e runs as a fail-slow matrix of 3 Playwright shards on the prebuilt sites, headless', () => {
+  const { wf } = readWorkflow();
+  const job = assertCheckJob(wf, 'e2e');
+  assert.deepEqual(job.strategy, { 'fail-fast': false, matrix: { shard: [1, 2, 3] } });
+  assert.equal(job.name, 'e2e ${{ matrix.shard }}/${{ strategy.job-total }}');
+  assert.ok(job['timeout-minutes'] > 0 && job['timeout-minutes'] <= 20, 'each shard has its own timeout');
+  assert.deepEqual(job.env, { ASTRO_TELEMETRY_DISABLED: 1, E2E_PREBUILT: 1 }, 'playwright.config serves dist-no-art/ and dist-e2e-accounts/ as built');
+  const runs = job.steps.map((s) => s.run).filter((r) => r !== undefined).map((r) => r.trim().split('\n')[0]);
+  assert.deepEqual(runs, ['npm ci', 'npm exec -- playwright install --with-deps chromium', 'npm run test:e2e -- --shard="$SHARD"']);
+  const test = job.steps.find((s) => String(s.run ?? '').startsWith('npm run test:e2e'));
+  assert.deepEqual(test.env, { SHARD: '${{ matrix.shard }}/${{ strategy.job-total }}' });
+  for (const step of job.steps) assert.doesNotMatch(String(step.run ?? ''), /--headed|--ui|--debug/, 'headless only');
+});
+
+test('ci-shard: Lighthouse runs in its own job on the prebuilt dist/, parallel to the shards', () => {
+  const { wf } = readWorkflow();
+  const job = assertCheckJob(wf, 'lighthouse');
+  assert.ok(job['timeout-minutes'] > 0 && job['timeout-minutes'] <= 20);
+  const runs = job.steps.map((s) => s.run).filter((r) => r !== undefined);
+  assert.deepEqual(runs, ['npm ci', 'npm run test:lh']);
+  assert.equal(job.strategy, undefined);
+});
+
+test('ci-shard: deploy needs the build, the secrets scan, every e2e shard and Lighthouse, all green; it uploads nothing itself', () => {
+  const { wf } = readWorkflow();
+  assert.deepEqual(wf.jobs.deploy.needs, DEPLOY_NEEDS);
+  assert.equal(wf.jobs.deploy.if, DEPLOY_IF);
+  assert.deepEqual(
+    wf.jobs.deploy.steps.map((s) => s.uses),
+    ['actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346'],
+    'deploy publishes the Pages artifact of the build job',
+  );
+  const pagesUploads = allSteps(wf).filter(({ step }) => String(step.uses ?? '').startsWith('actions/upload-pages-artifact@'));
+  assert.deepEqual(pagesUploads.map(({ job }) => job), ['build'], 'one Pages artifact, from the build job');
 });
 
 test('top-level permissions are empty and deploy has pages/id-token write', () => {
@@ -219,7 +322,14 @@ test('top-level permissions are empty and deploy has pages/id-token write', () =
   assert.deepEqual(wf.jobs.deploy.permissions, { pages: 'write', 'id-token': 'write' });
   assert.deepEqual(wf.jobs.build.permissions, { contents: 'read' });
   assert.deepEqual(wf.jobs['secrets-scan'].permissions, { contents: 'read' });
-  assert.deepEqual(wf.jobs.deploy.needs, ['build', 'secrets-scan']);
+  assert.deepEqual(wf.jobs.e2e.permissions, { contents: 'read' }, 'e2e shards: checkout only');
+  assert.deepEqual(wf.jobs.lighthouse.permissions, { contents: 'read' }, 'lighthouse: checkout only');
+  assert.deepEqual(wf.jobs['e2e-reports'].permissions, {}, 'e2e-reports: no checkout, artifacts only');
+  for (const [name, job] of Object.entries(wf.jobs)) {
+    assert.ok(job.permissions && typeof job.permissions === 'object', `${name} states its permissions`);
+    if (name !== 'deploy') for (const level of Object.values(job.permissions)) assert.equal(level, 'read', `${name}: read-only`);
+  }
+  assert.deepEqual(wf.jobs.deploy.needs, DEPLOY_NEEDS);
   assert.equal(wf.jobs.deploy.environment.name, 'github-pages');
   assert.deepEqual(wf.concurrency, { group: 'pages', 'cancel-in-progress': false });
 });
@@ -245,9 +355,8 @@ test('build steps run in the contract order', () => {
     'npm exec -- playwright install --with-deps chromium',
     'npm run build:pdf',
     'npm run test:ops',
-    'npm run test:e2e',
     'npm run test:links',
-    'npm run test:lh',
+    'npm run build:e2e',
   ]);
   const steps = wf.jobs.build.steps;
   const cacheIndex = steps.findIndex((s) => String(s.uses ?? '').startsWith('actions/cache@'));
@@ -277,7 +386,7 @@ test('fetch-health has no uses:, depends on build and deploy, and runs only when
 test('final review fix 1 item 10: every checkout drops its credentials (no job pushes)', () => {
   const { wf } = readWorkflow();
   const checkouts = allSteps(wf).filter(({ step }) => String(step.uses ?? '').startsWith('actions/checkout@'));
-  assert.deepEqual(checkouts.map(({ job }) => job).sort(), ['build', 'fetch-accounts', 'secrets-scan']);
+  assert.deepEqual(checkouts.map(({ job }) => job).sort(), ['build', 'e2e', 'fetch-accounts', 'lighthouse', 'secrets-scan']);
   for (const { job, step } of checkouts) assert.equal(step.with?.['persist-credentials'], false, `${job}: persist-credentials false`);
   assert.equal(wf.jobs['secrets-scan'].steps.find((s) => String(s.uses ?? '').startsWith('actions/checkout@')).with['fetch-depth'], 0);
 });
@@ -367,15 +476,39 @@ test('final review fix 1 item 10: when a push starts at the root, the BASE_REF s
   }
 });
 
-test('the screenshots artifact is uploaded with if: always()', () => {
+test('each shard uploads its screenshots (always) and its Playwright report (on failure) for e2e-reports to merge', () => {
   const { wf } = readWorkflow();
-  const upload = wf.jobs.build.steps.find((s) => String(s.uses ?? '').startsWith('actions/upload-artifact@') && s.with?.name === 'screenshots');
-  assert.ok(upload, 'screenshots upload step exists');
-  assert.match(String(upload.if), /always\(\)/);
-  assert.equal(upload.with.path, 'test-results/screenshots/');
-  assert.equal(upload.with['retention-days'], 14);
-  const report = wf.jobs.build.steps.find((s) => s.with?.name === 'playwright-report');
+  const steps = wf.jobs.e2e.steps;
+  const shots = steps.find((s) => String(s.uses ?? '').startsWith('actions/upload-artifact@') && s.with?.path === 'test-results/screenshots/');
+  assert.ok(shots, 'screenshots upload step exists');
+  assert.match(String(shots.if), /always\(\)/);
+  assert.equal(shots.with.name, 'screenshots-${{ matrix.shard }}');
+  assert.equal(shots.with['retention-days'], 1, 'the per-shard copy only lives until the merge');
+  assert.equal(shots.with['if-no-files-found'], 'ignore');
+  const report = steps.find((s) => String(s.uses ?? '').startsWith('actions/upload-artifact@') && s.with?.path === 'playwright-report/');
+  assert.ok(report, 'report upload step exists');
   assert.match(String(report.if), /failure\(\)/);
+  assert.equal(report.with.name, 'playwright-report-${{ matrix.shard }}');
+  assert.equal(report.with['retention-days'], 1);
+});
+
+test('e2e-reports merges the shard uploads into one screenshots (14 days) and one playwright-report (7 days) artifact', () => {
+  const { wf } = readWorkflow();
+  const job = wf.jobs['e2e-reports'];
+  assert.deepEqual(job.needs, ['e2e']);
+  assert.equal(job.if, "${{ !cancelled() && needs.e2e.result != 'skipped' }}", 'runs after failed shards too');
+  assert.equal(job.steps.some((s) => 'run' in s), false, 'no command, only the pinned merge action');
+  const merge = (name) => job.steps.find((s) => s.with?.name === name);
+  const shots = merge('screenshots');
+  assert.equal(shots.uses, 'actions/upload-artifact/merge@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a');
+  assert.deepEqual(shots.with, { name: 'screenshots', pattern: 'screenshots-*', 'retention-days': 14, 'delete-merged': true });
+  assert.equal(shots['continue-on-error'], true, 'no shard wrote a screenshot: nothing to merge');
+  const report = merge('playwright-report');
+  assert.equal(report.uses, 'actions/upload-artifact/merge@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a');
+  assert.equal(report.if, "needs.e2e.result == 'failure'");
+  assert.deepEqual(report.with, { name: 'playwright-report', pattern: 'playwright-report-*', 'separate-directories': true, 'retention-days': 7, 'delete-merged': true });
+  assert.equal(report['continue-on-error'], true);
+  assert.equal(wf.jobs.deploy.needs.includes('e2e-reports'), false, 'report merging never blocks the deploy');
 });
 
 test('the CV PDFs artifact is uploaded with if: always()', () => {
@@ -387,10 +520,10 @@ test('the CV PDFs artifact is uploaded with if: always()', () => {
   assert.equal(upload.with['retention-days'], 14);
   assert.equal(upload.with['if-no-files-found'], 'ignore');
   assert.equal(upload.uses, 'actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a');
-  const screenshots = wf.jobs.build.steps.findIndex((s) => s.with?.name === 'screenshots');
+  const builds = wf.jobs.build.steps.findIndex((s) => s.with?.name === 'site-builds');
   const pdfs = wf.jobs.build.steps.findIndex((s) => s.with?.name === 'cv-pdfs');
   const pages = wf.jobs.build.steps.findIndex((s) => String(s.uses ?? '').startsWith('actions/upload-pages-artifact@'));
-  assert.ok(screenshots >= 0 && pdfs > screenshots && pages > pdfs, 'cv-pdfs sits between screenshots and the Pages artifact');
+  assert.ok(builds >= 0 && pdfs > builds && pages > pdfs, 'cv-pdfs sits between the site builds and the Pages artifact');
 });
 
 // ── scripts/check-fetch-status.mjs ───────────────────────────────────────

@@ -160,26 +160,24 @@ jobs:
         env:
           PII_DENYLIST: ${{ secrets.PII_DENYLIST }}
 
-      - run: npm run test:e2e
       - run: npm run test:links
-      - run: npm run test:lh
 
-      - name: Upload Playwright report
-        if: failure()
+      # The two test-only sites the e2e run serves next to dist/ (scripts/e2e-dists.mjs holds their build switches).
+      - run: npm run build:e2e
+
+      # Built once, checked by the e2e shards and Lighthouse in parallel. dist/ carries the CV PDFs; the Pages artifact
+      # below is still dist/ alone.
+      - name: Upload site builds
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: playwright-report
-          path: playwright-report/
-          retention-days: 7
-
-      - name: Upload screenshots
-        if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: screenshots
-          path: test-results/screenshots/
-          retention-days: 14
-          if-no-files-found: ignore
+          name: site-builds
+          path: |
+            dist/
+            dist-no-art/
+            dist-e2e-accounts/
+          retention-days: 1
+          if-no-files-found: error
+          include-hidden-files: true
 
       - name: Upload CV PDFs
         if: always()
@@ -194,11 +192,128 @@ jobs:
         with:
           path: dist/
 
+  # Playwright in three shards on the build job's directories (E2E_PREBUILT=1: playwright.config.ts serves them as
+  # built, nothing is rebuilt). fail-fast off, so every shard reports.
+  e2e:
+    name: e2e ${{ matrix.shard }}/${{ strategy.job-total }}
+    needs: [build]
+    if: ${{ !cancelled() && needs.build.result == 'success' }} # result-based: a failed account job does not skip the shards
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3]
+    env:
+      ASTRO_TELEMETRY_DISABLED: 1
+      E2E_PREBUILT: 1
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      - name: Bring in the site builds
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          name: site-builds
+          path: .
+
+      - run: npm exec -- playwright install --with-deps chromium
+
+      - run: npm run test:e2e -- --shard="$SHARD"
+        env:
+          SHARD: ${{ matrix.shard }}/${{ strategy.job-total }}
+
+      # Per-shard copies live one day; e2e-reports merges them into the named artifacts.
+      - name: Upload Playwright report
+        if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: playwright-report-${{ matrix.shard }}
+          path: playwright-report/
+          retention-days: 1
+
+      - name: Upload screenshots
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: screenshots-${{ matrix.shard }}
+          path: test-results/screenshots/
+          retention-days: 1
+          if-no-files-found: ignore
+
+  # One screenshots artifact (14 days) and, after a failed shard, one playwright-report artifact (7 days, a folder per
+  # shard): the names and retention the privacy page states. Not a deploy prerequisite.
+  e2e-reports:
+    needs: [e2e]
+    if: ${{ !cancelled() && needs.e2e.result != 'skipped' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions: {}
+    steps:
+      - name: Merge screenshots
+        uses: actions/upload-artifact/merge@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        continue-on-error: true # no shard wrote a screenshot (e.g. every shard stopped before its tests): nothing to merge
+        with:
+          name: screenshots
+          pattern: screenshots-*
+          retention-days: 14
+          delete-merged: true
+
+      - name: Merge Playwright reports
+        if: needs.e2e.result == 'failure'
+        uses: actions/upload-artifact/merge@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        continue-on-error: true # a shard that failed before Playwright wrote no report
+        with:
+          name: playwright-report
+          pattern: playwright-report-*
+          separate-directories: true
+          retention-days: 7
+          delete-merged: true
+
+  # Lighthouse budgets on the build job's dist/, parallel to the e2e shards.
+  lighthouse:
+    needs: [build]
+    if: ${{ !cancelled() && needs.build.result == 'success' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      - name: Bring in the site builds
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          name: site-builds
+          path: .
+
+      - run: npm run test:lh
+
   deploy:
-    needs: [build, secrets-scan]
+    needs: [build, secrets-scan, e2e, lighthouse]
     # Result-based condition: a job-level if without a status function gets success(), which checks every ancestor job
-    # (fetch-accounts included), so a failed account job would skip the deploy. This checks only the direct needs.
-    if: ${{ !cancelled() && needs.build.result == 'success' && needs.secrets-scan.result == 'success' }}
+    # (fetch-accounts included), so a failed account job would skip the deploy. This checks only the direct needs; the
+    # matrix job e2e is 'success' only when every shard passed.
+    if: ${{ !cancelled() && needs.build.result == 'success' && needs.secrets-scan.result == 'success' && needs.e2e.result == 'success' && needs.lighthouse.result == 'success' }}
     runs-on: ubuntu-latest
     permissions:
       pages: write # deploy to Pages

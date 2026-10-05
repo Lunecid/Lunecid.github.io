@@ -17,6 +17,7 @@
     "assets": "node scripts/import-assets.mjs",
     "fetch": "node scripts/fetch-github.mjs && node scripts/fetch-goatcounter.mjs",
     "build:pdf": "node scripts/build-pdfs.mjs",
+    "build:e2e": "node scripts/e2e-dists.mjs",
     "test:ops": "node --test \"tests/ops/*.test.mjs\"",
     "test:e2e": "playwright test",
     "test:links": "linkinator dist --config linkinator.config.json",
