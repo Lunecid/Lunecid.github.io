@@ -93,4 +93,15 @@ describe('ChooserView.astro (MO-23: the v6.4 desk; P2-10 header)', () => {
     expect(ko).toContain('nt-header__bar--lang-only');
     expect(ko).not.toMatch(/aria-describedby/);
   });
+
+  it('MO-35: one .props layer, aria-hidden, before the files; .mat inside it; no img', async () => {
+    const html = await renderAstro(ChooserView, { props: { lang: 'ko' }, url: '/' });
+    const desk = html.match(/<div class="desk"[^>]*>([\s\S]*)/)?.[1] ?? '';
+    expect(html.match(/<div class="props"/g)).toHaveLength(1);
+    expect(desk.indexOf('<div class="props"')).toBeGreaterThanOrEqual(0);
+    expect(desk.indexOf('<div class="props"')).toBeLessThan(desk.indexOf('<article'));
+    expect(html).toMatch(/<div class="props" aria-hidden="true"[^>]*>\s*<i class="mat"[^>]*><\/i>/);
+    expect(html).not.toMatch(/<img\b|<picture\b/);
+  });
 });
+

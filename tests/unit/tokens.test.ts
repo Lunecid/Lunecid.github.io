@@ -589,6 +589,24 @@ describe('the chooser desk (MO-23, v6.4)', () => {
     for (const fg of ['--ch-t0', '--ch-t1', '--ch-t2', '--ch-cy']) expect(contrast(d.get(fg)!, d.get('--ch-k1')!), fg).toBeGreaterThanOrEqual(4.5);
   });
 
+  it('MO-35: desk and caption literals exact; caption on --ch-desk-lit ≥ 4.5; the device shell ≥ 15 ΔL* darker than --ch-desk (CIELAB from the literals, v6.9 bound); the yellow focus ring ≥ 3:1 on --ch-desk-lit', () => {
+    const d = declsOf(':root');
+    const DESK: Record<string, string> = {
+      '--ch-desk': '#444B73', '--ch-desk-lit': '#545C89', '--ch-desk-night': 'rgba(7, 9, 20, .52)', '--ch-cap': '#EEF1F5',
+      '--ch-mat-edge': 'rgba(18, 22, 46, .42)', '--ch-mat-lit': 'rgba(255, 255, 255, .025)', '--ch-mat-contact': 'rgba(0, 0, 0, .5)', '--ch-mat-stitch': 'rgba(178, 188, 236, .16)',
+      '--ch-vignette': 'rgba(0, 0, 0, .22)', '--ch-coat': 'rgba(255, 255, 255, .03)', '--ch-coat-2': 'rgba(255, 255, 255, .012)',
+    };
+    for (const [name, value] of Object.entries(DESK)) expect(squash(d.get(name)), name).toBe(squash(value));
+    expect(contrast(d.get('--ch-cap')!, d.get('--ch-desk-lit')!)).toBeGreaterThanOrEqual(4.5);
+    expect(contrast(d.get('--ch-y')!, d.get('--ch-desk-lit')!)).toBeGreaterThanOrEqual(3);
+    const lstar = (hex: string) => {
+      const c = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255).map((v) => (v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4));
+      const y = 0.2126 * c[0]! + 0.7152 * c[1]! + 0.0722 * c[2]!;
+      return y > 216 / 24389 ? 116 * Math.cbrt(y) - 16 : (24389 / 27) * y;
+    };
+    for (const shell of ['--dev-shell', '--dev-shell-2', '--dev-hi']) expect(lstar(d.get('--ch-desk')!) - lstar(d.get(shell)!), shell).toBeGreaterThanOrEqual(15);
+  });
+
   it('MO-23: the chooser page is dark (color-scheme dark in the chooser sheet), the other neutral pages stay light', () => {
     const sheet = read('src/styles/chooser.css');
     expect(sheet).toMatch(/(^|\n):root\[data-variant="neutral"\]\[data-page="chooser"\]\s*\{[^}]*color-scheme:\s*dark/);

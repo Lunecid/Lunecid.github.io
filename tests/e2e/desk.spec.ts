@@ -348,7 +348,8 @@ const timeToLeave = (page: Page) =>
   page.evaluate(() => {
     let t0 = 0;
     document.addEventListener('click', () => { t0 = performance.now(); }, { capture: true });
-    window.addEventListener('pagehide', () => sessionStorage.setItem('mo25:dt', String(performance.now() - t0)));
+    // beforeunload: when the navigation starts (pagehide would add the next page's fetch, which only measures load)
+    window.addEventListener('beforeunload', () => sessionStorage.setItem('mo25:dt', String(performance.now() - t0)));
   });
 const GAME_HIT = '.file--game .cta__hit';
 
@@ -675,5 +676,88 @@ test.describe('MO-34: the tablet', () => {
     expect(body).toEqual(['0px', 'none', 'none', '0px']);
     expect(await page.locator('.file--game .dev__screen').evaluate((el) => getComputedStyle(el).paddingTop)).toBe('0px');
     for (const sel of ['.dev__glass', '.dev__cam']) expect(await page.locator(`.file--game ${sel}`).evaluate((el) => getComputedStyle(el).display), sel).toBe('none');
+  });
+});
+
+/** One centimetre of the desk in CSS px (the --cm the props are placed with), read from a probe inside .props. */
+const pxPerCm = (page: Page) =>
+  page.evaluate(() => {
+    const probe = document.createElement('i');
+    probe.style.cssText = 'position:absolute;width:calc(10 * var(--cm));height:1px';
+    document.querySelector('.desk .props')!.appendChild(probe);
+    const w = probe.getBoundingClientRect().width / 10;
+    probe.remove();
+    return w;
+  });
+
+test.describe('MO-35: the desk in real centimetres', () => {
+  test('MO-35: one centimetre = device width / 28 (≥ 1068 px) or / 21 (below); ≤ 33.4 px at 2560×1440 and ≥ 27 px at 1280×800', async ({ page }) => {
+    for (const [w, h, per] of [[375, 812, 21], [768, 1024, 21], [1280, 800, 28], [1440, 900, 28], [2560, 1440, 28], [1280, 1200, 28]] as const) {
+      await openAt(page, '/?choose', w, h);
+      const cm = await pxPerCm(page);
+      const dev = await rectOf(page, '.file--game .dev__body');
+      expect(Math.abs(cm - dev.width / per), `@${w}×${h}`).toBeLessThan(0.05);
+      if (w === 2560) expect(cm).toBeLessThanOrEqual(33.45);
+      if (w === 1280 && h === 800) expect(cm).toBeGreaterThanOrEqual(27);
+      if (w === 1440) expect(Math.abs(cm - 30.4)).toBeLessThanOrEqual(0.3);
+    }
+  });
+
+  test('MO-35: the mat edges are inside the 2560×1440 viewport and outside it at 1920×1080 and below', async ({ page }) => {
+    await openAt(page, '/?choose', 2560, 1440);
+    const big = await rectOf(page, '.desk .mat');
+    expect(big.left).toBeGreaterThan(0);
+    expect(big.right).toBeLessThan(2560);
+    for (const [w, h] of [[1920, 1080], [1440, 900], [1280, 800]] as const) {
+      await openAt(page, '/?choose', w, h);
+      const m = await rectOf(page, '.desk .mat');
+      expect(m.left, `@${w}`).toBeLessThan(0);
+      expect(m.right, `@${w}`).toBeGreaterThan(w);
+      expect(m.bottom, `@${w}`).toBeGreaterThan(h);
+    }
+  });
+
+  for (const [w, h] of [[375, 812], [768, 1024], [1280, 800], [2560, 1440]] as const) {
+    test(`MO-35: caption text ≥ 4.5:1 against the lightest desk pixel under it (pixel sample, ${w})`, async ({ page }) => {
+      await openAt(page, '/?choose', w, h);
+      const cap = await rectOf(page, '.chooser__cap');
+      const ink = await page.locator('.chooser__cap > span:last-child').evaluate((el) => getComputedStyle(el).color);
+      // hide the caption, sample the desk under its box, keep the lightest pixel
+      await page.locator('.chooser__cap').evaluate((el) => (el as HTMLElement).style.setProperty('visibility', 'hidden'));
+      const png = (await page.screenshot({ clip: { x: cap.left, y: cap.top, width: cap.width, height: cap.height } })).toString('base64');
+      const ratio = await page.evaluate(async ([b64, fg]) => {
+        const img = new Image();
+        img.src = `data:image/png;base64,${b64}`;
+        await img.decode();
+        const c = document.createElement('canvas');
+        c.width = img.width;
+        c.height = img.height;
+        const ctx = c.getContext('2d')!;
+        ctx.drawImage(img, 0, 0);
+        const d = ctx.getImageData(0, 0, c.width, c.height).data;
+        const lum = (r: number, g: number, b: number) => [r, g, b].map((v) => v / 255).map((v) => (v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4)).reduce((s, v, i) => s + v * [0.2126, 0.7152, 0.0722][i]!, 0);
+        let max = 0;
+        for (let i = 0; i < d.length; i += 4) max = Math.max(max, lum(d[i]!, d[i + 1]!, d[i + 2]!));
+        const f = fg!.match(/\d+/g)!.map(Number);
+        return (lum(f[0]!, f[1]!, f[2]!) + 0.05) / (max + 0.05);
+      }, [png, ink]);
+      expect(ratio).toBeGreaterThanOrEqual(4.5);
+    });
+  }
+
+  for (const [w, h] of [[320, 640], [375, 812], [768, 1024], [1024, 768], [1280, 800], [1440, 900], [1920, 1080], [2560, 1440], [1280, 1200]] as const) {
+    test(`MO-35: no horizontal scroll at ${w}×${h}`, async ({ page }) => {
+      await openAt(page, '/?choose', w, h);
+      const o = await horizontalOverflow(page);
+      expect(o.scrollWidth, o.offenders.join(', ')).toBeLessThanOrEqual(o.width);
+    });
+  }
+
+  test('MO-35: the desk layer takes no pointer', async ({ page }) => {
+    await openAt(page, '/?choose', 2560, 1440);
+    expect(await page.locator('.desk .props').evaluate((el) => getComputedStyle(el).pointerEvents)).toBe('none');
+    const m = await rectOf(page, '.desk .mat');
+    const hit = await page.evaluate(([x, y]) => !!document.elementFromPoint(x!, y!)?.closest('.props'), [m.left + 20, m.top + m.height - 20]);
+    expect(hit).toBe(false);
   });
 });

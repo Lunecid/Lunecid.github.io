@@ -174,6 +174,19 @@
   --scr-off: #020203;                         /* the screen switched off (opening) */
   --scr-spill: rgba(150, 160, 190, .06);      /* the screen's light on the desk */
   --glare: rgba(255, 255, 255, .03);          /* the glass reflection (decoration over the content) */
+  /* ── the chooser's desk (MO-35, v6.9 navy felt A, v6.12 mat): a muted indigo felt mat (L* 33, 40 in its pool of
+     light; yellow's near-complement) on a darker desk, measured in real centimetres; the caption's ink on it ── */
+  --ch-desk: #444B73;                         /* the felt, L* 32.9 */
+  --ch-desk-lit: #545C89;                     /* its pool of light, L* 40.2 */
+  --ch-desk-night: rgba(7, 9, 20, .52);       /* the desk beyond the mat (one spread shadow round it) */
+  --ch-mat-edge: rgba(18, 22, 46, .42);       /* the mat's bound edge */
+  --ch-mat-lit: rgba(255, 255, 255, .025);
+  --ch-mat-contact: rgba(0, 0, 0, .5);        /* its thin contact shadow */
+  --ch-mat-stitch: rgba(178, 188, 236, .16);  /* the stitch line */
+  --ch-vignette: rgba(0, 0, 0, .22);
+  --ch-coat: rgba(255, 255, 255, .03);        /* one soft reflection from the top left */
+  --ch-coat-2: rgba(255, 255, 255, .012);
+  --ch-cap: #EEF1F5;                          /* the caption on the felt: 5.4:1 on --ch-desk-lit */
   /* the printout: white cotton-rag art paper (finish B "판화지") with painted fields; text pairs on the paper:
      ink 17.6:1, ink-2 8.6:1, stamp 8.6:1; white on the red field 5.4:1 flat; ink on the yellow 11.4:1 */
   --pr-paper: #FBFAF6;
