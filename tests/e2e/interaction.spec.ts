@@ -579,3 +579,61 @@ test('Z1: on a touch screen a tapped link keeps no hover colour (patch notes, he
   await tapKeepsColour('#cog-2026-engagement-bibtex [data-bib-copy]', (el) => getComputedStyle(el).borderTopColor);
   await context.close();
 });
+
+test.describe('G1: showcase tab timing', () => {
+  test.use({ reducedMotion: 'no-preference' });
+
+  test("G1: after a tab click the new scene's last copy line is settled within 0.75 s", async ({ page }) => {
+    await page.goto('/game/player-log/', { waitUntil: 'networkidle' });
+    await page.locator('#favorite-games').scrollIntoViewIfNeeded();
+    // hydrated: Astro removes the ssr attribute from the island once React has taken over
+    await page.waitForFunction(() => {
+      const island = document.querySelector('#favorite-games astro-island');
+      return !!island && !island.hasAttribute('ssr');
+    });
+    const tab = page.locator('#favorite-games [role="tab"]').nth(1);
+    // The probe arms on the press itself (capture phase) and follows the new scene every frame, so the times are
+    // counted from the click, in the page: mount (old scene gone), start (first animation on the line), settled
+    // (opacity 1, no running animation, no transform offset).
+    await page.evaluate(() => {
+      document.addEventListener(
+        'click',
+        () => {
+          const t0 = performance.now();
+          const host = document.querySelector('#favorite-games') as HTMLElement;
+          const old = host.querySelector('.fg__scene');
+          const r: Record<string, number> = {};
+          const w = window as Window & { __g1?: Record<string, number> };
+          const tick = (): void => {
+            const now = Math.round(performance.now() - t0);
+            const scene = [...host.querySelectorAll('.fg__scene')].find((el) => el !== old);
+            const last = scene?.querySelector<HTMLElement>('.fg__copy > :last-child');
+            if (scene && r.mount === undefined) r.mount = now;
+            if (last && r.start === undefined && last.getAnimations({ subtree: true }).length) r.start = now;
+            const cs = last ? getComputedStyle(last) : null;
+            if (
+              last && cs && r.start !== undefined && cs.opacity === '1' && /^(none|matrix\(1, 0, 0, 1, 0, 0\))$/.test(cs.transform) &&
+              !last.getAnimations({ subtree: true }).some((a) => a.playState === 'running')
+            ) {
+              r.settled = now;
+              w.__g1 = r;
+            } else if (now > 3000) w.__g1 = r;
+            else requestAnimationFrame(tick);
+          };
+          requestAnimationFrame(tick);
+        },
+        { capture: true, once: true },
+      );
+    });
+    await tab.click();
+    await expect(tab).toHaveAttribute('aria-selected', 'true');
+    const probe = await page
+      .waitForFunction(() => (window as Window & { __g1?: Record<string, number> }).__g1)
+      .then((h) => h.jsonValue() as Promise<Record<string, number>>);
+    // TL puts the end at 0.67 s (exit + gap + 3 staggers + enter); a container's headless Chromium adds ~30-80 ms
+    // (the exit's last frame, the animation start), so the wall-clock bound carries a 100 ms allowance. The old
+    // timeline ended at 1.1 s nominal and fails it.
+    expect(probe.settled, JSON.stringify(probe)).toBeDefined();
+    expect(probe.settled, JSON.stringify(probe)).toBeLessThanOrEqual(750 + 100);
+  });
+});
