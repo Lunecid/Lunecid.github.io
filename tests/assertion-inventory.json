@@ -113,6 +113,7 @@
   "tests/e2e/switch.spec.ts": 15,
   "tests/e2e/variant-structure.spec.ts": 23,
   "tests/e2e/variant-vocabulary.spec.ts": 11,
+  "tests/e2e/view-transitions.spec.ts": 46,
   "tests/e2e/wide-screens.spec.ts": 40,
   "tests/ops/account-relay.test.mjs": 441,
   "tests/ops/asset-names.test.mjs": 10,
@@ -136,6 +137,7 @@
   "tests/ops/pdf.test.mjs": 37,
   "tests/ops/safe-fetch.test.mjs": 112,
   "tests/ops/token-residue.test.mjs": 5,
+  "tests/ops/view-transitions.test.mjs": 4,
   "tests/ops/viewer-islands.test.mjs": 3,
   "tests/ops/workflow.test.mjs": 123,
   "tests/react/AccountLinks.test.tsx": 222,
@@ -222,5 +224,6 @@
   "tests/unit/tokens.test.ts": 125,
   "tests/unit/toolchain.test.ts": 107,
   "tests/unit/variants.test.ts": 74,
+  "tests/unit/view-transitions-css.test.ts": 19,
   "tests/unit/yaml-loader.test.ts": 33
 }
