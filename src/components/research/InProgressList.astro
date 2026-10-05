@@ -1,7 +1,8 @@
 ---
 // Ongoing research (content-research §3 `researchPage.ongoing`) as indexed light-HUD rows (P1-9): a mono index, a
 // square status tag, the title and one line. Items with href null stay unlinked (PUBG_Lab is not linked until the
-// owner marks the repository ready).
+// owner marks the repository ready). DS-8: the general version draws each item as the home page's 진행 중 band — the
+// status on a yellow painted cell (text on paint: ink, data-paint-text), title and line in the neutral cell beside it.
 import SectionHead from '../hud/SectionHead.astro';
 import type { researchPage } from '../../data/research-page';
 import type { Lang } from '../../i18n/ui';
@@ -29,12 +30,11 @@ const rows = items.map((item) => ({
   <div class="container">
     <SectionHead variant={variant} id="in-progress-title" caption={captionFor(getVariant(variant), 'inProgress', lang)} title={t(lang, 'research.inProgress')} />
     {variant === 'data' ? (
-      <ol class="ed-list" role="list">
+      <ol class="ed-nows" role="list">
         {rows.map((row) => (
-          <li class="ed-item" data-item={row.id}>
-            <p class="ed-tag">{row.status}</p>
-            <h3 class="ed-item__title" data-serif>{row.href ? <a class="hit" href={row.href}>{row.title}</a> : row.title}</h3>
-            <p class="ed-body">{row.body}</p>
+          <li class="ed-now ed-now--row" data-item={row.id}>
+            <p class="ed-now__label" data-paint-text>{row.status}</p>
+            <div class="ed-now__text"><h3 class="ed-item__title">{row.href ? <a class="hit" href={row.href}>{row.title}</a> : row.title}</h3><p class="ed-body">{row.body}</p></div>
           </li>
         ))}
       </ol>

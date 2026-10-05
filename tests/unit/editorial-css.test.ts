@@ -28,13 +28,14 @@ describe('src/styles/editorial.css (P2-1, spec §8)', () => {
     expect(css.match(/var\(--ed-accent\)/g) ?? []).toEqual([]);
   });
 
-  it('defines the editorial building blocks and the [data-serif] face rule (DS-3: SB Sans 800 until DS-8 removes the last attribute)', () => {
+  // Named change (DS-8): no data markup carries data-serif any more, so the transitional [data-serif] rule is gone.
+  it('defines the editorial building blocks; DS-8: no [data-serif] rule is left (the attribute is gone from data markup)', () => {
     const selectors = rules.map((r) => r.selector).join('\n');
     const classes = ['ed-sec', 'ed-list', 'ed-item', 'ed-item__title', 'ed-meta', 'ed-body', 'ed-tag', 'ed-links', 'ed-link', 'ed-btn', 'ed-btn--fill', 'ed-figure', 'ed-figcap', 'ed-figcap__num', 'ed-table', 'ed-prose'];
     for (const c of classes) expect(selectors, `.${c}`).toMatch(new RegExp(`\\.${c}(?![\\w-])`));
-    const serif = rules.find((r) => r.selector === `${SCOPE} [data-serif]`);
-    expect(serif?.decls.get('font-family')).toBe('var(--font-sans)');
-    expect(serif?.decls.get('font-weight')).toBe('800');
+    expect(selectors).not.toContain('[data-serif]');
+    // DS-8: the research index's plain interest cards and 진행 중 bands (the band's label sits on the yellow paint)
+    for (const c of ['ed-icards', 'ed-icard', 'ed-icard__n', 'ed-nows', 'ed-now--row']) expect(selectors, `.${c}`).toMatch(new RegExp(`\\.${c}(?![\\w-])`));
   });
 
   it('DS-3: the v5 frame — grid, rail and chip, page head, folio, paint marks, display face, one-time reveal with both reduce paths and print', () => {

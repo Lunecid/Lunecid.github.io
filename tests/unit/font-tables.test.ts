@@ -199,6 +199,33 @@ describe('buildFonts on a built page with characters the source fonts lack', () 
   });
 });
 
+describe('buildFonts: the general paper page preloads its Korean serif with font-display: optional', () => {
+  // A late swap of the paper serif rewrapped the Korean title gloss at 375 px (CLS 0.037): preloaded and optional, it
+  // is either there for the first render or not used on that view, never swapped in later.
+  it('keeps font-display: optional on the rewritten rule and points the preload at the hashed subset', async () => {
+    expect(fontFaceCss(['serifKo'], 'optional')).toBe(fontFaceCss(['serifKo']).replace('font-display:swap', 'font-display:optional'));
+    expect(fontFaceCss(['sans', 'display'])).not.toContain('optional');
+    const dist = mkdtempSync(join(tmpdir(), 'font-subsets-'));
+    mkdirSync(join(dist, '_astro'));
+    mkdirSync(join(dist, 'data', 'research', 'x'), { recursive: true });
+    const sansHead = `<style>${fontFaceCss(['sans'])}</style><link rel="preload" href="${FONT_URL.sans}" as="font" type="font/woff2" crossorigin>`;
+    writeFileSync(
+      join(dist, 'data', 'research', 'x', 'index.html'),
+      `<html lang="ko"><head>${sansHead}<style>${fontFaceCss(['serifKo'], 'optional')}</style><link rel="preload" href="${FONT_URL.serifKo}" as="font" type="font/woff2" crossorigin></head><body><article class="paper"><p>국문 초록</p></article></body></html>`,
+    );
+    try {
+      await buildFonts(dist, { warn: () => {} });
+      const page = readFileSync(join(dist, 'data', 'research', 'x', 'index.html'), 'utf8');
+      const url = /font-display:optional;src:url\((\/_astro\/sb-serif-kr\.[\w-]+\.woff2)\)/.exec(page)?.[1];
+      expect(url).toBeDefined();
+      expect(page).toContain(`<link rel="preload" href="${url}" as="font" type="font/woff2" crossorigin>`);
+      expect(page).not.toContain('/_fonts/');
+    } finally {
+      rmSync(dist, { recursive: true, force: true });
+    }
+  });
+});
+
 describe('buildFonts: the display face (Archivo subset)', () => {
   it('writes the display subset only when a page declares it, and points its preload at the hashed file', async () => {
     const dist = mkdtempSync(join(tmpdir(), 'font-subsets-'));

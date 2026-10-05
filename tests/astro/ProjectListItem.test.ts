@@ -9,7 +9,8 @@ describe('ProjectListItem.astro (P2-6)', () => {
   it('a list row: the title link, the tools line, tags, the cover as a small figure; no cartridge, sticker or lift', async () => {
     const html = await renderAstro(ProjectListItem, { props: { ...base, href: '/data/projects/school-zone-blindspots/', cover, sticker: { text: '최우수상', kind: 'award' } } });
     expect(html).toMatch(/<li class="pli ed-item"[^>]*data-tags="geospatial ml"/);
-    expect(html).toMatch(/<h3 class="pli__title ed-item__title" data-serif[^>]*><a class="pli__link hit"[^>]*href="\/data\/projects\/school-zone-blindspots\/"[^>]*>사각지대를 예측하다<\/a><\/h3>/);
+    // Named change (DS-8): headings no longer carry data-serif (SB Sans everywhere on data pages).
+    expect(html).toMatch(/<h3 class="pli__title ed-item__title"(?![^>]*data-serif)[^>]*><a class="pli__link hit"[^>]*href="\/data\/projects\/school-zone-blindspots\/"[^>]*>사각지대를 예측하다<\/a><\/h3>/);
     expect(html).toMatch(/<p class="ed-meta"[^>]*>Python · QGIS<\/p>/);
     expect(html.match(/<li class="ed-tag"/g)).toHaveLength(2);
     expect(html).toMatch(/<img[^>]*class="pli__img/);

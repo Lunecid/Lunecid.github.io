@@ -65,3 +65,44 @@ test.describe('ko/en pages expose the same section ids and internal link targets
     });
   }
 });
+
+// DS-8: the general version's Korean and English pages have the same composition: section ids, folios, rails (whose
+// CSS-counter numbers therefore match), stat tiles and display words; English pages show no Hangul outside the language
+// switch and proper names marked lang="ko".
+test.describe('DS-8: general pages — the same composition in ko and en', () => {
+  const shape = (page: import('@playwright/test').Page) =>
+    page.evaluate(() => ({
+      ids: [...document.querySelectorAll('main section[id], main [id].ed-sec')].map((el) => el.id),
+      folios: document.querySelectorAll('.ed-folio').length,
+      rails: [...document.querySelectorAll('main .ed-rail')].map((el) => el.closest('section')?.id ?? ''),
+      tiles: document.querySelectorAll('main .ed-stat').length,
+      display: document.querySelectorAll('main [data-display]').length,
+      paintText: document.querySelectorAll('main [data-paint-text]').length,
+    }));
+  for (const koRoute of builtRoutes({ variant: 'data', lang: 'ko' })) {
+    test(`DS-8: every general route has the same section ids, folio count, rail numbers and stat-tile count in ko and en — ${koRoute}`, async ({ page }) => {
+      const enRoute = `/en${koRoute}`;
+      expect((await page.goto(koRoute, { waitUntil: 'networkidle' }))?.status(), koRoute).toBe(200);
+      const ko = await shape(page);
+      expect((await page.goto(enRoute, { waitUntil: 'networkidle' }))?.status(), enRoute).toBe(200);
+      const en = await shape(page);
+      expect(en, `${enRoute} vs ${koRoute}`).toEqual(ko);
+      expect(ko.folios, 'a folio at least in the footer').toBeGreaterThan(0);
+      // Named exception: the kickick-park figure caption quotes the Korean axis label of its Tableau chart, "(합계)"
+      // (copy verbatim; the shared Figure component has no lang mark for it — reported, not changed here).
+      const hangul = await page.evaluate(() => {
+        const walker = document.createTreeWalker(document.querySelector('main')!, NodeFilter.SHOW_TEXT);
+        const hits: string[] = [];
+        for (let n = walker.nextNode(); n; n = walker.nextNode()) {
+          const el = n.parentElement!;
+          const text = (n.textContent ?? '').replace(/\(합계\)/g, '');
+          if (!/\p{Script=Hangul}/u.test(text) || el.closest('[lang="ko"], .sr-only, [hidden], .paper')) continue;
+          const s = getComputedStyle(el);
+          if (s.display !== 'none' && s.visibility !== 'hidden') hits.push(text.trim().slice(0, 40));
+        }
+        return hits;
+      });
+      expect(hangul, `${enRoute}: visible Hangul outside lang="ko"`).toEqual([]);
+    });
+  }
+});

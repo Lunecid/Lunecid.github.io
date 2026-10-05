@@ -64,7 +64,7 @@ const number = n === undefined ? null : String(n).padStart(2, '0');
 ) : (
 <li class:list={['pli', 'ed-item', { 'pli--chart': !!chart, 'pli--text': !chart && !cover }]} data-tags={tagKeys.join(' ')}>
   <div class="pli__text">
-    <Heading class="pli__title ed-item__title" data-serif>{href ? <a class="pli__link hit" href={href}>{title}</a> : title}</Heading>
+    <Heading class="pli__title ed-item__title">{href ? <a class="pli__link hit" href={href}>{title}</a> : title}</Heading>
     <p class="ed-meta">{meta}</p>
     {!href && summary && <p class="ed-body">{summary}</p>}
     {shownTags.length > 0 && (

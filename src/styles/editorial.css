@@ -5,8 +5,6 @@
 
 /* ── page ── */
 :root[data-variant="data"] body { font-variant-numeric: tabular-nums; }
-/* DS-3: the general version's headings are SB Sans 800 (v5); the attribute goes with DS-8 (the chooser keeps its own). */
-:root[data-variant="data"] [data-serif] { font-family: var(--font-sans); font-weight: 800; }
 :root[data-variant="data"] .skip-link { background: var(--ed-fill); color: var(--ed-fill-ink); }
 /* The sticky nav keeps scroll-margin 0, like .hud-nav in base.css (focus inside it never scrolls the page). */
 :root[data-variant="data"] body > .data-nav,
@@ -743,3 +741,37 @@
   :root[data-variant="data"] .ed-pending::before { display: none !important; }
   :root[data-variant="data"] .ed-cv > .ed-side { position: static; }
 }
+
+/* ══ DS-8: the research index — the interests as plain numbered cards (text, then its figure; side by side from
+   1068 px), the ongoing work as 진행 중 bands (the home band's yellow label cell with the status, the text cell beside
+   it; stacked on phones). Item titles keep the v5 heading weight. ══ */
+:root[data-variant="data"] .ed-icards { display: grid; gap: 16px; margin-top: 24px; }
+:root[data-variant="data"] .ed-icard { display: grid; gap: 20px; min-width: 0; padding: 18px 18px 22px; background: var(--ed-n-50); border: 1px solid var(--ed-line); }
+:root[data-variant="data"] .ed-icard__text { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+:root[data-variant="data"] .ed-icard__n { font-family: var(--font-ed-display); font-stretch: 112%; font-size: 1.5rem; font-weight: 900; line-height: 1; color: var(--ed-ink); font-variant-numeric: tabular-nums; }
+:root[data-variant="data"] .ed-icard .ed-item__title,
+:root[data-variant="data"] .ed-now--row .ed-item__title { font-weight: 800; }
+:root[data-variant="data"] .ed-icard .ed-figure { margin: 0; min-width: 0; background: var(--ed-bg); }
+/* phones: the dot plot's box runs to the card's edges (it needs 280 px for 12 px text; a 320 px screen leaves 250
+   inside the card's padding); its caption stays inset */
+@media (max-width: 733.98px) {
+  :root[data-variant="data"] .ed-icard .chart--editorial .chart__scroll { width: calc(100% + 38px); max-width: none; margin-inline: -19px; }
+}
+@media (min-width: 1068px) {
+  :root[data-variant="data"] .ed-icard { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); column-gap: 32px; align-items: start; padding: 24px; }
+}
+:root[data-variant="data"] .ed-nows { display: grid; gap: var(--ed-rw); margin-top: 24px; }
+:root[data-variant="data"] .ed-now--row { position: relative; grid-template-columns: minmax(0, 1fr); }
+:root[data-variant="data"] .ed-now--row > .ed-now__label { align-self: start; align-items: center; min-height: 44px; }
+:root[data-variant="data"] .ed-now--row > .ed-now__text { display: flex; flex-direction: column; gap: 6px; min-width: 0; padding: 14px 16px 16px; background: var(--ed-n-50); font-size: inherit; }
+@media (min-width: 734px) {
+  :root[data-variant="data"] .ed-now--row { grid-template-columns: 13rem minmax(0, 1fr); }
+}
+/* A cover with a data table (youth-startup): the table is part of the spread figure, so it reads on its own white
+   ground above the blue field (which runs to the figure's bottom); collapsed, only its toggle row is white. */
+:root[data-variant="data"] .ed-spread > .chart__table { position: relative; margin-top: 24px; background: var(--ed-bg); }
+/* Figure data tables (FigureTable, editorial tone): cells wrap only between words, as the game tone's do — the body's
+   overflow-wrap: anywhere let the auto layout squeeze value columns to one character on phones; the table scrolls in
+   its own region instead. */
+:root[data-variant="data"] .chart__table--editorial th,
+:root[data-variant="data"] .chart__table--editorial td { overflow-wrap: normal; }

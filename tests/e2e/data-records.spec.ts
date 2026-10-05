@@ -76,3 +76,29 @@ test('DS-7: sidebar sticky ≥ 734, stacked on phones; contents links land below
   expect(sideBox!.y + sideBox!.height).toBeLessThanOrEqual(mainBox!.y + 1); // stacked: the sidebar above the main column
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(375);
 });
+
+// DS-8: the research index in the v5 frame — folios after the head and between the sections, a rail per section,
+// the interests as plain cards, the ongoing work as 진행 중 bands (status on yellow paint, text cell beside it).
+for (const lang of ['ko', 'en'] as const) {
+  test(`DS-8 ${lang}: /data/research/ — folios between the sections, four rails, interest cards, 진행 중 bands on paint`, async ({ page }) => {
+    await page.goto(dataPath('/research/', lang), { waitUntil: 'networkidle' });
+    await expect(page.locator('main .ed-folio')).toHaveCount(4);
+    await expect(page.locator('footer .ed-folio')).toHaveCount(1);
+    await expect(page.locator('main .ed-rail')).toHaveCount(4);
+    for (const id of ['interests', 'publications', 'in-progress', 'for-labs']) {
+      // each section follows a folio (the first one closes the page head)
+      const prev = await page.locator(`#${id}`).evaluate((el) => el.previousElementSibling?.querySelector('.ed-folio') !== null || el.previousElementSibling?.classList.contains('ed-folio'));
+      expect(prev, `#${id} follows a folio`).toBe(true);
+    }
+    const cards = page.locator('#interests .ed-icard');
+    await expect(cards).toHaveCount(3);
+    const bands = page.locator('#in-progress .ed-now--row');
+    await expect(bands).toHaveCount(3);
+    for (const label of await page.locator('#in-progress .ed-now__label').all()) {
+      const bg = await label.evaluate((el) => getComputedStyle(el).backgroundImage);
+      expect(bg, 'the status sits on the yellow brush tile').toMatch(/paint-yv/);
+      expect(await label.getAttribute('data-paint-text')).toBe('');
+    }
+    await expect(page.locator('main [data-serif]')).toHaveCount(0);
+  });
+}

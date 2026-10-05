@@ -323,7 +323,10 @@ export async function buildFonts(distDir, { warn = (message) => console.warn(mes
       replace.set(FONT_URL.serifKo, write('serifKo', 'sb-serif-kr', data, serif.size - missing.length));
     } else {
       // Nothing to subset: drop the rule, the stack after "SB Serif KR" draws the text.
+      // (the general paper page declares the face font-display: optional and preloads it: both go too)
       replace.set(fontFaceRule('serifKo'), '');
+      replace.set(fontFaceRule('serifKo').replace('font-display:swap', 'font-display:optional'), '');
+      replace.set(preloadTag(FONT_URL.serifKo), '');
       warn(`font-subsets: no Noto Serif KR subset was built (none of the paper's Hangul is in the font); ${serifPages.map((p) => p.route).join(', ')} fall back to the system serif`);
     }
   }

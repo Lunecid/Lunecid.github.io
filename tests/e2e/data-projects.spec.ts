@@ -1,3 +1,4 @@
+import sharp from 'sharp';
 import { test, expect, dataPath } from './helpers';
 import { dataVariant } from '../../src/variants/data';
 
@@ -115,4 +116,53 @@ test.describe('general projects page (P2-6)', () => {
     await expect(dialog).toHaveCount(0);
     await expect(trigger).toBeFocused();
   });
+});
+
+// DS-8: the youth-startup cover carries a data table ("표로 보기"); opened, it reads on its own white ground above the
+// spread's blue painted field (the field ran to the bottom of the figure, under the table's ink text).
+for (const slug of ['youth-startup-location']) {
+  test(`DS-8: ${slug} — the cover's data table opens on white, never on the painted field`, async ({ page }) => {
+    await page.goto(dataPath(`/projects/${slug}/`), { waitUntil: 'networkidle' });
+    const table = page.locator('.ed-spread > .chart__table');
+    await expect(table).toHaveCount(1);
+    await table.locator('summary').click();
+    await expect(table.locator('table')).toBeVisible();
+    expect(await table.evaluate((el) => getComputedStyle(el).backgroundColor)).toBe('rgb(255, 255, 255)');
+    // pixels: no blue paint shows inside the opened table (pseudo-element fields are invisible to elementFromPoint)
+    const { data, info } = await sharp(await table.screenshot()).removeAlpha().raw().toBuffer({ resolveWithObject: true });
+    // a paint run = 20+ consecutive pixels near the blue pigment (#1F3A93 and its streaks); text edges are 1–2 px
+    const paintLike = (i: number): boolean => data[i]! < 80 && data[i + 1]! < 100 && data[i + 2]! > 90 && data[i + 2]! - data[i]! > 50;
+    let runs = 0;
+    for (let y = 0; y < info.height; y++) {
+      let run = 0;
+      for (let x = 0; x < info.width; x++) {
+        run = paintLike((y * info.width + x) * 3) ? run + 1 : 0;
+        if (run === 20) runs++;
+      }
+    }
+    expect(runs, 'rows of the opened table with blue paint showing').toBe(0);
+  });
+}
+
+// DS-8: on a phone a figure's data table keeps each value whole ("-0.13", not "-0 / .1 / 3": the body's
+// overflow-wrap: anywhere squeezed the auto-layout columns) and scrolls inside its own region, as the game tone does.
+test('DS-8: 375 px — figure data tables keep each value on one line and scroll in their own region', async ({ browser }) => {
+  const context = await browser.newContext({ viewport: { width: 375, height: 812 } });
+  const page = await context.newPage();
+  for (const slug of ['youth-startup-location', 'kickick-park']) {
+    await page.goto(dataPath(`/projects/${slug}/`), { waitUntil: 'networkidle' });
+    const table = page.locator('main .chart__table--editorial').first();
+    await table.locator('summary').click();
+    const broken = await table.evaluate((el) =>
+      [...el.querySelectorAll('tbody td')].filter((td) => {
+        const range = document.createRange();
+        range.selectNodeContents(td);
+        return new Set([...range.getClientRects()].map((r) => Math.round(r.top))).size > 1 && !/\s/.test(td.textContent!.trim());
+      }).map((td) => td.textContent!.trim()),
+    );
+    expect(broken, `${slug}: values broken across lines`).toEqual([]);
+    const scroll = await table.locator('[data-table-scroll]').evaluate((el) => getComputedStyle(el).overflowX);
+    expect(scroll).toBe('auto');
+  }
+  await context.close();
 });

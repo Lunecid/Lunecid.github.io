@@ -49,7 +49,11 @@ export function fontFaceRule(face: FontFace, url: string = FONT_URL[face], unico
   return `@font-face{${DESCRIPTORS[face]};src:url(${url}) format("woff2")${unicodeRange ? `;unicode-range:${unicodeRange}` : ''}}`;
 }
 
-/** The placeholder @font-face rules for the given faces (inlined into <head> with <style is:inline>). */
-export function fontFaceCss(faces: readonly FontFace[]): string {
-  return faces.map((face) => fontFaceRule(face)).join('');
+/**
+ * The placeholder @font-face rules for the given faces (inlined into <head> with <style is:inline>). `display`
+ * replaces font-display: swap — 'optional' for a preloaded face that must never swap in after the first render.
+ */
+export function fontFaceCss(faces: readonly FontFace[], display?: 'optional'): string {
+  const css = faces.map((face) => fontFaceRule(face)).join('');
+  return display ? css.replaceAll('font-display:swap', `font-display:${display}`) : css;
 }

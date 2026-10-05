@@ -8,6 +8,7 @@ import InterestCards from '../components/research/InterestCards.astro';
 import InProgressList from '../components/research/InProgressList.astro';
 import PublicationItem from '../components/research/PublicationItem.astro';
 import ViewerMount from '../components/common/ViewerMount.astro';
+import Folio from '../components/data/Folio.astro';
 import { researchPage } from '../data/research-page';
 import { resolveFacts, resolveLocalizedDeep } from '../lib/facts';
 import { getFactSource, getPerson, getPublications } from '../lib/portfolio';
@@ -46,8 +47,8 @@ const academicCv = DOCUMENTS[v.documents.academic];
       <p class="research-cv"><a class="btn btn--line cut cut--line" href={academicCv} title={t(lang, 'nav.cvAcademic')} download>{t(lang, 'nav.cvAcademic')} <span aria-hidden="true">↓</span></a></p>
     )}
   </PageHeader>
-  <InterestCards lang={lang} variant={variant} interests={resolveLocalizedDeep(researchPage.interests, facts)} />
-  <section id="publications" class:list={['pub__section', editorial ? 'ed-sec' : ['read', 'read-sec']]} aria-labelledby="publications-title">
+  {editorial && <div class="container"><Folio /></div>}<InterestCards lang={lang} variant={variant} interests={resolveLocalizedDeep(researchPage.interests, facts)} />
+  {editorial && <div class="container"><Folio /></div>}<section id="publications" class:list={['pub__section', editorial ? 'ed-sec' : ['read', 'read-sec']]} aria-labelledby="publications-title">
     {getVariant(variant).modules.includes('characterArt') && <GhostArt side="left" />}
     <div class="container">
       <SectionHead variant={variant} id="publications-title" caption={captionFor(getVariant(variant), 'publications', lang)} title={t(lang, 'research.publications')} />
@@ -63,8 +64,8 @@ const academicCv = DOCUMENTS[v.documents.academic];
       ))}
     </div>
   </section>
-  <InProgressList lang={lang} variant={variant} items={resolveLocalizedDeep(researchPage.ongoing, facts)} />
-  {editorial ? (
+  {editorial && <div class="container"><Folio /></div>}<InProgressList lang={lang} variant={variant} items={resolveLocalizedDeep(researchPage.ongoing, facts)} />
+  {editorial && <div class="container"><Folio /></div>}{editorial ? (
     <section id="for-labs" class="for-labs ed-sec" aria-labelledby="for-labs-title">
       <div class="container">
         <SectionHead variant={variant} id="for-labs-title" caption={captionFor(v, 'forLabs', lang)} title={labNote.title} />

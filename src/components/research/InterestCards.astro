@@ -39,18 +39,20 @@ const fullLabel = t(lang, 'action.fullSize');
 // 1440x900 and 2560x1440), so it loads eagerly; the rest stay lazy. No fetchpriority: on phones it is below the fold,
 // and the browser raises an in-view image's priority itself.
 const firstImageFigure = interests.find((item) => item.figure !== 'auc')?.figure;
-// P2-8: the general version shows the same figures as plain list rows, numbered 그림 1–3 in page order (spec §8).
+// P2-8: the general version shows the same figures numbered 그림 1–3 in page order (spec §8); DS-8: as plain cards
+// (editorial.css .ed-icard) with an aria-hidden card number.
 const editorial = variant === 'data';
 ---
 <section id="interests" class:list={['interests', editorial ? 'ed-sec' : ['read', 'read-sec']]} aria-labelledby="interests-title">
   <div class="container">
     <SectionHead variant={variant} id="interests-title" caption={captionFor(getVariant(variant), 'interests', lang)} title={t(lang, 'research.interests')} />
     {editorial ? (
-      <ol class="ed-list" role="list">
+      <ol class="ed-icards" role="list">
         {interests.map((item, i) => (
-          <li class="ed-item interests-ed__row" data-interest={item.id}>
-            <div>
-              <h3 class="ed-item__title" data-serif>{item.title[lang]}</h3>
+          <li class="ed-icard" data-interest={item.id}>
+            <div class="ed-icard__text">
+              <span class="ed-icard__n" aria-hidden="true">{String(i + 1).padStart(2, '0')}</span>
+              <h3 class="ed-item__title">{item.title[lang]}</h3>
               <p class="ed-body">{item.body[lang]}</p>
             </div>
             {item.figure === 'auc' ? (
@@ -174,10 +176,5 @@ const editorial = variant === 'data';
   @media (min-width: 1068px) {
     .interests__row { grid-template-columns: 4.5em minmax(0, 1fr) minmax(0, 400px); column-gap: 32px; align-items: start; }
     .interests__fig { grid-column: 3; grid-row: 1; }
-  }
-  /* General version (P2-8) */
-  .interests-ed__row { display: grid; gap: 16px; }
-  @media (min-width: 1068px) {
-    .interests-ed__row { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); column-gap: 40px; align-items: start; }
   }
 </style>
