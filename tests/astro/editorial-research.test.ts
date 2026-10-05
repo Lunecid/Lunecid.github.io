@@ -48,7 +48,7 @@ describe('research page components on the general version (P2-8)', () => {
     const html = await renderAstro(PublicationItem, { props: { variant: 'data', lang: 'ko', paper } });
     expect(html).toMatch(/<article class="pub pub--ed"[^>]*data-paper="cog-2026-engagement"/);
     expect(html).toMatch(/<a class="hit" href="\/data\/research\/cog-2026-engagement\/"/);
-    expect(html).toMatch(/<span class="pub__oral-ed"[^>]*>구두 발표<\/span>/);
+    expect(html).toMatch(/<span class="pub__oral-ed ed-tbox"[^>]*>구두 발표<\/span>/); // DS-7 (named): the ink-boxed tag (one badge per view)
     expect(html).not.toMatch(/bracket|pub--oral|>ORAL</);
   });
 });

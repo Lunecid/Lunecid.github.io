@@ -93,19 +93,22 @@ test.describe('DS-3: the v5 frame', () => {
       await page.goto(route, { waitUntil: 'domcontentloaded' });
       const geo = await page.evaluate(() => {
         const box = (el: Element | null) => (el ? el.getBoundingClientRect() : null);
-        const rails = Array.from(document.querySelectorAll('main .ed-sh > .ed-rail')).map((rail) => {
+        // DS-7 (named): on the records CV layout the openers sit in the main column (number + chip over the title) and
+        // the sidebar (aside.ed-side) is the rail; its edges must line up with the rail like every other rail.
+        const rails = Array.from(document.querySelectorAll('main .ed-sh > .ed-rail')).filter((rail) => !rail.closest('.ed-cv, .rhead-ed__text')).map((rail) => {
           const sh = rail.parentElement!;
           const r = box(rail)!;
           return { right: Math.round(r.right), left: Math.round(r.left), n: Math.round(box(rail.querySelector('.ed-rail__n'))!.left), title: Math.round(box(sh.querySelector(':scope > .ed-head__title'))!.left), id: sh.querySelector(':scope > .ed-head__title')?.id ?? '' };
         });
         const tblock = box(document.querySelector('main .ed-tblock'));
         const main = box(document.querySelector('main .ed-phead__main'));
-        return { rails, tblock: tblock && { left: Math.round(tblock.left), right: Math.round(tblock.right) }, main: main && Math.round(main.left) };
+        const side = box(document.querySelector('main .ed-cv > .ed-side'));
+        return { rails, tblock: tblock && { left: Math.round(tblock.left), right: Math.round(tblock.right) }, side: side && { left: Math.round(side.left), right: Math.round(side.right) }, main: main && Math.round(main.left) };
       });
       if (geo.rails.length === 0 && !geo.tblock) continue;
       checked += 1;
-      const lefts = [...geo.rails.map((r) => r.left), ...(geo.tblock ? [geo.tblock.left] : [])];
-      const rights = [...geo.rails.map((r) => r.right), ...(geo.tblock ? [geo.tblock.right] : [])];
+      const lefts = [...geo.rails.map((r) => r.left), ...(geo.tblock ? [geo.tblock.left] : []), ...(geo.side ? [geo.side.left] : [])];
+      const rights = [...geo.rails.map((r) => r.right), ...(geo.tblock ? [geo.tblock.right] : []), ...(geo.side ? [geo.side.right] : [])];
       const mains = [...geo.rails.map((r) => r.title), ...(geo.main !== null ? [geo.main] : [])];
       expect(Math.max(...lefts) - Math.min(...lefts), `${route}: rail left edges ${lefts}`).toBeLessThanOrEqual(1);
       expect(Math.max(...rights) - Math.min(...rights), `${route}: rail right edges ${rights}`).toBeLessThanOrEqual(1);
@@ -135,7 +138,7 @@ test.describe('DS-3: the v5 frame', () => {
       else expect(s.waiting, `${s.id} below the first screen waits`).toBe(true);
     }
     // the sections' content itself never waits, only the opener's own boxes
-    expect(await page.locator('main .ed-sec .ed-list').first().evaluate((el) => getComputedStyle(el).opacity)).toBe('1');
+    expect(await page.locator('main .ed-sec .ed-tl').first().evaluate((el) => getComputedStyle(el).opacity)).toBe('1'); // DS-7 (named): records lists are timelines now
     for (const s of atLoad.filter((x) => x.top >= 720)) {
       await page.locator(`#${s.id}`).scrollIntoViewIfNeeded();
       await expect.poll(async () => (await state()).find((x) => x.id === s.id)?.opacity, s.id).toBe(1);

@@ -170,4 +170,12 @@ describe('PublicationItem.astro', () => {
     expect(html).toMatch(/<h4[^>]*class="pub__title"/);
     expect(html).not.toMatch(/<h3\b/);
   });
+
+  it('DS-7: one badge per view — records uses the ink-boxed tag', async () => {
+    const html = await render({ variant: 'data', lang: 'ko', paper: ko, compact: true });
+    expect(html).toMatch(/<span class="pub__oral-ed ed-tbox"[^>]*>구두 발표<\/span>/);
+    expect(html).not.toMatch(/ed-stamp|data-paint-text/);
+    const css = (await import('node:fs')).readFileSync('src/styles/editorial.css', 'utf8');
+    expect(css).toMatch(/\.ed-tbox \{[^}]*box-shadow: inset 0 0 0 2px var\(--ed-ink\)/);
+  });
 });

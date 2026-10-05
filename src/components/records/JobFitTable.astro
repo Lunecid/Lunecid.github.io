@@ -98,7 +98,7 @@ const title = t(lang, 'jobfit.title');
         <p class="jobfit__note"><span class="jobfit__sources-title">{t(lang, 'jobfit.sources')}:</span> {r(data.sources.note[lang])}</p>
       </Fragment>
     ) : (
-      <p class="jobfit__pending">{t(lang, 'jobfit.pending')}</p>
+      <p class:list={['jobfit__pending', { 'ed-pending': variant === 'data' }]}>{t(lang, 'jobfit.pending')}</p>
     )}
   </div>
 </section>

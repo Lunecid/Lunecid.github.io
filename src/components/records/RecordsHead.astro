@@ -3,11 +3,17 @@
 // on phones), name, status, a one-line intro (the tagline), the three PDFs as cut-corner buttons (D-7 labels), contact,
 // and an in-page bar to the sections recruiters look for (학력 · 수상 · 기술 · 지원 요건 대응 · PDF). No education list
 // here: QUEST LOG right below is the one education list on the page.
+// DS-7 (v5): the general version's head is the CV head — the photo in a white frame with the painted composition below
+// it (phones: text first), the section opener (number + chip) and the greeting, name, status, tagline and the documents
+// row; the jump list (recordJumps) and the contacts sit in the page's sidebar (RecordsView), not here.
 import { Picture } from 'astro:assets';
 import photo from '../../assets/photo/photo-id.webp';
 import GhostArt from '../hud/GhostArt.astro';
 import SectionLabel from '../hud/SectionLabel.astro';
 import DocButtons from './DocButtons.astro';
+import SectionHead from '../hud/SectionHead.astro';
+import PaintMark from '../data/PaintMark.astro';
+import { recordJumps } from '../../lib/records';
 import type { Lang } from '../../i18n/ui';
 import { t } from '../../i18n/utils';
 import { fitWidths, sourceSize } from '../../lib/images';
@@ -36,15 +42,7 @@ const researcherLinks = [
   ids?.scholar ? { label: 'Google Scholar', href: ids.scholar } : null,
   ids?.orcid ? { label: 'ORCID', href: ids.orcid } : null,
 ].filter((link): link is { label: string; href: string } => link !== null);
-const jumps = [
-  { href: '#education', label: t(lang, 'records.education') },
-  // F-098 (b): one Publications jump for PhD readers; keep the other five recruiter links.
-  { href: '#publications', label: lang === 'ko' ? '논문' : 'Publications' },
-  { href: '#awards', label: t(lang, 'records.awards') },
-  { href: '#skills', label: t(lang, 'records.skills') },
-  { href: '#job-fit', label: t(lang, 'jobfit.title') },
-  { href: '#documents', label: 'PDF' },
-];
+const jumps = recordJumps(lang);
 ---
 {variant === 'game' ? (
 <section id="profile" class="rhead read" aria-labelledby="profile-title">
@@ -88,40 +86,15 @@ const jumps = [
 </section>
 ) : (
   <section id="profile" class="rhead-ed ed-sec" aria-labelledby="profile-title">
-    <div class="container">
-      <div class="rhead-ed__grid">
-        <Picture
-          class="rhead__photo"
-          src={photo}
-          formats={['avif', 'webp']}
-          fallbackFormat="webp"
-          widths={fitWidths([120, 240, 354], sourceSize(photo).width)}
-          sizes="(min-width: 1068px) 176px, (min-width: 734px) 150px, 112px"
-          priority
-          alt={t(lang, 'card.photoAlt')}
-        />
-        <div class="rhead-ed__intro">
-          <SectionLabel variant={variant} en={captionFor(getVariant(variant), 'profile', lang)} />
-          <h2 id="profile-title" class="rhead-ed__hello" data-serif>{`${t(lang, 'section.hello')}!`}</h2>
-          <p class="rhead-ed__name">{name}</p>
-          <p class="ed-meta">{status}</p>
-        </div>
-        <div class="rhead-ed__more">
-          <p class="ed-body">{tagline}</p>
-          <div class="rhead-ed__docs"><DocButtons variant={variant} documents={documents} primary={primary} /></div>
-          <ul class="ed-links" role="list">
-            <li><a class="ed-link" href={`mailto:${contact.email}`}>{contact.email}</a></li>
-            <li><a class="ed-link" href={contact.github}>GitHub <span aria-hidden="true">↗</span></a></li>
-            <li><a class="ed-link" href={contact.dacon}>DACON <span aria-hidden="true">↗</span></a></li>
-            {researcherLinks.map((link) => <li><a class="ed-link" href={link.href}>{link.label} <span aria-hidden="true">↗</span></a></li>)}
-          </ul>
-        </div>
+    <div class="container ed-g rhead-ed__grid">
+      <div class="rhead-ed__photo"><Picture class="rhead__photo" src={photo} formats={['avif', 'webp']} fallbackFormat="webp" widths={fitWidths([120, 240, 354], sourceSize(photo).width)} sizes="(min-width: 734px) 220px, 150px" priority alt={t(lang, 'card.photoAlt')} /><PaintMark kind="cv" /></div>
+      <div class="rhead-ed__text">
+        <SectionHead variant={variant} id="profile-title" caption={captionFor(getVariant(variant), 'profile', lang)} title={`${t(lang, 'section.hello')}!`} />
+        <p class="rhead-ed__name">{name}</p>
+        <p class="rhead-ed__status">{status}</p>
+        <p class="rhead-ed__tag">{tagline}</p>
+        <div class="rhead-ed__docs"><DocButtons variant={variant} documents={documents} primary={primary} /></div>
       </div>
-      <nav class="rnav-ed" aria-label={t(lang, 'records.jump')}>
-        <ol class="ed-links" role="list">
-          {jumps.map((jump) => <li><a class="ed-link" href={jump.href}>{jump.label}</a></li>)}
-        </ol>
-      </nav>
     </div>
   </section>
 )}

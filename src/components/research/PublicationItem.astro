@@ -43,7 +43,7 @@ const gloss = lang === 'ko' ? paper.titleGloss : null;
     <p class="pub__venue">
       <span lang="en">{paper.venue}</span>
       {paper.oral && (variant === 'data'
-        ? <span class="pub__oral-ed">{t(lang, 'research.oralPresentation')}</span>
+        ? <span class="pub__oral-ed ed-tbox">{t(lang, 'research.oralPresentation')}</span>
         : <span class="pub__oral" lang="en">{t(lang, 'research.oral')}</span>)}
     </p>
     <p class="pub__tldr">{paper.tldr}</p>
