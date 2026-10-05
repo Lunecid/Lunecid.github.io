@@ -165,7 +165,7 @@
   "tests/react/account-admin.test.ts": 314,
   "tests/react/achievements.test.ts": 56,
   "tests/react/chooser-init.test.ts": 28,
-  "tests/react/chooser.test.ts": 143,
+  "tests/react/chooser.test.ts": 148,
   "tests/react/data-paint.test.ts": 8,
   "tests/react/data-reveal.test.ts": 13,
   "tests/react/en-404.test.ts": 19,

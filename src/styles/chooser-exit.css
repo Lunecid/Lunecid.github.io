@@ -108,6 +108,7 @@
 .desk[data-exit="game"] ~ .xnav .xnav__ln { animation: x-line var(--x-line) var(--ease-out) var(--x-line-at) forwards; }
 .desk[data-exit="game"] ~ .xnav .xnav__bg { animation: x-in var(--x-line) var(--ease-wipe) var(--x-line-at) both; }
 .desk[data-exit="fade"] ~ .xnav .xnav__bg { animation: x-in var(--x-fade) linear both; }
+.desk[data-exit-done] ~ .xnav .xnav__bg { animation: none; opacity: 1; }
 @keyframes x-line { 0% { opacity: 1; transform: none; } 55% { opacity: 1; } 75% { transform: scaleX(var(--xl-k, 1)); } 100% { opacity: 0; transform: scaleX(var(--xl-k, 1)); } }
 
 /* ── data: the page turn (800 ms). A 45° fold line runs from the sheet's bottom-right corner past its top-left (0–720,

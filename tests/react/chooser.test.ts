@@ -609,6 +609,20 @@ describe('the handoff after the exits (MO-42)', () => {
     expect(sessionStorage.getItem('sb:intro')).toBe('1');
   });
 
+  it('MO-42: at the navigation the exit is marked done (the ground snaps to its end, whatever the animation clock); bfcache clears it', () => {
+    click(m.game);
+    expect(m.desk.hasAttribute('data-exit-done')).toBe(false);
+    vi.advanceTimersByTime(EXIT_MS.game);
+    expect(m.desk.hasAttribute('data-exit-done')).toBe(true);
+    expect(navigations).toEqual(['/game/']);
+    const ev = new Event('pageshow') as Event & { persisted: boolean };
+    Object.defineProperty(ev, 'persisted', { value: true });
+    window.dispatchEvent(ev);
+    expect(m.desk.hasAttribute('data-exit-done')).toBe(false);
+    const css = readFileSync('src/styles/chooser-exit.css', 'utf8');
+    expect(css).toMatch(/\.desk\[data-exit-done\] ~ \.xnav \.xnav__bg \{ animation: none; opacity: 1; \}/);
+  });
+
   it('MO-42: storage that throws never blocks the exit', () => {
     const spy = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => { throw new Error('blocked'); });
     try {

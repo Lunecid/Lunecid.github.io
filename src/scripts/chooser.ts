@@ -181,12 +181,18 @@ export function initExit(desk: HTMLElement, link: HTMLAnchorElement, kind: ExitK
     desk.dataset.exit = fade ? 'fade' : kind;
     if (!fade && kind === 'game') desk.classList.add('is-aside'); // the sheet makes way for the screen
     const href = link.getAttribute('href') ?? link.href;
-    window.setTimeout(() => navigate(href), fade ? EXIT_MS.reduce : EXIT_MS[kind]);
+    window.setTimeout(() => {
+      // the page the browser keeps on screen until the next one paints ends on its exit's ground, even when a busy
+      // main thread left the ground's fade behind the timer
+      desk.setAttribute('data-exit-done', '');
+      navigate(href);
+    }, fade ? EXIT_MS.reduce : EXIT_MS[kind]);
   });
   window.addEventListener('pageshow', (e) => {
     if (!(e as PageTransitionEvent).persisted) return;
     delete desk.dataset.exit;
     delete desk.dataset.exitTo;
+    desk.removeAttribute('data-exit-done');
     desk.classList.remove('is-aside');
     stamp?.classList.remove('is-declassified', 'is-struck');
     layer?.removeAttribute('style');
