@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import AucLabel from '../../src/components/research/AucLabel.astro';
 import ProjectCartridge from '../../src/components/projects/ProjectCartridge.astro';
@@ -51,5 +52,11 @@ describe('AucLabel.astro', () => {
   it('tone editorial (P2-5): the root gains auc-label--editorial; the default root is unchanged', async () => {
     expect(await renderAstro(AucLabel, { props: { lang: 'ko', tone: 'editorial' } })).toMatch(/<div class="auc-label auc-label--editorial"[^>]*data-auc-label/);
     expect(await renderAstro(AucLabel, { props: { lang: 'ko' } })).toMatch(/<div class="auc-label"[^>]*data-auc-label/);
+  });
+
+  it('GP-5: AucLabel highlight uses --hl2 (editorial keeps --ed-accent)', () => {
+    const src = readFileSync(new URL('../../src/components/research/AucLabel.astro', import.meta.url), 'utf8');
+    expect(src).toMatch(/\.auc-label__dot--hl \{ fill: var\(--hl2\); \}/);
+    expect(src).toMatch(/\.auc-label--editorial \.auc-label__dot--hl \{ fill: var\(--ed-accent\); \}/);
   });
 });

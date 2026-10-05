@@ -1,7 +1,7 @@
 // Batch 5 pins in a real browser: the light HUD reading areas (P1-9), job-fit cards and table (P1-11, P2-18), case-study
 // figures in one reading column (P1-7), cartridge labels and stickers (P1-6, P2-23), the records head (P2-19) and the
 // re-cropped photo (P2-22).
-import { test, expect, box, horizontalOverflow, openAt } from './helpers';
+import { test, expect, box, horizontalOverflow, openAt, builtRoutes } from './helpers';
 
 test.describe('P1-9: the reading bands are light HUD, not rounded card grids', () => {
   for (const route of ['/game/research/', '/game/records/', '/en/game/records/', '/game/projects/', '/game/player-log/']) {
@@ -287,5 +287,75 @@ test.describe('P2-19 / P2-22: the records head and the photo', () => {
     await expect.poll(() => photo.evaluate((el) => (el as HTMLImageElement).naturalWidth)).toBeGreaterThan(0);
     expect(await photo.evaluate((el) => (el as HTMLImageElement).naturalWidth)).toBeLessThanOrEqual(354);
     expect(await photo.evaluate((el) => getComputedStyle(el).borderTopWidth)).toBe('1px');
+  });
+});
+
+// GP-5 (game palette v4): the chart highlight is data, so it takes the second highlight (cyan on dark, deep cyan inside a
+// white panel), never the link colour; the cartridge card draws one focus ring; no lime, gold or olive is left.
+test.describe('GP-5: charts and components in the new roles', () => {
+  const lum = (rgb: string): number => {
+    const [r, g, b] = (rgb.match(/\d+(\.\d+)?/g) ?? []).slice(0, 3).map(Number).map((v) => {
+      const c = v / 255;
+      return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+    });
+    return 0.2126 * r! + 0.7152 * g! + 0.0722 * b!;
+  };
+  const ratio = (a: string, b: string) => { const [x, y] = [lum(a), lum(b)].sort((p, q) => q - p); return (x! + 0.05) / (y! + 0.05); };
+  test('GP-5 /game/: the AUC highlight is cyan on dark (hud tone) and #006F80 inside the paper panel; ≥ 3:1 against its ground', async ({ page }) => {
+    for (const [route, scope, expected] of [
+      ['/game/', '.rh .paper', 'rgb(0, 111, 128)'],
+      ['/game/research/', 'main', 'rgb(0, 229, 255)'],
+    ] as const) {
+      await openAt(page, route, 1280);
+      const marks = await page.locator(`${scope} .chart`).first().evaluate((chart) => {
+        let n: Element | null = chart;
+        let ground = 'rgb(255, 255, 255)';
+        while (n) {
+          const bg = getComputedStyle(n).backgroundColor;
+          if (bg !== 'rgba(0, 0, 0, 0)' && bg !== 'transparent') { ground = bg; break; }
+          n = n.parentElement;
+        }
+        const dot = chart.querySelector('.chart__dot--hl')!;
+        const ring = chart.querySelector('.chart__ring')!;
+        return { dot: getComputedStyle(dot).fill, ring: getComputedStyle(ring).stroke, ground };
+      });
+      expect(marks.dot, route).toBe(expected);
+      expect(marks.ring, route).toBe(expected);
+      expect(ratio(marks.dot, marks.ground), `${route} dot on ${marks.ground}`).toBeGreaterThanOrEqual(3);
+    }
+  });
+
+  test('GP-5: the cartridge title shows one focus ring (the card), not two', async ({ page }) => {
+    await openAt(page, '/game/', 1280);
+    await page.keyboard.press('Tab');
+    const link = page.locator('.cart__link').first();
+    await link.evaluate((el) => (el as HTMLElement).focus());
+    const rings = await link.evaluate((el) => ({
+      self: getComputedStyle(el).outlineStyle,
+      card: `${getComputedStyle(el, '::after').outlineStyle} ${getComputedStyle(el, '::after').outlineColor}`,
+    }));
+    expect(rings.self).toBe('none');
+    expect(rings.card).toBe('solid rgb(255, 230, 0)');
+  });
+
+  test('GP-5: no computed colour on any game route equals lime, gold or olive', async ({ page }) => {
+    const bad = ['rgb(200, 240, 60)', 'rgb(245, 179, 1)', 'rgb(79, 107, 0)', 'rgb(138, 90, 0)'];
+    const hits: string[] = [];
+    for (const route of builtRoutes({ variant: 'game' })) {
+      await openAt(page, route, 1280);
+      hits.push(...(await page.evaluate(([b, r]) => {
+        const out: string[] = [];
+        const props = ['color', 'background-color', 'border-top-color', 'border-right-color', 'border-bottom-color', 'border-left-color',
+          'outline-color', 'text-decoration-color', 'fill', 'stroke', 'background-image', 'box-shadow', 'text-shadow'];
+        for (const el of [document.documentElement, ...Array.from(document.body.querySelectorAll('*'))]) {
+          for (const pseudo of [null, '::before', '::after']) {
+            const s = getComputedStyle(el, pseudo);
+            for (const p of props) { const v = s.getPropertyValue(p); for (const c of b) if (v.includes(c)) out.push(`${r} ${el.tagName}.${el.getAttribute('class') ?? ''}${pseudo ?? ''} ${p} ${c}`); }
+          }
+        }
+        return out;
+      }, [bad, route] as const)));
+    }
+    expect(hits.slice(0, 20)).toEqual([]);
   });
 });

@@ -257,11 +257,11 @@ const columns = lang === 'ko' ? ['모델', '입력 표현', 'AUC'] : ['Model', '
   .chart__guide { stroke: var(--read-line); stroke-width: 1; stroke-dasharray: 2 4; }
   .chart__chance { stroke: var(--read-muted); stroke-width: 1.5; stroke-dasharray: 4 3; }
   .chart__dot { fill: var(--read-muted); }
-  .chart__dot--hl { fill: var(--accent-deep); }
-  /* P-06 F-085: LightGBM, the paper's model, is told apart without its hue: a 2px ring round its dot (--accent-deep in
+  .chart__dot--hl { fill: var(--hl2); }
+  /* P-06 F-085: LightGBM, the paper's model, is told apart without its hue: a 2px ring round its dot (--hl2, the second highlight, in
      the read and hud tones, --ed-accent in the editorial one) and its label and value at weight 800. The groups are
      named at their first row and the axis carries its title (muted, like the ticks). */
-  .chart__ring { fill: none; stroke: var(--accent-deep); stroke-width: 2px; }
+  .chart__ring { fill: none; stroke: var(--hl2); stroke-width: 2px; }
   .chart__label--hl,
   .chart__value--hl { font-weight: 800; }
   .chart__group,

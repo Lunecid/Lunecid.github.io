@@ -591,7 +591,7 @@ test.describe('image viewer', () => {
     });
     expect(outline.style).not.toBe('none');
     expect(outline.width).not.toBe('0px');
-    expect(outline.color).toMatch(/200,\s*240,\s*60/);
+    expect(outline.color).toMatch(/255,\s*230,\s*0/); // named change GP-5: the game accent is yellow
   });
 
   test('/game/projects/ hash-only popstate keeps the tag filter selection', async ({ page }) => {

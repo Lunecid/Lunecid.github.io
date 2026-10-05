@@ -209,10 +209,19 @@ describe('AucOverallChart.astro', () => {
       }
     }
     const src = readSource('src/components/research/AucOverallChart.astro');
-    expect(src).toMatch(/\.chart__ring \{ fill: none; stroke: var\(--accent-deep\); stroke-width: 2px; \}/); // read and hud
+    // named change (GP-5): the ring and dot take the second-highlight role (--hl2 = --accent-deep outside game pages, cyan
+    // on the game palette, deep cyan inside its white panels); a non-link must not wear the link colour
+    expect(src).toMatch(/\.chart__ring \{ fill: none; stroke: var\(--hl2\); stroke-width: 2px; \}/); // read and hud
     expect(src).toMatch(/\.chart__label--hl,\s*\n\s*\.chart__value--hl \{ font-weight: 800; \}/);
     expect(src).toMatch(/\.chart--editorial \.chart__ring \{ stroke: var\(--ed-accent\); \}/);
-    expect(src).not.toMatch(/\.chart--hud \.chart__ring/); // the hud tone keeps the --accent-deep ring
+    expect(src).not.toMatch(/\.chart--hud \.chart__ring/); // the hud tone keeps the --hl2 ring
+  });
+
+  it("GP-5: the paper's model dot and ring use --hl2 in read and hud tones; editorial unchanged", () => {
+    const src = readSource('src/components/research/AucOverallChart.astro');
+    expect(src).toMatch(/\.chart__dot--hl \{ fill: var\(--hl2\); \}/);
+    expect(src).toMatch(/\.chart--editorial \.chart__dot--hl \{ fill: var\(--ed-accent\); \}/);
+    expect(src).not.toMatch(/var\(--accent-deep\)/);
   });
 
   it('P-06 F-085: the groups are named at their boundary (TABULAR, NEURAL; above each group) and the axis is titled "AUC →", in every layout', async () => {
