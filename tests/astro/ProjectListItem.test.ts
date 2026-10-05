@@ -44,4 +44,24 @@ describe('ProjectListItem.astro (P2-6)', () => {
     expect(plain).toMatch(/<h3 class="ed-card__title"[^>]*>사각지대를 예측하다<\/h3>\s*<p class="ed-card__text"[^>]*>한 줄 요약입니다\.<\/p>/);
     expect(plain).not.toMatch(/<a |ed-card__img/);
   });
+
+  it('DS-5: the lead card — the page LCP image (priority) over the painted field, the same facts; priority only on the lead', async () => {
+    const html = await renderAstro(ProjectListItem, { props: { ...base, href: '/data/projects/school-zone-blindspots/', cover, variant: 'lead', n: 1, priority: true } });
+    expect(html).toMatch(/^<li class="ed-card ed-card--lead"[^>]*data-tags="geospatial ml"/);
+    expect(html).toMatch(/<div class="ed-card__img"[^>]*>\s*<picture/);
+    expect(/<img\b[^>]*>/.exec(html)?.[0]).toMatch(/fetchpriority="high"/);
+    expect(html).toMatch(/<span class="ed-card__n" aria-hidden="true"[^>]*>01<\/span>/);
+    expect(html).toMatch(/<h3 class="ed-card__title"[^>]*><a class="hit" href="\/data\/projects\/school-zone-blindspots\/"/);
+    const card = await renderAstro(ProjectListItem, { props: { ...base, href: '/x/', cover, variant: 'card', n: 2 } });
+    expect(card).not.toMatch(/fetchpriority="high"/);
+    expect(/<img\b[^>]*>/.exec(card)?.[0]).toMatch(/loading="lazy"/);
+  });
+
+  it('DS-5: the CoG card keeps its AUC label figure; the row variant is unchanged for other lists', async () => {
+    const html = await renderAstro(ProjectListItem, { props: { ...base, href: '/data/research/cog-2026-engagement/', chart: { kind: 'auc-overall', lang: 'ko' }, variant: 'card', n: 4 } });
+    expect(html).toMatch(/^<li class="ed-card"/);
+    expect(html).toMatch(/<div class="ed-card__img ed-card__img--chart"[^>]*>\s*<div class="auc-label auc-label--editorial"/);
+    const row = await renderAstro(ProjectListItem, { props: { ...base, href: '/x/', cover } });
+    expect(row).toMatch(/^<li class="pli ed-item"/);
+  });
 });

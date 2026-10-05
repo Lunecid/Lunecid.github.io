@@ -503,3 +503,50 @@
   :root[data-variant="data"] .ed-spread::after,
   :root[data-variant="data"] .ed-spread__y { display: none !important; }
 }
+
+/* ══ v5 projects (DS-5): the mosaic beside the title, the tag filter as bracket buttons, the card grid with the lead
+   card on paint, the GitHub repositories as the same cards ══ */
+/* the list section: an empty rail (the vertical gridline) and the main column, as every section */
+:root[data-variant="data"] .ed-plist__grid { row-gap: 0; }
+/* tag filter: white buttons in a 1px ink box with an aria-hidden [ ] mark; pressed = ink fill, [x] (v5.1, DS-OQ7) */
+:root[data-variant="data"] #project-list .tag-filter { gap: 8px; margin-bottom: 26px; }
+:root[data-variant="data"] .tag-filter__btn { display: inline-flex; align-items: center; gap: 6px; padding: 0 12px; border: 0; border-radius: 0; background: var(--ed-bg); box-shadow: inset 0 0 0 1px var(--ed-ink); color: var(--ed-ink); font-size: var(--fs-label); font-weight: 700; }
+:root[data-variant="data"] .tag-filter__btn::before { content: "[ ]" / ""; color: var(--ed-ink-2); }
+:root[data-variant="data"] .tag-filter__btn[aria-pressed="true"] { background: var(--ed-fill); color: var(--ed-fill-ink); box-shadow: inset 0 0 0 1px var(--ed-fill); }
+:root[data-variant="data"] .tag-filter__btn[aria-pressed="true"]::before { content: "[x]" / ""; color: var(--ed-fill-ink); }
+@media (hover: hover) {
+  :root[data-variant="data"] .tag-filter__btn[aria-pressed="false"]:hover { box-shadow: inset 0 0 0 2px var(--ed-ink); }
+}
+:root[data-variant="data"] .tag-filter__btn[aria-pressed="false"]:active { box-shadow: inset 0 0 0 2px var(--ed-ink); }
+/* the lead card: the page's big image over a blue painted field with a white notch and a red cell, the text beside it */
+:root[data-variant="data"] .ed-card--lead { border: 0; background: transparent; }
+:root[data-variant="data"] .ed-card--lead::before { inset: -8px; }
+:root[data-variant="data"] .ed-card--lead .ed-card__img { position: relative; isolation: isolate; aspect-ratio: auto; overflow: visible; padding: 0 0 26px 26px; border: 0; background: transparent; }
+:root[data-variant="data"] .ed-card--lead .ed-card__img::before { content: ""; position: absolute; z-index: -1; left: 0; bottom: 0; width: 70%; top: 30%;
+  background: linear-gradient(var(--ed-bg), var(--ed-bg)) 0 100% / calc(18% + var(--ed-rw)) calc(34% + var(--ed-rw)) no-repeat, var(--ed-paint-bh);
+  -webkit-mask-box-image: var(--ed-rag); }
+:root[data-variant="data"] .ed-card--lead .ed-card__img::after { content: ""; position: absolute; z-index: -1; left: 0; bottom: 0; width: calc(70% * .18); height: calc(70% * .34); background: var(--ed-paint-rv); -webkit-mask-box-image: var(--ed-rag); }
+:root[data-variant="data"] .ed-card--lead .ed-card__img img { height: auto; box-shadow: 0 0 0 8px var(--ed-bg); }
+:root[data-variant="data"] .ed-card--lead .ed-card__body { padding: 20px 0 0; }
+:root[data-variant="data"] .ed-card--lead .ed-card__title { font-size: var(--fs-ed-h2); line-height: 1.25; }
+/* GitHub repositories: the same cards, text only */
+:root[data-variant="data"] .gh .gh__h { margin-top: 28px; font-size: var(--fs-body); font-weight: 800; }
+
+@media (min-width: 734px) {
+  :root[data-variant="data"] .ed-plist__grid > * { grid-column: 4 / -1; }
+  :root[data-variant="data"] .ed-plist__grid > .ed-plist__rail { grid-column: 1 / 4; grid-row: 1 / span 3; border-right: 1px solid var(--ed-line); }
+  :root[data-variant="data"] .ed-cards--grid,
+  :root[data-variant="data"] .ed-cards--repos { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  :root[data-variant="data"] .ed-cards--grid { margin-top: 0; }
+  :root[data-variant="data"] .ed-card--lead { grid-column: 1 / -1; display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 0 24px; align-items: end; }
+  :root[data-variant="data"] .ed-card--lead[hidden] { display: none; }
+}
+@media (min-width: 1068px) {
+  :root[data-variant="data"] .ed-card--lead { column-gap: 32px; }
+  :root[data-variant="data"] .ed-phead__grid--mosaic > .ed-phead__main { grid-column: 4 / 10; }
+  :root[data-variant="data"] .ed-phead__grid--mosaic > .ed-mc--mosaic { grid-column: 10 / -1; align-self: start; margin-top: 10px; }
+}
+@media print {
+  :root[data-variant="data"] .ed-card--lead .ed-card__img::before,
+  :root[data-variant="data"] .ed-card--lead .ed-card__img::after { display: none !important; }
+}

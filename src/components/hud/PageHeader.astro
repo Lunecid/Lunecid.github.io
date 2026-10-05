@@ -18,8 +18,10 @@ interface Props {
   intro?: string;
   /** General version: the Latin display words over the title (the English page title); default: the title. */
   display?: string;
+  /** General version (DS-5): the small painted mosaic beside the title (from 1068 px; decoration). */
+  mosaic?: boolean;
 }
-const { variant, lang, label, title, intro, display } = Astro.props;
+const { variant, lang, label, title, intro, display, mosaic = false } = Astro.props;
 ---
 {variant === 'game' ? (
   <section class="page-head hud-grid" aria-labelledby="page-head-title">
@@ -33,7 +35,7 @@ const { variant, lang, label, title, intro, display } = Astro.props;
 ) : variant === 'data' ? (
   <section class="ed-phead" aria-labelledby="page-head-title">
     <div class="container">
-      <PageHeadData lang={lang} caption={label} title={title} display={display ?? title} intro={intro}><slot /></PageHeadData>
+      <PageHeadData lang={lang} caption={label} title={title} display={display ?? title} intro={intro} mosaic={mosaic}><slot /></PageHeadData>
     </div>
   </section>
 ) : (

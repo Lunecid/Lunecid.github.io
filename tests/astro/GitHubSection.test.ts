@@ -174,11 +174,15 @@ describe('GitHubSection.astro', () => {
 describe('GitHubSection.astro on the general version (P2-6)', () => {
   // The file-level hooks already fix Date to FIXED_NOW (vi.useFakeTimers({ now: FIXED_NOW, toFake: ['Date'] })); no
   // nested fake timers here (full fake timers would also freeze setTimeout under the container render).
-  it('editorial rows without the mono index, a black-and-grey calendar, serif sub-heads, the profile link underlined with ↗', async () => {
+  // DS-5 (named): the repositories are the projects page's cards (DS-OQ8), the sub-heads SB Sans (no data-serif).
+  it('repository cards with an aria-hidden number, a black-and-grey calendar, sans sub-heads, the profile link underlined with ↗', async () => {
     const html = await renderAstro(GitHubSection, { props: { variant: 'data', lang: 'ko', data: fixture() } });
     expect(html).toMatch(/<section id="github" class="gh ed-sec"/);
-    expect(html).toMatch(/<ol class="ed-list"/);
-    expect(html).toMatch(/<h3 class="gh__h" data-serif/);
+    expect(html).toMatch(/<ol class="ed-cards ed-cards--repos" role="list"/);
+    expect(html).toMatch(/<li class="ed-card gh-ed__repo"[^>]*>\s*<div class="ed-card__body"[^>]*>\s*<p class="ed-card__top"[^>]*><span class="ed-card__n" aria-hidden="true"[^>]*>01<\/span>/);
+    expect(html).toMatch(/<p class="ed-card__title"[^>]*><a class="gh-ed__name hit" href="https:\/\/github\.com\//);
+    expect(html).toMatch(/<h3 class="gh__h"[^>]*>/);
+    expect(html).not.toMatch(/data-serif/);
     expect(html).toMatch(/<svg class="gh__cal gh__cal--ed"/);
     expect(html).toMatch(/<a class="ed-link" href="https:\/\/github\.com\/Lunecid"[^>]*>[^<]*@Lunecid <span aria-hidden="true"[^>]*>↗<\/span><\/a>/);
     expect(html).not.toMatch(/lh-idx|lh-rows|lh-chip|bracket|ghost-art/);

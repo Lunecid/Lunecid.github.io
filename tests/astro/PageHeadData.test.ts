@@ -45,4 +45,12 @@ describe('PageHeadData.astro (DS-3)', () => {
     expect([...job.matchAll(/<span[^>]*>([^<]*)<\/span>/g)].map((m) => m[1])).toEqual(['school-zone-blindspots', '2025.05 – 2025.07']);
     expect(job).not.toMatch(/LUNECID|lang="en"/);
   });
+
+  it('DS-5: mosaic adds the aria-hidden painted mosaic after the main column; off by default', async () => {
+    const html = await head({ caption: '포트폴리오', title: '프로젝트', display: 'Projects', mosaic: true });
+    expect(html).toMatch(/^<div class="ed-g ed-phead__grid ed-phead__grid--mosaic"/);
+    expect(html).toMatch(/<\/div>\s*<span class="ed-mc ed-mc--mosaic" aria-hidden="true"[^>]*>(<i class="ed-mc__[rbyw]"[^>]*><\/i>){6}<\/span>\s*<\/div>$/);
+    const plain = await head({ caption: '포트폴리오', title: '연구', display: 'Research' });
+    expect(plain).not.toMatch(/mosaic/);
+  });
 });
