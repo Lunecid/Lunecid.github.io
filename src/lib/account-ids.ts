@@ -98,14 +98,14 @@ export function enkaProfileUrl(game: 'genshin' | 'zzz', uid: string): string | n
   return game === 'genshin' ? `https://enka.network/u/${value}/` : `https://enka.network/zzz/${value}/`;
 }
 
-// A Steam Web API key shape, or a GitHub token prefix (spec §4.3). Variables are printed in the run log (R-14).
-const SECRET_HEX = /^[0-9A-Fa-f]{32}$/;
+// A Steam Web API key shape, or a GitHub token prefix (spec §4.3), anywhere in the value: a wrapped or prefixed token
+// ("Bearer ghp_…", "key=<32 hex>") fits a name field too. Variables are printed in the run log (R-14).
+const SECRET_HEX = /[0-9A-Fa-f]{32}/;
 const SECRET_PREFIXES = ['github_pat_', 'ghp_', 'gho_', 'ghu_', 'ghs_', 'ghr_'] as const;
 
 export function looksLikeSecret(value: string): boolean {
   if (typeof value !== 'string') return false;
-  const v = value.trim();
-  return SECRET_HEX.test(v) || SECRET_PREFIXES.some((p) => v.startsWith(p));
+  return SECRET_HEX.test(value) || SECRET_PREFIXES.some((p) => value.includes(p));
 }
 
 export type VarCheck = { ok: true; value: string } | { ok: false; reason: 'name' | 'secret' | 'format' };

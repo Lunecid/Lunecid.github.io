@@ -54,6 +54,19 @@ describe('secrets and variables', () => {
     for (const s of ['0123456789abcdef0123456789ABCDEF', 'github' + '_pat_' + 'x'.repeat(30), fake('ghp'), fake('gho'), fake('ghu'), fake('ghs'), fake('ghr')]) expect(ids.looksLikeSecret(s)).toBe(true);
     for (const s of ['618285856', 'Hide on bush#KR1', '닉네임', '76561197960435530']) expect(ids.looksLikeSecret(s)).toBe(false);
   });
+  it('looksLikeSecret: secret-looking text anywhere in the value counts, not only the whole value', () => {
+    const hex = '0123456789abcdef'.repeat(2);
+    const token = (p: string) => p + '_' + 'A'.repeat(36); // built at run time (gitleaks)
+    const wrapped = [
+      'Bearer ' + token('ghp'), 'token ' + token('ghu'), 'key=' + hex, 'steam key: ' + hex.toUpperCase() + '.',
+      '"' + token('ghs') + '"', 'x'.repeat(20) + ' ' + 'github' + '_pat_' + 'x'.repeat(30), 'abc' + hex + 'def',
+      ('my name key=' + hex).padEnd(64, 'z'), '닉네임 ' + token('gho') + ' 닉네임', 'a\n' + token('ghr'),
+    ];
+    for (const s of wrapped) expect(ids.looksLikeSecret(s), s).toBe(true);
+    for (const s of wrapped) expect(ids.validateVar('ACCOUNT_STEAM_NAME', s), s).toEqual({ ok: false, reason: 'secret' });
+    // 31 hex digits, or hex split by a separator, is not a key
+    for (const s of ['0123456789abcdef0123456789abcde', '0123456789abcdef 0123456789abcdef', 'ghp', 'gh_p_x']) expect(ids.looksLikeSecret(s), s).toBe(false);
+  });
   it('validateVar: seven names, canonical values, secrets refused', () => {
     expect(ids.validateVar('ACCOUNT_OTHER', '1')).toEqual({ ok: false, reason: 'name' });
     expect(ids.validateVar('ACCOUNT_GENSHIN_UID', '618285856')).toEqual({ ok: true, value: '618285856' });
