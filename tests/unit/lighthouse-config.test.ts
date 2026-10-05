@@ -21,11 +21,12 @@ const desktop = read('lighthouserc.desktop.json');
  * LCP = the reference median + 100 ms; LCP element inside .desk). Re-baselined 2026-10-05 after MO-23 (controller
  * ruling): the v6.4 desk measured / 2105 ms (perf 0.99) and /en/ 1434 ms (perf 1.00) after the non-design fixes, so the
  * MO-20 reference (/ 1670 ms, /en/ 1383 ms, measured on the old two-panel chooser) is replaced. MO-26/MO-31 compare
- * against these values.
+ * against these values. /en/ re-baselined again 2026-10-05 (owner ruling, chooser v6.12 desk after MO-36): measured
+ * 1656 ms (median of six runs, bimodal 1505/1731; perf 0.99-1.00), was 1434.
  */
 const CHOOSER_BUDGET = {
   '/': { referenceLcpMs: 2105, lcpMs: 2205, minPerformance: 0.95 },
-  '/en/': { referenceLcpMs: 1434, lcpMs: 1534, minPerformance: 0.95 },
+  '/en/': { referenceLcpMs: 1656, lcpMs: 1756, minPerformance: 0.95 },
 } as const;
 
 describe('Lighthouse budget (A-21, P1-19)', () => {
