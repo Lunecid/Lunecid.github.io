@@ -1,21 +1,30 @@
 // AL-10: the LINKED ACCOUNTS row, server part (spec §3.1, §3.5, §3.7; plan DV-27: LoL and TFT are separate tiles).
 // The tiles come from the real view model over the committed synthetic fixture feeds (tests/fixtures/generated),
 // stamped fresh as the SB_E2E_ACCOUNTS=1 build does; islandImage is mocked (no astro:assets in jsdom).
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { readdirSync, readFileSync } from 'node:fs';
+import { join, relative } from 'node:path';
+import { fireEvent } from '@testing-library/react';
 import type { ImageMetadata } from 'astro';
 import { act } from 'react';
-import { hydrateRoot } from 'react-dom/client';
+import { hydrateRoot, type Root } from 'react-dom/client';
 import { renderToString } from 'react-dom/server';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // AL-11: the visitor island never loads the management chunk (AL-20 adds the ?manage cases).
 // hydrateRoot is driven through React's act() directly (no testing-library render), so declare the act environment.
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
+// Each flag turns true when the island first imports that module; both modules are the real ones (the owner-mode cases
+// below run the real panel and core). A module stays loaded once imported, so every case that expects no import runs
+// before the first owner-mode case.
 const manage = vi.hoisted(() => ({ loaded: false }));
-vi.mock('../../src/islands/account/ManagePanel', () => {
+const core = vi.hoisted(() => ({ loaded: false }));
+vi.mock('../../src/islands/account/ManagePanel', async (importOriginal) => {
   manage.loaded = true;
-  return { default: () => null };
+  return importOriginal();
+});
+vi.mock('../../src/lib/account-admin', async (importOriginal) => {
+  core.loaded = true;
+  return importOriginal();
 });
 vi.mock('../../src/lib/sound', () => ({ playSfx: vi.fn(() => Promise.resolve()) }));
 
@@ -32,9 +41,10 @@ vi.mock('../../src/lib/island-image.server', () => ({
 
 import { favoriteGameSchema, type FavoriteGameData } from '../../src/content/schemas';
 import { parseYamlList } from '../../src/content/yaml-loader';
+import { adminCopy } from '../../src/i18n/accounts-admin';
 import type { Lang } from '../../src/i18n/ui';
 import AccountLinks, { CLOSE_MS, CLOSE_MS_REDUCED, SWITCH_MS, TL, TOGGLE_WINDOW_MS } from '../../src/islands/AccountLinks';
-import { accountLinksLabels, buildAccountView, type AccountTile } from '../../src/lib/account-view';
+import { accountLinksLabels, buildAccountView, type AccountTile, type TileState } from '../../src/lib/account-view';
 import { createGeneratedLoader, freshenFixtureFeeds } from '../../src/lib/generated';
 
 const FIXTURES = join(process.cwd(), 'tests/fixtures/generated');
@@ -778,5 +788,551 @@ describe('AccountLinks card, timeline, reduced motion and stale removal', () => 
     expect(dialog.hasAttribute('open')).toBe(false);
     expect(names(host)).toEqual(['리그 오브 레전드', '전략적 팀 전투']);
     expect(document.activeElement).toBe(buttons(host)[0]);
+  });
+});
+
+// ---------------------------------------------------------------------------------------------------------------
+// Owner mode (?manage; spec §3.1, §3.2, §4.1, §4.2, §4.6). The real panel and core run; only the browser surface is
+// fake: fetch answers per relay path/op, BroadcastChannel is an EventTarget, jsdom gets a secure context, and
+// window.top is replaced for the framed case. The ticket and handle are fakes built at run time. The cases that expect
+// no import come first (see the flags at the top of this file).
+
+describe('AccountLinks owner mode (?manage)', () => {
+  const RELAY = 'https://account-relay.test-sub.workers.dev';
+  const HANDLE = 'hdl_' + 'A'.repeat(60);
+  const TICKET = 'tkt-' + 'B'.repeat(60);
+  const C = adminCopy.ko;
+  const STORED_ZZZ = '1300025292';
+
+  class FakeChannel extends EventTarget {
+    static made = 0;
+    constructor(readonly name: string) {
+      super();
+      FakeChannel.made += 1;
+    }
+    postMessage(): void {}
+    close(): void {}
+  }
+
+  beforeAll(() => {
+    Object.defineProperty(HTMLDialogElement.prototype, 'showModal', {
+      configurable: true,
+      writable: true,
+      value(this: HTMLDialogElement) {
+        this.setAttribute('open', '');
+      },
+    });
+    Object.defineProperty(HTMLDialogElement.prototype, 'close', {
+      configurable: true,
+      writable: true,
+      value(this: HTMLDialogElement) {
+        if (!this.hasAttribute('open')) return;
+        this.removeAttribute('open');
+        this.dispatchEvent(new Event('close'));
+      },
+    });
+  });
+
+  const roots: Root[] = [];
+  const hosts: HTMLElement[] = [];
+  beforeEach(() => {
+    document.documentElement.setAttribute('data-motion', 'full');
+    document.documentElement.classList.remove('is-scroll-locked');
+    Object.defineProperty(window, 'isSecureContext', { value: true, configurable: true });
+    vi.stubGlobal('BroadcastChannel', FakeChannel);
+    FakeChannel.made = 0;
+  });
+  afterEach(async () => {
+    for (const root of roots.splice(0)) await act(async () => root.unmount());
+    for (const h of hosts.splice(0)) h.remove();
+    Reflect.deleteProperty(window, 'isSecureContext');
+    vi.unstubAllGlobals();
+    history.replaceState(null, '', '/');
+  });
+
+  type Answer = (body: Record<string, unknown> | null, url: string) => Response;
+  const reply = (url: string, status: number, body?: unknown): Response => {
+    const res = new Response(body === undefined ? null : JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
+    Object.defineProperty(res, 'url', { value: url });
+    return res;
+  };
+  /** fetch answered per relay path (per op on /gh/api); returns the calls in order. */
+  function relayFetch(extra: Record<string, Answer> = {}) {
+    const answers: Record<string, Answer> = {
+      '/gh/session': (_b, url) => reply(url, 200, { handle: HANDLE, expiresIn: 3600 }),
+      '/gh/logout': (_b, url) => reply(url, 204),
+      'vars.list': (_b, url) => reply(url, 200, [{ name: 'ACCOUNT_ZZZ_UID', value: STORED_ZZZ }]),
+      'workflow.get': (_b, url) => reply(url, 200, { state: 'active' }),
+      ...extra,
+    };
+    const calls: { key: string; body: Record<string, unknown> | null; init: RequestInit }[] = [];
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      const path = new URL(url, location.href).pathname;
+      const body = typeof init?.body === 'string' ? (JSON.parse(init.body) as Record<string, unknown>) : null;
+      const key = path === '/gh/api' ? String(body?.op) : path;
+      calls.push({ key, body, init: init ?? {} });
+      const answer = answers[key];
+      if (answer === undefined) throw new Error(`no answer for ${key}`);
+      return answer(body, url);
+    });
+    return calls;
+  }
+
+  /** genshin errored and steam unlinked: two status tiles without a card on the visitors' row */
+  const offTiles = (list: AccountTile[]): AccountTile[] =>
+    list.map((t) => {
+      const state: TileState | null = t.key === 'genshin' ? 'error' : t.key === 'steam' ? 'unlinked' : null;
+      if (state === null) return t;
+      const { card: _card, teaser: _teaser, teaserSr: _sr, ...rest } = t;
+      return { ...rest, state };
+    });
+
+  async function hydrateOwner(o: { url?: string; relay?: string | null; lang?: Lang; edit?: (t: AccountTile[]) => AccountTile[] } = {}): Promise<HTMLElement> {
+    const lang = o.lang ?? 'ko';
+    history.replaceState(null, '', o.url ?? '/game/player-log/?manage');
+    const built = await tilesFor(lang);
+    const tiles = o.edit ? o.edit(built) : built;
+    const host = document.createElement('div');
+    host.innerHTML = await ssr(lang, tiles);
+    document.body.append(host);
+    hosts.push(host);
+    const relay = o.relay === undefined ? RELAY : o.relay;
+    await act(async () => {
+      roots.push(hydrateRoot(host, <AccountLinks lang={lang} tiles={tiles} labels={accountLinksLabels(lang)} relay={relay} steamButton={false} />));
+    });
+    return host;
+  }
+
+  const tick = (ms = 10) => act(async () => { await new Promise((r) => setTimeout(r, ms)); });
+  /** Waits (inside act) for the dynamic imports, relay answers and the effects they cause. */
+  async function until(check: () => boolean, what: string): Promise<void> {
+    for (let i = 0; i < 300; i++) {
+      if (check()) return;
+      await tick();
+    }
+    throw new Error(`timed out waiting for ${what}`);
+  }
+  const tileButtons = (host: HTMLElement) => [...host.querySelectorAll<HTMLButtonElement>('ul.acct-row > li > button.acct-tile')];
+  const manageButton = (host: HTMLElement) => host.querySelector<HTMLButtonElement>('button.acct-manage');
+  const dialogOf = (host: HTMLElement) => host.querySelector('dialog#acct-dlg') as HTMLDialogElement;
+  const isOpen = (host: HTMLElement) => dialogOf(host)?.hasAttribute('open') ?? false;
+  const panelReady = (host: HTMLElement) => host.querySelector('dialog#acct-dlg section.mp') !== null;
+  const buttonNamed = (host: HTMLElement, name: string) => [...host.querySelectorAll<HTMLButtonElement>('button')].find((b) => b.textContent === name);
+  const zzzField = (host: HTMLElement) => host.querySelector<HTMLInputElement>('.mp-group[data-group="zzz"] input');
+  const signedIn = (host: HTMLElement) => host.querySelector('.mp__perms') !== null;
+
+  async function requestCloseBy(host: HTMLElement, how: 'esc' | 'button' | 'backdrop'): Promise<void> {
+    const d = dialogOf(host);
+    await act(async () => {
+      if (how === 'esc') d.dispatchEvent(new Event('cancel', { cancelable: true }));
+      else if (how === 'button') d.querySelector<HTMLButtonElement>('.acct-dlg__close')?.click();
+      else {
+        d.dispatchEvent(new Event('pointerdown', { bubbles: true }));
+        d.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+      }
+    });
+    await tick(CLOSE_MS + 60);
+  }
+  async function click(el: HTMLElement | null | undefined): Promise<void> {
+    await act(async () => el?.click());
+    await tick(80);
+  }
+
+  it('a visitor address (no ?manage) imports neither the management core nor the panel and asks nothing of the relay', async () => {
+    const calls = relayFetch();
+    const host = await hydrateOwner({ url: '/game/player-log/' });
+    await tick(50);
+    expect(tileButtons(host)).toHaveLength(5);
+    expect(manageButton(host)).toBeNull();
+    expect(core.loaded).toBe(false);
+    expect(manage.loaded).toBe(false);
+    expect(calls).toEqual([]);
+  });
+
+  it('outside a secure context: ?manage leaves the address (the fragment stays) and nothing else changes', async () => {
+    Reflect.deleteProperty(window, 'isSecureContext'); // jsdom has none: not a secure context
+    const host = await hydrateOwner({ url: '/game/player-log/?manage#keep' });
+    await until(() => !location.search.includes('manage'), 'the query read');
+    await tick(30);
+    expect(core.loaded).toBe(true);
+    expect(`${location.pathname}${location.search}${location.hash}`).toBe('/game/player-log/#keep');
+    expect(manageButton(host)).toBeNull();
+    expect(host.querySelector('.acct-links__framed')).toBeNull();
+    expect(tileButtons(host)).toHaveLength(5);
+    expect(manage.loaded).toBe(false);
+  });
+
+  it('inside another page: only the framed line (no tile, no button, no dialog) and the panel chunk is never requested', async () => {
+    const own = Object.getOwnPropertyDescriptor(window, 'top');
+    Object.defineProperty(window, 'top', { value: {}, configurable: true });
+    try {
+      const calls = relayFetch();
+      const host = await hydrateOwner();
+      await until(() => host.querySelector('.acct-links__framed') !== null, 'the framed line');
+      expect(host.textContent).toBe('이 화면은 다른 페이지 안에서 열 수 없습니다.');
+      expect(host.querySelectorAll('button, dialog, ul')).toHaveLength(0);
+      expect(location.search).toBe('');
+      await tick(50);
+      expect(manage.loaded).toBe(false);
+      expect(calls).toEqual([]);
+    } finally {
+      if (own) Object.defineProperty(window, 'top', own);
+    }
+  });
+
+  it('?manage: every enabled tile with its state word (named by visible text), "연동 관리" at the row end, the panel mounted in the closed dialog, no request before login', async () => {
+    const calls = relayFetch();
+    const host = await hydrateOwner({ edit: offTiles });
+    await until(() => manageButton(host) !== null, 'owner mode');
+    expect(location.href).not.toContain('manage');
+    const list = tileButtons(host);
+    expect(list.map((b) => b.querySelector('.acct-tile__name')?.textContent)).toEqual(['젠레스 존 제로', '원신', '리그 오브 레전드', '전략적 팀 전투', 'Steam']);
+    expect(list.map((b) => b.querySelector('.acct-tile__state')?.textContent ?? null)).toEqual([null, '오류', null, null, '미연동']);
+    expect(list.map((b) => b.hasAttribute('data-off'))).toEqual([false, true, false, false, true]);
+    for (const b of list) expect(b.hasAttribute('aria-label')).toBe(false);
+    // the state word is visible text inside the button (its name), never aria-hidden; no teaser on a status tile
+    expect(list[1]?.querySelector('.acct-tile__state')?.closest('[aria-hidden]')).toBeNull();
+    expect(list[1]?.querySelector('.acct-tile__teaser, .sr-only')).toBeNull();
+    const button = manageButton(host);
+    expect(button?.textContent).toBe('연동 관리');
+    expect(button?.getAttribute('type')).toBe('button');
+    expect(button?.getAttribute('aria-controls')).toBe('acct-dlg');
+    expect(button?.closest('li')?.parentElement).toBe(host.querySelector('ul.acct-row'));
+    expect(button?.closest('li')?.nextElementSibling).toBeNull();
+    await until(() => panelReady(host), 'the panel');
+    expect(manage.loaded).toBe(true);
+    expect(isOpen(host)).toBe(false);
+    expect(calls).toEqual([]);
+  });
+
+  it('English page: "Manage links" and the English state words', async () => {
+    relayFetch();
+    const host = await hydrateOwner({ lang: 'en', edit: offTiles });
+    await until(() => manageButton(host) !== null, 'owner mode');
+    expect(manageButton(host)?.textContent).toBe('Manage links');
+    expect(tileButtons(host).map((b) => b.querySelector('.acct-tile__state')?.textContent ?? null)).toEqual([null, 'Error', null, null, 'Not linked']);
+  });
+
+  it('focus before login: a tile opens on the close button (no card → its state word as the title); "연동 관리" opens the first platform on [GitHub로 로그인]; each close returns to its opener', async () => {
+    relayFetch();
+    const host = await hydrateOwner({ edit: offTiles });
+    await until(() => panelReady(host), 'the panel');
+    await click(tileButtons(host)[1]);
+    expect(isOpen(host)).toBe(true);
+    expect(host.querySelector('#acct-game')?.textContent).toBe('원신');
+    expect(host.querySelector('#acct-title')?.textContent).toBe('오류');
+    expect(document.activeElement).toBe(dialogOf(host).querySelector('.acct-dlg__close'));
+    await requestCloseBy(host, 'button');
+    expect(document.activeElement).toBe(tileButtons(host)[1]);
+    // twice: the panel's focus request is cleared on close, so the same request reaches it again
+    for (let round = 0; round < 2; round++) {
+      await click(manageButton(host));
+      expect(isOpen(host)).toBe(true);
+      expect(host.querySelector('#acct-game')?.textContent).toBe('젠레스 존 제로');
+      expect(document.activeElement).toBe(buttonNamed(host, C['label:login']));
+      await requestCloseBy(host, 'esc');
+      expect(isOpen(host)).toBe(false);
+      expect(document.activeElement).toBe(manageButton(host));
+    }
+  });
+
+  it('same-tab return #gh=: read and removed with ?manage, sent once as n: null before the panel mounts; the dialog opens on the first platform with focus on the panel heading; later "연동 관리" focuses the first account field; nothing secret in the DOM, the address, storage or the console', async () => {
+    const setItem = vi.spyOn(Storage.prototype, 'setItem');
+    const logs = (['log', 'info', 'warn', 'error', 'debug'] as const).map((m) => vi.spyOn(console, m));
+    const calls = relayFetch();
+    const host = await hydrateOwner({ url: `/game/player-log/?manage#gh=${TICKET}` });
+    await until(() => isOpen(host) && signedIn(host), 'the signed-in dialog');
+    expect(location.href).not.toMatch(/manage|#|gh=/);
+    expect(calls.map((c) => c.key)).toEqual(['/gh/session', 'vars.list', 'workflow.get']);
+    expect(calls[0]?.body).toEqual({ ticket: TICKET, n: null });
+    expect(host.querySelector('#acct-game')?.textContent).toBe('젠레스 존 제로');
+    const heading = host.querySelector('h3.mp__title');
+    expect(heading?.textContent).toMatch(/^GitHub 로그인됨 · Lunecid/);
+    expect(document.activeElement).toBe(heading);
+    const html = document.documentElement.outerHTML;
+    expect(html).not.toContain(TICKET);
+    expect(html).not.toContain(HANDLE);
+    expect(document.cookie).toBe('');
+    for (const spy of [setItem, ...logs]) expect(JSON.stringify(spy.mock.calls)).not.toMatch(new RegExp(`${TICKET}|${HANDLE}`));
+    await requestCloseBy(host, 'button');
+    expect(document.activeElement).toBe(manageButton(host));
+    await click(manageButton(host));
+    expect(document.activeElement).toBe(zzzField(host));
+    expect(zzzField(host)?.value).toBe(STORED_ZZZ);
+  });
+
+  it('#gh-error=denied: the error line placed before [GitHub로 로그인] takes focus and says the sign-in was cancelled', async () => {
+    const calls = relayFetch();
+    const host = await hydrateOwner({ url: '/game/player-log/?manage#gh-error=denied' });
+    await until(() => isOpen(host), 'the dialog');
+    await tick(30);
+    expect(location.href).not.toMatch(/manage|#/);
+    const error = host.querySelector<HTMLElement>('[data-mp="error"]') as HTMLElement;
+    expect(document.activeElement).toBe(error);
+    expect(error.textContent).toBe(C['gh.denied']);
+    expect(error.getAttribute('role')).toBe('alert');
+    const login = buttonNamed(host, C['label:login']) as HTMLButtonElement;
+    expect(error.compareDocumentPosition(login) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(calls).toEqual([]);
+  });
+
+  it('no relay yet: a same-tab ticket is sent nowhere; the dialog opens on the relay-unset line with focus on its README link', async () => {
+    const calls = relayFetch();
+    const host = await hydrateOwner({ url: `/game/player-log/?manage#gh=${TICKET}`, relay: null });
+    await until(() => isOpen(host), 'the dialog');
+    await tick(30);
+    expect(location.href).not.toContain(TICKET);
+    expect(calls).toEqual([]);
+    expect(host.querySelector('.mp__unset')?.textContent).toContain(C['relay-unset']);
+    expect(document.activeElement).toBe(host.querySelector('.mp__unset a'));
+    expect(buttonNamed(host, C['label:login'])).toBeUndefined();
+  });
+
+  it('unsaved input: Esc, the backdrop and the close button each show the notice in the dialog; [계속 편집] returns to the field; [버리고 닫기] closes and puts the stored value back', async () => {
+    relayFetch();
+    const host = await hydrateOwner({ url: `/game/player-log/?manage#gh=${TICKET}` });
+    await until(() => zzzField(host) !== null, 'the form');
+    const field = () => zzzField(host) as HTMLInputElement;
+    fireEvent.change(field(), { target: { value: '1300025293' } });
+    field().focus();
+    const notice = () => dialogOf(host).querySelector('.acct-dlg__guard');
+    for (const how of ['esc', 'backdrop', 'button'] as const) {
+      await requestCloseBy(host, how);
+      expect(isOpen(host), how).toBe(true);
+      expect(dialogOf(host).getAttribute('data-state'), how).toBe('open');
+      expect(notice()?.getAttribute('role')).toBe('group');
+      expect(notice()?.querySelector('p')?.textContent).toBe('저장하지 않은 변경이 있습니다.');
+      const [discard, keep] = [...(notice()?.querySelectorAll('button') ?? [])];
+      expect([discard?.textContent, keep?.textContent]).toEqual(['버리고 닫기', '계속 편집']);
+      expect(document.activeElement).toBe(keep);
+      await act(async () => keep?.click());
+      expect(notice()).toBeNull();
+      expect(document.activeElement).toBe(field());
+      expect(field().value).toBe('1300025293');
+    }
+    await requestCloseBy(host, 'esc');
+    await act(async () => notice()?.querySelector('button')?.click());
+    await tick(CLOSE_MS + 60);
+    expect(isOpen(host)).toBe(false);
+    expect(document.activeElement).toBe(manageButton(host));
+    await click(manageButton(host));
+    expect(field().value).toBe(STORED_ZZZ);
+    expect(field().closest('.mp-field')?.querySelector('.mp-field__changed')).toBeNull();
+    await requestCloseBy(host, 'esc'); // nothing unsaved now: it closes at once
+    expect(isOpen(host)).toBe(false);
+  });
+
+  it('[버리고 닫기] also resets the unlink box: emptying the ID again after a discard needs a fresh tick', async () => {
+    relayFetch();
+    const host = await hydrateOwner({ url: `/game/player-log/?manage#gh=${TICKET}` });
+    await until(() => zzzField(host) !== null, 'the form');
+    const box = () => host.querySelector<HTMLInputElement>('.mp-group[data-group="zzz"] .mp-unlink input');
+    fireEvent.change(zzzField(host) as HTMLInputElement, { target: { value: '' } });
+    await until(() => box() !== null, 'the unlink box');
+    await act(async () => box()?.click());
+    expect(box()?.checked).toBe(true);
+    await requestCloseBy(host, 'esc');
+    await act(async () => dialogOf(host).querySelector<HTMLButtonElement>('.acct-dlg__guard button')?.click());
+    await tick(CLOSE_MS + 60);
+    expect(isOpen(host)).toBe(false);
+    await click(manageButton(host));
+    expect(zzzField(host)?.value).toBe(STORED_ZZZ);
+    fireEvent.change(zzzField(host) as HTMLInputElement, { target: { value: '' } });
+    await until(() => box() !== null, 'the unlink box again');
+    expect(box()?.checked).toBe(false);
+  });
+
+  /** zzz fetched long before now: stale by the browser clock although the build showed it */
+  const staleZzz = (list: AccountTile[]): AccountTile[] => list.map((t) => (t.key === 'zzz' ? { ...t, fetchedAt: '2000-01-01T00:00:00Z' } : t));
+
+  it('a first tile gone stale after the build: owner mode keeps it with the state word "오래됨"; its button and "연동 관리" both open the dialog', async () => {
+    relayFetch();
+    const host = await hydrateOwner({ edit: staleZzz });
+    await until(() => panelReady(host), 'the panel');
+    const first = tileButtons(host)[0] as HTMLButtonElement;
+    expect(first.querySelector('.acct-tile__name')?.textContent).toBe('젠레스 존 제로');
+    expect(first.querySelector('.acct-tile__state')?.textContent).toBe('오래됨');
+    expect(first.hasAttribute('data-off')).toBe(true);
+    expect(first.querySelector('.acct-tile__teaser')).toBeNull();
+    await click(first);
+    expect(isOpen(host)).toBe(true);
+    expect(host.querySelector('#acct-game')?.textContent).toBe('젠레스 존 제로');
+    await requestCloseBy(host, 'button');
+    expect(isOpen(host)).toBe(false);
+    await click(manageButton(host));
+    expect(isOpen(host)).toBe(true);
+    expect(host.querySelector('#acct-game')?.textContent).toBe('젠레스 존 제로');
+  });
+
+  it('a first tile gone stale after the build: the same-tab #gh= return still opens the dialog', async () => {
+    const calls = relayFetch();
+    const host = await hydrateOwner({ url: `/game/player-log/?manage#gh=${TICKET}`, edit: staleZzz });
+    await until(() => calls.some((c) => c.key === 'workflow.get'), 'the session');
+    await until(() => isOpen(host), 'the dialog');
+    expect(host.querySelector('#acct-game')?.textContent).toBe('젠레스 존 제로');
+  });
+
+  it('inside another page: a login-return fragment still leaves the address, and the ticket is sent nowhere', async () => {
+    const own = Object.getOwnPropertyDescriptor(window, 'top');
+    Object.defineProperty(window, 'top', { value: {}, configurable: true });
+    try {
+      const calls = relayFetch();
+      const host = await hydrateOwner({ url: `/game/player-log/?manage#gh=${TICKET}` });
+      await until(() => host.querySelector('.acct-links__framed') !== null, 'the framed line');
+      expect(location.href).not.toMatch(/manage|#|gh=/);
+      expect(calls).toEqual([]);
+    } finally {
+      if (own) Object.defineProperty(window, 'top', own);
+    }
+  });
+
+  it('outside a secure context: a login-return fragment leaves the address with ?manage', async () => {
+    Reflect.deleteProperty(window, 'isSecureContext');
+    const calls = relayFetch();
+    await hydrateOwner({ url: '/game/player-log/?manage#gh-error=denied' });
+    await until(() => !location.search.includes('manage'), 'the query read');
+    await tick(30);
+    expect(location.href).not.toMatch(/manage|#|gh-error/);
+    expect(calls).toEqual([]);
+  });
+
+  it('a switch keeps the panel mounted: the same field element keeps its typed value, and the highlight moves to the shown account (LoL and TFT share the Riot group)', async () => {
+    relayFetch();
+    const host = await hydrateOwner({ url: `/game/player-log/?manage#gh=${TICKET}` });
+    await until(() => zzzField(host) !== null, 'the form');
+    const field = zzzField(host) as HTMLInputElement;
+    const section = host.querySelector('section.mp');
+    fireEvent.change(field, { target: { value: '1300025293' } });
+    const highlighted = () => host.querySelector('.mp-group[data-current]')?.getAttribute('data-group');
+    expect(highlighted()).toBe('zzz');
+    const next = () => dialogOf(host).querySelector<HTMLButtonElement>('.acct-dlg__next');
+    for (const [game, group] of [['원신', 'genshin'], ['리그 오브 레전드', 'riot'], ['전략적 팀 전투', 'riot'], ['Steam', 'steam']] as const) {
+      await act(async () => next()?.click());
+      expect(host.querySelector('#acct-game')?.textContent).toBe(game);
+      expect(highlighted()).toBe(group);
+    }
+    expect(host.querySelector('section.mp')).toBe(section);
+    expect(field.isConnected).toBe(true);
+    expect(field.value).toBe('1300025293');
+  });
+
+  it('←/→ inside the command block (the sideways scroller of the no-login steps) do not switch accounts', async () => {
+    relayFetch();
+    const host = await hydrateOwner();
+    await until(() => panelReady(host), 'the panel');
+    await click(manageButton(host));
+    const pre = dialogOf(host).querySelector('pre') as HTMLElement;
+    expect(pre.getAttribute('tabindex')).toBe('0');
+    for (const k of ['ArrowRight', 'ArrowLeft']) {
+      const ev = new KeyboardEvent('keydown', { key: k, bubbles: true, cancelable: true });
+      await act(async () => {
+        pre.dispatchEvent(ev);
+      });
+      expect(ev.defaultPrevented).toBe(false);
+      expect(host.querySelector('#acct-game')?.textContent).toBe('젠레스 존 제로');
+    }
+  });
+
+  it('a tracked run: the "연동 관리" button carries the static chip "빌드 중 · {n}분" only while the dialog is closed', async () => {
+    relayFetch({
+      dispatch: (_b, url) => reply(url, 200, { runId: 7, htmlUrl: 'https://github.com/Lunecid/Lunecid.github.io/actions/runs/7' }),
+      'run.get': (_b, url) => reply(url, 200, { status: 'in_progress', conclusion: null }),
+      'run.jobs': (_b, url) => reply(url, 200, []),
+    });
+    const host = await hydrateOwner({ url: `/game/player-log/?manage#gh=${TICKET}` });
+    await until(() => buttonNamed(host, C['label:rebuild']) !== undefined, 'the form');
+    await act(async () => buttonNamed(host, C['label:rebuild'])?.click());
+    await until(() => host.querySelector('.mp-build__meta') !== null, 'the tracked run');
+    expect(manageButton(host)?.textContent).toBe('연동 관리');
+    await requestCloseBy(host, 'button');
+    const chip = manageButton(host)?.querySelector('.acct-manage__chip');
+    expect(chip?.textContent).toBe('빌드 중 · 0분');
+    expect(manageButton(host)?.textContent).toBe('연동 관리빌드 중 · 0분');
+    await click(manageButton(host));
+    expect(manageButton(host)?.querySelector('.acct-manage__chip')).toBeNull();
+  });
+
+  it('the panel outlives a close: 15 idle minutes after the dialog closed, the login ends with /gh/logout', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    try {
+      const calls = relayFetch();
+      const host = await hydrateOwner({ url: `/game/player-log/?manage#gh=${TICKET}` });
+      await until(() => signedIn(host), 'the session');
+      await requestCloseBy(host, 'button');
+      expect(isOpen(host)).toBe(false);
+      expect(calls.some((c) => c.key === '/gh/logout')).toBe(false);
+      await act(async () => {
+        vi.advanceTimersByTime(15 * 60_000 + 1_000);
+      });
+      await until(() => calls.some((c) => c.key === '/gh/logout'), '/gh/logout');
+      const logout = calls.find((c) => c.key === '/gh/logout');
+      expect((logout?.init.headers as Record<string, string>).Authorization).toBe(`Bearer ${HANDLE}`);
+      expect(host.querySelector('dialog#acct-dlg section.mp')).not.toBeNull();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('pagehide sends the handle once as a beacon called on navigator, to the relay\'s /gh/logout', async () => {
+    const thisArgs: unknown[] = [];
+    const beacon = vi.fn(function (this: unknown, _url: string, _data: string) {
+      thisArgs.push(this);
+      return true;
+    });
+    Object.defineProperty(navigator, 'sendBeacon', { value: beacon, configurable: true });
+    try {
+      relayFetch();
+      const host = await hydrateOwner({ url: `/game/player-log/?manage#gh=${TICKET}` });
+      await until(() => signedIn(host), 'the session');
+      await act(async () => {
+        window.dispatchEvent(new Event('pagehide'));
+      });
+      expect(beacon).toHaveBeenCalledTimes(1);
+      expect(beacon).toHaveBeenCalledWith(`${RELAY}/gh/logout`, HANDLE);
+      expect(thisArgs).toEqual([navigator]);
+      await act(async () => {
+        window.dispatchEvent(new Event('pagehide'));
+      });
+      expect(beacon).toHaveBeenCalledTimes(1); // the box is empty after the first
+    } finally {
+      Reflect.deleteProperty(navigator, 'sendBeacon');
+    }
+  });
+
+  it('one core binding for the page\'s life: the panel opens its link channel once across opens, switches and closes', async () => {
+    relayFetch();
+    const host = await hydrateOwner();
+    await until(() => panelReady(host), 'the panel');
+    expect(FakeChannel.made).toBe(1);
+    for (let round = 0; round < 2; round++) {
+      await click(manageButton(host));
+      await act(async () => dialogOf(host).querySelector<HTMLButtonElement>('.acct-dlg__next')?.click());
+      await requestCloseBy(host, 'button');
+    }
+    await click(tileButtons(host)[2]);
+    await requestCloseBy(host, 'esc');
+    expect(FakeChannel.made).toBe(1);
+  });
+
+  it('client:idle is the island\'s directive on the player log, never client:visible', () => {
+    const view = readFileSync(join(process.cwd(), 'src/views/PlayerLogView.astro'), 'utf8');
+    const tags = view.match(/<AccountLinks\b[^>]*>/g) ?? [];
+    expect(tags).toHaveLength(1);
+    expect(tags[0]).toContain(' client:idle ');
+    expect(tags[0]).not.toContain('client:visible');
+  });
+
+  it('one import site: only AccountLinks imports the panel chunk and the core, both dynamically; no other value import of either outside the chunk', () => {
+    const walk = (dir: string): string[] =>
+      readdirSync(dir, { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? walk(join(dir, e.name)) : [join(dir, e.name)]));
+    const files = walk(join(process.cwd(), 'src')).filter((f) => /\.(ts|tsx|astro|mjs)$/.test(f));
+    const rel = (f: string) => relative(process.cwd(), f).split('\\').join('/');
+    const sites = (re: RegExp) => files.flatMap((f) => (readFileSync(f, 'utf8').match(re) ?? []).map(() => rel(f)));
+    expect(sites(/import\(\s*['"][^'"]*account\/ManagePanel['"]\s*\)/g)).toEqual(['src/islands/AccountLinks.tsx']);
+    expect(sites(/import\(\s*['"][^'"]*lib\/account-admin['"]\s*\)/g)).toEqual(['src/islands/AccountLinks.tsx']);
+    const valueImports = (target: string) => files.filter((f) => new RegExp(`^\\s*import\\s+(?!type\\b)[^;]*?from\\s+['"][^'"]*${target}['"]`, 'm').test(readFileSync(f, 'utf8'))).map(rel);
+    expect(valueImports('account/ManagePanel')).toEqual([]);
+    expect(valueImports('account-admin')).toEqual(['src/islands/account/ManagePanel.tsx']);
   });
 });

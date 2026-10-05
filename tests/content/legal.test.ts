@@ -1,12 +1,13 @@
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it, vi } from 'vitest';
 
 // src/lib/characters.ts imports island-image.server → astro:assets; this test uses only its glob-based lookup.
 vi.mock('astro:assets', () => ({ getImage: vi.fn() }));
 
-import { GOATCOUNTER, RIOT_NOTICE_ON_PAGES, SITE } from '../../src/config';
+import { ACCOUNT_ADMIN, GOATCOUNTER, RIOT_NOTICE_ON_PAGES, SITE } from '../../src/config';
 import { legalSchema } from '../../src/content/schemas';
+import { ACCOUNT_MAX_AGE_DAYS } from '../../src/lib/account-config';
 import { ui } from '../../src/i18n/ui';
 import { characters } from '../../src/lib/characters';
 import { goatcounterSelfHosted, soundAvailability } from '../../src/lib/public-assets';
@@ -157,8 +158,8 @@ describe('legal content', () => {
     const on = RIOT_NOTICE_ON_PAGES;
     const ko = raw('ko', 'credits').split('\n').find((l) => l.startsWith('| 라이엇 게임즈 |'));
     const en = raw('en', 'credits').split('\n').find((l) => l.startsWith('| Riot Games |'));
-    expect(ko).toBe(`| 라이엇 게임즈 | <span lang="en">${ui.ko['notice.riot']}</span> | ${on ? 'CoG 논문 페이지에 표시' : '연동 시 표시'} |`);
-    expect(en).toBe(`| Riot Games | ${ui.en['notice.riot']} | ${on ? 'Shown on the CoG paper page' : 'Shown when linked'} |`);
+    expect(ko).toBe(`| 라이엇 게임즈 | <span lang="en">${ui.ko['notice.riot']}</span> | ${on ? 'CoG 논문 페이지에 표시' : '외부 링크만 사용(API·에셋 미사용)'} |`);
+    expect(en).toBe(`| Riot Games | ${ui.en['notice.riot']} | ${on ? 'Shown on the CoG paper page' : 'Outbound links only (no API or assets)'} |`);
     // The research-data paragraph always names the Riot Games API source.
     expect(raw('ko', 'credits')).toContain('Riot Games API</span>로 모은 공개 경기 데이터');
     expect(raw('en', 'credits')).toContain('public match data collected through the Riot Games API');
@@ -304,5 +305,127 @@ describe('legal content', () => {
         expect(new Set(emails), `${lang}/${doc}`).toEqual(new Set([SITE.email]));
       }
     }
+  });
+});
+
+/** deploy.yml facts the privacy text states: artifact retention by artifact name, and the daily cron. */
+const workflow = readFileSync(join(root, '.github/workflows/deploy.yml'), 'utf8');
+function retentionDays(artifact: string): number {
+  const m = new RegExp(`name: ${artifact}\\n(?:[^\\n]*\\n){0,3}?\\s*retention-days: (\\d+)`).exec(workflow);
+  if (!m) throw new Error(`retention-days for ${artifact} not found`);
+  return Number(m[1]);
+}
+function cronKst(): string {
+  const m = /cron: '(\d+) (\d+) \* \* \*'/.exec(workflow);
+  if (!m) throw new Error('daily cron not found');
+  const minutes = (Number(m[2]) * 60 + Number(m[1]) + 9 * 60) % (24 * 60);
+  return `${String(Math.floor(minutes / 60)).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}`;
+}
+/** Worker lifetimes (seconds) the relay paragraph states in minutes; read as text so no Worker module loads. */
+const relaySrc = readFileSync(join(root, 'workers/account-relay/src/index.mjs'), 'utf8');
+function workerConst(name: string): number {
+  const m = new RegExp(`export const ${name} = (\\d+);`).exec(relaySrc);
+  if (!m) throw new Error(`${name} not found`);
+  return Number(m[1]);
+}
+
+describe('account cards and the owner-only relay in privacy and credits', () => {
+  it('privacy ko carries the owner-relay sentences verbatim', () => {
+    const ko = body('ko', 'privacy');
+    for (const s of [
+      '방문자가 이름이나 연락처를 입력하는 곳도 없습니다. 플레이 로그에는 사이트 주인만 쓰는 연동 관리 화면이 있습니다. 주인이 GitHub·Steam으로 로그인하고 게임 계정 ID를 저장할 때, 그 값과 로그인 정보는 주인의 브라우저에서 Cloudflare Worker(중계 서버)를 거쳐 GitHub와 Steam으로만 갑니다. 방문자의 브라우저는 이 중계 서버에 접속하지 않습니다.',
+      '방문자의 브라우저는 GitHub API나 중계 서버를 호출하지 않습니다.',
+      '사이트 주인만 쓰는 연동 관리는 Cloudflare, Inc.의 Workers 중계 서버를 씁니다. Cloudflare는 이 처리에서 주인을 대신해 요청을 전달하는 처리자입니다.',
+      '중계 서버를 지나가는 것: 주인의 GitHub 로그인 정보(GitHub가 발급한 접근 토큰. 중계 서버 밖에서는 암호화된 상태로만 있고 최대 60분 뒤 쓸 수 없으며, 로그아웃하면 GitHub에서 승인이 지워집니다), 주인이 저장하는 게임 계정 ID와 닉네임, 주인의 Steam 로그인 확인 정보(Steam이 서명한 응답), 주인의 SteamID와 Steam 프로필 이름·공개 여부.',
+      '중계 서버는 이 값을 저장하지 않고, 요청 기록(호출 로그)을 끄고 운영합니다. Cloudflare가 서비스 운영을 위해 따로 남기는 기록은 Cloudflare의 방침을 따릅니다.',
+      '로그인할 때 주인의 브라우저에 중계 서버 주소의 쿠키 하나(로그인 확인용)가 생깁니다. 로그인이 사이트로 돌아올 때 지워지고, 돌아오지 않으면 늦어도 10분 뒤 만료됩니다. 이 사이트 주소에는 새 쿠키나 저장소 항목이 없습니다.',
+      '던전앤파이터는 연동하지 않습니다.',
+      '방문자의 게임 계정 정보는 어떤 경우에도 수집하지 않습니다.',
+    ]) {
+      expect(ko).toContain(s);
+    }
+    expect(ko).not.toContain('현재 버전은 게임 계정 데이터를 불러오지 않습니다');
+    expect(ko).not.toContain('30일');
+    expect(ko).not.toContain('방문자의 브라우저가 GitHub API를 직접 호출하지 않습니다.');
+  });
+
+  it('privacy en carries the same content', () => {
+    const en = body('en', 'privacy');
+    for (const s of [
+      "The Player Log has an account-link management screen that only the site owner uses. When the owner signs in with GitHub and Steam and saves game account IDs, those values and the sign-in information go from the owner's browser through a Cloudflare Worker (relay server) to GitHub and Steam only. Visitors' browsers never connect to this relay server.",
+      "Visitors' browsers do not call the GitHub API or the relay server.",
+      'Cloudflare Workers relay server operated by Cloudflare, Inc.',
+      'What passes through the relay server:',
+      'runs with request logging (invocation logs) turned off',
+      'No new cookie or storage entry is created for this site\'s address.',
+      'Dungeon & Fighter is not linked.',
+      "The site never collects visitors' game account information.",
+      'send no referrer',
+    ]) {
+      expect(en).toContain(s);
+    }
+    expect(en).not.toContain('The current version does not load any game account data');
+    expect(en).not.toContain('30 days');
+  });
+
+  it('privacy numbers equal the workflow, the Worker and the account config', () => {
+    const feeds = retentionDays('account-feeds');
+    const shots = retentionDays('screenshots');
+    const report = retentionDays('playwright-report');
+    expect([feeds, shots, report]).toEqual([1, 14, 7]);
+    const time = cronKst();
+    expect(time).toBe('03:30');
+    const handle = workerConst('HANDLE_MAX') / 60;
+    const cookie = workerConst('COOKIE_TTL') / 60;
+    const ko = body('ko', 'privacy');
+    expect(ko).toContain(`계정 데이터 아티팩트는 ${feeds}일, 빌드 화면 사진 아티팩트는 최대 ${shots}일, 테스트 실패 보고서는 ${report}일 동안 남고`);
+    expect(ko).toContain(`매일 ${time}(한국 시간)과 주인이 사이트를 다시 빌드할 때 갱신합니다. ${ACCOUNT_MAX_AGE_DAYS}일 동안 갱신되지 않으면 카드를 숨깁니다.`);
+    expect(ko).toContain(`최대 ${handle}분 뒤 쓸 수 없으며`);
+    expect(ko).toContain(`늦어도 ${cookie}분 뒤 만료됩니다`);
+    const en = body('en', 'privacy');
+    expect(en).toContain(`the account-data artifact is kept for ${feeds} day, the build screenshot artifact for up to ${shots} days, the failed-test report for ${report} days`);
+    expect(en).toContain(`daily at ${time} KST and whenever the owner rebuilds the site. A card that has not been refreshed for ${ACCOUNT_MAX_AGE_DAYS} days is hidden.`);
+    expect(en).toContain(`unusable after at most ${handle} minutes`);
+    expect(en).toContain(`expires after at most ${cookie} minutes`);
+  });
+
+  it('privacy links Cloudflare\'s privacy policy after the relay-records sentence, in both languages', () => {
+    expect(raw('ko', 'privacy')).toContain('Cloudflare가 서비스 운영을 위해 따로 남기는 기록은 Cloudflare의 방침을 따릅니다. 자세한 내용은 [Cloudflare 개인정보 처리방침](https://www.cloudflare.com/privacypolicy/)을 참고하세요.');
+    expect(raw('en', 'privacy')).toContain("Any records Cloudflare keeps separately to operate its service follow Cloudflare's policies. See the [Cloudflare Privacy Policy](https://www.cloudflare.com/privacypolicy/) for details.");
+  });
+
+  it('privacy names the relay host once ACCOUNT_ADMIN.relay is set', () => {
+    const relay: string | null = ACCOUNT_ADMIN.relay;
+    for (const lang of LANGS) {
+      if (relay === null) expect(raw(lang, 'privacy')).not.toContain('.workers.dev');
+      else expect(raw(lang, 'privacy'), lang).toContain(new URL(relay).host);
+    }
+  });
+
+  it('privacy was updated with the account text (frontmatter date on or after it)', () => {
+    for (const lang of LANGS) {
+      const updated = (readFrontmatter(file(lang, 'privacy')) as { updated: string }).updated;
+      expect(updated >= '2026-10-04', lang).toBe(true);
+    }
+  });
+
+  it('credits game-data statuses and the Valve button sentence', () => {
+    const row = (lang: L, start: string) => raw(lang, 'credits').split('\n').find((l) => l.startsWith(start)) ?? '';
+    expect(row('ko', '| 네오플 |')).toMatch(/\| 연동 시 표시 \|$/);
+    expect(row('en', '| Neople |')).toMatch(/\| Shown when linked \|$/);
+    expect(row('ko', '| Enka.Network |')).toMatch(/\| 플레이 로그 계정 카드 \|$/);
+    expect(row('en', '| Enka.Network |')).toMatch(/\| Player Log account cards \|$/);
+    const valveKo = row('ko', '| Valve(Steam) |');
+    const valveEn = row('en', '| Valve (Steam) |');
+    expect(valveKo).toMatch(/\| 플레이 로그 계정 카드 \|$/);
+    expect(valveEn).toMatch(/\| Player Log account cards \|$/);
+    expect(valveKo).toContain('주인 연동 관리 화면의 <span lang="en">“Sign in through Steam”</span> 버튼 이미지는 Valve의 것입니다.');
+    expect(valveEn).toContain("The “Sign in through Steam” button image in the owner's management screen is Valve's.");
+    for (const v of [valveKo, valveEn]) {
+      expect(v).toContain('Valve Corporation');
+      expect(v).not.toContain('nofollow');
+    }
+    expect(body('ko', 'credits')).toContain('플레이 로그의 계정 카드는 아래 출처에서 받은 데이터로 만듭니다. 아래 고지는 이 페이지와 플레이 로그에 함께 표시합니다.');
+    expect(body('en', 'credits')).toContain('The account cards on the Player Log are built from the sources below. The notices below are shown on this page and on the Player Log.');
   });
 });

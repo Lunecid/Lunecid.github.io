@@ -4,17 +4,19 @@
 // - dist-e2e-accounts (SB_E2E_ACCOUNTS=1, the third web server, never deployed): the synthetic fixture feeds of
 //   tests/fixtures/generated. The expected tile set is computed here with the view model's pure part (the same
 //   accountStatus the page uses, spec §11.1 "same pure function"), with the feeds stamped fresh as that build does.
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import AxeBuilder from '@axe-core/playwright';
 import type { Page } from '@playwright/test';
 import { load } from 'js-yaml';
 import type { FavoriteGameData } from '../../src/content/schemas';
+import { adminCopy } from '../../src/i18n/accounts-admin';
+import { ui } from '../../src/i18n/ui';
 import { TILE_SLOTS, accountStatus, type AccountStatus } from '../../src/lib/account-state';
 import type { AccountFeed, RiotLinks } from '../../src/lib/generated';
-import { collectViolations, expect, test, watchViolations } from './helpers';
+import { FAKE_HANDLE, FAKE_STEAM, FAKE_TICKET, RELAY, collectViolations, expect, mockRelay, test, watchViolations } from './helpers';
+import { ACCOUNTS_ORIGIN, ORIGIN } from './ports';
 
-const ACCOUNTS_ORIGIN = `http://127.0.0.1:${Number(process.env.E2E_ACCOUNTS_PORT ?? 4332)}`;
 const ROUTES = ['/game/player-log/', '/en/game/player-log/'];
 const FIXTURES = join(process.cwd(), 'tests/fixtures/generated');
 const AXE_TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'];
@@ -368,6 +370,301 @@ test.describe('account card — fixture build (AL-12)', () => {
       await expect(dialog(page).locator('.acct-dlg__card--out')).toHaveCount(0);
       ghostSeen = await page.evaluate(() => (window as unknown as { __ghost?: boolean }).__ghost === true);
       expect(ghostSeen).toBe(false);
+    });
+  }
+});
+
+// Owner mode (?manage; spec §4.1–§4.8, §11.1). The management copy is the panel's (src/i18n/accounts-admin.ts); the row's
+// words ("연동 관리", the state words) are visitor copy from ui.ts.
+const A = adminCopy.ko;
+const PANEL_CONTROLS = 'dialog#acct-dlg button, dialog#acct-dlg a[href], dialog#acct-dlg summary, dialog#acct-dlg input:not([type="checkbox"])';
+
+/** Management copy a page must not carry: every sentence and longer label not shared with ui.ts (as the dist check in
+ *  tests/unit/accounts-admin-i18n.test.ts), cut to its longest literal part between placeholders. Matched against the
+ *  page outside <style>: every stylesheet is inlined, the lazy panel's too, and its selectors are not copy. */
+function managementLiterals(lang: 'ko' | 'en'): string[] {
+  const shared = new Set(Object.values(ui[lang]) as string[]);
+  return Object.entries(adminCopy[lang])
+    .filter(([key, value]) => !shared.has(value) && !(key.startsWith('label:') && ([...value].length < 6 || (lang === 'en' && !/\s/.test(value)))))
+    .map(([, value]) => value.split(/\{\w+\}/).sort((a, b) => b.length - a.length)[0]?.trim() ?? '')
+    .filter((literal) => literal.length >= 4);
+}
+
+/** Every control of the row and the dialog that is shown (closed <details> content is laid out but hidden), with its box. */
+const controlSizes = (page: Page) =>
+  page.evaluate((sel) =>
+    [...document.querySelectorAll<HTMLElement>(`#membership ul.acct-row button, ${sel}`)]
+      .filter((el) => el.checkVisibility())
+      .map((el) => {
+        const r = el.getBoundingClientRect();
+        return { what: `${el.tagName.toLowerCase()}.${el.className} "${(el.textContent ?? '').trim().slice(0, 24)}"`, w: r.width, h: r.height };
+      }),
+  PANEL_CONTROLS);
+
+/** Neither the page nor the dialog body scrolls sideways (the command block scrolls inside itself). */
+const noSideScroll = (page: Page) =>
+  page.evaluate(() => {
+    const doc = document.documentElement;
+    const body = document.querySelector('dialog#acct-dlg .acct-dlg__body') as HTMLElement | null;
+    return doc.scrollWidth <= doc.clientWidth && (body === null || body.scrollWidth <= body.clientWidth);
+  });
+
+test.describe('owner mode — real build, relay not set (dark)', () => {
+  test('?manage: five status tiles with their state word and "연동 관리"; the region shows relay-unset and the no-login steps; nothing leaves 127.0.0.1', async ({ context, page }) => {
+    const seen: string[] = [];
+    context.on('request', (req) => seen.push(req.url()));
+    await watchViolations(page);
+    await page.goto(`${ORIGIN}/game/player-log/?manage`, { waitUntil: 'load' });
+    const tiles = page.locator('#membership ul.acct-row > li > button.acct-tile');
+    await expect(tiles).toHaveCount(5);
+    await expect(tiles.locator('.acct-tile__state')).toHaveText(['미연동', '미연동', '미연동', '미연동', '미연동']);
+    const manage = page.locator('#membership ul.acct-row > li:last-child > button.acct-manage');
+    await expect(manage).toHaveText('연동 관리');
+    expect(await page.evaluate(() => location.href)).toBe(`${ORIGIN}/game/player-log/`);
+    await manage.click();
+    const dialog = page.locator('dialog#acct-dlg');
+    await expect(dialog).toHaveAttribute('data-state', 'open');
+    await expect(dialog.locator('.mp__unset')).toContainText(A['relay-unset']);
+    await expect(dialog.locator('.mp__unset a')).toBeFocused();
+    await expect(dialog.getByRole('button', { name: A['label:login'] })).toHaveCount(0);
+    await expect(dialog.locator('details[data-mp="no-login"]')).toHaveAttribute('open', '');
+    await expect(dialog.locator('pre')).toHaveText('gh workflow run deploy.yml --ref main -R Lunecid/Lunecid.github.io');
+    await expect(dialog.locator('pre')).toBeVisible();
+    // the copy button works without a login: the command lines reach the clipboard and the note says so
+    await context.grantPermissions(['clipboard-read', 'clipboard-write'], { origin: ORIGIN });
+    await dialog.getByRole('button', { name: A['label:copy'] }).click();
+    await expect(dialog.locator('.mp-nologin__copy [role="status"]')).toHaveText(A.copied);
+    expect(await page.evaluate(() => navigator.clipboard.readText())).toBe('gh workflow run deploy.yml --ref main -R Lunecid/Lunecid.github.io');
+    // the management chunk came only now, from this origin; no request left the preview host
+    expect(seen.some((url) => /\/_astro\/ManagePanel\.[\w-]+\.js$/.test(url))).toBe(true);
+    expect(seen.filter((url) => /^https?:/.test(url) && new URL(url).hostname !== '127.0.0.1')).toEqual([]);
+    expect(await collectViolations(page)).toEqual([]);
+  });
+
+  test('visitor page: the served HTML carries no management copy, and no modulepreload or request names the management chunks', async ({ page, request }) => {
+    for (const [route, lang] of [['/game/player-log/', 'ko'], ['/en/game/player-log/', 'en']] as const) {
+      const html = (await (await request.get(`${ORIGIN}${route}`)).text()).replace(/<style\b[^>]*>[\s\S]*?<\/style>/g, '');
+      const literals = managementLiterals(lang);
+      expect(literals.length).toBeGreaterThan(50);
+      for (const literal of literals) expect(html.includes(literal), `${lang}: "${literal}"`).toBe(false);
+      expect(html).not.toMatch(/ManagePanel|account-admin/);
+    }
+    // the chunks exist in this build, so their absence below is meaningful
+    const chunks = readdirSync(join(process.cwd(), 'dist/_astro'));
+    expect(chunks.some((f) => /^ManagePanel\.[\w-]+\.js$/.test(f))).toBe(true);
+    expect(chunks.some((f) => /^account-admin\.[\w-]+\.js$/.test(f))).toBe(true);
+    const seen: string[] = [];
+    page.on('request', (req) => seen.push(req.url()));
+    await page.goto(`${ORIGIN}/game/player-log/`, { waitUntil: 'load' });
+    await expect(page.locator('astro-island[component-url*="AccountLinks"]:not([ssr])')).toHaveCount(1); // hydrated
+    await page.waitForTimeout(300);
+    const preloads = await page.locator('link[rel="modulepreload"]').evaluateAll((links) => links.map((l) => l.getAttribute('href') ?? ''));
+    expect(preloads.filter((href) => /ManagePanel|account-admin/.test(href))).toEqual([]);
+    expect(seen.filter((url) => /ManagePanel|account-admin/.test(url))).toEqual([]);
+  });
+});
+
+test.describe('owner mode — fixture build, mocked relay', () => {
+  const dialog = (page: Page) => page.locator('dialog#acct-dlg');
+  const manage = (page: Page) => page.locator('button.acct-manage');
+
+  test('the whole flow at 1280×800: ?manage → popup login → fill → Steam popup → save → rebuild → polling (fake clock) → per-game result; nothing reaches the network off 127.0.0.1', async ({ context, page }) => {
+    test.slow();
+    const relay = await mockRelay(context, { steam: true });
+    await watchViolations(page);
+    await page.clock.install();
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await page.goto(`${ACCOUNTS_ORIGIN}/game/player-log/?manage`, { waitUntil: 'load' });
+    await expect(manage(page)).toHaveText('연동 관리');
+    expect(await page.evaluate(() => location.href)).not.toContain('manage');
+    await manage(page).click();
+    await expect(dialog(page)).toHaveAttribute('data-state', 'open');
+    await expect(page.locator('#acct-game')).toHaveText('젠레스 존 제로');
+    const login = dialog(page).getByRole('button', { name: A['label:login'] });
+    await expect(login).toBeFocused();
+
+    // GitHub login in a popup: /gh/login → /link-return/ → BroadcastChannel → /gh/session with the popup's nonce
+    // (the popup posts and closes itself within milliseconds: its outcome is awaited, then that it closed)
+    const ghPopup = context.waitForEvent('page');
+    await login.click();
+    const ghWindow = await ghPopup;
+    const heading = dialog(page).locator('h3.mp__title');
+    await expect(heading).toHaveText(/^GitHub 로그인됨 · Lunecid · \d+분 남음$/);
+    await expect(heading).toBeFocused();
+    await expect.poll(() => ghWindow.isClosed()).toBe(true);
+    expect(relay.logins).toHaveLength(1);
+    const ghLogin = relay.logins[0] as URL;
+    expect(`${ghLogin.origin}${ghLogin.pathname}`).toBe(`${RELAY}/gh/login`);
+    expect([...ghLogin.searchParams.keys()]).toEqual(['lang', 'n']);
+    expect(ghLogin.searchParams.get('lang')).toBe('ko');
+    expect(relay.sessions).toEqual([{ ticket: FAKE_TICKET, n: ghLogin.searchParams.get('n') }]);
+    await expect(dialog(page).locator('.mp__perms')).toHaveText(A['label:perms']);
+
+    // fill
+    await dialog(page).getByLabel(A['label:field.ACCOUNT_GENSHIN_UID'], { exact: true }).fill('618285856');
+    await dialog(page).getByLabel(A['label:field.ACCOUNT_GENSHIN_NAME'], { exact: true }).fill('Traveler');
+    await dialog(page).getByLabel(A['label:field.ACCOUNT_RIOT_ID'], { exact: true }).fill('Hide on bush#KR1');
+    await dialog(page).getByLabel(A['label:field.riotConfirm'], { exact: true }).fill('Hide on bush#KR1');
+
+    // Steam in a popup: Steam's login → /link-return/?s=… → BroadcastChannel → /openid/verify with that s
+    const steamPopup = context.waitForEvent('page');
+    await dialog(page).getByRole('button', { name: 'Sign in through Steam' }).click();
+    const steamWindow = await steamPopup;
+    await expect(dialog(page).locator('.mp-steam__result')).toHaveText(`Steam: ${FAKE_STEAM.name} · ${FAKE_STEAM.id} · 프로필: 공개`);
+    await expect.poll(() => steamWindow.isClosed()).toBe(true);
+    expect(relay.verifies).toHaveLength(1);
+    expect(relay.verifies[0]).toMatchObject({ 'openid.mode': 'id_res', 'openid.claimed_id': `https://steamcommunity.com/openid/id/${FAKE_STEAM.id}` });
+
+    // save: one vars.set per changed field, in ACCOUNT_VARS order
+    await dialog(page).getByRole('button', { name: A['label:save'], exact: true }).click();
+    await expect(dialog(page).locator('[data-mp="save-alert"]')).toHaveText(A.saved);
+    expect(relay.ops.filter((op) => op.op !== 'vars.list' && op.op !== 'workflow.get')).toEqual([
+      { op: 'vars.set', name: 'ACCOUNT_GENSHIN_UID', value: '618285856' },
+      { op: 'vars.set', name: 'ACCOUNT_GENSHIN_NAME', value: 'Traveler' },
+      { op: 'vars.set', name: 'ACCOUNT_STEAM_ID64', value: FAKE_STEAM.id },
+      { op: 'vars.set', name: 'ACCOUNT_STEAM_NAME', value: FAKE_STEAM.name },
+      { op: 'vars.set', name: 'ACCOUNT_RIOT_ID', value: 'Hide on bush#KR1' },
+    ]);
+
+    // rebuild: the dispatch body carries the op alone; the first poll shows the build stage
+    await dialog(page).getByRole('button', { name: A['label:rebuild'] }).click();
+    await expect(dialog(page).locator('.mp-build__status')).toHaveText(A['stage.build']);
+    expect(relay.ops.filter((op) => op.op === 'dispatch')).toEqual([{ op: 'dispatch' }]);
+    // the dialog closed while the run is tracked: the static chip, and polling goes on
+    await page.keyboard.press('Escape');
+    await expect(dialog(page)).toBeHidden();
+    await expect(manage(page).locator('.acct-manage__chip')).toHaveText('빌드 중 · 0분');
+    const polls = relay.ops.filter((op) => op.op === 'run.get').length;
+    relay.finish();
+    await page.clock.fastForward(20_000);
+    await expect.poll(() => relay.ops.filter((op) => op.op === 'run.get').length).toBeGreaterThan(polls);
+    await expect(manage(page).locator('.acct-manage__chip')).toHaveCount(0);
+    await manage(page).click();
+    await expect(dialog(page).locator('.mp-build__status > p')).toHaveText([
+      '젠레스 존 제로 · 표시 중', '원신 · 표시 중', '리그 오브 레전드 · 표시 중', '전략적 팀 전투 · 표시 중', 'Steam · 표시 안 됨', A['result.reasons'],
+    ]);
+    await expect(dialog(page).getByRole('button', { name: A['label:refresh'] })).toBeVisible();
+
+    // nothing secret on the page; every request off 127.0.0.1 was a relay or Steam request, and each was routed
+    const html = await page.content();
+    expect(html).not.toContain(FAKE_TICKET);
+    expect(html).not.toContain(FAKE_HANDLE);
+    expect(page.url()).toBe(`${ACCOUNTS_ORIGIN}/game/player-log/`);
+    const offHost = relay.seen.filter((url) => new URL(url).hostname !== '127.0.0.1');
+    expect(offHost.length).toBeGreaterThan(0);
+    for (const url of offHost) expect(relay.routed.has(url), url).toBe(true);
+    expect([...new Set(offHost.map((url) => new URL(url).origin))].sort()).toEqual([RELAY, 'https://steamcommunity.com'].sort());
+    expect(await collectViolations(page)).toEqual([]);
+  });
+
+  test('popups blocked: [같은 창에서 로그인] sends this tab to the relay\'s /gh/login with mode=tab (the route cuts it)', async ({ context, page }) => {
+    const relay = await mockRelay(context);
+    await page.addInitScript(() => {
+      window.open = () => null;
+    });
+    await page.goto(`${ACCOUNTS_ORIGIN}/game/player-log/?manage`, { waitUntil: 'load' });
+    await manage(page).click();
+    await dialog(page).getByRole('button', { name: A['label:login'] }).click();
+    await expect(dialog(page).locator('[data-mp="error"]')).toHaveText(A['popup-blocked']);
+    const navigation = page.waitForRequest((req) => req.url().startsWith(`${RELAY}/gh/login`));
+    await dialog(page).getByRole('button', { name: A['label:sameTab'] }).click();
+    const req = await navigation;
+    expect(req.url()).toBe(`${RELAY}/gh/login?lang=ko&mode=tab`);
+    expect(req.isNavigationRequest()).toBe(true);
+    expect(relay.logins.map((url) => url.href)).toEqual([`${RELAY}/gh/login?lang=ko&mode=tab`]);
+    expect(relay.sessions).toEqual([]);
+  });
+
+  for (const [width, height] of [[375, 667], [1280, 800]] as const) {
+    test(`?manage#gh= at ${width}×${height}: within 2 s and without scrolling, the address loses #gh= and manage and the dialog is open (client:idle)`, async ({ context, page }) => {
+      const relay = await mockRelay(context);
+      await page.setViewportSize({ width, height });
+      const started = Date.now();
+      await page.goto(`${ACCOUNTS_ORIGIN}/game/player-log/?manage#gh=${FAKE_TICKET}`, { waitUntil: 'commit' });
+      await expect(dialog(page)).toHaveAttribute('open', '', { timeout: 2000 });
+      const href = await page.evaluate(() => location.href);
+      expect(Date.now() - started).toBeLessThanOrEqual(2000);
+      expect(href).not.toContain('#gh=');
+      expect(href).not.toContain('manage');
+      expect(await page.evaluate(() => window.scrollY)).toBe(0);
+      expect(relay.sessions).toEqual([{ ticket: FAKE_TICKET, n: null }]);
+      await expect(dialog(page).locator('h3.mp__title')).toBeFocused();
+    });
+  }
+
+  test('the core chunk fails to load: ?manage and #gh= still leave the address', async ({ context, page }) => {
+    await mockRelay(context);
+    await context.route(/\/_astro\/account-admin\.[\w-]+\.js$/, (r) => r.abort());
+    await page.goto(`${ACCOUNTS_ORIGIN}/game/player-log/?manage#gh=${FAKE_TICKET}`, { waitUntil: 'load' });
+    await expect.poll(() => page.evaluate(() => location.href), { timeout: 3000 }).not.toMatch(/manage|#|gh=/);
+    await expect(manage(page)).toHaveCount(0);
+  });
+
+  test('tiles stale by the visitor clock: owner mode still opens the dialog from "연동 관리"', async ({ context, page }) => {
+    await mockRelay(context);
+    await page.clock.install({ time: new Date('2030-01-01T00:00:00Z') });
+    await page.goto(`${ACCOUNTS_ORIGIN}/game/player-log/?manage`, { waitUntil: 'load' });
+    await expect(manage(page)).toBeVisible();
+    await expect(page.locator('ul.acct-row button.acct-tile').first().locator('.acct-tile__state')).toHaveText(ui.ko['accounts.state.stale']);
+    await manage(page).click();
+    await expect(dialog(page)).toHaveAttribute('data-state', 'open', { timeout: 3000 });
+  });
+
+  for (const [width, height] of [[320, 640], [375, 667], [768, 1024], [1280, 800]] as const) {
+    test(`management region at ${width}×${height}: before login and with a run's progress and results — no sideways scroll, every control 44×44, the last control reachable with the close button in view${width === 320 ? '' : ', axe 0'}`, async ({ context, page }) => {
+      test.slow();
+      const relay = await mockRelay(context);
+      await watchViolations(page);
+      await page.clock.install();
+      await page.setViewportSize({ width, height });
+      const check = async (state: string) => {
+        expect(await noSideScroll(page), `${state}: sideways scroll`).toBe(true);
+        const sizes = await controlSizes(page);
+        expect(sizes.length, state).toBeGreaterThan(8);
+        for (const s of sizes) {
+          expect(s.w, `${state}: ${s.what}`).toBeGreaterThanOrEqual(44);
+          expect(s.h, `${state}: ${s.what}`).toBeGreaterThanOrEqual(44);
+        }
+        // the last control of the management region scrolls into view inside the dialog; the sticky close stays in view
+        const view = await page.evaluate(() => {
+          const controls = [...document.querySelectorAll<HTMLElement>('dialog#acct-dlg section.mp :is(button, a[href], summary, input, [tabindex="0"])')].filter((el) => el.checkVisibility());
+          const last = controls.at(-1) as HTMLElement;
+          last.scrollIntoView({ block: 'nearest' });
+          const box = (el: Element) => {
+            const r = el.getBoundingClientRect();
+            return { top: r.top, bottom: r.bottom };
+          };
+          return { last: box(last), close: box(document.querySelector('.acct-dlg__close') as Element), height: innerHeight };
+        });
+        for (const part of [view.last, view.close]) {
+          expect(part.top, state).toBeGreaterThanOrEqual(0);
+          expect(part.bottom, state).toBeLessThanOrEqual(view.height);
+        }
+        if (width !== 320) {
+          const axe = await new AxeBuilder({ page }).withTags(AXE_TAGS).analyze();
+          expect(axe.violations.map((v) => `${v.id}: ${v.nodes.slice(0, 3).map((n) => n.target.join(' ')).join(' | ')}`), `${state}: axe`).toEqual([]);
+        }
+      };
+
+      await page.goto(`${ACCOUNTS_ORIGIN}/game/player-log/?manage`, { waitUntil: 'load' });
+      await manage(page).click();
+      await expect(dialog(page).getByRole('button', { name: A['label:login'] })).toBeFocused();
+      await page.waitForTimeout(SETTLED_MS);
+      await check('before login');
+
+      await page.goto(`${ACCOUNTS_ORIGIN}/game/player-log/?manage#gh=${FAKE_TICKET}`, { waitUntil: 'load' });
+      await expect(dialog(page).locator('.mp__perms')).toBeVisible();
+      await dialog(page).getByRole('button', { name: A['label:rebuild'] }).click();
+      await expect(dialog(page).locator('.mp-build__status')).toHaveText(A['stage.build']);
+      await expect(dialog(page).locator('.mp-build__meta')).toBeVisible();
+      await page.waitForTimeout(SETTLED_MS);
+      await check('run in progress');
+
+      relay.finish();
+      await page.clock.fastForward(20_000);
+      await expect(dialog(page).getByRole('button', { name: A['label:refresh'] })).toBeVisible();
+      await check('run results');
+      expect(await collectViolations(page)).toEqual([]);
     });
   }
 });
