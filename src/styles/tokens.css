@@ -132,6 +132,32 @@
   --cover-blk-scan: rgba(11, 13, 17, .16);    /* scanlines inside the reversed title block: --hud-bg at 16% */
   --neon-glow: rgba(232, 234, 237, .5);       /* --hud-text at 50%: a static glow, never animated */
   --neon-halo: rgba(139, 147, 161, .42);      /* --hud-muted at 42% */
+  /* ── the chooser's game cover in the approved game palette (MO-33, chooser v6.11): black ground, yellow for what you
+     click, cyan for the rest. Chooser only: the screen-only chooser rule below re-points the HUD names the cover uses to
+     these literals, so --accent is yellow on / and /en/ while the game pages stay lime until the game palette ships
+     (GP-9 replaces these duplicates with its --gp-* tokens). Pairs: off-white on the panel 14.7:1, muted 7.3:1, cyan
+     11.9:1, ink on yellow 15.6:1; yellow as text (the language switch) #FFE14A. ── */
+  --ch-k0: #0A0A0B;                           /* the ground; ink on yellow */
+  --ch-k1: #141416;                           /* the cover window */
+  --ch-k2: #1C1C1F;                           /* raised: the title bar, the plate */
+  --ch-t0: #F4F4F0;                           /* titles */
+  --ch-t1: #E6E6E1;                           /* text */
+  --ch-t2: #A3A39C;                           /* muted labels */
+  --ch-line: #707078;                         /* component lines, neutral */
+  --ch-dash: #3A3A40;                         /* decorative rules */
+  --ch-divider: #24242A;
+  --ch-frame: #2C2C31;
+  --ch-panel-92: rgba(20, 20, 22, .92);
+  --ch-y: #FFE600;                            /* yellow: fills and strokes of what you click, and the listed marks */
+  --ch-y-hover: #FFF06B;                      /* the filled link under the pointer: ink on it 17.0:1 */
+  --ch-y-text: #FFE14A;                       /* yellow as text on dark (the language switch) */
+  --ch-ink: #0A0A0B;                          /* text on yellow */
+  --ch-cy: #00E5FF;                           /* cyan: line-art, numbers, data; never clickable */
+  --ch-cy-dim: rgba(0, 229, 255, .42);
+  --ch-cy-glow: rgba(0, 229, 255, .35);
+  --ch-neon-glow: rgba(230, 230, 225, .5);    /* --ch-t1 at 50%: a static glow */
+  --ch-neon-halo: rgba(163, 163, 156, .4);    /* --ch-t2 at 40% */
+  --ch-blk-scan: rgba(10, 10, 11, .12);       /* scanlines inside the yellow GAME block */
   /* the printout: white cotton-rag art paper (finish B "판화지") with painted fields; text pairs on the paper:
      ink 17.6:1, ink-2 8.6:1, stamp 8.6:1; white on the red field 5.4:1 flat; ink on the yellow 11.4:1 */
   --pr-paper: #FBFAF6;
@@ -362,6 +388,19 @@
   --page-link: var(--accent); --page-rule: var(--hud-divider); --page-rule-strong: var(--hud-line-strong);
   --page-fill: var(--accent); --page-fill-ink: var(--accent-ink);
   --nt-bg: var(--hud-bg); --nt-ink: var(--hud-text); --nt-muted: var(--hud-muted); --nt-rule: var(--hud-divider); --nt-accent: var(--accent);
+}
+/* MO-33: the chooser's game cover in the game palette (the --ch-* group above). Screen only: print keeps the HUD print
+   values (black on white). */
+@media screen {
+  :root[data-variant="neutral"][data-page="chooser"] {
+    --hud-bg: var(--ch-k0); --hud-panel: var(--ch-k1); --hud-panel-2: var(--ch-k2); --hud-text: var(--ch-t1); --hud-strong: var(--ch-t0);
+    --hud-muted: var(--ch-t2); --hud-label: var(--ch-t2); --hud-line: var(--ch-line); --hud-line-strong: var(--ch-line); --hud-line-dash: var(--ch-dash);
+    --hud-divider: var(--ch-divider); --hud-frame: var(--ch-frame); --hud-panel-92: var(--ch-panel-92);
+    --accent: var(--ch-y); --accent-ink: var(--ch-ink); --accent-hover: var(--ch-y-hover); --accent-wash: var(--ch-k2); --accent-wash-strong: var(--ch-k2);
+    --neon-glow: var(--ch-neon-glow); --neon-halo: var(--ch-neon-halo); --cover-blk-scan: var(--ch-blk-scan);
+    --cover-cy: var(--ch-cy); --cover-cy-dim: var(--ch-cy-dim); --cover-cy-glow: var(--ch-cy-glow);
+    --nt-accent: var(--ch-y-text); --page-link: var(--ch-y-text);
+  }
 }
 @media (min-width: 734px) {
   :root { --fs-name: 3.75rem; --fs-display: 3rem; --fs-h2: 1.75rem; --fs-sub: 1.3125rem; --gutter: 32px; --section-pad-y: 44px;

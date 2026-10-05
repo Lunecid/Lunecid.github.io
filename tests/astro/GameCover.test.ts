@@ -81,9 +81,27 @@ describe('GameCover.astro (MO-23)', () => {
     const html = await render('ko');
     expect(html).toMatch(/<article class="file file--game"[^>]*>\s*<div class="face device"[^>]*>\s*<div class="screen"[^>]*>\s*<div class="bar"/);
     const block = /\/\* ── the device frame[\s\S]*?end of the device frame ── \*\//.exec(css)?.[0] ?? '';
-    expect(block).toMatch(/\.device\s*\{[^}]*border:\s*var\(--frame\) solid var\(--accent\)/);
+    // MO-33 (named change): the window's frame is a dark rim with a neutral hairline (the yellow is the plate's outline)
+    expect(block).toMatch(/\.device\s*\{[^}]*border:\s*var\(--frame\) solid var\(--hud-panel-2, var\(--hud-panel\)\)/);
     expect(block).toMatch(/\.br\s*\{/);
     const outside = css.replace(block, '').replace(/@media \((forced-colors|print)[^{]*\{[\s\S]*?\n  \}/g, '');
     expect(outside).not.toMatch(/border:\s*var\(--frame\)|\.br--tl|outline-offset:\s*5px/);
+  });
+
+  it('MO-33: plate wraps the series line and display words; circuit and grid pseudo-items aria-hidden; no text added', async () => {
+    const html = await render('ko');
+    // the plate: two pseudo-items of the cover grid over its first two rows (the series line and the display words)
+    expect(css).toMatch(/\.file--game \.cv::before, \.file--game \.cv::after\s*\{[^}]*grid-row:\s*1 \/ 3;[^}]*pointer-events:\s*none/);
+    expect(css).toMatch(/\.file--game \.cv::before\s*\{[^}]*background:\s*var\(--accent\)/);
+    // the circuit trace: an inline SVG in cyan, decoration only, drawn from a 540px cover
+    const circuit = /<svg class="cv__circuit"[\s\S]*?<\/svg>/.exec(html)?.[0] ?? '';
+    expect(circuit).toMatch(/aria-hidden="true"/);
+    expect(circuit).toMatch(/focusable="false"/);
+    expect(circuit).not.toMatch(/<text|href=|#[0-9a-f]{3,6}\b/i);
+    expect(css).toMatch(/\.file--game \.cv__circuit\s*\{[^}]*display:\s*none/);
+    // no words were added: the cover's text is the v6.4 text
+    const text = (h: string) => h.replace(/<svg[\s\S]*?<\/svg>/g, '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+    expect(text(html)).toBe(text(html.replace(circuit, '')));
+    expect(text(html)).not.toMatch(/circuit/i);
   });
 });

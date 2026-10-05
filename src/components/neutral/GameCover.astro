@@ -1,8 +1,9 @@
 ---
 // Styles: src/styles/chooser.css (one external stylesheet for the chooser).
-// The game file on the chooser desk (MO-23, chooser v6.4): an electronic window (title bar) holding a printed cyber
-// cover — lime frame, hazard bands, the gamepad emblem, a mono series line, Anton display words with the first one
-// reversed out of lime, the Korean h2, the hidden declassify stamp (MO-25 inks it on the entering click), the tagline,
+// The game file on the chooser desk (MO-23, chooser v6.4; v6.11 palette, MO-33): an electronic window (title bar)
+// holding a printed cyber cover — a dark plate in a yellow outline (with a cyan circuit trace from 540px) behind the
+// series line and the display words, two short hazard strips, the cyan gamepad emblem, Anton display words with the
+// first one reversed out of yellow, the Korean h2, the hidden declassify stamp (MO-25 inks it on the entering click), the tagline,
 // a rule with the contents line and the link, the foot line, and from 540px a barcode rail. Behind the printout at rest.
 // The one link (its CTA) stretches its hit layer over the whole face. Structure: .file--game > .face.device (the frame,
 // one isolated CSS block, swappable for a device bezel) > .screen (the cover). Words: coverCopy (framing), chooserCopy (title,
@@ -41,6 +42,7 @@ const [first, ...rest] = g.display;
           <CoverEmblem kind="game" />
           <p class="cv__series neon--dim"><span class="cv__lead"><span class="cv__pub" lang="en">{g.series}</span>&nbsp;<span class="cv__sep" aria-hidden="true">·</span></span> <span class="cv__kicker" lang="en">{mode}</span>&nbsp;<span class="cv__sep" aria-hidden="true">·</span> <span class="cv__no" lang="en">{g.num}</span></p>
         </div>
+        <svg class="cv__circuit" viewBox="0 0 420 150" aria-hidden="true" focusable="false"><path class="ck" d="M8 142h120l34-34h96l30-30h124M330 92v-22h36"></path><path class="cf" d="M60 118h70l26-26h72M300 46h50l24-24h40"></path></svg>
         <p class="disp" lang="en" aria-hidden="true">
           <span class="disp__row"><span class="disp__blk">{first}</span><span class="disp__w">{rest[0]}</span></span>
           <span class="disp__row"><span class="disp__w">{rest[1]}</span></span>

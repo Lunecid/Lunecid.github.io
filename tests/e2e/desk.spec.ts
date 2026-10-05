@@ -1,5 +1,6 @@
 // The chooser desk (motion plan amendment 2026-10-05, chooser v6.4 approved): the game file's cyber cover behind, the
 // general file's white art-paper printout tilted on top of it. MO-23: the static desk at rest.
+import { readFileSync } from 'node:fs';
 import type { Page } from '@playwright/test';
 import { test, expect, horizontalOverflow, textBelow12px, expectNoAxeViolations, openAt } from './helpers';
 
@@ -17,10 +18,11 @@ const fileAt = (page: Page, x: number, y: number) =>
   }, [x, y]);
 
 test.describe('MO-23: the static desk', () => {
-  test('dark HUD page: color-scheme dark, body --hud-bg, focus rings lime on the game file and --pr-focus on the printout', async ({ page }) => {
+  // MO-33 (named change): the game palette on the chooser: the page is the game black, the game file's ring yellow
+  test('dark HUD page: color-scheme dark, body --hud-bg, focus ring yellow round the game file and --pr-focus on the printout', async ({ page }) => {
     await openAt(page, '/?choose', 1280, 800);
     expect(await page.evaluate(() => getComputedStyle(document.documentElement).colorScheme)).toBe('dark');
-    expect(await page.evaluate(() => getComputedStyle(document.body).backgroundColor)).toBe('rgb(11, 13, 17)');
+    expect(await page.evaluate(() => getComputedStyle(document.body).backgroundColor)).toBe('rgb(10, 10, 11)');
     await page.locator(DATA).focus();
     await page.keyboard.press('Shift+Tab');
     await page.keyboard.press('Tab'); // keyboard focus, so :focus-visible applies
@@ -30,7 +32,7 @@ test.describe('MO-23: the static desk', () => {
     await page.keyboard.press('Tab');
     await expect(page.locator(GAME)).toBeFocused();
     const gameRing = await page.locator('.file--game > .face').evaluate((el) => [getComputedStyle(el).outlineStyle, getComputedStyle(el).outlineColor]);
-    expect(gameRing).toEqual(['solid', 'rgb(200, 240, 60)']);
+    expect(gameRing).toEqual(['solid', 'rgb(255, 230, 0)']);
   });
 
   test("at rest the printout lies over the game cover; the game cover's title bar and display row stay visible (≥ 734 px: left strip; < 734 px: top 96 px)", async ({ page }) => {
@@ -363,7 +365,8 @@ test.describe('MO-25: the declassify stamp', () => {
     expect(await rectOf(page, '#file-game-title')).toEqual(title);
   });
 
-  test('click on the game cover: the stamp turns lime (bg --accent) with a ring, then /game/ loads after ~440 ms', async ({ page }) => {
+  // MO-33 (named change): struck in yellow with ink, its ring yellow with a cyan echo outside it
+  test('click on the game cover: the stamp turns yellow (bg rgb(255, 230, 0), ink text) with a cyan echo ring, then /game/ loads after ~440 ms', async ({ page }) => {
     await openAt(page, '/?choose', 1280, 800);
     await timeToLeave(page);
     const g = await rectOf(page, '.file--game');
@@ -376,7 +379,9 @@ test.describe('MO-25: the declassify stamp', () => {
     const look = await stamp.evaluate((el) => ({ ring: getComputedStyle(el, '::after').animationName, strike: getComputedStyle(el).animationName }));
     expect(look).toEqual({ ring: 'stamp-ring', strike: 'stamp-strike' });
     // the colour change runs over --dur-hover (the button is still held: nothing navigates yet)
-    await expect.poll(() => stamp.evaluate((el) => getComputedStyle(el).backgroundColor), { timeout: 400 }).toBe('rgb(200, 240, 60)');
+    await expect.poll(() => stamp.evaluate((el) => getComputedStyle(el).backgroundColor), { timeout: 400 }).toBe('rgb(255, 230, 0)');
+    expect(await stamp.evaluate((el) => getComputedStyle(el).color)).toBe('rgb(10, 10, 11)');
+    expect(await stamp.evaluate((el) => [getComputedStyle(el, '::after').borderTopColor, getComputedStyle(el, '::after').outlineColor])).toEqual(['rgb(255, 230, 0)', 'rgb(0, 229, 255)']);
     await page.mouse.up();
     await page.waitForURL(/\/game\/$/);
     const dt = Number(await page.evaluate(() => sessionStorage.getItem('mo25:dt')));
@@ -391,12 +396,17 @@ test.describe('MO-25: the declassify stamp', () => {
     await page.locator(DATA).focus();
     await page.keyboard.press('Tab');
     await page.waitForTimeout(260);
+    // the stamp is read in the page right after the activation (the 150 ms navigation may outrun a round trip)
+    await page.evaluate(() => {
+      const el = document.querySelector('.file--game .stamp')!;
+      document.addEventListener('click', () => setTimeout(() => sessionStorage.setItem('mo25:stamp', JSON.stringify([el.className, getComputedStyle(el).animationName, getComputedStyle(el, '::after').animationName]))), { capture: true });
+    });
     const leaving = page.waitForURL(/\/game\/$/);
     await page.keyboard.press('Enter');
-    const stamp = page.locator('.file--game .stamp');
-    await expect(stamp).toHaveClass(/is-declassified/);
-    expect(await stamp.evaluate((el) => [getComputedStyle(el).animationName, getComputedStyle(el, '::after').animationName])).toEqual(['none', 'none']);
     await leaving;
+    const [cls, strike, ring] = JSON.parse((await page.evaluate(() => sessionStorage.getItem('mo25:stamp'))) ?? '[]') as string[];
+    expect(cls).toMatch(/is-declassified/);
+    expect([strike, ring]).toEqual(['none', 'none']);
     const dt = Number(await page.evaluate(() => sessionStorage.getItem('mo25:dt')));
     expect(dt).toBeGreaterThanOrEqual(140);
     expect(dt).toBeLessThanOrEqual(300);
@@ -424,5 +434,158 @@ test.describe('MO-25: the declassify stamp', () => {
     await expect(stamp).not.toHaveClass(/is-declassified|is-struck/);
     expect(await stamp.evaluate((el) => getComputedStyle(el).opacity)).toBe('0');
     await expect(page.locator('.desk')).not.toHaveClass(/is-aside/);
+  });
+});
+
+/** Every colour a page computes (each element and its ::before / ::after; colour properties, gradients and shadows),
+ *  as [r, g, b] in 0–255. */
+const computedColours = (page: Page) =>
+  page.evaluate(() => {
+    const props = ['color', 'background-color', 'border-top-color', 'border-right-color', 'border-bottom-color', 'border-left-color', 'outline-color', 'text-decoration-color', 'fill', 'stroke', 'caret-color'];
+    const rich = ['background-image', 'box-shadow', 'text-shadow'];
+    const out = new Map<string, number[]>();
+    const take = (v: string) => {
+      for (const m of v.matchAll(/rgba?\(([^)]*)\)|color\(srgb ([^)]*)\)/g)) {
+        const n = (m[1] ?? m[2] ?? '').split(/[\s,/]+/).filter(Boolean).map(Number);
+        if (n.length < 3) continue;
+        const rgb = m[2] ? n.slice(0, 3).map((x) => Math.round(x * 255)) : n.slice(0, 3);
+        const alpha = n[3] ?? 1;
+        if (alpha > 0) out.set(rgb.join(','), rgb);
+      }
+    };
+    for (const el of document.querySelectorAll('*')) {
+      for (const pseudo of [null, '::before', '::after']) {
+        const cs = getComputedStyle(el, pseudo);
+        for (const p of props) take(cs.getPropertyValue(p));
+        for (const p of rich) take(cs.getPropertyValue(p));
+      }
+    }
+    return [...out.values()];
+  });
+const near = (a: number[], b: number[], d = 3) => a.every((v, i) => Math.abs(v - b[i]!) <= d);
+
+/** Share of yellow and of cyan pixels in a viewport clip (the printout hidden), counted in the page from a screenshot. */
+async function paletteShare(page: Page, clip: { x: number; y: number; width: number; height: number }): Promise<{ yellow: number; cyan: number }> {
+  const png = (await page.screenshot({ clip, animations: 'disabled' })).toString('base64');
+  return page.evaluate(async (b64) => {
+    const img = new Image();
+    img.src = `data:image/png;base64,${b64}`;
+    await img.decode();
+    const c = document.createElement('canvas');
+    c.width = img.width;
+    c.height = img.height;
+    const ctx = c.getContext('2d')!;
+    ctx.drawImage(img, 0, 0);
+    const d = ctx.getImageData(0, 0, c.width, c.height).data;
+    let y = 0;
+    let cy = 0;
+    for (let i = 0; i < d.length; i += 4) {
+      const [r, g, b] = [d[i]!, d[i + 1]!, d[i + 2]!];
+      if (r > 190 && g > 170 && b < 110 && r - b > 120) y++;
+      else if (r < 110 && g > 150 && b > 170 && b - r > 90) cy++;
+    }
+    const n = d.length / 4;
+    return { yellow: y / n, cyan: cy / n };
+  }, png);
+}
+
+test.describe('MO-33: the game cover in the approved palette', () => {
+  test('MO-33: no lime and no gold computed on / (any element, any colour property)', async ({ page }) => {
+    for (const route of ['/?choose', '/en/?choose']) {
+      await openAt(page, route, 1280, 800);
+      const colours = await computedColours(page);
+      const LIME = [200, 240, 60];
+      const GOLD = [245, 179, 1];
+      const OLIVE = [79, 107, 0];
+      expect(colours.filter((c) => near(c, LIME) || near(c, GOLD) || near(c, OLIVE)), route).toEqual([]);
+      // the palette is there: yellow and cyan are computed
+      expect(colours.some((c) => near(c, [255, 230, 0])), route).toBe(true);
+      expect(colours.some((c) => near(c, [0, 229, 255])), route).toBe(true);
+    }
+  });
+
+  for (const width of [375, 768, 1280]) {
+    test(`MO-33: every visible cover text ≥ 4.5:1 by computed colour (${width})`, async ({ page }) => {
+      await openAt(page, '/?choose', width, 900);
+      await page.locator('.desk').evaluate((el) => el.classList.add('is-aside')); // the whole cover in view
+      const low = await page.evaluate(() => {
+        const parse = (v: string): number[] | null => {
+          const m = /rgba?\(([^)]*)\)/.exec(v);
+          if (!m) return null;
+          const n = m[1]!.split(/[\s,/]+/).filter(Boolean).map(Number);
+          return [n[0]!, n[1]!, n[2]!, n[3] ?? 1];
+        };
+        const lum = (c: number[]) => {
+          const f = (x: number) => { const s = x / 255; return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4; };
+          return 0.2126 * f(c[0]!) + 0.7152 * f(c[1]!) + 0.0722 * f(c[2]!);
+        };
+        const ratio = (a: number[], b: number[]) => { const [x, y] = [lum(a), lum(b)].sort((p, q) => q - p); return (x! + 0.05) / (y! + 0.05); };
+        const bgOf = (el: Element): number[] => {
+          for (let e: Element | null = el; e; e = e.parentElement) {
+            if (e.classList.contains('cta__face')) { const b = parse(getComputedStyle(e, '::after').backgroundColor); if (b && b[3]! > 0) return b; }
+            const b = parse(getComputedStyle(e).backgroundColor);
+            if (b && b[3]! > 0.5) return b;
+          }
+          return [0, 0, 0, 1];
+        };
+        const shown = (el: Element) => {
+          for (let e: Element | null = el; e; e = e.parentElement) {
+            const cs = getComputedStyle(e);
+            if (cs.display === 'none' || cs.visibility === 'hidden' || Number(cs.opacity) === 0) return false;
+          }
+          return (el as HTMLElement).getClientRects().length > 0;
+        };
+        const out: string[] = [];
+        for (const el of document.querySelectorAll('.file--game *')) {
+          const own = [...el.childNodes].some((n) => n.nodeType === 3 && n.textContent!.trim() !== '');
+          if (!own || !shown(el)) continue;
+          const fg = parse(getComputedStyle(el).color)!;
+          const bg = bgOf(el);
+          const mixed = fg.slice(0, 3).map((v, i) => v * fg[3]! + bg[i]! * (1 - fg[3]!));
+          const r = ratio(mixed, bg);
+          if (r < 4.5) out.push(`${el.className || el.tagName}: ${r.toFixed(2)}`);
+        }
+        return out;
+      });
+      expect(low).toEqual([]);
+    });
+  }
+
+  test('MO-33: yellow + cyan pixels ≤ 10% of the 375 and 1280 folds (printout hidden), ≥ 4% of the cover (the palette is present)', async ({ page }) => {
+    for (const [w, h] of [[375, 812], [1280, 800]] as const) {
+      await openAt(page, '/?choose', w, h);
+      await page.locator('.file--data').evaluate((el) => (el as HTMLElement).style.setProperty('visibility', 'hidden', 'important'));
+      await page.mouse.move(0, h - 1);
+      const fold = await paletteShare(page, { x: 0, y: 0, width: w, height: h });
+      expect(fold.yellow + fold.cyan, `fold @${w}`).toBeLessThanOrEqual(0.1);
+      const r = await rectOf(page, '.file--game');
+      const top = Math.max(0, r.top);
+      const cover = await paletteShare(page, { x: Math.max(0, r.left), y: top, width: Math.min(w, r.right) - Math.max(0, r.left), height: Math.min(h, r.bottom) - top });
+      expect(cover.yellow + cover.cyan, `cover @${w}`).toBeGreaterThanOrEqual(0.04);
+      expect(cover.yellow + cover.cyan, `cover @${w}`).toBeLessThanOrEqual(0.1);
+    }
+  });
+
+  test('MO-33: cover text boxes unchanged (±1 px) vs the MO-32 build at 375/768/1280', async ({ page }) => {
+    const fixture = JSON.parse(readFileSync(new URL('./fixtures/cover-boxes.json', import.meta.url), 'utf8')) as Record<string, Record<string, number[]>>;
+    for (const [key, boxes] of Object.entries(fixture)) {
+      if (key.startsWith('_')) continue;
+      const [lang, w] = key.split('@') as [string, string];
+      await openAt(page, lang === 'en' ? '/en/?choose' : '/?choose', Number(w), 900);
+      await page.evaluate(() => document.fonts.ready);
+      const now = await page.evaluate((sels) => {
+        const o = document.querySelector('.file--game .screen, .file--game .dev__screen > .face')!.getBoundingClientRect();
+        const r: Record<string, number[]> = {};
+        for (const s of sels) {
+          const b = document.querySelector(`.file--game ${s}`)?.getBoundingClientRect();
+          if (b?.width) r[s] = [b.left - o.left, b.top - o.top, b.width, b.height];
+        }
+        return r;
+      }, Object.keys(boxes));
+      for (const [sel, box] of Object.entries(boxes)) {
+        expect(now[sel], `${key} ${sel}`).toBeDefined();
+        box.forEach((v, i) => expect(Math.abs(now[sel]![i]! - v), `${key} ${sel}[${i}]`).toBeLessThanOrEqual(1));
+      }
+    }
   });
 });

@@ -528,6 +528,51 @@ describe('the chooser desk (MO-23, v6.4)', () => {
     expect(d.get('--font-ed-display')).toMatch(/^"SB Display"/);
   });
 
+  // MO-33 (chooser v6.11): the game cover in the approved game palette, on the chooser only. The literals sit in one
+  // --ch-* group of :root; a screen-only chooser rule re-points the HUD names the cover uses (print keeps the HUD print
+  // values); the game and data blocks are untouched (game pages stay lime until the game palette ships).
+  const CH: Record<string, string> = {
+    '--ch-k0': '#0A0A0B', '--ch-k1': '#141416', '--ch-k2': '#1C1C1F', '--ch-t0': '#F4F4F0', '--ch-t1': '#E6E6E1', '--ch-t2': '#A3A39C',
+    '--ch-line': '#707078', '--ch-dash': '#3A3A40', '--ch-divider': '#24242A', '--ch-frame': '#2C2C31', '--ch-panel-92': 'rgba(20, 20, 22, .92)',
+    '--ch-y': '#FFE600', '--ch-y-hover': '#FFF06B', '--ch-y-text': '#FFE14A', '--ch-ink': '#0A0A0B',
+    '--ch-cy': '#00E5FF', '--ch-cy-dim': 'rgba(0, 229, 255, .42)', '--ch-cy-glow': 'rgba(0, 229, 255, .35)',
+    '--ch-neon-glow': 'rgba(230, 230, 225, .5)', '--ch-neon-halo': 'rgba(163, 163, 156, .4)', '--ch-blk-scan': 'rgba(10, 10, 11, .12)',
+  };
+  const screenChooser = () =>
+    new Map(tokenRules().filter((r) => r.selector === ':root[data-variant="neutral"][data-page="chooser"]' && r.media === '@media screen').flatMap((r) => [...r.decls]));
+
+  it('MO-33: chooser palette literals exact; the chooser block re-points the HUD names and --accent to them; game and data blocks unchanged', () => {
+    const d = declsOf(':root');
+    for (const [name, value] of Object.entries(CH)) expect(squash(d.get(name)), name).toBe(squash(value));
+    const re = screenChooser();
+    expect(Object.fromEntries(re)).toEqual({
+      '--hud-bg': 'var(--ch-k0)', '--hud-panel': 'var(--ch-k1)', '--hud-panel-2': 'var(--ch-k2)', '--hud-text': 'var(--ch-t1)', '--hud-strong': 'var(--ch-t0)',
+      '--hud-muted': 'var(--ch-t2)', '--hud-label': 'var(--ch-t2)', '--hud-line': 'var(--ch-line)', '--hud-line-strong': 'var(--ch-line)', '--hud-line-dash': 'var(--ch-dash)',
+      '--hud-divider': 'var(--ch-divider)', '--hud-frame': 'var(--ch-frame)', '--hud-panel-92': 'var(--ch-panel-92)',
+      '--accent': 'var(--ch-y)', '--accent-ink': 'var(--ch-ink)', '--accent-hover': 'var(--ch-y-hover)', '--accent-wash': 'var(--ch-k2)', '--accent-wash-strong': 'var(--ch-k2)',
+      '--neon-glow': 'var(--ch-neon-glow)', '--neon-halo': 'var(--ch-neon-halo)', '--cover-blk-scan': 'var(--ch-blk-scan)',
+      '--cover-cy': 'var(--ch-cy)', '--cover-cy-dim': 'var(--ch-cy-dim)', '--cover-cy-glow': 'var(--ch-cy-glow)',
+      '--nt-accent': 'var(--ch-y-text)', '--page-link': 'var(--ch-y-text)',
+    });
+    // nothing outside the chooser moves: the game pages keep lime, the data block sets no accent
+    expect(d.get('--accent')).toBe('#C8F03C');
+    expect(d.get('--hud-bg')).toBe('#0B0D11');
+    expect(declsOf(':root[data-variant="data"]').has('--accent')).toBe(false);
+    expect(tokenRules().filter((r) => /--ch-/.test([...r.decls.values()].join(' ')) && !r.selector.includes('chooser') && r.selector !== ':root')).toEqual([]);
+  });
+
+  it('MO-33: pairs ≥ 4.5 — ink on yellow, off-white/muted on panel and panel-2, cyan text on panel; focus yellow ≥ 3 on the panel', () => {
+    const d = declsOf(':root');
+    const v = (n: string) => d.get(n)!;
+    expect(contrast(v('--ch-ink'), v('--ch-y'))).toBeGreaterThanOrEqual(4.5);
+    expect(contrast(v('--ch-ink'), v('--ch-y-hover'))).toBeGreaterThanOrEqual(4.5);
+    for (const bg of ['--ch-k1', '--ch-k2']) for (const fg of ['--ch-t0', '--ch-t1', '--ch-t2']) expect(contrast(v(fg), v(bg)), `${fg} on ${bg}`).toBeGreaterThanOrEqual(4.5);
+    expect(contrast(v('--ch-cy'), v('--ch-k1'))).toBeGreaterThanOrEqual(4.5);
+    expect(contrast(v('--ch-cy'), v('--ch-k2'))).toBeGreaterThanOrEqual(4.5);
+    expect(contrast(v('--ch-y-text'), v('--ch-k0'))).toBeGreaterThanOrEqual(4.5); // the language switch on the page
+    expect(contrast(v('--ch-y'), v('--ch-k1'))).toBeGreaterThanOrEqual(3);
+  });
+
   it('MO-23: the chooser page is dark (color-scheme dark in the chooser sheet), the other neutral pages stay light', () => {
     const sheet = read('src/styles/chooser.css');
     expect(sheet).toMatch(/(^|\n):root\[data-variant="neutral"\]\[data-page="chooser"\]\s*\{[^}]*color-scheme:\s*dark/);

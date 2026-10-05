@@ -91,10 +91,11 @@
 /* ═══ the emblems (CoverEmblem) ═══ */
 .desk .emblem { display: block; flex: none; width: 30px; height: 30px; }
 @container (min-width: 440px) { .desk .emblem { width: 44px; height: 44px; } }
-.desk .em__frame { fill: none; stroke: var(--hud-line); stroke-width: 1; }
-.desk .em__corner { fill: none; stroke: var(--accent); stroke-width: 2; }
-.desk .em__tick { fill: none; stroke: var(--hud-muted); stroke-width: 1; }
-.desk .em__line { fill: none; stroke: var(--hud-strong); stroke-width: 1.6; stroke-linejoin: round; stroke-linecap: round; }
+/* the gamepad in cyan line-art (v6.11; print: the HUD muted ink) */
+.desk .em__frame { fill: none; stroke: var(--cover-cy-dim, var(--hud-muted)); stroke-width: 1; }
+.desk .em__corner { fill: none; stroke: var(--cover-cy, var(--hud-muted)); stroke-width: 2; }
+.desk .em__tick { fill: none; stroke: var(--cover-cy-dim, var(--hud-muted)); stroke-width: 1; }
+.desk .em__line { fill: none; stroke: var(--cover-cy, var(--hud-strong)); stroke-width: 1.6; stroke-linejoin: round; stroke-linecap: round; }
 /* the bar chart, in ink: a dotted frame, ink corners, dot-shaded bars */
 .desk .emblem--ink .em__frame { stroke: var(--pr-ink-2); stroke-dasharray: 2 2; }
 .desk .emblem--ink .em__corner { stroke: var(--pr-ink); }
@@ -143,10 +144,13 @@
 
 /* ── the device frame (bezel). The one block that draws the game file's outer frame: its border, shadow, focus ring
    and HUD bracket corners. A different bezel replaces only this block; the desk measures the outer .file--game box,
-   so a thicker frame moves nothing else. Placeholder: the v6.4 lime frame. ── */
+   so a thicker frame moves nothing else. v6.11: a dark rim with a neutral hairline at its outer edge (the yellow is the
+   plate's outline); the width is unchanged, so the layout is too. ── */
 .file--game .device {
   background-color: var(--hud-panel);
-  border: var(--frame) solid var(--accent);
+  border: var(--frame) solid var(--hud-panel-2, var(--hud-panel));
+  outline: 1px solid var(--hud-line);
+  outline-offset: -1px;
   box-shadow: 0 26px 52px -18px color-mix(in srgb, var(--cover-shadow) 85%, transparent), 0 2px 8px color-mix(in srgb, var(--cover-shadow) 55%, transparent);
 }
 .file--game:has(.cta:focus-visible) > .device { outline: 2px solid var(--accent); outline-offset: 5px; }
@@ -167,7 +171,7 @@
   height: var(--bar-h);
   padding: 0 12px 0 14px;
   overflow: hidden;
-  background: var(--hud-bg);
+  background: var(--hud-panel-2, var(--hud-bg));
   border-bottom: 1px solid var(--hud-divider);
   font: 600 var(--fs-min)/1.35 var(--font-mono-cover);
   letter-spacing: .1em;
@@ -176,6 +180,8 @@
 }
 .file--game .bar__sq { flex: none; width: 8px; height: 8px; margin-right: -6px; background: var(--accent); }
 .file--game .bar__access { margin-left: auto; }
+/* the access state is data: cyan */
+.file--game .bar__access.neon--dim { color: var(--cover-cy, var(--hud-text)); text-shadow: 0 0 7px var(--cover-cy-glow, transparent); }
 .file--game .bar__ctl { display: flex; gap: 5px; }
 .file--game .bar__ctl i { width: 9px; height: 9px; border: 1px solid var(--hud-muted); }
 /* a static glow (MO-27 types these labels during the opening; the glow itself never animates) */
@@ -204,6 +210,9 @@
   background: repeating-linear-gradient(-45deg, var(--accent) 0 5px, transparent 5px 11px);
 }
 .file--game .haz--b { margin: 0 var(--haz-in) var(--haz-in); }
+/* two short strips (v6.11), the height and margins kept, so nothing else moves */
+.file--game .haz--t { width: min(180px, 34%); }
+.file--game .haz--b { width: min(110px, 22%); }
 
 /* one column: series line, display words, Korean title, the tagline, then (after the only flexible row) the contents
    line with the link, and the foot line; from 540px a barcode rail runs down the right edge */
@@ -215,6 +224,51 @@
   grid-template-areas: "head" "disp" "title" "intro" "." "end" "foot";
   row-gap: var(--row-gap);
   padding: var(--cv-pad-t) var(--cv-pad-x) var(--cv-pad-b);
+}
+/* the plate (v6.11): a dark raised plate in a 2px yellow outline behind the series line and the display words,
+   chamfered at its top right, its lower edge stepped. Two pseudo-items of the grid over its first two rows (negative
+   margins, no row moves): ::before the yellow, ::after the dark plate 2px inside it; from 540px a cyan circuit trace
+   (.cv__circuit) in its lower right, between the plate and the words. Isolation only (no position: the link's hit
+   layer must still cover the whole window); grid items take z-index without being positioned. */
+.file--game .cv { isolation: isolate; }
+.file--game .cv::before, .file--game .cv::after {
+  content: "";
+  grid-column: 1;
+  grid-row: 1 / 3;
+  z-index: -2;
+  pointer-events: none;
+  --pc: 18px;
+  --ps: 12px;
+  --pm: calc(var(--cv-pad-x) - 6px);
+  --pmr: calc(var(--pm) - var(--rail-gap) * .4);
+  margin: -4px calc(-1 * var(--pmr)) -8px calc(-1 * var(--pm));
+  clip-path: polygon(0 0, calc(100% - var(--pc)) 0, 100% var(--pc), 100% calc(100% - var(--ps)), 58% calc(100% - var(--ps)), calc(58% - var(--ps)) 100%, 0 100%);
+}
+.file--game .cv::before { background: var(--accent); }
+.file--game .cv::after {
+  --pc: 17.2px;
+  margin: -2px calc(2px - var(--pmr)) -6px calc(2px - var(--pm));
+  background: var(--hud-panel-2, var(--hud-panel));
+  clip-path: polygon(0 0, calc(100% - var(--pc)) 0, 100% var(--pc), 100% calc(100% - var(--ps)), calc(58% - .5px) calc(100% - var(--ps)), calc(58% - var(--ps) - .5px) 100%, 0 100%);
+}
+@container (min-width: 440px) { .file--game .cv::before, .file--game .cv::after { --ps: 16px; } .file--game .cv::before { --pc: 26px; } .file--game .cv::after { --pc: 25.2px; } }
+.file--game .cv__circuit { display: none; }
+@container (min-width: 540px) {
+  .file--game .cv__circuit {
+    display: block;
+    grid-column: 1;
+    grid-row: 1 / 3;
+    z-index: -1;
+    justify-self: end;
+    align-self: end;
+    width: min(24%, 170px);
+    height: auto;
+    margin: 0 calc(16px - var(--cv-pad-x) + 6px - var(--rail-gap) * .4) 12px 0;
+    pointer-events: none;
+  }
+  .file--game .cv__circuit path { fill: none; stroke: var(--cover-cy, var(--hud-muted)); stroke-linejoin: miter; }
+  .file--game .cv__circuit .ck { stroke-width: 7; }
+  .file--game .cv__circuit .cf { stroke-width: 2; }
 }
 @container (min-width: 540px) {
   .file--game .cv {
@@ -232,10 +286,12 @@
 .file--game .cv__pub, .file--game .cv__kicker, .file--game .cv__no { white-space: nowrap; }
 @container (max-width: 539px) { .file--game .cv__lead { display: block; } }
 .file--game .cv__sep { color: var(--hud-muted); text-shadow: none; }
+/* the kicker is cyan (v6.11) */
+.file--game .cv__kicker { color: var(--cover-cy, var(--hud-text)); text-shadow: none; }
 
 /* the display words: Anton caps are .87em tall; each line box is the cap height plus .1em above and below, so the
    reversed block hugs its word evenly; the lines overlap by .08em */
-.file--game .disp { grid-area: disp; font: 400 var(--disp-fs)/.87 var(--font-cover); color: var(--hud-strong); letter-spacing: .005em; }
+.file--game .disp { grid-area: disp; font: 400 var(--disp-fs)/.87 var(--font-cover); color: var(--hud-text); letter-spacing: .005em; }
 .file--game .disp__row { display: flex; align-items: flex-start; gap: .25em; }
 .file--game .disp__row + .disp__row { margin-top: -.08em; }
 /* clipped to its box: Anton's ink sits inside it, and a late display face (or a fallback with other metrics) then
@@ -243,7 +299,7 @@
 .file--game .disp__blk, .file--game .disp__w { display: block; padding-top: .2em; white-space: nowrap; overflow: clip; }
 .file--game .disp__blk {
   padding-inline: .1em;
-  color: var(--hud-bg);
+  color: var(--accent-ink);
   background-color: var(--accent);
   background-image: repeating-linear-gradient(to bottom, var(--cover-blk-scan) 0 1px, transparent 1px 3px);
 }
@@ -265,10 +321,11 @@
   opacity: 0;
   transition: color var(--dur-hover) linear, background-color var(--dur-hover) linear, border-color var(--dur-hover) linear, outline-color var(--dur-hover) linear;
 }
-/* entering the game file declassifies it (chooser.ts): the stamp inks in lime (the click's own feedback), is struck
-   (scale and a slight turn, the overshoot as a keyframe) and a lime ring spreads once; reduced motion: colour only */
-.file--game .stamp.is-declassified { opacity: 1; color: var(--accent-ink); background-color: var(--accent); border-color: var(--accent); outline-color: var(--accent); }
-.file--game .stamp::after { content: ""; position: absolute; inset: -6px; border: 2px solid var(--accent); opacity: 0; pointer-events: none; }
+/* entering the game file declassifies it (chooser.ts): the stamp inks in yellow with ink (the click's own feedback), is
+   struck (scale and a slight turn, the overshoot as a keyframe) and a yellow ring spreads once with a cyan echo outside
+   it; reduced motion: colour only */
+.file--game .stamp.is-declassified { opacity: 1; color: var(--accent-ink); background-color: var(--accent); border-color: var(--accent); outline-color: var(--cover-cy, var(--accent)); }
+.file--game .stamp::after { content: ""; position: absolute; inset: -6px; border: 2px solid var(--accent); outline: 1px solid var(--cover-cy, var(--accent)); outline-offset: 3px; opacity: 0; pointer-events: none; }
 .file--game .stamp.is-struck { animation: stamp-strike var(--dur-strike) var(--ease-out) 1; }
 .file--game .stamp.is-struck::after { animation: stamp-ring var(--dur-strike-ring) var(--ease-out) 1; }
 @keyframes stamp-strike { 0% { transform: scale(1.55) rotate(-8deg); opacity: .4; } 60% { transform: scale(.96) rotate(-2deg); opacity: 1; } 100% { transform: none; opacity: 1; } }
@@ -284,19 +341,20 @@
 .file--game .cv__end { grid-area: end; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; padding-top: 10px; border-top: 1px solid var(--hud-line); }
 .file--game .toc { display: flex; flex-wrap: wrap; gap: 2px 16px; font: 600 var(--fs-min)/1.5 var(--font-mono-cover); color: var(--hud-text); }
 .file--game .toc:lang(ko) { font-family: var(--font-sans); letter-spacing: 0; }
-.file--game .toc__n { margin-right: 6px; font-family: var(--font-mono-cover); color: var(--hud-muted); }
+.file--game .toc__n { margin-right: 6px; font-family: var(--font-mono-cover); color: var(--cover-cy, var(--hud-muted)); }
 .file--game .cv__foot { grid-area: foot; min-width: 0; font: 600 var(--fs-min)/1.4 var(--font-mono-cover); letter-spacing: .06em; color: var(--hud-muted); text-transform: uppercase; }
 @container (min-width: 440px) { .file--game .cv__foot { letter-spacing: .12em; } }
 .file--game .cv__rail { display: none; }
 @container (min-width: 540px) {
   /* the rail: a perforated stub with a barcode and the serial */
   .file--game .cv__rail { grid-area: rail; display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 2px 0 0 calc(var(--rail-gap) / 2 - 2px); margin-left: calc(var(--rail-gap) / -2); border-left: 1px dashed var(--hud-line-dash); }
-  .file--game .cv__code { display: block; width: 20px; height: 84px; transform-origin: 0 0; background: repeating-linear-gradient(to bottom, var(--hud-muted) 0 2px, transparent 2px 4px, var(--hud-muted) 4px 5px, transparent 5px 9px, var(--hud-muted) 9px 12px, transparent 12px 14px); }
+  .file--game .cv__code { display: block; width: 20px; height: 84px; transform-origin: 0 0; background: repeating-linear-gradient(to bottom, var(--cover-cy, var(--hud-muted)) 0 2px, transparent 2px 4px, var(--cover-cy, var(--hud-muted)) 4px 5px, transparent 5px 9px, var(--cover-cy, var(--hud-muted)) 9px 12px, transparent 12px 14px); }
   .file--game .cv__sn { writing-mode: vertical-rl; font: 600 var(--fs-min)/1 var(--font-mono-cover); letter-spacing: var(--ls-label); color: var(--hud-muted); }
 }
 
-/* the link: the house outline button (hud.css .btn--line .cut, drawn locally); its hit layer covers the face */
-.file--game .cta { margin-left: auto; text-decoration: none; white-space: nowrap; color: var(--accent); font: 800 .875rem/1 var(--font-sans); }
+/* the link (v6.11): the filled yellow chamfer plate with ink (yellow = clickable on dark); the pointer lifts it to
+   --accent-hover. The same box, padding and cut as the v6.4 outline button. Its hit layer covers the face */
+.file--game .cta { margin-left: auto; text-decoration: none; white-space: nowrap; color: var(--accent-ink); font: 800 .875rem/1 var(--font-sans); }
 .file--game .cta:focus-visible { outline: none; }
 .file--game .cta__face {
   --c: var(--cut-btn);
@@ -308,13 +366,13 @@
   gap: 8px;
   min-height: var(--tap);
   padding: 0 14px;
-  color: var(--accent);
+  color: var(--accent-ink);
 }
 @container (min-width: 440px) { .file--game .cta__face { padding: 0 18px; } }
 .file--game .cta__face::before, .file--game .cta__face::after { content: ""; position: absolute; }
 .file--game .cta__face::before { inset: 0; z-index: -3; background: var(--accent); clip-path: polygon(0 0, calc(100% - var(--c)) 0, 100% var(--c), 100% 100%, var(--c) 100%, 0 calc(100% - var(--c))); }
-.file--game .cta__face::after { inset: 1px; z-index: -2; background: var(--accent-wash); clip-path: polygon(0 0, calc(100% - var(--ci)) 0, 100% var(--ci), 100% 100%, var(--ci) 100%, 0 calc(100% - var(--ci))); }
-.file--game .cta__hov { position: absolute; inset: 1px; z-index: -1; opacity: 0; background: var(--accent-wash-strong); clip-path: polygon(0 0, calc(100% - var(--ci)) 0, 100% var(--ci), 100% 100%, var(--ci) 100%, 0 calc(100% - var(--ci))); transition: opacity var(--dur-hover) linear; }
+.file--game .cta__face::after { inset: 1px; z-index: -2; background: var(--accent); clip-path: polygon(0 0, calc(100% - var(--ci)) 0, 100% var(--ci), 100% 100%, var(--ci) 100%, 0 calc(100% - var(--ci))); }
+.file--game .cta__hov { position: absolute; inset: 1px; z-index: -1; opacity: 0; background: var(--accent-hover); clip-path: polygon(0 0, calc(100% - var(--ci)) 0, 100% var(--ci), 100% 100%, var(--ci) 100%, 0 calc(100% - var(--ci))); transition: opacity var(--dur-hover) linear; }
 @media (hover: hover) { .file--game:hover .cta__hov { opacity: 1; } }
 .file--game:active .cta__hov, .file--game:has(.cta:focus-visible) .cta__hov { opacity: 1; }
 .file--game .cta__hit { position: absolute; inset: 0; z-index: 4; }
@@ -328,12 +386,15 @@
   .file--game .neon, .file--game .neon--dim { text-shadow: none; }
   .file--game .cta__face::before, .file--game .cta__face::after, .file--game .cta__hov { background: none; }
   .file--game .cta__face { border: 1px solid LinkText; }
+  .file--game .cv::before, .file--game .cv::after { background: none; }
+  .file--game .cv__circuit { display: none; }
 }
 /* print: flat, under the printout (ChooserView stacks the desk), no shadow, no stamp */
 @media print {
   .file--game.file--game { width: 100%; margin: 0; aspect-ratio: auto; break-inside: avoid; }
   .file--game.file--game > .device { box-shadow: none; }
   .file--game .stamp { display: none; }
+  .file--game .cv::before, .file--game .cv::after, .file--game .cv__circuit { display: none; }
 }
 
 /* ═══ the printout (PrintoutCover) ═══ */
