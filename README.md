@@ -42,7 +42,7 @@ npm run test:links                            # internal links, CSS URLs and #fr
 $env:PW_CHANNEL='chrome'; npm run verify      # all of the above in order
 ```
 
-Lighthouse budgets (performance ≥ 0.90, accessibility ≥ 0.95, mobile and desktop) run in CI with `npm run test:lh` (`lighthouserc.json`, `lighthouserc.desktop.json`).
+Lighthouse budgets (performance ≥ 0.90, accessibility ≥ 0.95, mobile and desktop) run in CI's `lighthouse` job with `npm run test:lh` (`lighthouserc.json`, `lighthouserc.desktop.json`).
 
 ## Content
 
@@ -55,7 +55,9 @@ Lighthouse budgets (performance ≥ 0.90, accessibility ≥ 0.95, mobile and des
 
 ## Build-time data, secrets and deploy
 
-`.github/workflows/deploy.yml` runs on every push to `main`, on demand, and daily at 03:30 KST: fetch GitHub/GoatCounter data → type check → unit tests → build → PDFs → ops tests → e2e → links → Lighthouse → deploy to GitHub Pages.
+`.github/workflows/deploy.yml` runs on every push to `main`, on demand, and daily at 03:30 KST. The `build` job fetches GitHub/GoatCounter data → type check → unit tests → build → PDFs → ops tests → links, then builds the two test-only sites (`npm run build:e2e`: `dist-no-art/`, `dist-e2e-accounts/`) and uploads all three directories once. Three `e2e` shard jobs (`npm run test:e2e -- --shard=i/3` with `E2E_PREBUILT=1`, so Playwright serves the downloaded directories instead of rebuilding them) and the `lighthouse` job then run in parallel on that upload; the deploy to GitHub Pages waits until the build, the secrets scan, every shard and Lighthouse are green. `e2e-reports` merges the shards' screenshots and failure reports into one artifact each.
+
+To run one shard locally the way CI does: `npm run build`, `npm run build:pdf`, `npm run build:e2e`, then `$env:E2E_PREBUILT='1'; npm run test:e2e -- --shard=1/3`.
 
 - Fetched JSON goes to `src/data/generated/` and is never committed; missing, failed or stale data hides its section instead of breaking the build, and the browser hides sections whose data passed its maximum age.
 - Repository secrets (Settings → Secrets and variables → Actions): `GOATCOUNTER_TOKEN` (GoatCounter API key with "Read statistics" only), optional `GH_PROFILE_TOKEN` (fine-grained token, public repositories read-only) and optional `PII_DENYLIST` (literal values the dist scan must never find, separated by `|`). The GoatCounter site code is public and lives in `src/config.ts` (`null` = statistics off).

@@ -280,6 +280,40 @@ describe('toolchain', () => {
     expect(svg).not.toMatch(/<image|data:image/);
   });
 
+  it('ci-shard: playwright.config builds the two test-only sites itself by default and serves them as built under E2E_PREBUILT=1', { timeout: 30_000 }, async () => {
+    const { E2E_DISTS } = await import('../../scripts/e2e-dists.mjs');
+    expect(E2E_DISTS).toEqual([
+      { outDir: 'dist-no-art', env: { SB_NO_ART: '1' } },
+      { outDir: 'dist-e2e-accounts', env: { SB_E2E_ACCOUNTS: '1' } },
+    ]);
+    type Server = { command: string; env?: Record<string, string>; url: string; reuseExistingServer: boolean };
+    // A computed specifier with its own query string evaluates the config again under that environment.
+    const load = async (query: string) => ((await import(/* @vite-ignore */ `../../playwright.config.ts?${query}`)) as { default: { webServer: Server[] } }).default.webServer;
+    const ports = await import('../../tests/e2e/ports');
+    const preview = (dir: string, port: number) => `npm run preview -- --outDir ${dir} --host 127.0.0.1 --port ${port} --ignore-lock`;
+    try {
+      vi.stubEnv('E2E_PREBUILT', undefined);
+      const local = await load('local');
+      vi.stubEnv('E2E_PREBUILT', '1');
+      const ci = await load('prebuilt');
+      expect(local[0]).toEqual(ci[0]);
+      expect(local[0]?.command).toBe(`npm run preview -- --host 127.0.0.1 --port ${ports.PORT} --ignore-lock`);
+      // Local npm run test:e2e: unchanged, each test site is built before it is served.
+      expect(local.slice(1).map((w) => [w.command, w.env])).toEqual([
+        [`npm run build -- --outDir dist-no-art && ${preview('dist-no-art', ports.NO_ART_PORT)}`, { SB_NO_ART: '1' }],
+        [`npm run build -- --outDir dist-e2e-accounts && ${preview('dist-e2e-accounts', ports.ACCOUNTS_PORT)}`, { SB_E2E_ACCOUNTS: '1' }],
+      ]);
+      // CI shards: the directories come from the build job's artifact; serving them never rebuilds.
+      expect(ci.slice(1).map((w) => [w.command, w.env])).toEqual([
+        [preview('dist-no-art', ports.NO_ART_PORT), { SB_NO_ART: '1' }],
+        [preview('dist-e2e-accounts', ports.ACCOUNTS_PORT), { SB_E2E_ACCOUNTS: '1' }],
+      ]);
+      for (const w of [...local, ...ci]) expect(w.reuseExistingServer).toBe(false);
+    } finally {
+      vi.unstubAllEnvs();
+    }
+  });
+
   it('Container renders an Astro fixture', async () => {
     const html = await renderAstro(Hello, { props: { name: 'x' } });
     expect(html).toMatch(/<p class="hello"[^>]*>hello x<\/p>/);
