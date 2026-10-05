@@ -3,6 +3,32 @@
    keeps the layers out of the layout at rest and the desk's pointer lock. Every layer is decoration (aria-hidden, no
    pointer), every moment is a --x-* token or a calc() of them, and only transform and opacity move. */
 
+:root {
+  /* the chooser's exits (MO-38/MO-39; chooser v6.10): when each phase starts (--x-*-at, from the click) and how long
+     it runs. The game exit (the waveform) ends with its line at --x-game = EXIT_MS.game; --x-fade is the reduced form
+     of both exits (EXIT_MS.reduce waits for it). */
+  --x-game: .88s;
+  --x-scrim-at: .12s;    /* the screen dims */
+  --x-scrim: .26s;
+  --x-grat-at: .14s;     /* the oscilloscope graticule */
+  --x-grat: .24s;
+  --x-trace-at: .15s;    /* the trace sweeps across the screen */
+  --x-trace: .38s;
+  --x-grow: .43s;        /* … its amplitude builds */
+  --x-square-at: .28s;   /* the sine turns square */
+  --x-square: .26s;
+  --x-echo-lag: .06s;    /* the cyan echo runs this far behind */
+  --x-collapse-at: .54s; /* CRT collapse into one line */
+  --x-collapse: .17s;
+  --x-line-at: .69s;     /* the line leaves the tablet across the page, the page goes dark */
+  --x-line: .19s;
+  --x-fade: .14s;
+  --x-data: .8s;         /* the page turn: the next page loads (EXIT_MS.data) */
+  --x-fold: .72s;        /* the fold crosses the sheet */
+  --x-pull-at: .4s;      /* the flap is pulled away from about here (a stop of the eased fold) */
+  --x-flap-fade-at: .576s; /* … and fades from 80% of the fold */
+}
+
 /* ── game: the signal (880 ms). The stamp strikes (0–320); the screen dims under a cyan graticule (120–380); a yellow
    trace sweeps across it (150–530), its amplitude building as a sine turns square, travelling, a cyan echo a step
    behind; CRT collapse (540–710): the cover squashes into the line, the screen around it goes black, the trace flattens

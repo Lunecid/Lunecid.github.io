@@ -10,9 +10,13 @@
 // the cover's size container) > .face (the cover window) + .dev__glass / .dev__off / .dev__pwr (glass and the opening's
 // power-on layers). The one link (its CTA) stretches its hit layer over the whole device body. Words: coverCopy (framing), chooserCopy (title,
 // CTA, mode number), the variant's tagline and nav labels (buildCover).
+// MO-41: the opening's overlay (.ov, aria-hidden, display: none unless :root[data-intro="opening"]): ten shutters over
+// the cover, a scan line, the HUD frame (edges and corners drawn by pseudo-elements) and a console that types the
+// access request and decrypts, then a status badge. Its words: coverCopy.opening.
 import { chooserCopy } from '../../data/copy/chooser';
 import { coverCopy } from '../../data/copy/chooser-covers';
 import type { CoverData } from '../../lib/chooser-covers';
+import { VARIANT_IDS } from '../../variants/ids';
 import CoverEmblem from './CoverEmblem.astro';
 
 interface Props {
@@ -26,6 +30,8 @@ const foot = copy.foot.replace('{year}', cover.foot.year).replace('{host}', cove
 // a tagline breaks between its clauses (each clause still wraps inside itself on a narrow file)
 const clauses = cover.tagline.split(/(?<=,) /);
 const [first, ...rest] = g.display;
+const op = copy.opening;
+const request = op.request.replace('{count}', String(VARIANT_IDS.length));
 ---
 <article class="file file--game" aria-labelledby={`file-${cover.id}-title`}>
   <div class="dev">
@@ -70,6 +76,7 @@ const [first, ...rest] = g.display;
     </div>
     <span class="br br--tl" aria-hidden="true"></span>
     <span class="br br--br" aria-hidden="true"></span>
+    <div class="ov" aria-hidden="true"><div class="ov__shut"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><i class="ov__scan"></i><i class="ov__fr"></i><i class="ov__cn"></i><i class="ov__cn ov__cn--b"></i><div class="ov__con" lang="en"><p class="ov__hd"><i class="ov__sq"></i><span class="ov__t">{op.terminal}</span><span class="ov__nd">{op.node.num}</span></p><p class="ov__ln"><span class="ov__rq">{request}</span></p><p class="ov__dec"><span class="ov__dt">{op.decrypt}</span><i class="ov__bar"></i><span class="ov__pct">{op.pct.num}</span></p><i class="ov__scan"></i></div><p class="ov__st" lang="en">{op.granted}</p></div>
   </div>
   <i class="dev__glass" aria-hidden="true"></i>
   <i class="dev__off" aria-hidden="true"></i>

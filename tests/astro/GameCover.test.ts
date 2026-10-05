@@ -118,5 +118,59 @@ describe('GameCover.astro (MO-23)', () => {
     expect(css).toMatch(/\.file--game \.xg, \.file--game \.xg__off, \.xnav \{ display: none; \}/);
     expect(exitCss).toMatch(/\.desk\[data-exit="game"\] \.file--game \.xg, \.desk\[data-exit="game"\] \.file--game \.xg__off \{ display: block; \}/);
   });
-});
 
+  it('MO-41: the opening overlay: aria-hidden inside the cover window, its words from coverCopy.opening, shown only under data-intro=opening, never takes the pointer', async () => {
+    for (const lang of ['ko', 'en'] as const) {
+      const html = await render(lang);
+      const ov = /<div class="ov" aria-hidden="true"[^>]*>[\s\S]*?<p class="ov__st"[^>]*>[^<]*<\/p><\/div>/.exec(html)?.[0] ?? '';
+      expect(ov, lang).not.toBe('');
+      expect(html.indexOf(ov)).toBeLessThan(html.indexOf('class="dev__glass"')); // inside .face, before the glass
+      const op = coverCopy[lang].opening;
+      for (const word of [op.terminal, op.node.num, op.request.replace('{count}', '2'), op.decrypt, op.pct.num, op.granted]) expect(ov, `${lang}: ${word}`).toContain(`>${word.replace(/>/g, '&gt;')}</`);
+      expect(ov.match(/<i><\/i>/g), 'ten shutters').toHaveLength(10);
+      expect(ov).not.toMatch(/<a\b|<button|tabindex|<h\d/);
+    }
+    expect(css).toMatch(/\n\.ov \{[^}]*display: none;[^}]*pointer-events: none;/);
+    expect(css).toMatch(/\n:root\[data-intro="opening"\] \.ov, [^{]*\{ display: block; \}/);
+    // overlay text is small (≤ --fs-small)
+    const sizes = [...css.matchAll(/\.ov__\w+[^{]*\{[^}]*font: \d+ var\((--fs-[\w-]+)\)/g)].map((m) => m[1]);
+    expect(sizes.length).toBeGreaterThanOrEqual(3);
+    for (const size of sizes) expect(['--fs-min', '--fs-small', '--fs-caption', '--fs-label', '--fs-meta']).toContain(size);
+  });
+
+  it('MO-41: opening keyframes animate transform and opacity only, never infinitely; each opening animation fills both ways', () => {
+    const plain = css.replace(/\/\*[\s\S]*?\*\//g, '');
+    const frames = [...plain.matchAll(/@keyframes (op-[\w-]+) \{([\s\S]*?\})\s*\}/g)];
+    expect(frames.length).toBeGreaterThanOrEqual(14);
+    for (const [, name, body] of frames) {
+      const props = [...body!.matchAll(/([\w-]+):/g)].map((m) => m[1]);
+      expect(props.filter((p) => p !== 'opacity' && p !== 'transform'), name).toEqual([]);
+    }
+    const opening = [...plain.matchAll(/\[data-intro="opening"\][^{}]*\{\s*animation:([^;]+);/g)].map((m) => m[1]!);
+    expect(opening.length).toBeGreaterThanOrEqual(25);
+    for (const a of opening) {
+      expect(a, a).not.toMatch(/infinite/);
+      expect(a.trim(), a).toMatch(/ both$/);
+    }
+  });
+
+  it('MO-41: the device rises and powers on before the decrypt (screen off, then the bloom); the device starts at opacity .01 (an LCP candidate from the first paint)', () => {
+    const plain = css.replace(/\/\*[\s\S]*?\*\//g, '');
+    expect(plain).toMatch(/\[data-intro="opening"\] \.file--game \.dev \{ animation: op-rise var\(--dur-op-device\) var\(--ease-out\) both; \}/);
+    expect(plain).toMatch(/@keyframes op-rise \{ from \{ opacity: \.01; transform: translateY\(14px\) scale\(\.985\); \}/);
+    expect(plain).toMatch(/\.file--game \.dev__off \{ animation: op-out var\(--dur-op-off\) linear var\(--at-op-off\) both; \}/);
+    expect(plain).toMatch(/\.file--game \.dev__pwr \{ animation: op-pwr var\(--dur-op-power\) var\(--ease-out\) var\(--at-op-power\) both; \}/);
+    expect(plain).toMatch(/@keyframes op-pwr \{\s*0% \{ opacity: 0; transform: scale\(\.55, \.04\); \}\s*28% \{[^}]*\}\s*55% \{[^}]*\}\s*100% \{ opacity: 0; transform: scale\(1\.08, 1\.04\); \}/);
+  });
+
+  it('MO-41: both reduce paths, forced colours and print hide every opening layer and stop the desk\'s opening animations', () => {
+    const plain = css.replace(/\/\*[\s\S]*?\*\//g, '');
+    const media = /@media \(prefers-reduced-motion: reduce\), \(forced-colors: active\), print \{([\s\S]*?\})\s*\}/.exec(plain)?.[1] ?? '';
+    expect(media).toMatch(/:root\[data-intro\] \.desk :is\(\.ov, \.dev__off, \.dev__pwr\) \{ display: none; \}/);
+    expect(media).toMatch(/:root\[data-intro\] \.desk :is\(\*, \*::before, \*::after\) \{ animation: none !important; \}/);
+    expect(plain).toMatch(/:root\[data-motion="reduce"\]\[data-intro\] \.desk :is\(\.ov, \.dev__off, \.dev__pwr\) \{ display: none; \}/);
+    expect(plain).toMatch(/:root\[data-motion="reduce"\]\[data-intro\] \.desk :is\(\*, \*::before, \*::after\) \{ animation: none !important; \}/);
+    // the reduce rules come after every opening rule
+    expect(plain.lastIndexOf('[data-intro="opening"] .file--data .rstamp__ink')).toBeLessThan(plain.indexOf('@media (prefers-reduced-motion: reduce), (forced-colors: active), print'));
+  });
+});

@@ -376,7 +376,7 @@ describe('the stamp and the game exit (MO-25, MO-38)', () => {
   });
 
   it('MO-38: EXIT_MS.game equals the end of the last game exit keyframe (token sum)', () => {
-    const tokens = readFileSync('src/styles/tokens.css', 'utf8');
+    const tokens = readFileSync('src/styles/chooser-exit.css', 'utf8'); // the exits' tokens (MO-41: moved from tokens.css)
     const t = (name: string) => parseFloat(new RegExp(`${name}:\\s*([\\d.]+)s`).exec(tokens)?.[1] ?? 'NaN') * 1000;
     expect(EXIT_MS.game).toBeCloseTo(t('--x-line-at') + t('--x-line'), 5);
     expect(EXIT_MS.game).toBeCloseTo(t('--x-game'), 5);
@@ -677,3 +677,56 @@ describe('the exit layers (MO-38, MO-39)', () => {
   });
 });
 
+describe('a press that ends the opening (MO-41)', () => {
+  let m: ReturnType<typeof mount>;
+  beforeEach(() => {
+    navigations = [];
+    localStorage.clear();
+    sessionStorage.clear();
+    coarse(true);
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    m = mount();
+    initChooser(document, { navigate: (href) => navigations.push(href) });
+  });
+  afterEach(() => {
+    initDesk(m.desk, m.hint)();
+    vi.useRealTimers();
+    delete (window as Window & { __sbOpeningSkip?: number }).__sbOpeningSkip;
+  });
+  // head-init ends the opening on the pointerdown and records its timeStamp (window capture, before this script)
+  const skipPress = (el: Element, pointerType = 'mouse') => {
+    const ev = new MouseEvent('pointerdown', { bubbles: true, cancelable: true, button: 0 });
+    Object.defineProperty(ev, 'pointerType', { value: pointerType });
+    (window as Window & { __sbOpeningSkip?: number }).__sbOpeningSkip = ev.timeStamp;
+    el.dispatchEvent(ev);
+  };
+
+  it('MO-41: the click of the press that ended the opening does nothing: no navigation, no stamp, no first tap, no memory', () => {
+    for (const [link, file, type] of [[m.game, m.gameFile, 'mouse'], [m.game, m.gameFile, 'touch'], [m.data, m.dataFile, 'mouse']] as const) {
+      skipPress(file, type);
+      expect(click(link), `${link.getAttribute('href')} ${type}`).toBe(false);
+      vi.advanceTimersByTime(EXIT_MS.game + 10);
+      expect(navigations).toEqual([]);
+      expect(m.desk.hasAttribute('data-exit')).toBe(false);
+      expect(m.stamp.classList.contains('is-struck')).toBe(false);
+      expect(m.stamp.classList.contains('is-declassified'), 'not even inked by the press').toBe(false);
+      expect(m.desk.classList.contains('is-aside')).toBe(false);
+      expect(localStorage.getItem('sb:variant')).toBeNull();
+    }
+  });
+
+  it('MO-41: the next press, and a keyboard activation after a skip press, work as usual', () => {
+    skipPress(m.gameFile);
+    click(m.data, 0); // Enter on the focused link: detail 0, never the skipped press
+    vi.advanceTimersByTime(EXIT_MS.data + 10);
+    expect(navigations).toEqual(['/data/']);
+    navigations = [];
+    const ev = new Event('pageshow') as Event & { persisted: boolean };
+    Object.defineProperty(ev, 'persisted', { value: true });
+    window.dispatchEvent(ev);
+    pointerdown(m.dataFile, 'mouse');
+    click(m.data);
+    vi.advanceTimersByTime(EXIT_MS.data + 10);
+    expect(navigations).toEqual(['/data/']);
+  });
+});

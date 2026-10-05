@@ -345,6 +345,20 @@ export function initChooser(root: ParentNode = document, opts: { navigate?: (hre
   const links = Array.from(container.querySelectorAll<HTMLAnchorElement>('a[data-choose-variant]'));
   const [first, second] = links;
   if (!first || !second || links.length !== 2) return;
+  // a press during the opening only ends it (MO-41): head-init ends the opening on its pointerdown and leaves that
+  // event's timeStamp in __sbOpeningSkip; that pointerdown and its click stop here, before any other listener sees
+  // them (no stamp, no first tap, no navigation, no memory). A keyboard activation (detail 0) is never that press.
+  let skipPress = false;
+  window.addEventListener('pointerdown', (e) => {
+    skipPress = (window as Window & { __sbOpeningSkip?: number }).__sbOpeningSkip === e.timeStamp;
+    if (skipPress) e.stopImmediatePropagation();
+  }, { capture: true });
+  window.addEventListener('click', (e) => {
+    if (!skipPress || e.detail === 0) return;
+    skipPress = false;
+    e.preventDefault();
+    e.stopImmediatePropagation();
+  }, { capture: true });
   // the desk first: its first-tap rule must see the click before the memory does
   if (container.hasAttribute('data-desk')) initDesk(container, root.querySelector<HTMLElement>('.desk__hint'));
   container.addEventListener('keydown', (event) => {

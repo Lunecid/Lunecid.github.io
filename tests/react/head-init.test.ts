@@ -1,8 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { STORAGE_KEYS } from '../../src/config';
-import { HEAD_INIT_SCRIPT, INTRO_TIMING } from '../../src/lib/head-init';
+import { HEAD_INIT_SCRIPT, INTRO_TIMING, OPENING_TIMING } from '../../src/lib/head-init';
 
-type IntroWindow = Window & { __sbIntroSkipped?: boolean };
+type IntroWindow = Window & { __sbIntroSkipped?: boolean; __sbRedirect?: boolean; __sbOpeningSkip?: number };
 const root = document.documentElement;
 
 function stubOsReduce(reduce: boolean): void {
@@ -48,6 +48,22 @@ function resetRoot(): void {
   root.className = '';
   for (const name of ['data-page', 'data-motion', 'data-intro', 'data-intro-played', 'data-intro-skip', 'data-hero-seen']) root.removeAttribute(name);
   delete (window as IntroWindow).__sbIntroSkipped;
+  delete (window as IntroWindow).__sbRedirect;
+  delete (window as IntroWindow).__sbOpeningSkip;
+}
+
+/** The chooser (neutral variant): runs the head script there, then puts the game variant back for the other tests. */
+function runOnChooser(search = ''): void {
+  const variant = root.getAttribute('data-variant');
+  window.history.replaceState(null, '', `/${search}`);
+  root.setAttribute('data-variant', 'neutral');
+  try {
+    runHeadScript('chooser');
+  } finally {
+    if (variant === null) root.removeAttribute('data-variant');
+    else root.setAttribute('data-variant', variant);
+    window.history.replaceState(null, '', '/');
+  }
 }
 
 beforeEach(() => {
@@ -275,5 +291,117 @@ describe('HEAD_INIT_SCRIPT', () => {
     expect(root.hasAttribute('data-hero-seen'), 'an ordinary load keeps the rise').toBe(false);
     reveal({});
     expect(root.hasAttribute('data-hero-seen')).toBe(true);
+  });
+  it('MO-41: the opening plays once per session on the chooser only (data-intro=opening)', () => {
+    expect(OPENING_TIMING).toEqual({ doneMs: 2400, safetyMs: 3400 });
+    runOnChooser();
+    expect(root.getAttribute('data-intro')).toBe('opening');
+    expect(root.hasAttribute('data-intro-played'), 'the CRT marker stays the game home\'s').toBe(false);
+    expect(sessionStorage.getItem(STORAGE_KEYS.intro)).toBe('1');
+    vi.advanceTimersByTime(OPENING_TIMING.doneMs);
+    expect(root.hasAttribute('data-intro')).toBe(false);
+    resetRoot();
+    runOnChooser();
+    expect(root.hasAttribute('data-intro'), 'second load').toBe(false);
+    // other neutral pages never play it
+    sessionStorage.clear();
+    resetRoot();
+    root.setAttribute('data-variant', 'neutral');
+    runHeadScript('privacy');
+    root.setAttribute('data-variant', 'game');
+    expect(root.hasAttribute('data-intro')).toBe(false);
+    expect(sessionStorage.getItem(STORAGE_KEYS.intro)).toBeNull();
+  });
+
+  it('MO-41: none with ?choose, after a pre-paint redirect, under reduced motion, or with throwing storage', () => {
+    runOnChooser('?choose');
+    expect(root.hasAttribute('data-intro'), '?choose').toBe(false);
+    runOnChooser('?x=1&choose=1');
+    expect(root.hasAttribute('data-intro'), '?…&choose=').toBe(false);
+    (window as IntroWindow).__sbRedirect = true;
+    runOnChooser();
+    expect(root.hasAttribute('data-intro'), 'redirect').toBe(false);
+    resetRoot();
+    localStorage.setItem(STORAGE_KEYS.motion, 'off');
+    runOnChooser();
+    expect(root.hasAttribute('data-intro'), 'site toggle').toBe(false);
+    localStorage.clear();
+    resetRoot();
+    stubOsReduce(true);
+    runOnChooser();
+    expect(root.hasAttribute('data-intro'), 'OS reduce').toBe(false);
+    stubOsReduce(false);
+    expect(sessionStorage.getItem(STORAGE_KEYS.intro), 'none of these spends the session').toBeNull();
+    resetRoot();
+    vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
+      throw new Error('storage denied');
+    });
+    expect(() => runOnChooser()).not.toThrow();
+    expect(root.hasAttribute('data-intro'), 'throwing storage').toBe(false);
+  });
+
+  it('MO-41: a redirect does not spend sb:intro', () => {
+    (window as IntroWindow).__sbRedirect = true;
+    runOnChooser();
+    expect(sessionStorage.getItem(STORAGE_KEYS.intro)).toBeNull();
+    // the game home the redirect lands on still plays its CRT
+    resetRoot();
+    runHeadScript('home');
+    expect(root.getAttribute('data-intro')).toBe('playing');
+  });
+
+  it('MO-41: done at doneMs after FCP; safety without FCP; dispatches sb:intro-done', () => {
+    const onDone = vi.fn();
+    window.addEventListener('sb:intro-done', onDone);
+    runOnChooser();
+    vi.advanceTimersByTime(OPENING_TIMING.doneMs - 1);
+    expect(root.getAttribute('data-intro')).toBe('opening');
+    vi.advanceTimersByTime(1);
+    expect(root.hasAttribute('data-intro')).toBe(false);
+    expect(onDone).toHaveBeenCalledTimes(1);
+
+    sessionStorage.clear();
+    resetRoot();
+    vi.stubGlobal('PerformanceObserver', undefined);
+    runOnChooser();
+    vi.advanceTimersByTime(OPENING_TIMING.safetyMs - 1);
+    expect(root.getAttribute('data-intro')).toBe('opening');
+    vi.advanceTimersByTime(1);
+    expect(root.hasAttribute('data-intro')).toBe(false);
+    expect(onDone).toHaveBeenCalledTimes(2);
+    window.removeEventListener('sb:intro-done', onDone);
+  });
+
+  it('MO-41: any input ends it synchronously and records the pointer skip timestamp', () => {
+    for (const type of ['keydown', 'pointerdown', 'wheel', 'touchstart']) {
+      sessionStorage.clear();
+      resetRoot();
+      const onDone = vi.fn();
+      window.addEventListener('sb:intro-done', onDone);
+      runOnChooser();
+      vi.advanceTimersByTime(300);
+      const ev = new Event(type);
+      window.dispatchEvent(ev);
+      expect(root.hasAttribute('data-intro'), type).toBe(false);
+      expect(root.hasAttribute('data-intro-skip'), `${type}: no fade`).toBe(false);
+      expect(onDone, type).toHaveBeenCalledTimes(1);
+      const skip = (window as IntroWindow).__sbOpeningSkip;
+      if (type === 'pointerdown' || type === 'touchstart') expect(skip, type).toBe(ev.timeStamp);
+      else expect(skip, type).toBeUndefined();
+      // the listeners are gone
+      window.dispatchEvent(new Event('pointerdown'));
+      expect((window as IntroWindow).__sbOpeningSkip, `${type}: unbound`).toBe(skip);
+      vi.advanceTimersByTime(OPENING_TIMING.safetyMs);
+      expect(onDone, `${type}: once`).toHaveBeenCalledTimes(1);
+      window.removeEventListener('sb:intro-done', onDone);
+    }
+  });
+
+  it('D-2: after the opening a game home in the same session plays no CRT', () => {
+    runOnChooser();
+    vi.advanceTimersByTime(OPENING_TIMING.doneMs);
+    resetRoot();
+    runHeadScript('home');
+    expect(root.hasAttribute('data-intro')).toBe(false);
   });
 });

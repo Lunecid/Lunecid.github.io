@@ -607,8 +607,14 @@ describe('the chooser desk (MO-23, v6.4)', () => {
     for (const shell of ['--dev-shell', '--dev-shell-2', '--dev-hi']) expect(lstar(d.get('--ch-desk')!) - lstar(d.get(shell)!), shell).toBeGreaterThanOrEqual(15);
   });
 
-  it('MO-38: --x-* tokens exact and their last end = --x-game', () => {
-    const d = declsOf(':root');
+  // named change (MO-41): the chooser's motion tokens moved out of tokens.css (inlined into every page's first flight):
+  // the exits' --x-* to the top of chooser-exit.css (loaded after the page), the opening's to the top of chooser.css
+  const rootOf = (file: string): Map<string, string> =>
+    new Map(parseCss(read(file)).filter((r) => r.selector === ':root' && r.media === null).flatMap((r) => [...r.decls]));
+
+  it('MO-38: --x-* tokens exact and their last end = --x-game (declared in chooser-exit.css, not tokens.css)', () => {
+    const d = rootOf('src/styles/chooser-exit.css');
+    expect([...declsOf(':root').keys()].filter((k) => /^--(x|at-op|dur-op|op)-/.test(k))).toEqual([]);
     const X: Record<string, string> = {
       '--x-game': '.88s', '--x-scrim-at': '.12s', '--x-scrim': '.26s', '--x-grat-at': '.14s', '--x-grat': '.24s', '--x-trace-at': '.15s', '--x-trace': '.38s',
       '--x-grow': '.43s', '--x-square-at': '.28s', '--x-square': '.26s', '--x-echo-lag': '.06s', '--x-collapse-at': '.54s', '--x-collapse': '.17s',
@@ -622,7 +628,7 @@ describe('the chooser desk (MO-23, v6.4)', () => {
   });
 
   it('MO-39: --x-data .8s; the fold ends at .72s; EXIT_MS.data equals --x-data', async () => {
-    const d = declsOf(':root');
+    const d = rootOf('src/styles/chooser-exit.css');
     expect(d.get('--x-data')).toBe('.8s');
     expect(d.get('--x-fold')).toBe('.72s');
     expect(d.get('--x-pull-at')).toBe('.4s');
@@ -635,6 +641,58 @@ describe('the chooser desk (MO-23, v6.4)', () => {
     const fade = /@keyframes x-flap-fade \{ 0% \{ opacity: 1\.000; \} ([\d.]+)% \{ opacity: 1\.000; \}/.exec(exit)?.[1];
     expect(Number(fade) / 100 * 720).toBeCloseTo(576, 0);
     expect(exit).toMatch(/55\.56% \{ transform: translate\(0\.0px, 0\.0px\)/); // the pull starts at --x-pull-at
+  });
+
+  it('MO-41: opening tokens exact; every opening animation ends by 2.398 s ≤ OPENING_TIMING.doneMs; the toss starts after the decrypt and the status end', async () => {
+    const d = rootOf('src/styles/chooser.css');
+    const OP: Record<string, string> = {
+      '--dur-op-device': '.28s', '--at-op-props': '.08s', '--dur-op-props': '.36s', '--op-props-step': '.06s', '--at-op-power': '.17s', '--dur-op-power': '.34s',
+      '--at-op-off': '.25s', '--dur-op-off': '.14s', '--dur-op-step': '10.4ms', '--at-op-boot': '.3s', '--dur-op-boot': '.156s', '--at-op-type': '.404s',
+      '--at-op-decrypt': '.716s', '--dur-op-decrypt': '.2288s', '--at-op-shutter': '1.0176s', '--dur-op-shutter': '.1248s', '--at-op-lock': '1.2152s',
+      '--dur-op-lock': '.1352s', '--at-op-toss': '1.548s', '--at-op-rstamp': '2.178s', '--dur-op-rstamp': '.22s',
+    };
+    for (const [name, value] of Object.entries(OP)) expect(d.get(name), name).toBe(value);
+    // the cyber part plays at K .52 from the power-on (300 ms): each phase start is 300 + t × .52 of v6.2's 2.4 s scale
+    const ms = (v: string) => (v.endsWith('ms') ? parseFloat(v) : parseFloat(v) * 1000);
+    for (const [name, t] of [['--at-op-type', 200], ['--at-op-decrypt', 800], ['--at-op-shutter', 1380], ['--at-op-lock', 1760], ['--at-op-toss', 2400]] as const) {
+      expect(ms(d.get(name)!), name).toBeCloseTo(300 + t * 0.52, 6);
+    }
+    const dur = new Map<string, number>([...d].filter(([k]) => /^--(at|dur)-op-|^--op-/.test(k)).map(([k, v]) => [k, ms(v)]));
+    dur.set('--dur-enter', ms(declsOf(':root').get('--dur-enter')!));
+    // per-element indices at their largest: props (6), shutters (10), label offsets (12 steps)
+    const MAX: Record<string, number> = { '--pi': 5, '--i': 9, '--li': 12 };
+    const evalTime = (expr: string): number => {
+      const js = expr.replace(/var\((--[\w-]+)(?:,\s*[\d.]+)?\)/g, (_, name: string) => {
+        const v = MAX[name] ?? dur.get(name);
+        if (v === undefined) throw new Error(`unknown token ${name} in ${expr}`);
+        return String(v);
+      }).replace(/calc\(/g, '(');
+      expect(js, expr).toMatch(/^[\d.\s+*/()-]+$/);
+      return Function(`return ${js}`)() as number;
+    };
+    const sheet = read('src/styles/chooser.css').replace(/\/\*[\s\S]*?\*\//g, '');
+    const anims = [...sheet.matchAll(/([^{}]*\[data-intro="opening"\][^{}]*)\{\s*animation:\s*(op-[\w-]+) ([^;]+?) both;\s*\}/g)].map((m) => {
+      const [name, rest] = [m[2]!, m[3]!];
+      // "<duration> <easing> [<delay>]": durations and delays are var()/calc() of tokens (never a literal time)
+      const parts = rest.match(/calc\((?:[^()]|\([^()]*\))*\)|var\([^()]*\)|steps\([^()]*\)|[\w.-]+/g)!;
+      const times = parts.filter((p) => /^(var\(--(at|dur|op)-|calc\()/.test(p));
+      expect(parts.filter((p) => /^\d|^\.\d/.test(p)), `${m[1]!.trim()}: no literal time`).toEqual([]);
+      return { sel: m[1]!.trim(), name, dur: evalTime(times[0]!), at: times[1] ? evalTime(times[1]) : 0 };
+    });
+    expect(anims.length).toBeGreaterThanOrEqual(25);
+    const end = Math.max(...anims.map((a) => a.at + a.dur));
+    expect(end).toBeCloseTo(2398, 6);
+    const { OPENING_TIMING } = await import('../../src/lib/head-init');
+    expect(end).toBeLessThanOrEqual(OPENING_TIMING.doneMs);
+    const of = (name: string) => anims.filter((a) => a.name === name);
+    const toss = of('op-toss')[0]!;
+    expect(toss.at).toBeCloseTo(1548, 6);
+    for (const a of anims.filter((x) => /\.ov/.test(x.sel))) expect(a.at + a.dur, a.sel).toBeLessThanOrEqual(toss.at + 1e-6);
+    expect(Math.max(...of('op-status').map((a) => a.at + a.dur))).toBeCloseTo(toss.at, 6);
+    // the device rises and powers on before the decrypt; the props are all in by 740 ms
+    expect(Math.max(...of('op-pwr').map((a) => a.at + a.dur))).toBeLessThanOrEqual(ms(d.get('--at-op-decrypt')!));
+    expect(of('op-rise')[0]!.dur).toBe(280);
+    expect(anims.filter((a) => /\.prop/.test(a.sel)).map((a) => a.at + a.dur)).toEqual([740]);
   });
 
   it('MO-23: the chooser page is dark (color-scheme dark in the chooser sheet), the other neutral pages stay light', () => {

@@ -4,6 +4,35 @@
    namespaced under .chooser / .desk / .file--game / .file--data (the classes inside the covers are short). Overrides
    (reduced motion, forced colours, print) come after the rules they override, at equal or higher specificity. */
 
+/* ═══ the opening's motion tokens (durations; tokens.css holds the chooser's colours; the exits' --x-* tokens are in
+   chooser-exit.css with the exits) ═══ */
+:root {
+  /* the chooser's opening (MO-41; v6.12): phase starts (--at-op-*, from the first frame) and lengths. The tablet rises
+     and powers on, the props settle, the cyber part plays at K .52 from .3s (--dur-op-step = 20 ms of its timeline),
+     the printout is tossed for --dur-enter, the rubber stamp lands; last end 2.398s (OPENING_TIMING.doneMs) */
+  --dur-op-device: .28s;
+  --at-op-props: .08s;
+  --dur-op-props: .36s;
+  --op-props-step: .06s;
+  --at-op-power: .17s;
+  --dur-op-power: .34s;
+  --at-op-off: .25s;
+  --dur-op-off: .14s;
+  --dur-op-step: 10.4ms;
+  --at-op-boot: .3s;
+  --dur-op-boot: .156s;
+  --at-op-type: .404s;
+  --at-op-decrypt: .716s;
+  --dur-op-decrypt: .2288s;
+  --at-op-shutter: 1.0176s;
+  --dur-op-shutter: .1248s;
+  --at-op-lock: 1.2152s;
+  --dur-op-lock: .1352s;
+  --at-op-toss: 1.548s;
+  --at-op-rstamp: 2.178s;
+  --dur-op-rstamp: .22s;
+}
+
 /* ═══ the page and the desk (ChooserView) ═══ */
 :root[data-variant="neutral"][data-page="chooser"] { color-scheme: dark; }
 /* the desk top seen from above (v6.9 / v6.12): a navy felt mat with its fibres (a static inline-SVG tile, white and
@@ -83,6 +112,7 @@
   --arot: 4deg;            /* the extra turn when the sheet slides aside */
   --ax: 12px;              /* the slide-aside offset without the script (chooser.ts measures the real one) */
   --ay: 90%;
+  --cx: 0px;               /* the game file's offset to the desk centre while it plays alone (the opening, MO-41) */
   --aside-t: translate(var(--ax), var(--ay)) rotate(var(--arot));
   --aside-o: 1;
   --cm: calc(100cqi / 21);  /* one real centimetre: the portrait slate is 21 cm wide (see .props) */
@@ -110,6 +140,7 @@
     --arot: 6deg;
     --ax: 360px;
     --ay: 18px;
+    --cx: calc((var(--dx) + var(--dw) - var(--gw)) / 2);
   }
 }
 /* desktop: --u is the v6.4 file size; a landscape 4:3 tablet a little wider than it, the sheet over its right half */
@@ -155,29 +186,29 @@
 .desk .prop--cup { --w: 12; --h: 12; --r: 0deg; }            /* 8.4 cm cup on an 11 cm coaster */
 .desk .prop--plant { --w: 10; --h: 10; --r: 0deg; }          /* succulent, 9.2 cm concrete pot */
 /* phone: the files fill the width; the keyboard and the stylus at the foot, cropped by the page's sides and bottom */
-.desk .prop--kb { --x: 11; --y: 6.3; --ty: 1; }
-.desk .prop--pen { --x: 15.5; --y: 2.4; --ty: 1; }
+.desk .prop--kb { --x: 11; --y: 6.3; --ty: 1; --pi: 0; }
+.desk .prop--pen { --x: 15.5; --y: 2.4; --ty: 1; --pi: 1; }
 .desk .prop--phone, .desk .prop--clip, .desk .prop--cup, .desk .prop--plant { display: none; }
 /* tablet (portrait slate, 21 cm): the keyboard and stylus below the files, the phone and the clip at the slate's left,
    the cup above the sheet (clear of the caption and of the slid-aside sheet, which goes right) */
 @media (min-width: 734px) {
-  .desk .prop--kb { --x: 11; --y: 7.4; }
-  .desk .prop--pen { --x: 21; --y: 3.2; }
-  .desk .prop--phone { display: block; --x: -4.6; --y: 9; }
-  .desk .prop--clip { display: block; --x: -2.8; --y: 20; }
-  .desk .prop--cup { display: block; --x: 23.5; --y: -6.4; }
+  .desk .prop--kb { --x: 11; --y: 7.4; --pi: 3; }
+  .desk .prop--pen { --x: 21; --y: 3.2; --pi: 4; }
+  .desk .prop--phone { display: block; --x: -4.6; --y: 9; --pi: 1; }
+  .desk .prop--clip { display: block; --x: -2.8; --y: 20; --pi: 2; }
+  .desk .prop--cup { display: block; --x: 23.5; --y: -6.4; --pi: 0; }
 }
 /* desktop (landscape slate, 28 cm; the sheet reaches 33.8 cm): as ref-desk-16 / -17, the objects close round the
    documents: the phone at the slate's left, the clip below it, the keyboard just in front of the files with the stylus
    across it, the plant and the cup behind them. The right side (x 29-52 cm, y 0-23.5 cm) stays clear: it is the path of
    the slid-aside sheet. */
 @media (min-width: 1068px) {
-  .desk .prop--kb { --x: 11.5; --y: 6.4; }
-  .desk .prop--pen { --x: 21.6; --y: 2.6; }
-  .desk .prop--phone { --x: -5; --y: 8.8; }
-  .desk .prop--clip { --x: -3.2; --y: 19.2; }
-  .desk .prop--cup { --x: 35.5; --y: -6.2; }
-  .desk .prop--plant { display: block; --x: 16.5; --y: -6.6; }
+  .desk .prop--kb { --x: 11.5; --y: 6.4; --pi: 4; }
+  .desk .prop--pen { --x: 21.6; --y: 2.6; --pi: 5; }
+  .desk .prop--phone { --x: -5; --y: 8.8; --pi: 2; }
+  .desk .prop--clip { --x: -3.2; --y: 19.2; --pi: 3; }
+  .desk .prop--cup { --x: 35.5; --y: -6.2; --pi: 1; }
+  .desk .prop--plant { display: block; --x: 16.5; --y: -6.6; --pi: 0; }
 }
 /* the felt desk mat (desktop): 72 × 47.5 cm centred under the scene, on a darker desk; its edges only come into a very
    large crop (2560px wide): a bound edge with a stitch line, a thin contact shadow, the desk beyond it darker (one
@@ -615,7 +646,7 @@
   --tex-yh: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='800' height='400'%3E%3Cfilter id='p' filterUnits='userSpaceOnUse' primitiveUnits='userSpaceOnUse' x='-40' y='-40' width='880' height='480' color-interpolation-filters='sRGB'%3E%3CfeTurbulence x='0' y='0' width='800' height='400' type='fractalNoise' baseFrequency='0.0017 0.045' numOctaves='2' seed='15' stitchTiles='stitch'/%3E%3CfeTile result='a'/%3E%3CfeTurbulence x='0' y='0' width='800' height='400' type='fractalNoise' baseFrequency='0.006 0.9' numOctaves='2' seed='19' stitchTiles='stitch'/%3E%3CfeTile result='b'/%3E%3CfeTurbulence x='0' y='0' width='800' height='400' type='fractalNoise' baseFrequency='0.004 0.012' numOctaves='1' seed='24' stitchTiles='stitch'/%3E%3CfeTile result='c'/%3E%3CfeTurbulence x='0' y='0' width='800' height='400' type='fractalNoise' baseFrequency='0.005 0.02' numOctaves='1' seed='17' stitchTiles='stitch'/%3E%3CfeTile result='w'/%3E%3CfeComposite in='a' in2='b' operator='arithmetic' k2='.55' k3='.45' result='ab'/%3E%3CfeComposite in='ab' in2='c' operator='arithmetic' k2='.78' k3='.22' result='n0'/%3E%3CfeDisplacementMap in='n0' in2='w' scale='26' xChannelSelector='R' yChannelSelector='G' result='n'/%3E%3CfeColorMatrix in='n' type='matrix' values='0 0 0 0 0.784 0 0 0 0 0.525 0 0 0 0 0.000 5 0 0 0 -2.45'/%3E%3CfeComponentTransfer result='d'%3E%3CfeFuncA type='table' tableValues='0 0.2'/%3E%3C/feComponentTransfer%3E%3CfeColorMatrix in='n' type='matrix' values='0 0 0 0 1.000 0 0 0 0 0.957 0 0 0 0 0.753 -5 0 0 0 2.5'/%3E%3CfeComponentTransfer result='l'%3E%3CfeFuncA type='table' tableValues='0 0.12'/%3E%3C/feComponentTransfer%3E%3CfeMerge%3E%3CfeMergeNode in='d'/%3E%3CfeMergeNode in='l'/%3E%3C/feMerge%3E%3C/filter%3E%3Crect x='-40' y='-40' width='880' height='480' filter='url(%23p)'/%3E%3C/svg%3E");
   --tex-yv: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='800'%3E%3Cfilter id='p' filterUnits='userSpaceOnUse' primitiveUnits='userSpaceOnUse' x='-40' y='-40' width='480' height='880' color-interpolation-filters='sRGB'%3E%3CfeTurbulence x='0' y='0' width='400' height='800' type='fractalNoise' baseFrequency='0.045 0.0017' numOctaves='2' seed='19' stitchTiles='stitch'/%3E%3CfeTile result='a'/%3E%3CfeTurbulence x='0' y='0' width='400' height='800' type='fractalNoise' baseFrequency='0.9 0.006' numOctaves='2' seed='23' stitchTiles='stitch'/%3E%3CfeTile result='b'/%3E%3CfeTurbulence x='0' y='0' width='400' height='800' type='fractalNoise' baseFrequency='0.012 0.004' numOctaves='1' seed='28' stitchTiles='stitch'/%3E%3CfeTile result='c'/%3E%3CfeTurbulence x='0' y='0' width='400' height='800' type='fractalNoise' baseFrequency='0.02 0.005' numOctaves='1' seed='21' stitchTiles='stitch'/%3E%3CfeTile result='w'/%3E%3CfeComposite in='a' in2='b' operator='arithmetic' k2='.55' k3='.45' result='ab'/%3E%3CfeComposite in='ab' in2='c' operator='arithmetic' k2='.78' k3='.22' result='n0'/%3E%3CfeDisplacementMap in='n0' in2='w' scale='26' xChannelSelector='R' yChannelSelector='G' result='n'/%3E%3CfeColorMatrix in='n' type='matrix' values='0 0 0 0 0.784 0 0 0 0 0.525 0 0 0 0 0.000 5 0 0 0 -2.45'/%3E%3CfeComponentTransfer result='d'%3E%3CfeFuncA type='table' tableValues='0 0.2'/%3E%3C/feComponentTransfer%3E%3CfeColorMatrix in='n' type='matrix' values='0 0 0 0 1.000 0 0 0 0 0.957 0 0 0 0 0.753 -5 0 0 0 2.5'/%3E%3CfeComponentTransfer result='l'%3E%3CfeFuncA type='table' tableValues='0 0.12'/%3E%3C/feComponentTransfer%3E%3CfeMerge%3E%3CfeMergeNode in='d'/%3E%3CfeMergeNode in='l'/%3E%3C/feMerge%3E%3C/filter%3E%3Crect x='-40' y='-40' width='480' height='880' filter='url(%23p)'/%3E%3C/svg%3E");
   --tex-bv: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='800'%3E%3Cfilter id='p' filterUnits='userSpaceOnUse' primitiveUnits='userSpaceOnUse' x='-40' y='-40' width='480' height='880' color-interpolation-filters='sRGB'%3E%3CfeTurbulence x='0' y='0' width='400' height='800' type='fractalNoise' baseFrequency='0.045 0.0017' numOctaves='2' seed='12' stitchTiles='stitch'/%3E%3CfeTile result='a'/%3E%3CfeTurbulence x='0' y='0' width='400' height='800' type='fractalNoise' baseFrequency='0.9 0.006' numOctaves='2' seed='16' stitchTiles='stitch'/%3E%3CfeTile result='b'/%3E%3CfeTurbulence x='0' y='0' width='400' height='800' type='fractalNoise' baseFrequency='0.012 0.004' numOctaves='1' seed='21' stitchTiles='stitch'/%3E%3CfeTile result='c'/%3E%3CfeTurbulence x='0' y='0' width='400' height='800' type='fractalNoise' baseFrequency='0.02 0.005' numOctaves='1' seed='14' stitchTiles='stitch'/%3E%3CfeTile result='w'/%3E%3CfeComposite in='a' in2='b' operator='arithmetic' k2='.55' k3='.45' result='ab'/%3E%3CfeComposite in='ab' in2='c' operator='arithmetic' k2='.78' k3='.22' result='n0'/%3E%3CfeDisplacementMap in='n0' in2='w' scale='26' xChannelSelector='R' yChannelSelector='G' result='n'/%3E%3CfeColorMatrix in='n' type='matrix' values='0 0 0 0 0.039 0 0 0 0 0.086 0 0 0 0 0.322 5 0 0 0 -2.45'/%3E%3CfeComponentTransfer result='d'%3E%3CfeFuncA type='table' tableValues='0 0.32'/%3E%3C/feComponentTransfer%3E%3CfeColorMatrix in='n' type='matrix' values='0 0 0 0 0.847 0 0 0 0 0.886 0 0 0 0 1.000 -5 0 0 0 2.5'/%3E%3CfeComponentTransfer result='l'%3E%3CfeFuncA type='table' tableValues='0 0.09'/%3E%3C/feComponentTransfer%3E%3CfeMerge%3E%3CfeMergeNode in='d'/%3E%3CfeMergeNode in='l'/%3E%3C/feMerge%3E%3C/filter%3E%3Crect x='-40' y='-40' width='480' height='880' filter='url(%23p)'/%3E%3C/svg%3E");
-  --ragbox: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='132' height='132'%3E%3Cpath d='M2.40 2.40L6.00 2.50L8.00 2.46L10.00 2.39L12.00 2.58L14.00 2.72L16.00 2.65L18.00 2.97L20.00 3.50L22.00 3.50L24.00 3.41L26.00 3.41L28.00 3.28L30.00 2.73L32.00 2.34L34.00 2.29L36.00 2.24L38.00 2.13L40.00 2.23L42.00 2.34L44.00 2.17L46.00 2.08L48.00 2.32L50.00 2.50L52.00 2.47L54.00 2.50L56.00 2.46L58.00 2.14L60.00 1.90L62.00 2.06L64.00 2.26L66.00 2.29L68.00 2.42L70.00 2.55L72.00 2.41L74.00 2.28L76.00 2.45L78.00 2.52L80.00 2.27L82.00 2.05L84.00 1.91L86.00 1.60L88.00 1.43L90.00 1.66L92.00 1.89L94.00 1.82L96.00 1.77L98.00 1.80L100.00 1.63L102.00 1.48L104.00 1.63L106.00 1.73L108.00 1.52L110.00 1.40L112.00 1.52L114.00 1.59L116.00 1.74L118.00 2.19L120.00 2.55L122.00 2.51L124.00 2.43L126.00 2.50L129.60 2.40L129.20 6.00L129.18 8.00L129.03 10.00L129.11 12.00L129.48 14.00L129.65 16.00L129.54 18.00L129.50 20.00L129.43 22.00L129.18 24.00L129.15 26.00L129.44 28.00L129.60 30.00L129.54 32.00L129.64 34.00L129.79 36.00L129.77 38.00L129.87 40.00L130.15 42.00L130.16 44.00L129.84 46.00L129.63 48.00L129.55 50.00L129.39 52.00L129.41 54.00L129.72 56.00L129.86 58.00L129.71 60.00L129.71 62.00L129.84 64.00L129.82 66.00L129.82 68.00L129.98 70.00L129.94 72.00L129.63 74.00L129.54 76.00L129.75 78.00L129.90 80.00L130.10 82.00L130.47 84.00L130.63 86.00L130.45 88.00L130.23 90.00L130.05 92.00L130.20 94.00L130.40 96.00L130.43 98.00L130.32 100.00L129.94 102.00L129.59 104.00L129.56 106.00L129.62 108.00L129.86 110.00L130.17 112.00L130.13 114.00L129.70 116.00L129.45 118.00L129.50 120.00L129.42 122.00L129.22 124.00L129.20 126.00L129.60 129.60L126.00 130.33L124.00 130.14L122.00 130.16L120.00 130.21L118.00 129.80L116.00 129.27L114.00 128.99L112.00 128.88L110.00 128.86L108.00 129.13L106.00 129.51L104.00 129.50L102.00 129.29L100.00 129.30L98.00 129.33L96.00 129.22L94.00 129.26L92.00 129.40L90.00 129.22L88.00 128.81L86.00 128.76L84.00 128.90L82.00 129.24L80.00 129.67L78.00 130.13L76.00 130.04L74.00 129.77L72.00 129.76L70.00 129.85L68.00 129.75L66.00 129.72L64.00 129.80L62.00 129.68L60.00 129.49L58.00 129.67L56.00 129.97L54.00 130.03L52.00 130.02L50.00 130.04L48.00 129.81L46.00 129.48L44.00 129.50L42.00 129.71L40.00 129.73L38.00 129.75L36.00 129.93L34.00 129.99L32.00 129.96L30.00 130.24L28.00 130.59L26.00 130.58L24.00 130.42L22.00 130.37L20.00 130.21L18.00 130.00L16.00 130.13L14.00 130.43L12.00 130.43L10.00 130.32L8.00 130.37L6.00 130.33L2.40 129.60L1.63 126.00L1.64 124.00L1.98 122.00L2.23 120.00L2.41 118.00L2.72 116.00L2.84 114.00L2.69 112.00L2.70 110.00L2.93 108.00L2.94 106.00L2.78 104.00L2.74 102.00L2.64 100.00L2.40 98.00L2.43 96.00L2.76 94.00L2.90 92.00L2.80 90.00L2.77 88.00L2.64 86.00L2.29 84.00L2.15 82.00L2.27 80.00L2.21 78.00L1.97 76.00L1.92 74.00L1.97 72.00L1.92 70.00L2.08 68.00L2.46 66.00L2.56 64.00L2.35 62.00L2.23 60.00L2.17 58.00L2.07 56.00L2.18 54.00L2.56 52.00L2.74 50.00L2.45 48.00L2.36 46.00L2.70 44.00L2.65 42.00L2.36 40.00L2.41 38.00L2.28 36.00L1.83 34.00L1.58 32.00L1.55 30.00L1.46 28.00L1.47 26.00L1.71 24.00L1.77 22.00L1.59 20.00L1.61 18.00L1.83 16.00L1.89 14.00L1.88 12.00L1.99 10.00L1.92 8.00L1.63 6.00Z'/%3E%3C/svg%3E");
+  --ragbox: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='132' height='132'%3E%3Cpath d='M2.4 2.4 6 2.5 8 2.46 10 2.39 12 2.58 14 2.72 16 2.65 18 2.97 20 3.5 22 3.5 24 3.41 26 3.41 28 3.28 30 2.73 32 2.34 34 2.29 36 2.24 38 2.13 40 2.23 42 2.34 44 2.17 46 2.08 48 2.32 50 2.5 52 2.47 54 2.5 56 2.46 58 2.14 60 1.9 62 2.06 64 2.26 66 2.29 68 2.42 70 2.55 72 2.41 74 2.28 76 2.45 78 2.52 80 2.27 82 2.05 84 1.91 86 1.6 88 1.43 90 1.66 92 1.89 94 1.82 96 1.77 98 1.8 100 1.63 102 1.48 104 1.63 106 1.73 108 1.52 110 1.4 112 1.52 114 1.59 116 1.74 118 2.19 120 2.55 122 2.51 124 2.43 126 2.5 129.6 2.4 129.2 6 129.18 8 129.03 10 129.11 12 129.48 14 129.65 16 129.54 18 129.5 20 129.43 22 129.18 24 129.15 26 129.44 28 129.6 30 129.54 32 129.64 34 129.79 36 129.77 38 129.87 40 130.15 42 130.16 44 129.84 46 129.63 48 129.55 50 129.39 52 129.41 54 129.72 56 129.86 58 129.71 60 129.71 62 129.84 64 129.82 66 129.82 68 129.98 70 129.94 72 129.63 74 129.54 76 129.75 78 129.9 80 130.1 82 130.47 84 130.63 86 130.45 88 130.23 90 130.05 92 130.2 94 130.4 96 130.43 98 130.32 100 129.94 102 129.59 104 129.56 106 129.62 108 129.86 110 130.17 112 130.13 114 129.7 116 129.45 118 129.5 120 129.42 122 129.22 124 129.2 126 129.6 129.6 126 130.33 124 130.14 122 130.16 120 130.21 118 129.8 116 129.27 114 128.99 112 128.88 110 128.86 108 129.13 106 129.51 104 129.5 102 129.29 100 129.3 98 129.33 96 129.22 94 129.26 92 129.4 90 129.22 88 128.81 86 128.76 84 128.9 82 129.24 80 129.67 78 130.13 76 130.04 74 129.77 72 129.76 70 129.85 68 129.75 66 129.72 64 129.8 62 129.68 60 129.49 58 129.67 56 129.97 54 130.03 52 130.02 50 130.04 48 129.81 46 129.48 44 129.5 42 129.71 40 129.73 38 129.75 36 129.93 34 129.99 32 129.96 30 130.24 28 130.59 26 130.58 24 130.42 22 130.37 20 130.21 18 130 16 130.13 14 130.43 12 130.43 10 130.32 8 130.37 6 130.33 2.4 129.6 1.63 126 1.64 124 1.98 122 2.23 120 2.41 118 2.72 116 2.84 114 2.69 112 2.7 110 2.93 108 2.94 106 2.78 104 2.74 102 2.64 100 2.4 98 2.43 96 2.76 94 2.9 92 2.8 90 2.77 88 2.64 86 2.29 84 2.15 82 2.27 80 2.21 78 1.97 76 1.92 74 1.97 72 1.92 70 2.08 68 2.46 66 2.56 64 2.35 62 2.23 60 2.17 58 2.07 56 2.18 54 2.56 52 2.74 50 2.45 48 2.36 46 2.7 44 2.65 42 2.36 40 2.41 38 2.28 36 1.83 34 1.58 32 1.55 30 1.46 28 1.47 26 1.71 24 1.77 22 1.59 20 1.61 18 1.83 16 1.89 14 1.88 12 1.99 10 1.92 8 1.63 6Z'/%3E%3C/svg%3E");
   /* the art paper's cotton tooth (a fine neutral speckle, ink at up to about 2.5%) and formation (the pulp's soft,
      wide cloudiness, up to about 2%); the rubber stamp's uneven ink (alpha about .83-1, so its text keeps 4.5:1 where
      the ink is thinnest) and its frame's worn ink (alpha about .25-1, no text) */
@@ -1015,3 +1046,147 @@
 .desk[data-exit], .desk[data-exit] * { pointer-events: none !important; }
 .file--game .xg, .file--game .xg__off, .xnav { display: none; }
 @media print { .file--game .xg, .file--game .xg__off, .xnav { display: none !important; } }
+
+/* ═══ the opening (MO-41, chooser v6.12): once per session, head-init sets :root[data-intro="opening"] (never under
+   reduced motion) and removes it at the end or on any input. The tablet rises, its screen is off, then a power-on bloom;
+   the props settle (opacity); on the lit screen the HUD frame boots, the console types the access request and decrypts,
+   the shutters open over the cover, the cover locks on; then the printout (its folder, clip and flag with it: one
+   element) is tossed onto the desk from below the viewport, painted from the first frame at opacity 1 (never a late LCP
+   candidate), while the game file slides from the desk centre (--cx) to rest; the rubber stamp lands. Every timing is a
+   --dur-op-* / --at-op-* token or a calc() of them (tokens.css), every animation fills both ways and ends in the rest
+   state, so removing data-intro (end or skip) changes nothing on screen. Transform and opacity only. ═══ */
+.file--game .dev__off { background: var(--scr-off); }
+.file--game .dev__pwr { opacity: 0; background: radial-gradient(60% 55%, color-mix(in srgb, var(--hud-strong) 34%, var(--scr-lit)), color-mix(in srgb, var(--scr-lit) 60%, transparent) 45%, transparent 78%); }
+/* the overlay: over the cover window and its frame, aria-hidden, never takes the pointer */
+.ov { position: absolute; inset: calc(-1 * var(--frame)); z-index: 7; display: none; overflow: hidden; pointer-events: none; }
+:root[data-intro="opening"] .ov, :root[data-intro="opening"] .file--game .dev__off, :root[data-intro="opening"] .file--game .dev__pwr { display: block; }
+.ov__shut { position: absolute; inset: 0; display: flex; flex-direction: column; }
+.ov__shut i { flex: 1; margin-bottom: -1px; transform-origin: 50% 0; background-color: var(--hud-bg); background-image: repeating-linear-gradient(to bottom, var(--cover-scan) 0 1px, transparent 1px 4px); box-shadow: inset 0 -1px 0 var(--hud-divider); }
+.ov__shut i:nth-child(2) { --i: 1; }
+.ov__shut i:nth-child(3) { --i: 2; }
+.ov__shut i:nth-child(4) { --i: 3; }
+.ov__shut i:nth-child(5) { --i: 4; }
+.ov__shut i:nth-child(6) { --i: 5; }
+.ov__shut i:nth-child(7) { --i: 6; }
+.ov__shut i:nth-child(8) { --i: 7; }
+.ov__shut i:nth-child(9) { --i: 8; }
+.ov__shut i:nth-child(10) { --i: 9; }
+/* a scan line: the bottom edge of a box parked one height above its container, swept down (translateY 0 → 100%) */
+.ov__scan { position: absolute; left: 0; right: 0; top: -100%; height: 100%; opacity: 0; border-bottom: 1px solid var(--hud-text); background: linear-gradient(to top, var(--neon-glow), transparent 22px); }
+/* the HUD frame: top and bottom hairlines (::before, grow from the centre), the sides (::after), four bracket corners */
+.ov__fr, .ov__cn { position: absolute; inset: 12px; }
+.ov__fr::before, .ov__fr::after { content: ""; position: absolute; inset: 0 30px; border: 0 solid color-mix(in srgb, var(--hud-muted) 55%, transparent); border-width: 1px 0; }
+.ov__fr::after { inset: 30px 0; border-width: 0 1px; }
+.ov__cn::before, .ov__cn::after { content: ""; position: absolute; top: 0; left: 0; width: 22px; height: 22px; border: 2px solid var(--hud-text); border-width: 2px 0 0 2px; transform-origin: 0 0; }
+.ov__cn::after { left: auto; right: 0; border-width: 2px 2px 0 0; transform-origin: 100% 0; }
+.ov__cn--b { transform: scaleY(-1); }
+/* the console: the terminal head, the access request behind a block cursor, the decrypt bar */
+.ov__con { position: absolute; inset: 0; width: min(460px, calc(100% - 40px)); height: max-content; margin: auto; padding: 14px 16px 16px; overflow: hidden; background: var(--hud-panel-92); border: 1px solid var(--hud-frame); }
+.ov__hd, .ov__dec { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; margin: 0 0 12px; padding-bottom: 10px; border-bottom: 1px solid var(--hud-frame); font: 600 var(--fs-min)/1.4 var(--font-mono-cover); letter-spacing: .14em; color: var(--hud-muted); }
+.ov__dec { flex-wrap: nowrap; gap: 12px; margin: 12px 0 0; padding: 0; border: 0; }
+.ov__sq { width: 8px; height: 8px; background: var(--hud-text); }
+.ov__nd { margin-left: auto; }
+.ov__ln { margin: 0; font: 500 var(--fs-small)/1.6 var(--font-mono-cover); color: var(--hud-strong); }
+.ov__rq::after { content: ""; display: inline-block; width: .6em; height: 1.1em; margin-left: 2px; vertical-align: -.2em; background: var(--hud-strong); opacity: 0; }
+.ov__bar { flex: 1; height: 12px; padding: 2px; border: 1px solid color-mix(in srgb, var(--hud-label) 60%, transparent); }
+.ov__bar::before { content: ""; display: block; height: 100%; transform-origin: 0 50%; background: repeating-linear-gradient(90deg, var(--hud-label) 0 10px, transparent 10px 13px); }
+.ov__pct { min-width: 4ch; text-align: right; }
+.ov__st { position: absolute; top: calc(var(--frame) + var(--bar-h) + var(--haz-in) + var(--haz-h) + 14px); right: 18px; margin: 0; padding: 7px 12px; background: var(--hud-panel-92); border: 1px solid var(--hud-text); font: 700 var(--fs-min)/1.3 var(--font-mono-cover); letter-spacing: .18em; color: var(--hud-strong); }
+
+/* the timeline (the cyber part's steps: --dur-op-step each, from --at-op-boot) */
+:root[data-intro="opening"] .file--game .dev { animation: op-rise var(--dur-op-device) var(--ease-out) both; }
+:root[data-intro="opening"] .desk .prop { animation: op-in var(--dur-op-props) var(--ease-out) calc(var(--at-op-props) + var(--pi, 0) * var(--op-props-step)) both; }
+:root[data-intro="opening"] .file--game .dev__off { animation: op-out var(--dur-op-off) linear var(--at-op-off) both; }
+:root[data-intro="opening"] .file--game .dev__pwr { animation: op-pwr var(--dur-op-power) var(--ease-out) var(--at-op-power) both; }
+:root[data-intro="opening"] :is(.ov__fr, .ov__cn) { animation: op-out calc(14 * var(--dur-op-step)) var(--ease-in) calc(var(--at-op-boot) + 70 * var(--dur-op-step)) both; }
+:root[data-intro="opening"] .ov__fr::before { animation: op-gx calc(13 * var(--dur-op-step)) var(--ease-out) var(--at-op-boot) both; }
+:root[data-intro="opening"] .ov__fr::after { animation: op-gy calc(13 * var(--dur-op-step)) var(--ease-out) calc(var(--at-op-boot) + 2 * var(--dur-op-step)) both; }
+:root[data-intro="opening"] .ov__cn::before, :root[data-intro="opening"] .ov__cn::after { animation: op-corner calc(10 * var(--dur-op-step)) var(--ease-out) calc(var(--at-op-boot) + 5 * var(--dur-op-step)) both; }
+:root[data-intro="opening"] .ov__con { animation: op-con calc(68 * var(--dur-op-step)) linear calc(var(--at-op-boot) + 2 * var(--dur-op-step)) both; }
+:root[data-intro="opening"] .ov__t { animation: op-in calc(12 * var(--dur-op-step)) steps(4, end) var(--at-op-type) both; }
+:root[data-intro="opening"] .ov__rq { animation: op-in calc(14 * var(--dur-op-step)) steps(6, end) calc(var(--at-op-type) + 9 * var(--dur-op-step)) both; }
+:root[data-intro="opening"] .ov__rq::after { animation: op-out var(--dur-op-step) steps(1, end) calc(var(--at-op-type) + 30 * var(--dur-op-step)) both; }
+:root[data-intro="opening"] .ov__nd { animation: op-in calc(4 * var(--dur-op-step)) steps(2, end) calc(var(--at-op-type) + 16 * var(--dur-op-step)) both; }
+:root[data-intro="opening"] :is(.ov__dt, .ov__bar) { animation: op-in calc(4 * var(--dur-op-step)) linear var(--at-op-decrypt) both; }
+:root[data-intro="opening"] .ov__bar::before { animation: op-gx calc(20 * var(--dur-op-step)) steps(16, end) calc(var(--at-op-decrypt) + 2 * var(--dur-op-step)) both; }
+:root[data-intro="opening"] .ov__con .ov__scan { animation: op-scan calc(20 * var(--dur-op-step)) linear calc(var(--at-op-decrypt) + 2 * var(--dur-op-step)) both; }
+:root[data-intro="opening"] .ov__pct { animation: op-in calc(2 * var(--dur-op-step)) steps(1, end) calc(var(--at-op-decrypt) + 20 * var(--dur-op-step)) both; }
+:root[data-intro="opening"] .ov__shut i { animation: op-shut var(--dur-op-shutter) var(--ease-in) calc(var(--at-op-shutter) + var(--i, 0) * var(--dur-op-step)) both; }
+:root[data-intro="opening"] .ov > .ov__scan { animation: op-scan calc(22 * var(--dur-op-step)) var(--ease-wipe) var(--at-op-shutter) both; }
+:root[data-intro="opening"] .ov__st { animation: op-status calc(32 * var(--dur-op-step)) linear var(--at-op-lock) both; }
+/* the cover locks on: the bracket corners snap in (an overshoot keyframe), the labels appear (MO-27 types them), the
+   hazard strips charge, the barcode prints */
+:root[data-intro="opening"] .file--game .br { animation: op-br var(--dur-op-lock) var(--ease-out) var(--at-op-lock) both; }
+.file--game .br--tl { --bx: -14px; }
+.file--game .br--br { --bx: 14px; }
+:root[data-intro="opening"] .file--game :is(.bar__name, .cv__pub, .cv__kicker, .bar__access, .cv__no, .bar__no, .cv__foot-t, .cv__sn) { animation: op-in var(--dur-op-lock) steps(4, end) calc(var(--at-op-lock) + var(--li, 0) * var(--dur-op-step)) both; }
+.file--game .cv__pub { --li: 2; }
+.file--game :is(.cv__kicker, .bar__access) { --li: 5; }
+.file--game .cv__foot-t { --li: 7; }
+.file--game :is(.cv__no, .bar__no) { --li: 8; }
+.file--game .cv__sn { --li: 12; }
+:root[data-intro="opening"] .file--game .haz { animation: op-gx var(--dur-op-lock) steps(13, end) calc(var(--at-op-lock) + var(--dur-op-step)) both; }
+:root[data-intro="opening"] .file--game .haz--b { animation-delay: calc(var(--at-op-lock) + 5 * var(--dur-op-step)); }
+:root[data-intro="opening"] .file--game .cv__code { animation: op-gy calc(11 * var(--dur-op-step)) steps(10, end) calc(var(--at-op-lock) + 10 * var(--dur-op-step)) both; }
+/* the toss: the printout and its lift shadow; the game file slides over from the desk centre; the rubber stamp */
+:root[data-intro="opening"] .desk > .file--data { animation: op-toss var(--dur-enter) var(--ease-out) var(--at-op-toss) both; }
+:root[data-intro="opening"] .desk > .file--data::before { animation: op-out var(--dur-enter) var(--ease-in) var(--at-op-toss) both; }
+:root[data-intro="opening"] .desk > .file--game { animation: op-cx var(--dur-enter) var(--ease-wipe) var(--at-op-toss) both; }
+:root[data-intro="opening"] .file--data .rstamp__ink { animation: op-stamp var(--dur-op-rstamp) var(--ease-out) var(--at-op-rstamp) both; }
+
+/* the device fades from .01, not 0: text under an opacity-0 ancestor is not an LCP candidate when it is first painted, so
+   the cover's text would only count when it is next repainted, after the opening (probe, MO-41 Step 2) */
+@keyframes op-rise { from { opacity: .01; transform: translateY(14px) scale(.985); } to { opacity: 1; transform: none; } }
+@keyframes op-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes op-out { from { opacity: 1; } to { opacity: 0; } }
+@keyframes op-pwr {
+  0% { opacity: 0; transform: scale(.55, .04); }
+  28% { opacity: 1; transform: scale(1, .08); }
+  55% { opacity: .85; transform: scale(1.04, 1); }
+  100% { opacity: 0; transform: scale(1.08, 1.04); }
+}
+@keyframes op-gx { from { transform: scaleX(0); } to { transform: none; } }
+@keyframes op-gy { from { transform: scaleY(0); } to { transform: none; } }
+@keyframes op-corner { from { opacity: 0; transform: scale(1.5); } to { opacity: 1; transform: none; } }
+/* opens over 10 steps, holds, fades out over the last 7 */
+@keyframes op-con {
+  0% { opacity: 0; transform: scaleY(.02); }
+  14.706% { opacity: 1; transform: none; }
+  89.706% { opacity: 1; transform: none; }
+  100% { opacity: 0; transform: none; }
+}
+@keyframes op-scan {
+  0% { opacity: 0; transform: translateY(0); }
+  12% { opacity: 1; }
+  82% { opacity: 1; }
+  100% { opacity: 0; transform: translateY(100%); }
+}
+@keyframes op-shut { from { transform: none; } to { transform: scaleY(0); } }
+/* in over 3 steps, held, out over the last 7 (it is gone when the toss starts) */
+@keyframes op-status {
+  0% { opacity: 0; }
+  9.375% { opacity: 1; }
+  78.125% { opacity: 1; }
+  100% { opacity: 0; }
+}
+/* from 14px outside the window (--bx), past rest by 1px, back */
+@keyframes op-br {
+  0% { opacity: 0; transform: translate(var(--bx), var(--bx)); }
+  70% { opacity: 1; transform: translate(calc(var(--bx) / -14), calc(var(--bx) / -14)); }
+  100% { opacity: 1; transform: none; }
+}
+/* from below the viewport (relative to the rest box), turned and a little large, at opacity 1 */
+@keyframes op-toss { from { transform: translate(clamp(80px, 30vw, 360px), calc(100svh + 40px)) rotate(16deg) scale(1.06); } to { transform: none; } }
+@keyframes op-cx { from { transform: translateX(var(--cx)); } to { transform: none; } }
+@keyframes op-stamp {
+  0% { opacity: 0; transform: scale(1.7); }
+  70% { opacity: 1; transform: scale(.96); }
+  100% { opacity: 1; transform: none; }
+}
+/* reduced motion (both paths), forced colours and print: no opening layer, nothing on the desk animates */
+@media (prefers-reduced-motion: reduce), (forced-colors: active), print {
+  :root[data-intro] .desk :is(.ov, .dev__off, .dev__pwr) { display: none; }
+  :root[data-intro] .desk :is(*, *::before, *::after) { animation: none !important; }
+}
+:root[data-motion="reduce"][data-intro] .desk :is(.ov, .dev__off, .dev__pwr) { display: none; }
+:root[data-motion="reduce"][data-intro] .desk :is(*, *::before, *::after) { animation: none !important; }

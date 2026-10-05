@@ -9,8 +9,15 @@
 // fade (CrtIntro.astro), then done 150 ms later removes both attributes. Timers arm on FCP (or crt-on
 // animationstart fallback); a 3 s safety calls done() only.
 // CRT gate (A-19): only the game home plays the intro; this string cannot import VARIANT_MODULES, so tests/react/variant-runtime.test.ts pins the agreement.
+// The chooser's opening (MO-41, chooser v6.12): on the neutral chooser, once per session (the same sb:intro, so the
+// game home after it plays no CRT, D-2), never with ?choose, after the pre-paint redirect (window.__sbRedirect, set by
+// the chooser's head script that runs before this one; a redirect does not spend sb:intro), under reduced motion or
+// with unreadable storage. data-intro="opening" runs the CSS timeline in chooser.css; done at doneMs after FCP (the
+// timeline ends at 2.398 s), safetyMs without FCP. Any input ends it at once (no fade): pointer and touch input leave
+// window.__sbOpeningSkip = the event's timeStamp, so chooser.ts cancels that press's click (a press only ends it).
 
 export const INTRO_TIMING = { releaseMs: 400, doneMs: 700, skipFadeMs: 150, safetyMs: 3000 } as const;
+export const OPENING_TIMING = { doneMs: 2400, safetyMs: 3400 } as const;
 
 export const HEAD_INIT_SCRIPT = `(function () {
   var d = document.documentElement;
@@ -33,15 +40,16 @@ export const HEAD_INIT_SCRIPT = `(function () {
       if (ev.viewTransition) d.setAttribute('data-hero-seen', '');
     });
   }
-  if (reduce || d.getAttribute('data-variant') !== 'game' || d.getAttribute('data-page') !== 'home') return;
+  var opening = d.getAttribute('data-variant') === 'neutral' && d.getAttribute('data-page') === 'chooser';
+  if (opening ? reduce || window.__sbRedirect || /[?&]choose(?:[=&]|$)/.test(location.search) : reduce || !gameHome) return;
   var seen = true;
   try {
     seen = window.sessionStorage.getItem('sb:intro') === '1';
     window.sessionStorage.setItem('sb:intro', '1');
   } catch (e) { seen = true; }
   if (seen) return;
-  d.setAttribute('data-intro', 'playing');
-  d.setAttribute('data-intro-played', '');
+  d.setAttribute('data-intro', opening ? 'opening' : 'playing');
+  if (!opening) d.setAttribute('data-intro-played', '');
   var types = ['keydown', 'pointerdown', 'wheel', 'touchstart'];
   var finished = false;
   var skipped = false;
@@ -65,8 +73,13 @@ export const HEAD_INIT_SCRIPT = `(function () {
   function release() {
     if (d.getAttribute('data-intro') === 'playing') d.setAttribute('data-intro', 'fading');
   }
-  function skip() {
+  function skip(ev) {
     if (finished || skipped) return;
+    if (opening) {
+      if (ev && (ev.type === 'pointerdown' || ev.type === 'touchstart')) window.__sbOpeningSkip = ev.timeStamp;
+      done();
+      return;
+    }
     skipped = true;
     window.__sbIntroSkipped = true;
     window.clearTimeout(t1);
@@ -79,8 +92,8 @@ export const HEAD_INIT_SCRIPT = `(function () {
     if (started || finished) return;
     started = true;
     window.clearTimeout(tSafety);
-    t1 = window.setTimeout(release, ${INTRO_TIMING.releaseMs});
-    t2 = window.setTimeout(done, ${INTRO_TIMING.doneMs});
+    if (!opening) t1 = window.setTimeout(release, ${INTRO_TIMING.releaseMs});
+    t2 = window.setTimeout(done, opening ? ${OPENING_TIMING.doneMs} : ${INTRO_TIMING.doneMs});
   }
   function onAnim(ev) {
     if (ev && ev.animationName === 'crt-on') start();
@@ -108,6 +121,6 @@ export const HEAD_INIT_SCRIPT = `(function () {
     } catch (e) { po = null; }
   }
   d.addEventListener('animationstart', onAnim, true);
-  tSafety = window.setTimeout(done, ${INTRO_TIMING.safetyMs});
+  tSafety = window.setTimeout(done, opening ? ${OPENING_TIMING.safetyMs} : ${INTRO_TIMING.safetyMs});
   for (var j = 0; j < types.length; j++) window.addEventListener(types[j], skip, { capture: true, passive: true });
 })();`;
