@@ -30,6 +30,102 @@ test('without reduced motion the CRT intro plays once per session on the home pa
   await expect(html).not.toHaveAttribute('data-intro');
 });
 
+/** t: ms since the key press; ct: currentTime of the running opacity transition on .crt (null when none). */
+type CrtSample = { t: number; ct: number | null; intro: string | null; opacity: number; display: string };
+
+test('F1: after a key press the CRT overlay is below 0.5 opacity within 100 ms and gone by 200 ms', async ({ page }) => {
+  // Registered before the head script, so this window capture listener runs before its skip listener: the first
+  // sample is the state at the press, and every later one is one animation frame of the skip fade.
+  await page.addInitScript(() => {
+    window.addEventListener(
+      'keydown',
+      () => {
+        const w = window as Window & { __crtSamples?: CrtSample[] };
+        const d = document.documentElement;
+        const crt = document.querySelector('.crt') as HTMLElement;
+        const t0 = performance.now();
+        const read = (): CrtSample => {
+          const cs = getComputedStyle(crt);
+          const fade = crt.getAnimations().find((a) => a instanceof CSSTransition && a.transitionProperty === 'opacity');
+          const ct = fade && fade.currentTime !== null ? Number(fade.currentTime) : null;
+          return { t: performance.now() - t0, ct, intro: d.getAttribute('data-intro'), opacity: Number(cs.opacity), display: cs.display };
+        };
+        const s = [read()];
+        const tick = (): void => {
+          s.push(read());
+          if (performance.now() - t0 < 260) requestAnimationFrame(tick);
+          else w.__crtSamples = s;
+        };
+        requestAnimationFrame(tick);
+      },
+      { capture: true, once: true },
+    );
+  });
+  // A loaded container sometimes presses only after the 400 ms release, or renders no frame at all during the
+  // 150 ms skip; such an attempt measures the machine, not the fade, so it is retried in a fresh session (max 4).
+  let samples: CrtSample[] = [];
+  for (let attempt = 0; attempt < 4; attempt++) {
+    if (attempt > 0) await page.evaluate(() => sessionStorage.clear());
+    await page.goto('/game/', { waitUntil: 'commit' });
+    // Press once the overlay is on screen (after FCP, which also arms the 400 ms release).
+    await page.waitForFunction(
+      () =>
+        document.documentElement.getAttribute('data-intro') === 'playing' &&
+        performance.getEntriesByName('first-contentful-paint').length > 0,
+      null,
+      { polling: 'raf' },
+    );
+    await page.keyboard.press('Shift');
+    const handle = await page.waitForFunction(() => (window as Window & { __crtSamples?: CrtSample[] }).__crtSamples, null, {
+      polling: 'raf',
+    });
+    samples = (await handle.jsonValue()) as CrtSample[];
+    if (samples[0].intro === 'playing' && samples.some((x) => x.ct !== null && x.ct > 0)) break;
+  }
+  const log = JSON.stringify(
+    samples.map((x) => [Math.round(x.t), x.ct === null ? null : Math.round(x.ct), x.intro, x.display, x.opacity.toFixed(2)]),
+  );
+  expect(samples[0].intro, `the press came while the intro was playing ${log}`).toBe('playing');
+  // "Within 100 ms" is read on the fade's own clock: a container's headless Chromium starts a transition only at its
+  // next committed frame (often 60-100 ms after the style change here), which says nothing about the curve. The old
+  // --dur-exit/--ease-in exit was still at about 0.9 at 100 ms; the skip fade is well below 0.5.
+  expect(samples.some((x) => x.ct !== null && x.ct <= 100 && x.display !== 'none' && x.opacity < 0.5), log).toBe(true);
+  const late = samples.filter((x) => x.t >= 200);
+  expect(late.length, log).toBeGreaterThan(0);
+  expect(late.every((x) => x.display === 'none'), log).toBe(true);
+});
+
+test('H1: the hero copy rises on the first game-home view of the session only', async ({ page }) => {
+  // No CRT in this session, so the rise is not suppressed by data-intro-played.
+  await page.addInitScript((key) => sessionStorage.setItem(key, '1'), STORAGE_KEYS.intro);
+  // A fill-mode "both" animation stays in getAnimations() after it ends, so a finished rise still counts as played.
+  const rises = () =>
+    page.locator('.hero__copy > *').evaluateAll((els) => {
+      const all = els.flatMap((el) => el.getAnimations()).filter((a) => (a as CSSAnimation).animationName === 'hero-rise');
+      return { all: all.length, running: all.filter((a) => a.playState === 'running').length };
+    });
+  const html = page.locator('html');
+  const lines = page.locator('.hero__copy > *');
+  await page.goto('/game/', { waitUntil: 'domcontentloaded' });
+  await expect(html).not.toHaveAttribute('data-hero-seen');
+  expect((await rises()).all, 'first view: every copy line rises').toBe(await lines.count());
+  // let the first rise end, so a back/forward-cache restore cannot show it still running
+  await lines.evaluateAll((els) => Promise.all(els.flatMap((el) => el.getAnimations()).map((a) => a.finished)));
+
+  await page.locator('.hud-nav a[href="/game/projects/"]').first().click();
+  await expect(page).toHaveURL(/\/game\/projects\/$/);
+  await page.goBack({ waitUntil: 'domcontentloaded' });
+  await expect(page).toHaveURL(/\/game\/$/);
+  expect((await rises()).running, 'back to the home: no rise').toBe(0);
+
+  await page.locator('.hud-nav a[href="/game/projects/"]').first().click();
+  await expect(page).toHaveURL(/\/game\/projects\/$/);
+  await page.locator('.hud-nav__brand').click();
+  await expect(page).toHaveURL(/\/game\/$/);
+  await expect(html).toHaveAttribute('data-hero-seen', '');
+  expect(await rises(), 'nav click to the home: no rise').toEqual({ all: 0, running: 0 });
+});
+
 test.describe('with the OS reduced-motion setting', () => {
   test.use({ reducedMotion: 'reduce' });
 

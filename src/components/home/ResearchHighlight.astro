@@ -115,7 +115,10 @@ const [figTag, ...figRest] = figureLabel.split(' · ');
   .paper__oral { padding: 1px 7px; font: 800 var(--fs-label)/1.4 var(--font-mono); color: var(--gold-ink); background: var(--gold-wash); border: 1px solid var(--gold-line); }
   .paper__title { margin-top: 6px; font-size: var(--fs-sub); font-weight: 700; line-height: var(--lh-sub); }
   .paper__title a { color: var(--read-text); text-decoration: none; transition: color var(--dur-hover) linear; }
-  .paper__title a:hover { color: var(--accent-deep); text-decoration: underline; }
+  @media (hover: hover) {
+    .paper__title a:hover { color: var(--accent-deep); text-decoration: underline; }
+  }
+  .paper__title a:active { color: var(--accent-deep); text-decoration: underline; }
   .paper__gloss { margin-top: 6px; font-size: var(--fs-small); color: var(--read-muted); }
   .paper__gloss-mark { white-space: nowrap; }
   .paper__authors { margin-top: 6px; font-size: var(--fs-meta); color: var(--read-muted); }

@@ -35,6 +35,11 @@
     opacity: 0;
     transition: opacity var(--dur-exit) var(--ease-in, cubic-bezier(.4, 0, 1, 1));
   }
+  /* A skip fades at once (ease-out) and finishes with done() 150 ms later, instead of the slow ease-in exit
+     curve being cut off at about 85 % opacity. */
+  :global(:root[data-intro='fading'][data-intro-skip]) .crt {
+    transition: opacity var(--dur-press) var(--ease-out);
+  }
   :global(:root[data-motion='reduce']) .crt {
     display: none;
   }

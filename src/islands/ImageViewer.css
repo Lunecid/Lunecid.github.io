@@ -16,7 +16,7 @@
   -webkit-backdrop-filter: blur(14px) saturate(120%);
   backdrop-filter: blur(14px) saturate(120%);
   opacity: 0;
-  transition: opacity 200ms ease;
+  transition: opacity var(--dur-fade) var(--ease-out);
 }
 .image-viewer:not([open]) { display: none; }
 .image-viewer::backdrop { background: transparent; }
@@ -99,7 +99,7 @@
   transition: transform var(--dur-panel-out) var(--ease-in), opacity var(--dur-panel-out) var(--ease-in);
 }
 .image-viewer__stage[data-flip="off"] {
-  transition: opacity 150ms ease, transform 150ms ease;
+  transition: opacity var(--dur-press) var(--ease-out), transform var(--dur-press) var(--ease-out);
 }
 
 .image-viewer__frame {
@@ -108,7 +108,7 @@
   pointer-events: none;
   opacity: 0;
   transform: scale(.96);
-  transition: opacity 200ms ease 150ms, transform 200ms var(--ease-out) 150ms;
+  transition: opacity var(--dur-fade) var(--ease-out) 150ms, transform var(--dur-fade) var(--ease-out) 150ms;
 }
 .image-viewer[data-state="open"] .image-viewer__frame,
 .image-viewer[data-state="navigating"] .image-viewer__frame {
@@ -144,7 +144,7 @@
   width: 100%;
   height: 100%;
   /* S3: keep transform in the transition so clearing data-shift animates, not snaps */
-  transition: opacity 180ms ease, transform 180ms ease;
+  transition: opacity var(--dur-panel-out) var(--ease-wipe), transform var(--dur-panel-out) var(--ease-wipe);
 }
 .image-viewer__placeholder,
 .image-viewer__img {
@@ -162,7 +162,7 @@
 .image-viewer__img {
   position: relative;
   opacity: 0;
-  transition: opacity 180ms ease;
+  transition: opacity var(--dur-panel-out) var(--ease-out);
 }
 .image-viewer__img[data-ready="true"] { opacity: 1; }
 /* Outgoing / incoming slide on the shared wrapper (R7: placeholder + img move together) */
@@ -188,7 +188,7 @@
   background: var(--hud-bg);
   opacity: 0;
   transform: translateY(8px);
-  transition: opacity 200ms ease 150ms, transform 200ms var(--ease-out) 150ms;
+  transition: opacity var(--dur-fade) var(--ease-out) 150ms, transform var(--dur-fade) var(--ease-out) 150ms;
 }
 .image-viewer[data-state="open"] .image-viewer__cap,
 .image-viewer[data-state="navigating"] .image-viewer__cap {
@@ -303,25 +303,25 @@
 }
 
 :root[data-motion="reduce"] .image-viewer {
-  transition: opacity 150ms ease;
+  transition: opacity var(--dur-fade-out) var(--ease-out);
 }
 :root[data-motion="reduce"] .image-viewer[data-state="closing"] {
-  transition: opacity 150ms ease;
+  transition: opacity var(--dur-fade-out) var(--ease-in);
 }
 :root[data-motion="reduce"] .image-viewer__stage,
 :root[data-motion="reduce"] .image-viewer__frame {
-  transition: opacity 150ms ease !important;
+  transition: opacity var(--dur-fade-out) var(--ease-out) !important;
   transform: none !important;
 }
 :root[data-motion="reduce"] .image-viewer__slide,
 :root[data-motion="reduce"] .image-viewer__img {
-  transition: opacity 150ms ease !important;
+  transition: opacity var(--dur-fade-out) var(--ease-out) !important;
 }
 :root[data-motion="reduce"] .image-viewer__slide {
   transform: none !important;
 }
 :root[data-motion="reduce"] .image-viewer__cap {
-  transition: opacity 150ms ease !important;
+  transition: opacity var(--dur-fade-out) var(--ease-out) !important;
   transform: none;
 }
 :root[data-motion="reduce"] .image-viewer__frame,

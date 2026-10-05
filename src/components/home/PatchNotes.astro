@@ -58,8 +58,10 @@ const { lang, variant, notes } = Astro.props;
     opacity: 0; transform: translateX(-4px);
     transition: opacity var(--dur-hover) linear, transform var(--dur-press) var(--ease-out);
   }
-  .pn__item:hover .pn__ptr,
   .pn__item:focus-within .pn__ptr { opacity: 1; transform: none; }
+  @media (hover: hover) {
+    .pn__item:hover .pn__ptr { opacity: 1; transform: none; }
+  }
   :global(:root[data-motion="reduce"]) .pn__ptr { transform: none; }
   .pn__ver { grid-area: ver; font: 700 var(--fs-label)/1.5 var(--font-mono); letter-spacing: .06em; color: var(--hud-strong); }
   .pn__date { grid-area: date; font: 500 var(--fs-label)/1.5 var(--font-mono); color: var(--hud-muted); font-variant-numeric: tabular-nums; }
@@ -71,7 +73,10 @@ const { lang, variant, notes } = Astro.props;
   .pn__body { grid-area: body; min-width: 0; }
   .pn__title { font-size: var(--fs-body); font-weight: 700; line-height: 1.45; color: var(--hud-strong); }
   .pn__link { color: var(--accent); text-decoration: none; text-underline-offset: .2em; transition: color var(--dur-hover) linear; }
-  .pn__link:hover { color: var(--accent-hover); text-decoration: underline; }
+  @media (hover: hover) {
+    .pn__link:hover { color: var(--accent-hover); text-decoration: underline; }
+  }
+  .pn__link:active { color: var(--accent-hover); text-decoration: underline; }
   .pn__text { margin-top: 2px; max-width: var(--measure); font-size: var(--fs-small); line-height: 1.6; color: var(--hud-muted); }
   @media (min-width: 734px) {
     /* F-017: max-content tag column so EN "Research" stays one line; nowrap on the tag itself. */

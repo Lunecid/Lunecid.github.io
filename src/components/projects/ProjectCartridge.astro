@@ -114,7 +114,7 @@ const sizes = wide ? CARTRIDGE_SIZES.wide : CARTRIDGE_SIZES.normal;
   .cart { position: relative; isolation: isolate; }
   .cart[hidden] { display: none; }
   /* F-008: padding and lift live on the body so the article hit box (and ::after) never moves. */
-  .cart__body { position: relative; padding: 22px 14px 34px; transition: transform .25s var(--ease-out); }
+  .cart__body { position: relative; padding: 22px 14px 34px; transition: transform var(--dur-lift) var(--ease-out); }
   .cart__shell {
     position: absolute; inset: 0; z-index: -1;
     background: var(--cart-shell); border-radius: 10px 10px 6px 6px; box-shadow: inset 0 -26px 0 var(--cart-shell-shade);
@@ -208,14 +208,20 @@ const sizes = wide ? CARTRIDGE_SIZES.wide : CARTRIDGE_SIZES.normal;
     .cart:not(.cart--static):hover .cart__body,
     .cart:not(.cart--static):focus-within .cart__body { transform: translateY(-16px); }
   }
-  /* reduced motion: no lift; shell wash still signals hover */
-  :global(:root[data-motion="reduce"]) .cart:hover .cart__body,
+  /* reduced motion: no lift; shell wash still signals hover (and press) */
   :global(:root[data-motion="reduce"]) .cart:focus-within .cart__body { transform: none; }
-  :global(:root[data-motion="reduce"]) .cart:not(.cart--static):hover .cart__shell { background: var(--cart-shell-hover); }
+  @media (hover: hover) {
+    :global(:root[data-motion="reduce"]) .cart:hover .cart__body { transform: none; }
+    :global(:root[data-motion="reduce"]) .cart:not(.cart--static):hover .cart__shell { background: var(--cart-shell-hover); }
+  }
+  :global(:root[data-motion="reduce"]) .cart:not(.cart--static):active .cart__shell { background: var(--cart-shell-hover); }
   /* F-069: no-JS twin — OS reduce without data-motion (the wash stays in this component, not base.css). */
   @media (prefers-reduced-motion: reduce) {
-    :global(html:not(.js)) .cart:hover .cart__body,
     :global(html:not(.js)) .cart:focus-within .cart__body { transform: none; }
+    :global(html:not(.js)) .cart:not(.cart--static):active .cart__shell { background: var(--cart-shell-hover); }
+  }
+  @media (prefers-reduced-motion: reduce) and (hover: hover) {
+    :global(html:not(.js)) .cart:hover .cart__body { transform: none; }
     :global(html:not(.js)) .cart:not(.cart--static):hover .cart__shell { background: var(--cart-shell-hover); }
   }
   /* G-014 / N14: cartridge edge survives forced colours (shell fill is otherwise flattened). */

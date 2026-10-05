@@ -127,5 +127,47 @@ test.describe('N14: forced colours', () => {
     await expect(tags.nth(1)).toHaveAttribute('aria-pressed', 'true');
     expect(await tags.nth(1).evaluate((el) => getComputedStyle(el).backgroundColor), 'pressed tag differs').not.toBe(idleBg);
   });
+
+  test('T1: the general cue line is drawn in CanvasText under forced colors', async ({ page }) => {
+    // The line is a border (not a background), so forced colours repaint it in CanvasText instead of erasing it.
+    await page.emulateMedia({ forcedColors: 'active', colorScheme: 'light' });
+    await page.goto('/data/projects/school-zone-blindspots/', { waitUntil: 'load' });
+    await page.locator('main a[href="#figure-2"]').first().click();
+    await expect(page).toHaveURL(/#figure-2$/);
+    const line = await page.locator('#figure-2').evaluate((el) => {
+      const probe = document.createElement('span');
+      probe.style.color = 'CanvasText';
+      el.append(probe);
+      const canvasText = getComputedStyle(probe).color;
+      probe.remove();
+      const cs = getComputedStyle(el, '::before');
+      return { display: cs.display, width: cs.borderTopWidth, color: cs.borderTopColor, canvasText };
+    });
+    expect(line.display).not.toBe('none');
+    expect(line.width).toBe('2px');
+    expect(line.color).toBe(line.canvasText);
+  });
+  test('MO-21: the targeted figure marker is drawn in CanvasText', async ({ page }) => {
+    // Reduced motion draws a square marker before the targeted figure number; forced colours would erase a plain
+    // background, so the marker opts out and paints CanvasText.
+    await page.emulateMedia({ forcedColors: 'active', colorScheme: 'light', reducedMotion: 'reduce' });
+    for (const [path, num] of [['/game/projects/school-zone-blindspots/', '.figure__num'], ['/data/projects/school-zone-blindspots/', '.ed-figcap__num']] as const) {
+      await page.goto(path, { waitUntil: 'load' });
+      await page.locator('main a[href="#figure-2"]').first().click();
+      await expect(page).toHaveURL(/#figure-2$/);
+      const marker = await page.locator(`#figure-2 ${num}`).evaluate((el) => {
+        const probe = document.createElement('span');
+        probe.style.color = 'CanvasText';
+        el.append(probe);
+        const canvasText = getComputedStyle(probe).color;
+        probe.remove();
+        const cs = getComputedStyle(el, '::before');
+        return { content: cs.content, width: parseFloat(cs.width) || 0, bg: cs.backgroundColor, canvasText };
+      });
+      expect(marker.content, path).toBe('""');
+      expect(marker.width, path).toBeGreaterThan(0);
+      expect(marker.bg, path).toBe(marker.canvasText);
+    }
+  });
 });
 

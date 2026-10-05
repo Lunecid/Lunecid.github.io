@@ -14,9 +14,9 @@ import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { dirname, join, relative, sep } from 'node:path';
 import { JSDOM } from 'jsdom';
-import { isHangul } from '../../scripts/fonts/glyphs.mjs';
+import { PRINTABLE_ASCII, isHangul } from '../../scripts/fonts/glyphs.mjs';
 import { cmapCodePoints, parseName, woff2Tables } from '../../scripts/fonts/sfnt.mjs';
-import { DISPLAY_FAMILY, SANS_FAMILY, SERIF_KO_FAMILY, SERIF_KO_HEAD_FAMILY } from '../../src/lib/fonts.ts';
+import { COVER_DISPLAY_FAMILY, COVER_MONO_FAMILY, DISPLAY_FAMILY, SANS_FAMILY, SERIF_KO_FAMILY, SERIF_KO_HEAD_FAMILY } from '../../src/lib/fonts.ts';
 
 const DIST = process.env.DIST_DIR ?? 'dist';
 
@@ -246,14 +246,13 @@ test('the Korean paper page loads the Korean serif and no other page does', () =
   assert.deepEqual(withSerif.sort(), ['/data/research/cog-2026-engagement/', '/game/research/cog-2026-engagement/']);
 });
 
-test('the chooser declares the Korean heading face; data pages no longer do (DS-1); no page preloads it', () => {
+test('no page declares the Korean heading face (data pages dropped it in DS-1, the chooser in MO-23), and no page preloads it (P2-3)', () => {
   /** @type {string[]} */
   const wrong = [];
   for (const p of builtPages()) {
     const html = readFileSync(p.file, 'utf8');
     const declares = fontFaces(new JSDOM(html).window.document).some((f) => f.family === SERIF_KO_HEAD_FAMILY);
-    const chooser = p.route === '/' || p.route === '/en/';
-    if (declares !== chooser) wrong.push(`${p.route}: declares=${declares}`);
+    if (declares) wrong.push(`${p.route}: declares=${declares}`);
     if (/<link rel="preload"[^>]*sb-serif-kr-head/.test(html)) wrong.push(`${p.route}: preloads the heading face`);
   }
   assert.deepEqual(wrong, []);
@@ -414,4 +413,42 @@ test('the sans subsets do not present "Pretendard" as their name and keep the co
     assert.match(records.find((r) => r.nameID === 13)?.value ?? '', /SIL Open Font License/, `${file}: license`);
     assert.match(records.find((r) => r.nameID === 14)?.value ?? '', /OFL/i, `${file}: license URL`);
   }
+});
+
+/** Code points of a cover face's source file (JetBrains Mono latin, Anton latin). @param {string} family */
+function coverSource(family) {
+  const req = createRequire(import.meta.url);
+  const file = family === COVER_MONO_FAMILY ? req.resolve('@fontsource-variable/jetbrains-mono/files/jetbrains-mono-latin-wght-normal.woff2') : req.resolve('@fontsource/anton/files/anton-latin-400-normal.woff2');
+  const cmap = woff2Tables(readFileSync(file)).get('cmap');
+  assert.ok(cmap);
+  return cmapCodePoints(cmap);
+}
+
+test('MO-23: only the chooser declares the cover faces; each subset draws printable ASCII and every non-Hangul character the chooser shows; neither is preloaded', () => {
+  /** @type {string[]} */
+  const wrong = [];
+  let chooserPages = 0;
+  for (const p of builtPages()) {
+    const html = readFileSync(p.file, 'utf8');
+    const doc = new JSDOM(html).window.document;
+    const faces = fontFaces(doc).filter((f) => f.family === COVER_MONO_FAMILY || f.family === COVER_DISPLAY_FAMILY);
+    const chooser = p.route === '/' || p.route === '/en/';
+    if (!chooser) {
+      if (faces.length > 0) wrong.push(`${p.route}: declares a cover face`);
+      continue;
+    }
+    chooserPages += 1;
+    if (faces.length !== 2) wrong.push(`${p.route}: ${faces.length} cover faces`);
+    if (/<link rel="preload"[^>]*sb-cover/.test(html)) wrong.push(`${p.route}: preloads a cover face`);
+    const shown = [...new Set((doc.body.textContent ?? '') + PRINTABLE_ASCII)].filter((ch) => !ignorable(ch) && !isHangul(/** @type {number} */ (ch.codePointAt(0))) && ch !== '\n' && ch !== '\t');
+    for (const f of faces) {
+      const cmap = fontCmap(f.url);
+      const source = coverSource(f.family);
+      // a character the source font lacks (→, ↗) is drawn by the next font of the stack, as everywhere else
+      const lacking = shown.filter((ch) => ch !== ' ' && source.has(/** @type {number} */ (ch.codePointAt(0))) && !cmap.has(/** @type {number} */ (ch.codePointAt(0))));
+      if (lacking.length > 0) wrong.push(`${p.route}: "${f.family}" lacks ${lacking.join('')}`);
+    }
+  }
+  assert.equal(chooserPages, 2);
+  assert.deepEqual(wrong, []);
 });

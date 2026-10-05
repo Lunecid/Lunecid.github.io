@@ -77,10 +77,16 @@ const gloss = lang === 'ko' ? paper.titleGloss : null;
   .pub__body { min-width: 0; }
   .pub__title { font-size: var(--fs-sub); font-weight: 700; line-height: 1.4; }
   .pub__title a { color: var(--read-text); text-decoration: none; transition: color var(--dur-hover) linear; }
-  .pub__title a:hover { color: var(--accent-deep); text-decoration: underline; }
+  @media (hover: hover) {
+    .pub__title a:hover { color: var(--accent-deep); text-decoration: underline; }
+  }
+  .pub__title a:active { color: var(--accent-deep); text-decoration: underline; }
   /* General version: the hover stays in the one editorial accent (no accent-deep on general pages; this scoped rule
      would otherwise outrank editorial.css by source order). */
-  .pub--ed .pub__title a:hover { color: var(--ed-accent); }
+  @media (hover: hover) {
+    .pub--ed .pub__title a:hover { color: var(--ed-accent); }
+  }
+  .pub--ed .pub__title a:active { color: var(--ed-accent); }
   .pub__gloss { margin-top: 4px; font-size: var(--fs-meta); line-height: 1.5; color: var(--read-muted); }
   .pub__gloss-mark { white-space: nowrap; }
   .pub__authors { margin-top: 6px; font-size: var(--fs-meta); line-height: 1.5; color: var(--read-muted); }

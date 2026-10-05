@@ -50,6 +50,47 @@
 :root[data-variant="data"] .ed-figcap { margin-top: 8px; font-size: var(--fs-small); line-height: 1.6; color: var(--ed-muted); }
 :root[data-variant="data"] .ed-figcap__num { margin-right: .35em; font-weight: 700; color: var(--ed-ink); }
 :root[data-variant="data"] .ed-figcap__num:lang(en) { font-family: var(--font-ed-serif); font-style: italic; }
+/* Arrival cue: a figure or records section reached through an in-page link draws an ink line over its heavy top rule,
+   holds it and fades it once (draw --dur-panel-in, hold --dur-streak, fade --dur-fade); a cue is never a link colour.
+   The line is a border, so forced colours repaint it in CanvasText. Reduced motion: no line; the top rule is ink and an
+   ink square marks a figure's number while targeted (CanvasText under forced colours). Print: no cue. */
+@keyframes cue-rule { 0% { transform: scaleX(0); opacity: 1; } 23% { transform: scaleX(1); } 85% { opacity: 1; } 100% { opacity: 0; } }
+:root[data-variant="data"] .ed-figure:target,
+:root[data-variant="data"] .rec.ed-sec:target > .container > .ed-head,
+:root[data-variant="data"] .jobfit.ed-sec:target > .container > .ed-head { position: relative; }
+:root[data-variant="data"] .ed-figure:target::before,
+:root[data-variant="data"] .rec.ed-sec:target > .container > .ed-head::before,
+:root[data-variant="data"] .jobfit.ed-sec:target > .container > .ed-head::before {
+  content: ""; position: absolute; left: 0; right: 0; top: calc(-1 * var(--ed-rule-w-strong)); height: 0;
+  border-top: var(--ed-rule-w-strong) solid var(--ed-ink); transform-origin: 0; opacity: 0; pointer-events: none;
+  animation: cue-rule calc(var(--dur-panel-in) + var(--dur-streak) + var(--dur-fade)) var(--ease-out);
+}
+:root[data-variant="data"][data-motion="reduce"] .ed-figure:target::before,
+:root[data-variant="data"][data-motion="reduce"] .rec.ed-sec:target > .container > .ed-head::before,
+:root[data-variant="data"][data-motion="reduce"] .jobfit.ed-sec:target > .container > .ed-head::before { animation: none; }
+:root[data-variant="data"][data-motion="reduce"] .ed-figure:target,
+:root[data-variant="data"][data-motion="reduce"] .rec.ed-sec:target > .container > .ed-head,
+:root[data-variant="data"][data-motion="reduce"] .jobfit.ed-sec:target > .container > .ed-head { border-top-color: var(--ed-ink); }
+:root[data-variant="data"][data-motion="reduce"] .ed-figure:target .ed-figcap__num::before { content: ""; display: inline-block; width: .5em; height: .5em; margin-inline-end: .35em; background: currentColor; }
+@media (prefers-reduced-motion: reduce) {
+  :root[data-variant="data"] .ed-figure:target::before,
+  :root[data-variant="data"] .rec.ed-sec:target > .container > .ed-head::before,
+  :root[data-variant="data"] .jobfit.ed-sec:target > .container > .ed-head::before { animation: none; }
+  :root[data-variant="data"] .ed-figure:target,
+  :root[data-variant="data"] .rec.ed-sec:target > .container > .ed-head,
+  :root[data-variant="data"] .jobfit.ed-sec:target > .container > .ed-head { border-top-color: var(--ed-ink); }
+  :root[data-variant="data"] .ed-figure:target .ed-figcap__num::before { content: ""; display: inline-block; width: .5em; height: .5em; margin-inline-end: .35em; background: currentColor; }
+}
+@media (forced-colors: active) {
+  :root[data-variant="data"] .ed-figure:target .ed-figcap__num::before,
+  :root[data-variant="data"][data-motion="reduce"] .ed-figure:target .ed-figcap__num::before { forced-color-adjust: none; background: CanvasText; }
+}
+@media print {
+  :root[data-variant="data"] .ed-figure:target::before,
+  :root[data-variant="data"] .rec.ed-sec:target > .container > .ed-head::before,
+  :root[data-variant="data"] .jobfit.ed-sec:target > .container > .ed-head::before { animation: none !important; }
+  :root[data-variant="data"] .ed-figure:target .ed-figcap__num::before { display: none !important; }
+}
 
 /* ── tables: thin rules, a bold head rule, numbers right-aligned ── */
 :root[data-variant="data"] .ed-table { width: 100%; border-collapse: collapse; }

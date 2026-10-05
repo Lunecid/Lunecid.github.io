@@ -600,6 +600,8 @@ test.describe('image viewer', () => {
     await settle(page);
     await page.locator('[data-tag-filter] button').nth(1).click();
     await expect(page.locator('[data-tag-filter] button').nth(1)).toHaveAttribute('aria-pressed', 'true');
+    // the cards swap inside the filter's view transition (R1), a frame after the click
+    await page.waitForFunction(() => document.querySelectorAll('#project-grid [data-tags][hidden]').length > 0);
     await page.evaluate(() => {
       history.pushState({ tag: 'x' }, '', `${location.pathname}${location.search}#tag-test`);
       history.back();

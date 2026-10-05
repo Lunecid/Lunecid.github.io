@@ -23,6 +23,7 @@ import { fileURLToPath } from 'node:url';
 import subsetFont from 'subset-font';
 import { FONT_URL, HANGUL_UNICODE_RANGE, SANS_FAMILY, fontFaceRule } from '../../src/lib/fonts.ts';
 import {
+  PRINTABLE_ASCII,
   charSet,
   clientScripts,
   htmlText,
@@ -49,7 +50,24 @@ export const SOURCES = {
   mono: require.resolve('@fontsource-variable/jetbrains-mono/files/jetbrains-mono-latin-wght-normal.woff2'),
   serifKoDir: dirname(require.resolve('@fontsource-variable/noto-serif-kr/files/noto-serif-kr-0-wght-normal.woff2')),
   display: require.resolve('@fontsource-variable/archivo/files/archivo-latin-wdth-normal.woff2'),
+  coverDisplay: require.resolve('@fontsource/anton/files/anton-latin-400-normal.woff2'),
 };
+
+/**
+ * The chooser covers' faces (MO-23): every printable ASCII character (the owner may still change the Latin labels, and
+ * the foot line is uppercased by CSS) plus every non-Hangul character the pages that declare the face show. The mono
+ * face is pinned to wght 600, the only weight the covers set it in.
+ * @param {'coverMono' | 'coverDisplay'} face @param {string[]} htmls
+ */
+export async function subsetCover(face, htmls) {
+  const chars = new Set([...PRINTABLE_ASCII, ...charSet(htmls.map((h) => shownText(h)))].filter((ch) => {
+    const cp = /** @type {number} */ (ch.codePointAt(0));
+    return !isHangul(cp) && !isIgnorable(ch) && cp >= 0x20;
+  }));
+  const source = readFileSync(face === 'coverMono' ? SOURCES.mono : SOURCES.coverDisplay);
+  const data = await subsetFont(source, setText(chars), { targetFormat: 'woff2', ...(face === 'coverMono' ? { variationAxes: { wght: 600 } } : {}) });
+  return { data, chars: chars.size };
+}
 
 /** OpenType features the pages can trigger (kerning, ligatures, marks, tabular figures, Hangul jamo). */
 const SANS_FEATURES = ['kern', 'liga', 'calt', 'ccmp', 'locl', 'mark', 'mkmk', 'tnum', 'case', 'ljmo', 'vjmo', 'tjmo'];
@@ -311,6 +329,14 @@ export async function buildFonts(distDir, { warn = (message) => console.warn(mes
     replace.set(FONT_URL.mono, write('mono', 'jetbrains-mono', mono, 0));
   }
 
+  // ── the chooser covers' mono and display faces (MO-23): chooser pages only, never preloaded ──
+  for (const face of /** @type {const} */ (['coverMono', 'coverDisplay'])) {
+    const coverPages = pages.filter((p) => p.html.includes(FONT_URL[face]));
+    if (coverPages.length === 0) continue;
+    const { data, chars } = await step(`subsetting the chooser cover face ${face}`, () => subsetCover(face, coverPages.map((p) => p.html)));
+    replace.set(FONT_URL[face], write(face, face === 'coverMono' ? 'sb-cover-mono' : 'sb-cover-display', data, chars));
+  }
+
   // ── Korean serif ──
   const serifPages = pages.filter((p) => p.html.includes(FONT_URL.serifKo));
   if (serifPages.length > 0) {
@@ -394,7 +420,8 @@ function sourceHangul() {
  */
 export async function devFont(url) {
   if (url === FONT_URL.sans) return readFileSync(SOURCES.sans);
-  if (url === FONT_URL.mono) return readFileSync(SOURCES.mono);
+  if (url === FONT_URL.mono || url === FONT_URL.coverMono) return readFileSync(SOURCES.mono);
+  if (url === FONT_URL.coverDisplay) return readFileSync(SOURCES.coverDisplay);
   if (url === FONT_URL.serifKo) return (devSerif ??= subsetSerifKo(sourceHangul()).then((r) => r.data));
   if (url === FONT_URL.serifKoHead) return (devSerifHead ??= subsetSerifKo(sourceHangul(), { wght: 700 }).then((r) => r.data));
   if (url === FONT_URL.display) return subsetDisplay();

@@ -10,8 +10,10 @@ describe('src/styles/editorial.css (P2-1, spec §8)', () => {
 
   it('scopes every selector to the general version (defence in depth: a data rule must never style a game page)', () => {
     expect(rules.length).toBeGreaterThan(0);
-    // DS-3: the scope may be compounded on the root itself (html.js, the page's motion setting) — still the general version only
+    // DS-3: the scope may be compounded on the root itself (html.js, the page's motion setting) — still the general version only;
+    // @keyframes preludes are names, not selectors
     const unscoped = rules
+      .filter((r) => !r.selector.startsWith('@keyframes '))
       .flatMap((r) => splitSelectors(r.selector))
       .filter((s) => s !== SCOPE && !s.startsWith(`${SCOPE} `) && !/^:root\[data-variant="data"\](\.js|\[data-motion="reduce"\]) /.test(s));
     expect(unscoped).toEqual([]);

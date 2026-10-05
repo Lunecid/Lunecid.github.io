@@ -142,7 +142,10 @@ const jumps = recordJumps(lang);
   /* F-071 (P-08): the 8px list gap is taken; the 10px padding stays (8px would make '학력' narrower than 44px, and its
      min-width would then widen only its own gap). */
   .rnav__list li:first-child .rnav__link { margin-left: -10px; }
-  .rnav__link:hover { color: var(--accent-deep); text-decoration: underline; text-underline-offset: .2em; }
+  @media (hover: hover) {
+    .rnav__link:hover { color: var(--accent-deep); text-decoration: underline; text-underline-offset: .2em; }
+  }
+  .rnav__link:active { color: var(--accent-deep); text-decoration: underline; text-underline-offset: .2em; }
   @media (min-width: 734px) {
     .rhead { padding-top: 44px; }
     /* Final fix 2 item 6: two content-sized rows, and the photo really spans both (the <picture> rule above). */

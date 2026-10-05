@@ -217,9 +217,9 @@ const currentValue = exact ? 'page' : 'true';
       overscroll-behavior: contain;
     }
     .data-nav[data-open="true"] .data-nav__panel { display: block; }
-    /* F-025 (P-05): a 150ms entrance on open; closing is instant (no visibility transition, style guard). */
-    :global(html.js) .data-nav[data-open="true"] .data-nav__panel { animation: nav-panel-in 150ms var(--ease-out); }
-    :global(html.js) .data-nav[data-open="true"] .data-nav__scrim { animation: nav-scrim-in 150ms linear; }
+    /* F-025 (P-05): a --dur-menu (150ms) entrance on open; closing is instant (no visibility transition, style guard). */
+    :global(html.js) .data-nav[data-open="true"] .data-nav__panel { animation: nav-panel-in var(--dur-menu) var(--ease-out); }
+    :global(html.js) .data-nav[data-open="true"] .data-nav__scrim { animation: nav-scrim-in var(--dur-menu) linear; }
     :global(html.js) .data-nav[data-open="true"] .data-nav__scrim {
       display: block;
       position: fixed;

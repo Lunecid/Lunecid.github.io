@@ -13,6 +13,45 @@
    corner marks like [ NOW PLAYING ] (.bracket.bracket--sm turns accent-deep on light bands), a mono index column,
    and hairlines between rows instead of boxes around them. */
 .read-sec { padding-block: var(--section-pad-y); border-top: 1px solid var(--read-line); }
+/* Arrival cue: a records section reached through an in-page link (#job-fit, the records menu) frames its head with two
+   corner marks that lock on, hold and let go (draw --dur-panel-in, hold --dur-streak, fade --dur-fade); the marks
+   exist only during the cue. Marks and hairline are ink, never a link colour. Reduced motion: no marks; the section's
+   top hairline turns ink while targeted. Print: no cue. */
+@keyframes cue-head-tl { 0% { transform: translate(-6px, -6px); opacity: .4; } 23% { transform: none; opacity: 1; } 85% { opacity: 1; } 100% { opacity: 0; } }
+@keyframes cue-head-br { 0% { transform: translate(6px, 6px); opacity: .4; } 23% { transform: none; opacity: 1; } 85% { opacity: 1; } 100% { opacity: 0; } }
+.rec.read-sec:target > .container > .sec-head,
+.jobfit.read-sec:target > .container > .sec-head { position: relative; }
+.rec.read-sec:target > .container > .sec-head::before,
+.jobfit.read-sec:target > .container > .sec-head::before,
+.rec.read-sec:target > .container > .sec-head::after,
+.jobfit.read-sec:target > .container > .sec-head::after {
+  content: ""; position: absolute; width: var(--bracket-sm); height: var(--bracket-sm);
+  border: 2px solid var(--read-text); opacity: 0; pointer-events: none;
+}
+.rec.read-sec:target > .container > .sec-head::before,
+.jobfit.read-sec:target > .container > .sec-head::before { left: -8px; top: -8px; border-right: 0; border-bottom: 0; animation: cue-head-tl calc(var(--dur-panel-in) + var(--dur-streak) + var(--dur-fade)) var(--ease-out); }
+.rec.read-sec:target > .container > .sec-head::after,
+.jobfit.read-sec:target > .container > .sec-head::after { right: -8px; bottom: -8px; border-left: 0; border-top: 0; animation: cue-head-br calc(var(--dur-panel-in) + var(--dur-streak) + var(--dur-fade)) var(--ease-out); }
+:root[data-motion="reduce"] .rec.read-sec:target > .container > .sec-head::before,
+:root[data-motion="reduce"] .jobfit.read-sec:target > .container > .sec-head::before,
+:root[data-motion="reduce"] .rec.read-sec:target > .container > .sec-head::after,
+:root[data-motion="reduce"] .jobfit.read-sec:target > .container > .sec-head::after { animation: none; }
+:root[data-motion="reduce"] .rec.read-sec:target,
+:root[data-motion="reduce"] .jobfit.read-sec:target { border-top-color: var(--read-text); }
+@media (prefers-reduced-motion: reduce) {
+  .rec.read-sec:target > .container > .sec-head::before,
+  .jobfit.read-sec:target > .container > .sec-head::before,
+  .rec.read-sec:target > .container > .sec-head::after,
+  .jobfit.read-sec:target > .container > .sec-head::after { animation: none; }
+  .rec.read-sec:target,
+  .jobfit.read-sec:target { border-top-color: var(--read-text); }
+}
+@media print {
+  .rec.read-sec:target > .container > .sec-head::before,
+  .jobfit.read-sec:target > .container > .sec-head::before,
+  .rec.read-sec:target > .container > .sec-head::after,
+  .jobfit.read-sec:target > .container > .sec-head::after { animation: none !important; }
+}
 
 /* Rows: a hairline list with a mono index column. <ol class="lh-rows"><li class="lh-row"><span class="lh-idx">01</span> */
 .lh-rows { border-top: 1px solid var(--read-line-strong); }

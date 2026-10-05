@@ -105,6 +105,20 @@ html.js .site-ach__nojs { display: none; }
 .ed-label { font-size: var(--fs-caption); line-height: var(--lh-caption); color: var(--page-muted); }
 .ed-label:lang(en) { font-family: var(--font-ed-serif); font-style: italic; }
 
+/* Page transitions: every same-origin navigation fades through (old page out .09 s, then the new one in .16 s); the
+   site's nav is named only during a transition (a permanent name would make it a backdrop root and drop its blur).
+   Reduced motion keeps this fade: it is opacity only. Print pages, redirect stubs and utility pages never load this
+   sheet, so they never opt in. */
+@view-transition { navigation: auto; types: page; }
+:root:active-view-transition-type(page)[data-variant="game"] .hud-nav { view-transition-name: nav-game; view-transition-class: site-nav; }
+:root:active-view-transition-type(page)[data-variant="data"] .data-nav { view-transition-name: nav-data; view-transition-class: site-nav; }
+:root:active-view-transition-type(page)[data-variant="neutral"] .nt-header { view-transition-name: nav-neutral; view-transition-class: site-nav; }
+@keyframes vt-out { to { opacity: 0; } }
+@keyframes vt-in { from { opacity: 0; } }
+::view-transition-old(root), ::view-transition-old(*.site-nav):only-child { animation: vt-out var(--dur-nav-out) var(--ease-in) both; }
+::view-transition-new(root), ::view-transition-new(*.site-nav):only-child { animation: vt-in var(--dur-nav-in) var(--ease-out) var(--dur-nav-out) both; }
+::view-transition-group(*.site-nav) { animation-duration: var(--dur-hover); }
+
 /* ── Print (P-12: G-023..G-026, G-028). Screen rendering is untouched: every rule sits inside @media print, and the
    footers' canonical URL line is display:none on screen. The palette switch (G-023) is in tokens.css. The game rules
    are keyed on :root[data-variant="game"]; the general pages keep their own print behaviour apart from the shared

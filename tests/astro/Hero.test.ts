@@ -282,4 +282,15 @@ describe('Hero.astro', () => {
     expect(en).not.toMatch(/web services/);
     expect(en).toMatch(/web service\b/);
   });
+  it('H1: data-hero-seen stops the rise and the reduced fade, except a replay', () => {
+    const source = readSource('src/components/hud/Hero.astro');
+    const rule = source.match(/:global\(:root\[data-hero-seen\]\)\s*\.hero__copy:not\(\.is-replayed\)\s*>\s*\*\s*\{([^}]*)\}/);
+    expect(rule, 'the data-hero-seen rule').not.toBeNull();
+    expect(rule?.[1].trim()).toBe('animation: none;');
+    // It outranks the reduced fade by specificity (one :not() more), so hero-fade is stopped too; the fade rule must
+    // stay plain (no !important) for that to hold.
+    const reduced = source.match(/:global\(:root\[data-motion="reduce"\]\)\s*\.hero__copy\s*>\s*\*\s*\{([^}]*)\}/);
+    expect(reduced?.[1]).toMatch(/animation:\s*hero-fade\b/);
+    expect(reduced?.[1]).not.toMatch(/!important/);
+  });
 });

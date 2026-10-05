@@ -19,7 +19,13 @@ export const SERIF_KO_HEAD_FAMILY = 'SB Serif KR Head';
  *  its LICENSE and name ID 0 declare none), width axis pinned at 112 %, weight 700–900. Data pages only. */
 export const DISPLAY_FAMILY = 'SB Display';
 
-export type FontFace = 'sans' | 'mono' | 'serifKo' | 'serifKoHead' | 'display';
+/** The chooser covers (MO-23): JetBrains Mono pinned to wght 600 and Anton, each subset to the characters the chooser
+ * pages show (plus printable ASCII), declared only by ChooserView (swap, not preloaded). OFL 1.1, no Reserved Font
+ * Name; renamed families so they never stand in for the site-wide faces. */
+export const COVER_MONO_FAMILY = 'SB Cover Mono';
+export const COVER_DISPLAY_FAMILY = 'SB Cover Display';
+
+export type FontFace = 'sans' | 'mono' | 'serifKo' | 'serifKoHead' | 'display' | 'coverMono' | 'coverDisplay';
 
 /** Placeholder URL per face (replaced by the hashed file in dist). */
 export const FONT_URL: Record<FontFace, string> = {
@@ -28,6 +34,8 @@ export const FONT_URL: Record<FontFace, string> = {
   serifKo: '/_fonts/sb-serif-kr.woff2',
   serifKoHead: '/_fonts/sb-serif-kr-head.woff2',
   display: '/_fonts/sb-display.woff2',
+  coverMono: '/_fonts/sb-cover-mono.woff2',
+  coverDisplay: '/_fonts/sb-cover-display.woff2',
 };
 
 /** The Hangul blocks (Jamo, Compatibility Jamo, Jamo Extended-A, Syllables, Jamo Extended-B). */
@@ -39,6 +47,8 @@ const DESCRIPTORS: Record<FontFace, string> = {
   serifKo: `font-family:"${SERIF_KO_FAMILY}";font-style:normal;font-weight:200 900;font-display:swap`,
   serifKoHead: `font-family:"${SERIF_KO_HEAD_FAMILY}";font-style:normal;font-weight:700;font-display:swap`,
   display: `font-family:"${DISPLAY_FAMILY}";font-style:normal;font-weight:700 900;font-stretch:112%;font-display:swap`,
+  coverMono: `font-family:"${COVER_MONO_FAMILY}";font-style:normal;font-weight:600;font-display:swap`,
+  coverDisplay: `font-family:"${COVER_DISPLAY_FAMILY}";font-style:normal;font-weight:400;font-display:swap`,
 };
 
 /** The Korean serifs draw Hangul only, so Latin text keeps its Times face. */

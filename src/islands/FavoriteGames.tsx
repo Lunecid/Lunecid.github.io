@@ -47,9 +47,11 @@ const EASE_IN: Bezier = [0.4, 0, 1, 1];
 const EASE_WIPE: Bezier = [0.65, 0, 0.35, 1];
 const TINTS: readonly CharacterId[] = ['remielle', 'eula', 'mona'];
 
-/** Seconds from the new scene's mount (spec §4: the account card finishes within 2 s). */
+/** Seconds from the new scene's mount (spec §4: the account card finishes within 2 s). The copy settles within
+ *  0.75 s of a tab click (exit + gap + 3 staggers + enter) so games can be compared quickly; the art enters a little
+ *  slower (art) than the copy. */
 export const TL = {
-  exit: 0.25, gap: 0.07, enter: 0.6, streak: 0.8, streakStagger: 0.06, copyStagger: 0.06,
+  exit: 0.15, gap: 0.05, enter: 0.35, art: 0.45, streak: 0.8, streakStagger: 0.06, copyStagger: 0.04,
   panelAt: 0.27, panel: 0.45, linesAt: 0.72, lineStagger: 0.08, line: 0.3, count: 0.8,
   barAt: 1.28, bar: 0.5, badgesAt: 1.57, badgeStagger: 0.08, badge: 0.25,
 } as const;
@@ -60,7 +62,7 @@ export const MAX_BADGES = 3;
 const sceneV: Variants = { hidden: {}, show: {}, exit: { opacity: 0, transition: { duration: TL.exit, ease: EASE_IN } } };
 const chrV: Variants = {
   hidden: { x: '40%', opacity: 0 },
-  show: { x: 0, opacity: 1, transition: { duration: TL.enter, ease: EASE_OUT, delay: TL.gap } },
+  show: { x: 0, opacity: 1, transition: { duration: TL.art, ease: EASE_OUT, delay: TL.gap } },
   exit: { x: '18%', opacity: 0, transition: { duration: TL.exit, ease: EASE_IN } },
 };
 /* reduced motion: the art waits for its decode like in full motion, then fades in with the scene's short fade */

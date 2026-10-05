@@ -59,7 +59,7 @@ astro-island[data-loading] .char-stage__streak { animation-play-state: paused; }
 
 /* reduced motion (OS or footer toggle): fades only, no streaks */
 :root[data-motion="reduce"] .char-stage:not([data-phase="idle"]) .char-stage__img { animation: char-fade-in var(--dur-fade) ease-out both; }
-:root[data-motion="reduce"] .char-stage[data-phase="exiting"] .char-stage__img { animation: char-fade-out .15s ease-in both; }
+:root[data-motion="reduce"] .char-stage[data-phase="exiting"] .char-stage__img { animation: char-fade-out var(--dur-fade-out) var(--ease-in) both; }
 :root.js[data-motion="reduce"] .char-stage[data-phase="idle"] .char-stage__img { transform: none; }
 :root[data-motion="reduce"] .char-stage__streaks { display: none; }
 :root[data-motion="reduce"] .char-stage__streak { animation: none; }

@@ -5,7 +5,7 @@
   --gap: calc((100vw - 100cqw) / 2);
 }
 .fg__tints { position: absolute; inset: 0; pointer-events: none; }
-.fg__tint { position: absolute; inset: 0; opacity: 0; transition: opacity .6s var(--ease-out); }
+.fg__tint { position: absolute; inset: 0; opacity: 0; transition: opacity var(--dur-enter) var(--ease-out); }
 .fg__tint[data-on="true"] { opacity: 1; }
 .fg__tint--remielle { background: radial-gradient(60% 70% at 72% 45%, var(--tint-remielle), transparent 70%); }
 .fg__tint--eula { background: radial-gradient(60% 70% at 72% 45%, var(--tint-eula), transparent 70%); }
@@ -212,7 +212,7 @@ html:not(.js) .fg .fg__scene { display: none; } /* A-03 F-051: the server-render
 @media (min-width: 1068px) {
   html:not(.js) .fg--art .fg__layout { padding: 24px 32px 20px; }
 }
-:root[data-motion="reduce"] .fg__tint { transition-duration: .2s; }
+:root[data-motion="reduce"] .fg__tint { transition-duration: var(--dur-fade); }
 :root[data-motion="reduce"] .fg__tab:active {
   transform: none;
   border-color: var(--accent);

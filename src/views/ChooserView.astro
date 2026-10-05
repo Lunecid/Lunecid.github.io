@@ -1,18 +1,26 @@
 ---
-// The chooser (spec §6, A안): the name and the one line (B-13), then the two versions side by side — the game version's
-// preview on the left (dark HUD with generic brackets and grid, no character) and the general version's on the right
-// (white, serif 데이터 분석가, a small real chart) — each one whole link to its home. Stacked on phones. Keyboard and
-// memory: src/scripts/chooser.ts. The pre-paint redirect (P1-14) runs from the head (headScript="chooser").
+// The chooser (motion plan amendment 2026-10-05; chooser v6.4, owner-approved): a dark HUD page holding a desk with two
+// files — the game version's cyber cover behind, the general version's white art-paper printout tilted on top of it
+// (data in front at rest, so the DOM and Tab order run data → game). No visible heading: the name is a visually hidden
+// h1 (the page keeps its heading and title); the small archive caption stays at the top left and the desk is centred in
+// the height below it. Each file is one link. Keyboard and memory: src/scripts/chooser.ts. The pre-paint redirect
+// (P1-14) runs from the head (headScript="chooser").
 import NeutralLayout from '../layouts/NeutralLayout.astro';
-import { chooserCopy } from '../data/copy/chooser';
-import { CHANCE_AUC, overallAuc } from '../data/research/cog-2026';
+// The page, desk and cover styles ship as ONE external, content-hashed stylesheet that only the chooser links (the
+// HTML stays within the first flight; the textures are cached): src/styles/chooser.css.
+import chooserCss from '../styles/chooser.css?url';
+import GameCover from '../components/neutral/GameCover.astro';
+import PrintoutCover from '../components/neutral/PrintoutCover.astro';
+import { coverCopy } from '../data/copy/chooser-covers';
 import type { Lang } from '../i18n/ui';
-import { resolveDeep } from '../lib/facts';
+import { buildCover, COVER_ORDER } from '../lib/chooser-covers';
 import { fontFaceCss } from '../lib/fonts';
-import { chooserHref, homeHref } from '../lib/links';
+import { chooserHref } from '../lib/links';
 import { getFactSource, getPerson } from '../lib/portfolio';
+import { todayIso } from '../lib/records';
 import { canonicalUrl, personJsonLd } from '../lib/seo';
 import { NEUTRAL_IDENTITY, pageMetaFor } from '../variants';
+import { VARIANT_IDS } from '../variants/ids';
 
 interface Props {
   lang: Lang;
@@ -20,18 +28,12 @@ interface Props {
 const { lang } = Astro.props;
 const facts = await getFactSource();
 const person = await getPerson();
-const copy = resolveDeep(chooserCopy[lang], lang, facts);
 const meta = pageMetaFor('chooser', lang, null, facts);
-// The small real chart: the paper's test AUC per model (src/data/research/cog-2026.ts) as dots on a 0.50–0.70 axis,
-// the paper's model in the accent. Decorative here (aria-hidden); the caption names it.
-const W = 240;
-const H = 72;
-const X0 = 8;
-const X1 = 232;
-const AXIS_Y = 64;
-const MAX = Math.max(0.7, ...overallAuc.map((row) => row.auc)); // the axis always holds every dot
-const x = (auc: number): number => Math.round((X0 + ((auc - CHANCE_AUC) / (MAX - CHANCE_AUC)) * (X1 - X0)) * 10) / 10;
-const dots = overallAuc.map((row, i) => ({ cx: x(row.auc), cy: 10 + i * 6.5, hl: row.highlight === true }));
+const today = todayIso(new Date());
+const mast = coverCopy[lang].mast;
+const touch = coverCopy[lang].touch; // the touch hint (chooser.ts fills it on touch screens only)
+const files = mast.files.replace('{n}', String(VARIANT_IDS.length).padStart(2, '0'));
+const covers = COVER_ORDER.map((id) => buildCover(id, lang, today));
 ---
 <NeutralLayout
   lang={lang}
@@ -43,33 +45,20 @@ const dots = overallAuc.map((row, i) => ({ cx: x(row.auc), cy: 10 + i * 6.5, hl:
   header="lang-only"
   jsonLd={personJsonLd(lang, { jobTitle: NEUTRAL_IDENTITY.headline[lang], url: canonicalUrl(chooserHref(lang)) }, person.researchIds)}
 >
-  <Fragment slot="head"><style is:inline set:html={fontFaceCss(['serifKoHead'])}></style></Fragment>
+  <Fragment slot="head">
+    <link rel="stylesheet" href={chooserCss} />
+    <style is:inline set:html={fontFaceCss(['coverMono', 'coverDisplay'])}></style>
+  </Fragment>
   <section class="chooser" aria-labelledby="chooser-name">
-    <div class="container chooser__intro">
-      <h1 id="chooser-name" class="chooser__name">{person.name[lang]}</h1>
-      <p class="chooser__line">{NEUTRAL_IDENTITY.oneLiner[lang]}</p>
-    </div>
-    <div class="chooser__split" data-chooser>
-      <a class="chooser__side chooser__side--game" href={homeHref(lang, 'game')} data-choose-variant="game" aria-labelledby="chooser-game-title chooser-game-cta" aria-describedby="chooser-game-evidence">
-        <span class="chooser__corner chooser__corner--tl" aria-hidden="true"></span>
-        <span class="chooser__corner chooser__corner--br" aria-hidden="true"></span>
-        <span class="chooser__mode" lang="en">{`[ MODE ${copy.game.num} ]`}</span>
-        <span id="chooser-game-title" class="chooser__title">{copy.game.title}</span>
-        <span id="chooser-game-evidence" class="chooser__evidence">{copy.game.evidence}</span>
-        <span id="chooser-game-cta" class="chooser__cta">{copy.game.cta} <span aria-hidden="true">→</span></span>
-      </a>
-      <a class="chooser__side chooser__side--data" href={homeHref(lang, 'data')} data-choose-variant="data" aria-labelledby="chooser-data-title chooser-data-cta" aria-describedby="chooser-data-evidence">
-        <span class="chooser__kicker">{copy.data.kicker}</span>
-        <span id="chooser-data-title" class="chooser__title chooser__title--serif" data-serif>{copy.data.title}</span>
-        <svg class="chooser__chart" viewBox={`0 0 ${W} ${H}`} width={W} height={H} aria-hidden="true" focusable="false">
-          <line class="chooser__axis" x1={X0} x2={X1} y1={AXIS_Y} y2={AXIS_Y} />
-          <line class="chooser__chance" x1={X0} x2={X0} y1="4" y2={AXIS_Y} />
-          {dots.map((dot) => <circle class:list={['chooser__dot', { 'chooser__dot--hl': dot.hl }]} cx={dot.cx} cy={dot.cy} r="3.5" />)}
-        </svg>
-        <span class="chooser__chart-cap">{copy.data.chartCaption}</span>
-        <span id="chooser-data-evidence" class="chooser__evidence">{copy.data.evidence}</span>
-        <span id="chooser-data-cta" class="chooser__cta">{copy.data.cta} <span aria-hidden="true">→</span></span>
-      </a>
+    <div class="chooser__stage">
+      <div class="chooser__mast">
+        <p class="chooser__cap" lang="en"><span class="chooser__mark" aria-hidden="true">[<i class="chooser__sq"></i>]</span><span>{mast.label}</span><span>{files}</span></p>
+        <h1 id="chooser-name" class="sr-only">{person.name[lang]}</h1>
+      </div>
+      <div class="desk" data-chooser data-desk>
+        {covers.map((cover) => (cover.id === 'data' ? <PrintoutCover cover={cover} /> : <GameCover cover={cover} />))}
+      </div>
+      <p class="desk__hint" aria-live="polite" data-rest={touch.rest} data-aside={touch.aside}></p>
     </div>
   </section>
 </NeutralLayout>
@@ -78,87 +67,3 @@ const dots = overallAuc.map((row, i) => ({ cx: x(row.auc), cy: 10 + i * 6.5, hl:
   import { initChooser } from '../scripts/chooser';
   initChooser();
 </script>
-
-<style>
-  .chooser { padding-block: 24px 48px; }
-  .chooser__name { font-size: var(--fs-display); font-weight: 800; line-height: var(--lh-display); color: var(--nt-ink); }
-  .chooser__line { margin-top: 12px; max-width: var(--measure); font-size: var(--fs-sub); line-height: var(--lh-sub); color: var(--nt-muted); }
-  /* overflow: clip keeps the widened side (transform) out of the page's scrollable area at every width. */
-  .chooser__split {
-    display: flex;
-    flex-direction: column;
-    gap: 12px; /* stacked: room for the focused half's 1.02 scale, so the halves never overlap */
-    max-width: var(--container-hud);
-    margin: 28px auto 0;
-    padding: 12px var(--gutter);
-    overflow: clip;
-  }
-  .chooser__side {
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    min-height: 260px;
-    padding: 32px 24px;
-    text-decoration: none;
-    transition: transform var(--dur-exit) var(--ease-out), background-color var(--dur-exit) linear, border-color var(--dur-exit) linear;
-  }
-  .chooser__side:focus-visible { outline-offset: -6px; }
-  .chooser__side:focus-visible { z-index: 1; transform: scale(1.02); }
-  /* game preview: the HUD look on generic shapes only (grid, bracket corners) */
-  .chooser__side--game {
-    background-color: var(--hud-bg);
-    background-image: linear-gradient(var(--grid-line) 1px, transparent 1px), linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
-    background-size: 32px 32px;
-    color: var(--hud-text);
-  }
-  .chooser__side--game:focus-visible,
-  .chooser__side--game:active { background-color: var(--hud-panel); }
-  .chooser__side--game:focus-visible { outline-color: var(--accent); }
-  .chooser__corner { position: absolute; width: var(--bracket); height: var(--bracket); border: 2px solid var(--accent); }
-  .chooser__corner--tl { left: 12px; top: 12px; border-right: 0; border-bottom: 0; }
-  .chooser__corner--br { right: 12px; bottom: 12px; border-left: 0; border-top: 0; }
-  .chooser__mode { font: 600 var(--fs-label)/1.5 var(--font-mono); letter-spacing: var(--ls-label); color: var(--hud-muted); }
-  .chooser__side--game .chooser__title { font-size: var(--fs-h2); font-weight: 800; line-height: var(--lh-h2); color: var(--hud-strong); }
-  .chooser__side--game .chooser__evidence { color: var(--hud-muted); }
-  .chooser__side--game .chooser__cta { color: var(--accent); }
-  /* general preview: the editorial look */
-  .chooser__side--data { background: var(--ed-bg); color: var(--ed-ink); border: var(--ed-rule-w) solid var(--ed-rule); }
-  .chooser__side--data:focus-visible,
-  .chooser__side--data:active { border-color: var(--ed-ink); }
-  .chooser__kicker { font-size: var(--fs-caption); line-height: var(--lh-caption); color: var(--ed-muted); }
-  .chooser__kicker:lang(en) { font-family: var(--font-ed-serif); font-style: italic; }
-  .chooser__title--serif { font-family: var(--font-ed-head); font-size: var(--fs-h2); font-weight: 700; line-height: var(--lh-h2); }
-  .chooser__chart { width: 240px; max-width: 100%; height: auto; }
-  .chooser__axis { stroke: var(--ed-ink); stroke-width: 1; }
-  .chooser__chance { stroke: var(--ed-muted); stroke-width: 1; stroke-dasharray: 3 3; }
-  .chooser__dot { fill: var(--ed-muted); }
-  .chooser__dot--hl { fill: var(--ed-accent); }
-  .chooser__chart-cap { font-size: var(--fs-caption); color: var(--ed-muted); }
-  .chooser__side--data .chooser__evidence { color: var(--ed-ink); font-weight: 600; }
-  .chooser__side--data .chooser__cta { color: var(--ed-accent); text-decoration: underline; text-underline-offset: .2em; }
-  .chooser__cta { margin-top: auto; font-weight: 700; }
-  @media (min-width: 734px) {
-    .chooser__split { flex-direction: row; gap: 0; }
-    .chooser__side { flex: 1 1 0; min-height: 360px; padding: 44px 40px; }
-  }
-  /* hover widens and re-colours only on hover-capable pointers (no sticky widen on touch; fix-brief global rules, N13) */
-  @media (hover: hover) {
-    .chooser__side:hover { z-index: 1; transform: scale(1.02); }
-    .chooser__side--game:hover { background-color: var(--hud-panel); }
-    .chooser__side--data:hover { border-color: var(--ed-ink); }
-  }
-  /* reduced motion (site toggle or OS): colours only */
-  :root[data-motion="reduce"] .chooser__side { transition: background-color var(--dur-exit) linear, border-color var(--dur-exit) linear; }
-  :root[data-motion="reduce"] .chooser__side:focus-visible { transform: none; }
-  @media (hover: hover) {
-    :root[data-motion="reduce"] .chooser__side:hover { transform: none; }
-  }
-  @media (prefers-reduced-motion: reduce) {
-    .chooser__side { transition: background-color var(--dur-exit) linear, border-color var(--dur-exit) linear; }
-    .chooser__side:focus-visible { transform: none; }
-  }
-  @media (prefers-reduced-motion: reduce) and (hover: hover) {
-    .chooser__side:hover { transform: none; }
-  }
-</style>

@@ -1,0 +1,68 @@
+---
+// Styles: src/styles/chooser.css (one external stylesheet for the chooser).
+// The game file on the chooser desk (MO-23, chooser v6.4): an electronic window (title bar) holding a printed cyber
+// cover — lime frame, hazard bands, the gamepad emblem, a mono series line, Anton display words with the first one
+// reversed out of lime, the Korean h2, the hidden declassify stamp (MO-25 inks it on the entering click), the tagline,
+// a rule with the contents line and the link, the foot line, and from 540px a barcode rail. Behind the printout at rest.
+// The one link (its CTA) stretches its hit layer over the whole face. Structure: .file--game > .face.device (the frame,
+// one isolated CSS block, swappable for a device bezel) > .screen (the cover). Words: coverCopy (framing), chooserCopy (title,
+// CTA, mode number), the variant's tagline and nav labels (buildCover).
+import { chooserCopy } from '../../data/copy/chooser';
+import { coverCopy } from '../../data/copy/chooser-covers';
+import type { CoverData } from '../../lib/chooser-covers';
+import CoverEmblem from './CoverEmblem.astro';
+
+interface Props {
+  cover: CoverData;
+}
+const { cover } = Astro.props;
+const copy = coverCopy[cover.lang];
+const g = copy.game;
+const mode = `[ MODE ${chooserCopy[cover.lang].game.num} ]`;
+const foot = copy.foot.replace('{year}', cover.foot.year).replace('{host}', cover.foot.host);
+// a tagline breaks between its clauses (each clause still wraps inside itself on a narrow file)
+const clauses = cover.tagline.split(/(?<=,) /);
+const [first, ...rest] = g.display;
+---
+<article class="file file--game" aria-labelledby={`file-${cover.id}-title`}>
+  <div class="face device">
+    <div class="screen">
+    <div class="bar">
+      <i class="bar__sq" aria-hidden="true"></i>
+      <span class="bar__name neon" lang="en">{g.file}</span>
+      <span class="bar__access neon--dim" lang="en">{g.access}</span>
+      <span class="bar__no neon--dim" lang="en">{g.serial}</span>
+      <span class="bar__ctl" aria-hidden="true"><i></i><i></i><i></i></span>
+    </div>
+    <div class="cover">
+      <i class="haz haz--t" aria-hidden="true"></i>
+      <div class="cv">
+        <div class="cv__head">
+          <CoverEmblem kind="game" />
+          <p class="cv__series neon--dim"><span class="cv__lead"><span class="cv__pub" lang="en">{g.series}</span>&nbsp;<span class="cv__sep" aria-hidden="true">·</span></span> <span class="cv__kicker" lang="en">{mode}</span>&nbsp;<span class="cv__sep" aria-hidden="true">·</span> <span class="cv__no" lang="en">{g.num}</span></p>
+        </div>
+        <p class="disp" lang="en" aria-hidden="true">
+          <span class="disp__row"><span class="disp__blk">{first}</span><span class="disp__w">{rest[0]}</span></span>
+          <span class="disp__row"><span class="disp__w">{rest[1]}</span></span>
+        </p>
+        <div class="cv__title">
+          <h2 class="title" id={`file-${cover.id}-title`}>{cover.title}</h2>
+          <span class="stamp" aria-hidden="true">{g.stamp}</span>
+        </div>
+        <p class="intro">{clauses.map((clause, i) => <>{i > 0 && ' '}<span class="cl">{clause}</span></>)}</p>
+        <div class="cv__end">
+          <ol class="toc" role="list">
+            {cover.contents.map((item) => <li><span class="toc__n" aria-hidden="true">{item.num}</span>{item.label}</li>)}
+          </ol>
+          <a class="cta cta--hud" href={cover.href} data-choose-variant={cover.id} aria-labelledby={`file-${cover.id}-title file-${cover.id}-cta`}><span class="cta__face"><i class="cta__hov" aria-hidden="true"></i><span id={`file-${cover.id}-cta`}>{cover.cta}</span> <span aria-hidden="true">→</span></span><span class="cta__hit" aria-hidden="true"></span></a>
+        </div>
+        <p class="cv__foot" lang="en" aria-hidden="true"><span class="cv__foot-t">{foot}</span></p>
+        <div class="cv__rail" lang="en" aria-hidden="true"><i class="cv__code"></i><span class="cv__sn">{g.rail.serial}</span></div>
+      </div>
+      <i class="haz haz--b" aria-hidden="true"></i>
+    </div>
+    </div>
+    <span class="br br--tl" aria-hidden="true"></span>
+    <span class="br br--br" aria-hidden="true"></span>
+  </div>
+</article>

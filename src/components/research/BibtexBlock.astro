@@ -143,7 +143,10 @@ const Wrapper = heading ? 'section' : 'div';
     transition: border-color var(--dur-hover) linear, color var(--dur-hover) linear;
   }
   :global(html.js) .bib__copy { display: inline-grid; }
-  .bib__copy:hover { border-color: var(--accent-deep); color: var(--accent-deep); }
+  @media (hover: hover) {
+    .bib__copy:hover { border-color: var(--accent-deep); color: var(--accent-deep); }
+  }
+  .bib__copy:active { border-color: var(--accent-deep); color: var(--accent-deep); }
   .bib__copy:focus-visible { outline: 2px solid var(--accent-deep); outline-offset: 3px; }
   .bib__copy:lang(ko) { font-family: var(--font-sans); }
   .bib__copy > span { grid-area: label; visibility: hidden; }

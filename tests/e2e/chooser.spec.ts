@@ -46,7 +46,8 @@ test.describe('chooser memory (§5.5, success criterion 2)', () => {
     await page.goto('/');
     await expect(page.locator('a[data-choose-variant="game"]')).toHaveAttribute('href', '/game/');
     await expect(page.locator('a[data-choose-variant="data"]')).toHaveAttribute('href', '/data/');
-    await page.locator('a[data-choose-variant="game"]').click();
+    // MO-23: the game link's hit layer covers the game file; its title bar stays visible above the printout
+    await page.locator('.file--game .cta__hit').click({ position: { x: 24, y: 12 } });
     await expect(page).toHaveURL(/\/game\/$/);
     await context.close();
   });

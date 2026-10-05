@@ -133,6 +133,25 @@ test.describe('print (P-12)', () => {
     if ((await viewer.count()) > 0) await expect(viewer.first()).toHaveCSS('display', 'none');
   });
 
+  test('T1: a targeted figure prints without the cue', async ({ page }) => {
+    for (const path of ['/game/projects/school-zone-blindspots/', '/data/projects/school-zone-blindspots/']) {
+      await page.emulateMedia({ media: 'screen' });
+      await page.goto(path, { waitUntil: 'load' });
+      await page.locator('main a[href="#figure-2"]').first().click();
+      await expect(page).toHaveURL(/#figure-2$/);
+      // on screen the targeted figure carries the cue …
+      expect(await page.locator('#figure-2').evaluate((el) => getComputedStyle(el, '::before').animationName), path).toMatch(/^cue-/);
+      // … on paper it does not
+      await page.emulateMedia({ media: 'print' });
+      const cue = await page.locator('#figure-2').evaluate((el) => ({
+        running: el.getAnimations({ subtree: true }).map((a) => (a as CSSAnimation).animationName).filter((n) => n.startsWith('cue-')),
+        before: getComputedStyle(el, '::before').animationName,
+        after: getComputedStyle(el, '::after').animationName,
+      }));
+      expect(cue, path).toEqual({ running: [], before: 'none', after: 'none' });
+    }
+  });
+
   test('AL-11: the account dialog, opened on screen, does not print (fixture build)', async ({ page }) => {
     await page.goto(`${ACCOUNTS_ORIGIN}/game/player-log/`, { waitUntil: 'load' });
     await page.locator('#membership button.acct-tile').first().click();

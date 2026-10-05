@@ -196,6 +196,26 @@ describe('design tokens (src/styles/tokens.css)', () => {
     expect(parseFloat(d.get('--dur-medal')!)).toBeLessThanOrEqual(0.4);
   });
 
+  it('MO-1 (audit Z1, V1, V3, R1): motion tokens for transitions, morph, reflow, menu, lift and reduced exits', () => {
+    const d = rootDecls(BASE);
+    const s = (name: string) => parseFloat(d.get(name)!);
+    expect(d.get('--dur-nav-out')).toBe('.09s');
+    expect(d.get('--dur-nav-in')).toBe('.16s');
+    expect(d.get('--dur-morph')).toBe('.4s');
+    expect(d.get('--dur-reflow')).toBe('.3s');
+    expect(d.get('--dur-menu')).toBe('.15s');
+    expect(d.get('--dur-lift')).toBe('.25s');
+    expect(d.get('--dur-fade-out')).toBe('.15s');
+    // Fade-through: the whole page transition is .25s and the old page leaves in about the first third of it.
+    expect(s('--dur-nav-out') + s('--dur-nav-in')).toBeCloseTo(0.25, 10);
+    expect(s('--dur-nav-out') / 0.25).toBeGreaterThanOrEqual(0.33);
+    expect(s('--dur-nav-out') / 0.25).toBeLessThanOrEqual(0.37);
+    expect(s('--dur-morph')).toBeLessThanOrEqual(0.4);
+    expect(s('--dur-fade-out')).toBeLessThan(s('--dur-fade'));
+    expect(d.get('--dur-menu')).toBe(d.get('--dur-press'));
+    expect(d.get('--dur-lift')).toBe(d.get('--dur-exit'));
+  });
+
   it('F-067 (P-11): the cartridge shell colours are tokens', () => {
     const d = rootDecls(BASE);
     expect(['--cart-shell', '--cart-shell-hover', '--cart-shell-shade', '--cart-shell-grip'].map((n) => d.get(n))).toEqual(['#C9CED6', '#D5D9E0', '#AEB4BE', '#8E949E']);
@@ -445,5 +465,74 @@ describe('editorial palette, neutral aliases and role tokens (P2-1, spec §8, co
     const focus = base.find((r) => splitSelectors(r.selector).includes(':root[data-variant="data"] :focus-visible'));
     expect(splitSelectors(focus?.selector ?? '')).toEqual([':root[data-variant="data"] :focus-visible', ':root[data-variant="neutral"] :focus-visible']);
     expect(focus?.decls.get('outline-color')).toBe('var(--page-focus)');
+  });
+});
+
+describe('the chooser desk (MO-23, v6.4)', () => {
+  const tokenRules = () => parseCss(read('src/styles/tokens.css'));
+  const declsOf = (selector: string): Map<string, string> =>
+    new Map(tokenRules().filter((r) => r.selector === selector && r.media === null).flatMap((r) => [...r.decls]));
+
+  it('MO-23: chooser role block uses HUD tokens only; printout tokens exact; text pairs ≥ 4.5 (ink, ink-2, link and stamp on paper; white on the red field; ink on the yellow)', () => {
+    const chooser = declsOf(':root[data-variant="neutral"][data-page="chooser"]');
+    expect(Object.fromEntries(chooser)).toEqual({
+      '--page-bg': 'var(--hud-bg)', '--page-ink': 'var(--hud-text)', '--page-muted': 'var(--hud-muted)', '--page-focus': 'var(--accent)',
+      '--page-link': 'var(--accent)', '--page-rule': 'var(--hud-divider)', '--page-rule-strong': 'var(--hud-line-strong)',
+      '--page-fill': 'var(--accent)', '--page-fill-ink': 'var(--accent-ink)',
+      '--nt-bg': 'var(--hud-bg)', '--nt-ink': 'var(--hud-text)', '--nt-muted': 'var(--hud-muted)', '--nt-rule': 'var(--hud-divider)', '--nt-accent': 'var(--accent)',
+    });
+    for (const value of chooser.values()) expect(value).toMatch(/^var\(--(hud|accent)[\w-]*\)$/);
+    const d = declsOf(':root');
+    const printout: Record<string, string> = {
+      '--pr-paper': '#FBFAF6', '--pr-ink': 'var(--ed-ink)', '--pr-ink-2': 'var(--paper-muted)', '--pr-stamp': '#8A2416',
+      '--pr-plate': 'rgba(20, 20, 20, .075)', '--pr-lit': 'rgba(255, 255, 255, .95)',
+      '--pr-red': '#CC281C', '--pr-blue': '#1F3A93', '--pr-yellow': '#F5C400', '--pr-on-color': '#FFFFFF',
+      // MO-OQ16 stand-ins until the general version's type and link tokens arrive (MO-29 repoints them)
+      '--pr-font-text': 'var(--font-sans)', '--pr-font-banner': 'var(--font-sans)',
+      '--pr-link': 'var(--ed-ink)', '--pr-link-stroke': 'var(--pr-yellow)', '--pr-focus': 'var(--ed-ink)',
+      '--font-cover': '"SB Cover Display", Impact, "Arial Narrow Bold", sans-serif',
+      '--dur-stroke': '.2s',
+    };
+    // the covers' mono stack keeps monospace fallbacks ahead of the proportional sans (no re-wrap when the face swaps in)
+    const coverMono = d.get('--font-mono-cover') ?? '';
+    expect(coverMono.indexOf('"SB Cover Mono"')).toBe(0);
+    expect(coverMono.indexOf('Menlo')).toBeLessThan(coverMono.indexOf('"SB Sans"'));
+    expect(coverMono.indexOf('"DejaVu Sans Mono"')).toBeLessThan(coverMono.indexOf('"SB Sans"'));
+    for (const [name, value] of Object.entries(printout)) expect(squash(d.get(name)), name).toBe(squash(value));
+    const hex = (name: string): string => {
+      const v = d.get(name)!;
+      const ref = /^var\((--[\w-]+)\)$/.exec(v);
+      return ref ? hex(ref[1]!) : v;
+    };
+    const paper = hex('--pr-paper');
+    expect(contrast(hex('--pr-ink'), paper)).toBeGreaterThanOrEqual(7);
+    expect(contrast(hex('--pr-ink-2'), paper)).toBeGreaterThanOrEqual(4.5);
+    expect(contrast(hex('--pr-link'), paper)).toBeGreaterThanOrEqual(7);
+    expect(contrast(hex('--pr-focus'), paper)).toBeGreaterThanOrEqual(3);
+    expect(contrast(hex('--pr-stamp'), paper)).toBeGreaterThanOrEqual(7);
+    expect(contrast(hex('--pr-on-color'), hex('--pr-red'))).toBeGreaterThanOrEqual(5.3);
+    expect(contrast(hex('--pr-ink'), hex('--pr-yellow'))).toBeGreaterThanOrEqual(7);
+    // the game cover keeps the HUD pairs: muted labels on the panel, the reversed word in ink on lime
+    expect(contrast(hex('--hud-muted'), hex('--hud-panel'))).toBeGreaterThanOrEqual(4.5);
+    expect(contrast(hex('--hud-bg'), hex('--accent'))).toBeGreaterThanOrEqual(7);
+  });
+
+  it('MO-23: the chooser page is dark (color-scheme dark in the chooser sheet), the other neutral pages stay light', () => {
+    const sheet = read('src/styles/chooser.css');
+    expect(sheet).toMatch(/(^|\n):root\[data-variant="neutral"\]\[data-page="chooser"\]\s*\{[^}]*color-scheme:\s*dark/);
+    expect(read('src/styles/base.css')).toMatch(/:root\[data-variant="data"\], :root\[data-variant="neutral"\] \{ color-scheme: light; \}/);
+  });
+
+  it('MO-24: --dur-aside is .45s and at most --dur-morph + .05s', () => {
+    const d = declsOf(':root');
+    expect(d.get('--dur-aside')).toBe('.45s');
+    expect(parseFloat(d.get('--dur-aside')!)).toBeLessThanOrEqual(parseFloat(d.get('--dur-morph')!) + 0.05 + 1e-9);
+  });
+
+  it('MO-25: --dur-strike .32s, --dur-strike-ring .42s (the chooser does not redefine --dur-stamp: the general version owns that name)', () => {
+    const d = declsOf(':root');
+    expect(d.get('--dur-strike')).toBe('.32s');
+    expect(d.get('--dur-strike-ring')).toBe('.42s');
+    expect(d.get('--dur-stamp')).toBe('.22s');
   });
 });

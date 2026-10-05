@@ -281,8 +281,13 @@ describe('FavoriteGames', () => {
     expect(TL.badgesAt + (MAX_BADGES - 1) * TL.badgeStagger + TL.badge).toBeLessThanOrEqual(2 + 1e-9);
     expect(TL.linesAt + (3 + MAX_STATS - 1) * TL.lineStagger + TL.count).toBeLessThanOrEqual(2 + 1e-9);
     expect(TL.barAt + TL.bar).toBeLessThanOrEqual(2);
-    expect(TL.enter).toBe(0.6);
-    expect(TL.exit).toBe(0.25);
+    // G1: faster tab switching for repeated comparison; the art keeps a longer entrance than the copy
+    expect(TL.enter).toBe(0.35);
+    expect(TL.exit).toBe(0.15);
+    expect(TL.art).toBe(0.45);
+    expect(TL.copyStagger).toBe(0.04);
+    expect(TL.gap).toBe(0.05);
+    expect(TL.exit + TL.gap + 3 * TL.copyStagger + TL.enter).toBeLessThanOrEqual(0.75 + 1e-9);
     expect(TL.panel).toBe(0.45);
     expect(TL.lineStagger).toBe(0.08);
     expect(TL.count).toBe(0.8);

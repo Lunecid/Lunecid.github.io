@@ -272,6 +272,7 @@ describe('legal content', () => {
       '- 사이트 업적 달성 기록',
       '- 업적을 위해 둘러본 메뉴(연구·프로젝트·기록·플레이 로그)와 언어',
       'CRT 인트로',
+      '첫 화면 문구 등장',
       '- 마지막으로 고른 포트폴리오 버전(게임·일반)',
       '- 배경음악을 이어 듣기 위한 재생 위치(sessionStorage, 창을 닫으면 사라지고 30분이 지나면 쓰지 않음)',
     ]) {
@@ -284,6 +285,7 @@ describe('legal content', () => {
       '- Site achievements you have unlocked',
       '- Which of the four menu sections and which languages you have opened (for achievements)',
       'CRT intro',
+      'home text entrance',
       '- The portfolio version you last chose (game or general)',
       '- The background-music position so it continues on the next page (sessionStorage; cleared when the tab closes, ignored after 30 minutes)',
     ]) {
