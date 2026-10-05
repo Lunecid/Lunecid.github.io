@@ -238,6 +238,22 @@
   }
 }
 
+/* ═══ FORCED COLOURS ═══════════════════════════════════════════════════════════════════════════════════════════
+   System colours repaint the palette: the white panels keep a 1 px CanvasText frame (their edge does not depend on the
+   clip-path), the decorative hazard, barcode and tick marks go, the job-fit statuses keep their distinct border styles. */
+@media (forced-colors: active) {
+  :root[data-variant="game"] :is(.rh .paper, .rec__pubs, .psum, .creds__table, .skills__table, .jobfit__table, .pub__list, .paper-view__sheet, article.prose.read, .pd__table) {
+    border: 1px solid CanvasText;
+  }
+  :root[data-variant="game"] .hud-nav::after, :root[data-variant="game"] .hud-label::after,
+  :root[data-variant="game"] .read-section::before, :root[data-variant="game"] .page-head::before,
+  :root[data-variant="game"] .page-head::after, :root[data-variant="game"] .page-head__title::before {
+    display: none;
+  }
+  :root[data-variant="game"] :is(.jobfit__status--met, .jobfit__status--partial) { border-style: solid; }
+  :root[data-variant="game"] .jobfit__status--in-progress { border-style: dashed; }
+}
+
 /* ═══ PRINT ════════════════════════════════════════════════════════════════════════════════════════════════════
    Game pages print black on white (tokens.css print twin). The white panels re-point their own names, so they get the
    print values here: black ink on white paper, no yellow edge, no chamfer, no highlighter strip, no halo. */
@@ -256,5 +272,15 @@
   }
   :root[data-variant="game"] :is(.cart__label .cart__img, .rh .paper__fig .chart__scroll, .interests__fig .interests__img, .interests__fig--chart .chart__scroll) {
     transform: none !important; box-shadow: none !important;
+  }
+  /* the line-art marks are screen decoration */
+  :root[data-variant="game"] .hud-nav::after, :root[data-variant="game"] .hud-label::after,
+  :root[data-variant="game"] .read-section::before, :root[data-variant="game"] .page-head::before,
+  :root[data-variant="game"] .page-head::after, :root[data-variant="game"] .page-head__title::before {
+    display: none;
+  }
+  /* badges and statuses print as outlined ink */
+  :root[data-variant="game"] :is(.jobfit__status--met, .jobfit__status--partial, .jobfit__status--in-progress, .badge--tier) {
+    color: var(--gp-print-ink); border-color: var(--gp-print-ink); background: none;
   }
 }

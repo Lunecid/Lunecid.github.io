@@ -143,3 +143,9 @@ describe('media tilt (GP-7)', () => {
     expect(all.some((r) => r.at.includes('@media (forced-colors: active)') && /cart__img/.test(r.selector) && r.decls.get('outline-color') === 'CanvasText !important')).toBe(true);
   });
 });
+
+describe('game.css validity', () => {
+  it('no pseudo-element inside :is() / :where() (the whole rule would be dropped)', () => {
+    for (const r of rulesOf(css())) expect(r.selector, r.selector).not.toMatch(/:(is|where)\([^)]*::/);
+  });
+});

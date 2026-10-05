@@ -107,6 +107,29 @@ test.describe('print (P-12)', () => {
     }
   });
 
+  test('GP-8: /game/, /game/records/, a case study and /game/research/ print every text ≥ 4.5:1 on white; no panel chamfer, strip, edge or line-art', async ({ page }) => {
+    await page.emulateMedia({ media: 'print' });
+    for (const route of ['/game/', '/game/records/', '/game/projects/school-zone-blindspots/', '/game/research/'] as const) {
+      await open(page, route);
+      // text a reader gets (decorative separators and marks are aria-hidden)
+      const low = (await inkContrastOnPaper(page, 'main :is(p, li, td, th, dt, dd, h1, h2, h3, h4, a, span, small, b, strong, figcaption):not([aria-hidden="true"], [aria-hidden="true"] *)')).filter((r) => r.text && r.ratio < 4.5);
+      expect(low.slice(0, 8), `${route}: text under 4.5:1 on paper`).toEqual([]);
+      const look = await page.evaluate(() => {
+        const panels = Array.from(document.querySelectorAll('.rh .paper, .rec__pubs, .psum, .creds__table, .skills__table, .jobfit__table, .pub__list, .paper-view__sheet, article.prose.read, .pd__table'))
+          .map((el) => ({ clip: getComputedStyle(el).clipPath, top: getComputedStyle(el).borderTopWidth }));
+        const strips = Array.from(document.querySelectorAll('main a')).filter((a) => getComputedStyle(a).backgroundImage.includes('255, 230, 0')).length;
+        const marks = [['.hud-label', '::after'], ['.read-section', '::before'], ['.page-head', '::before'], ['.page-head', '::after'], ['.page-head__title', '::before']]
+          .map(([sel, pseudo]) => { const el = document.querySelector(sel!); return el ? getComputedStyle(el, pseudo!).display : 'none'; });
+        const edge = getComputedStyle(document.querySelector('.edge')!).display;
+        return { panels, strips, marks, edge };
+      });
+      for (const p of look.panels) expect(p, route).toEqual({ clip: 'none', top: '0px' });
+      expect(look.strips, `${route}: highlighter strips`).toBe(0);
+      expect(look.marks, route).toEqual(['none', 'none', 'none', 'none', 'none']);
+      expect(look.edge, route).toBe('none');
+    }
+  });
+
   test('G-024 / G-028: print hides the controls, the menu, the image viewer and the secret achievements', async ({ page }) => {
     await open(page, '/game/player-log/');
     const secret = page.locator('[data-secret]');

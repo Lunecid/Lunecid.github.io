@@ -3,6 +3,31 @@ import { test, expect, settle } from './helpers';
 // N14 / G-012..G-014: Windows High Contrast (forced-colors) keeps cut edges and selected states.
 
 test.describe('N14: forced colours', () => {
+  test('GP-8: game panels, statuses and tilt frames stay framed in forced colours; decorative marks gone', async ({ page }) => {
+    await page.emulateMedia({ forcedColors: 'active', colorScheme: 'dark' });
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/game/records/', { waitUntil: 'networkidle' });
+    await settle(page);
+    const look = await page.evaluate(() => {
+      const panels = Array.from(document.querySelectorAll('.rec__pubs, .psum, .creds__table, .skills__table, .jobfit__table')).map((el) => {
+        const s = getComputedStyle(el);
+        return `${s.borderLeftWidth} ${s.borderLeftStyle} ${s.borderRightWidth} ${s.borderBottomWidth}`;
+      });
+      const status = (k: string) => getComputedStyle(document.querySelector(`#job-fit .jobfit__status--${k}`)!).borderTopStyle;
+      const marks = [['.hud-nav', '::after'], ['.hud-label', '::after'], ['.read-section', '::before'], ['.page-head', '::before'], ['.page-head', '::after'], ['.page-head__title', '::before']]
+        .map(([sel, pseudo]) => { const el = document.querySelector(sel!); return el ? getComputedStyle(el, pseudo!).display : 'none'; });
+      return { panels, met: status('met'), partial: status('partial'), progress: status('in-progress'), marks };
+    });
+    expect(look.panels.length).toBe(5);
+    for (const p of look.panels) expect(p).toBe('1px solid 1px 1px');
+    expect([look.met, look.partial, look.progress]).toEqual(['solid', 'solid', 'dashed']);
+    expect(look.marks).toEqual(['none', 'none', 'none', 'none', 'none', 'none']);
+    await page.goto('/game/', { waitUntil: 'networkidle' });
+    const frame = await page.locator('.cart:not(.cart--static) .cart__img').first().evaluate((el) => ({ o: getComputedStyle(el).outlineStyle, sh: getComputedStyle(el).boxShadow }));
+    expect(frame).toEqual({ o: 'solid', sh: 'none' });
+    expect(await page.locator('.edge').evaluate((el) => getComputedStyle(el).display)).toBe('none');
+  });
+
   for (const colorScheme of ['dark', 'light'] as const) {
     test(`${colorScheme}: visible .cut controls keep a ≥1px border on /game/ and /game/records/`, async ({ page }) => {
       await page.emulateMedia({ forcedColors: 'active', colorScheme });
