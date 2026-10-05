@@ -163,6 +163,12 @@ export function initExit(desk: HTMLElement, link: HTMLAnchorElement, kind: ExitK
     e.preventDefault();
     const variant = link.dataset.chooseVariant;
     if (isVariantId(variant)) rememberVariant(variant);
+    // the exit is the version's entry: the game home plays no CRT intro after it (one intro per session, D-2)
+    try {
+      sessionStorage.setItem('sb:intro', '1');
+    } catch {
+      /* storage off: the CRT may play */
+    }
     const fade = reduced() || matches('(forced-colors: active)');
     if (!stamp?.classList.contains('is-declassified')) strike();
     // measure first: the exit's own rules change the layout they would read

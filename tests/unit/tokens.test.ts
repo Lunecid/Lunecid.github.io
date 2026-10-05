@@ -201,7 +201,8 @@ describe('design tokens (src/styles/tokens.css)', () => {
     const s = (name: string) => parseFloat(d.get(name)!);
     expect(d.get('--dur-nav-out')).toBe('.09s');
     expect(d.get('--dur-nav-in')).toBe('.16s');
-    expect(d.get('--dur-morph')).toBe('.4s');
+    // MO-42 (named): --dur-morph is gone with the chooser morph it timed (the exits replaced it); no rule used it
+    expect(d.has('--dur-morph')).toBe(false);
     expect(d.get('--dur-reflow')).toBe('.3s');
     expect(d.get('--dur-menu')).toBe('.15s');
     expect(d.get('--dur-lift')).toBe('.25s');
@@ -210,7 +211,6 @@ describe('design tokens (src/styles/tokens.css)', () => {
     expect(s('--dur-nav-out') + s('--dur-nav-in')).toBeCloseTo(0.25, 10);
     expect(s('--dur-nav-out') / 0.25).toBeGreaterThanOrEqual(0.33);
     expect(s('--dur-nav-out') / 0.25).toBeLessThanOrEqual(0.37);
-    expect(s('--dur-morph')).toBeLessThanOrEqual(0.4);
     expect(s('--dur-fade-out')).toBeLessThan(s('--dur-fade'));
     expect(d.get('--dur-menu')).toBe(d.get('--dur-press'));
     expect(d.get('--dur-lift')).toBe(d.get('--dur-exit'));
@@ -646,7 +646,8 @@ describe('the chooser desk (MO-23, v6.4)', () => {
   it('MO-24: --dur-aside is .45s and at most --dur-morph + .05s', () => {
     const d = declsOf(':root');
     expect(d.get('--dur-aside')).toBe('.45s');
-    expect(parseFloat(d.get('--dur-aside')!)).toBeLessThanOrEqual(parseFloat(d.get('--dur-morph')!) + 0.05 + 1e-9);
+    // MO-42 (named): --dur-morph (.4s) is gone; the bound keeps its value
+    expect(parseFloat(d.get('--dur-aside')!)).toBeLessThanOrEqual(0.4 + 0.05 + 1e-9);
   });
 
   it('MO-25: --dur-strike .32s, --dur-strike-ring .42s (the chooser does not redefine --dur-stamp: the general version owns that name)', () => {

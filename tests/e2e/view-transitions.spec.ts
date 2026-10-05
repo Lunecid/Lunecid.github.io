@@ -249,3 +249,25 @@ test('R1: a tag click on /game/projects/ runs a same-document transition; remain
   expect(await log(page)).toEqual([]);
   await expect(page.locator('#project-grid > [data-tags]:not([hidden])')).toHaveCount(3);
 });
+
+// MO-42: after the chooser's exits the version home fades in with the plain page transition (V1); no chooser morph.
+for (const [variant, hit] of [['game', '.file--game .cta__hit'], ['data', '.file--data .cta__hit']] as const) {
+  test(`MO-42: chooser → /${variant}/ after the ${variant === 'game' ? 'waveform' : 'page turn'}: types page (V1 fade), no chooser-stage group, the old page ends on its exit's ground`, async ({ page }) => {
+    await page.addInitScript(() => {
+      addEventListener('pageswap', () => {
+        const bg = document.querySelector('.xnav__bg');
+        try { sessionStorage.setItem('mo42:bg', bg ? getComputedStyle(bg).opacity : ''); } catch { /* */ }
+      });
+    });
+    await page.goto('/?choose');
+    await page.waitForLoadState('networkidle');
+    await clearLog(page);
+    await page.locator(hit).click({ position: { x: 30, y: 30 } });
+    await expect(page).toHaveURL(new RegExp(`/${variant}/$`));
+    const { types, anims } = await transitionInto(page, `/${variant}/`);
+    expect(types).toContain('page');
+    expect(types).not.toContain('choose');
+    expect(pseudos(anims).filter((p) => p.includes('chooser-stage'))).toEqual([]);
+    if (variant === 'game') expect(Number(await page.evaluate(() => sessionStorage.getItem('mo42:bg')))).toBeGreaterThan(0.95); // near-black, no white frame
+  });
+}

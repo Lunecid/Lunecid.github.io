@@ -382,7 +382,6 @@
   /* page transitions: fade-through, the old page out first, then the new one in (M2 crossover ≈ .35) */
   --dur-nav-out: .09s;
   --dur-nav-in: .16s;
-  --dur-morph: .4s;      /* the chosen chooser file grows into the version home (container transform) */
   --dur-reflow: .3s;     /* tag-filter cards move to their new places */
   --dur-menu: .15s;      /* phone menu panel entrance (HudNav, DataNav) */
   --dur-lift: .25s;      /* cartridge lift on hover (spec §6's 0.25 s) */

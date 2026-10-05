@@ -579,6 +579,48 @@ describe('the page-turn sound and the mute button (MO-40)', () => {
   });
 });
 
+describe('the handoff after the exits (MO-42)', () => {
+  let m: ReturnType<typeof mount>;
+  beforeEach(() => {
+    navigations = [];
+    localStorage.clear();
+    sessionStorage.clear();
+    window.matchMedia = vi.fn().mockImplementation((q: string) => ({ matches: false, media: q, addEventListener() {}, removeEventListener() {} })) as unknown as typeof window.matchMedia;
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    m = mount();
+    initChooser(document, { navigate: (href) => navigations.push(href) });
+  });
+  afterEach(() => {
+    initDesk(m.desk, m.hint)();
+    vi.useRealTimers();
+    sessionStorage.clear();
+  });
+
+  it('MO-42: both exits spend sb:intro (the exit is the entry: no CRT on the game home after it); modified clicks and the first touch tap do not', () => {
+    pointerdown(m.gameFile, 'touch');
+    click(m.game); // first tap: reveal only
+    click(m.game, 1, { ctrlKey: true });
+    expect(sessionStorage.getItem('sb:intro')).toBeNull();
+    click(m.game);
+    expect(sessionStorage.getItem('sb:intro')).toBe('1');
+    sessionStorage.clear();
+    settle();
+    click(m.data);
+    expect(sessionStorage.getItem('sb:intro')).toBe('1');
+  });
+
+  it('MO-42: storage that throws never blocks the exit', () => {
+    const spy = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => { throw new Error('blocked'); });
+    try {
+      click(m.game);
+      vi.advanceTimersByTime(EXIT_MS.game);
+      expect(navigations).toEqual(['/game/']);
+    } finally {
+      spy.mockRestore();
+    }
+  });
+});
+
 describe('the exit sheet (MO-38)', () => {
   it('MO-38: the exit sheet is attached once, only after the page has loaded', () => {
     document.head.querySelectorAll('link[data-chooser-exit]').forEach((l) => l.remove());

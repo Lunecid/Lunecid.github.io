@@ -334,3 +334,17 @@ test.describe('MO-40: the page-turn sound and its mute button', () => {
     }
   });
 });
+
+test.describe('MO-42: one intro per session', () => {
+  test('MO-42: an exit spends sb:intro, so /game/ after a chooser exit plays no CRT (also after ?choose)', async ({ browser }) => {
+    const context = await browser.newContext({ viewport: { width: 1280, height: 800 } });
+    const page = await context.newPage();
+    await page.goto('/?choose');
+    expect(await page.evaluate(() => sessionStorage.getItem('sb:intro'))).toBeNull();
+    await page.locator(GAME_HIT).click({ position: { x: 24, y: 12 } });
+    await page.waitForURL(/\/game\/$/);
+    await expect(page.locator('html')).not.toHaveAttribute('data-intro-played', /.*/);
+    expect(await page.evaluate(() => sessionStorage.getItem('sb:intro'))).toBe('1');
+    await context.close();
+  });
+});
