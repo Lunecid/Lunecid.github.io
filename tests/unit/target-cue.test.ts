@@ -1,6 +1,7 @@
 // In-page arrival cue (motion audit T1): a figure or records section reached through an in-page link (`:target`)
-// marks itself once — the game figure's corner marks lock on, the general figure draws an accent line over its heavy
+// marks itself once — the game figure's corner marks lock on, the general figure draws an ink line over its heavy
 // top rule; the records section heads take the same pattern. Reduced motion (both paths) and print get no motion.
+// The cue is never a link colour (accent = clickable only): ink rules and, under reduced motion, an ink square marker.
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -88,14 +89,15 @@ describe('T1 in-page arrival cue', () => {
       expect(screenValue(READ, `${sel}::before`, 'animation'), sel).toBe(`cue-head-tl ${HOLD} var(--ease-out)`);
       expect(screenValue(READ, `${sel}::after`, 'animation'), sel).toBe(`cue-head-br ${HOLD} var(--ease-out)`);
       expect(screenValue(READ, `${sel}::before`, 'opacity'), sel).toBe('0');
+      expect(screenValue(READ, `${sel}::before`, 'border'), sel).toBe('2px solid var(--read-text)');
     }
   });
 
-  it('T1: general figures draw an accent rule, then fade', () => {
+  it('T1: general figures draw an ink rule, then fade', () => {
     for (const sel of [DATA_FIG, ...DATA_SEC]) {
       const pe = `${sel}::before`;
       expect(screenValue(ED, pe, 'animation'), sel).toBe(`cue-rule ${HOLD} var(--ease-out)`);
-      expect(screenValue(ED, pe, 'border-top'), sel).toBe('var(--ed-rule-w-strong) solid var(--ed-accent)');
+      expect(screenValue(ED, pe, 'border-top'), sel).toBe('var(--ed-rule-w-strong) solid var(--ed-ink)');
       expect(screenValue(ED, pe, 'transform-origin'), sel).toBe('0');
       expect(screenValue(ED, pe, 'opacity'), sel).toBe('0'); // gone once the animation ends
     }
@@ -116,18 +118,49 @@ describe('T1 in-page arrival cue', () => {
     }
   });
 
-  it('T1: both reduce paths replace the motion with a static colour', () => {
-    const cases: [string, string[], [string, string, string][]][] = [
-      [HUD, [`${GAME_FIG}::before`, `${GAME_FIG}::after`], [[`${GAME_FIG} .figure__num`, 'color', 'var(--accent-deep)']]],
-      [READ, GAME_SEC.flatMap((s) => [`${s}::before`, `${s}::after`]), [['.rec.read-sec:target', 'border-top-color', 'var(--accent-deep)'], ['.jobfit.read-sec:target', 'border-top-color', 'var(--accent-deep)']]],
-      [ED, [DATA_FIG, ...DATA_SEC].map((s) => `${s}::before`), [[`${DATA_FIG} .ed-figcap__num`, 'color', 'var(--ed-accent)'], [DATA_FIG, 'border-top-color', 'var(--ed-accent)'], ...DATA_SEC.map((s): [string, string, string] => [s, 'border-top-color', 'var(--ed-accent)'])]],
+  it('T1: reduced motion — the figure number gets an ink marker; its colour is unchanged', () => {
+    const cases: [string, string[], [string, string, string][], string][] = [
+      [HUD, [`${GAME_FIG}::before`, `${GAME_FIG}::after`], [], `${GAME_FIG} .figure__num`],
+      [READ, GAME_SEC.flatMap((s) => [`${s}::before`, `${s}::after`]), [['.rec.read-sec:target', 'border-top-color', 'var(--read-text)'], ['.jobfit.read-sec:target', 'border-top-color', 'var(--read-text)']], ''],
+      [ED, [DATA_FIG, ...DATA_SEC].map((s) => `${s}::before`), [[DATA_FIG, 'border-top-color', 'var(--ed-ink)'], ...DATA_SEC.map((s): [string, string, string] => [s, 'border-top-color', 'var(--ed-ink)'])], `${DATA_FIG} .ed-figcap__num`],
     ];
-    for (const [text, moving, statics] of cases) {
+    for (const [text, moving, statics, num] of cases) {
       const { js, os } = reduceRules(text);
       for (const [label, list] of [['data-motion', js], ['media', os]] as const) {
         for (const pe of moving) expect(covers(list, pe.replace(/^:root\[data-variant="data"\] /, ''), 'animation', 'none'), `${label}: ${pe}`).toBe(true);
         for (const [sel, prop, value] of statics) expect(covers(list, sel.replace(/^:root\[data-variant="data"\] /, ''), prop, value), `${label}: ${sel} ${prop}`).toBe(true);
+        if (num) {
+          const n = num.replace(/^:root\[data-variant="data"\] /, '');
+          expect(list.some((r) => r.selectors.some((s) => s.endsWith(n)) && decl(r.body, 'color') !== undefined), `${label}: ${n} keeps its colour`).toBe(false);
+        }
       }
+    }
+  });
+
+  it('MO-21: no :target rule uses --accent, --accent-deep or --ed-accent (cue is not a link colour)', () => {
+    const offenders: string[] = [];
+    for (const [file, text] of [['hud.css', HUD], ['read.css', READ], ['editorial.css', ED]] as const) {
+      for (const r of rules(text)) {
+        if (r.selectors.some((s) => s.includes(':target')) && /var\(--(?:accent|accent-deep|ed-accent|ed-link[\w-]*)\)/.test(r.body)) offenders.push(`${file}: ${r.selectors.join(', ')} { ${r.body} }`);
+      }
+    }
+    expect(offenders).toEqual([]);
+    // the scan sees the cue rules (not vacuous)
+    expect(rules(ED).filter((r) => r.selectors.some((s) => s.includes(':target'))).length).toBeGreaterThan(5);
+  });
+
+  it('MO-21: both reduce paths draw an ink square marker before the targeted figure number', () => {
+    const MARKER: [string, string][] = [['content', '""'], ['display', 'inline-block'], ['width', '.5em'], ['height', '.5em'], ['margin-inline-end', '.35em'], ['background', 'currentColor']];
+    for (const [text, num] of [[HUD, `${GAME_FIG} .figure__num::before`], [ED, `${DATA_FIG} .ed-figcap__num::before`]] as const) {
+      const { js, os } = reduceRules(text);
+      for (const [label, list] of [['data-motion', js], ['media', os]] as const) {
+        for (const [prop, value] of MARKER) expect(covers(list, num.replace(/^:root\[data-variant="data"\] /, ''), prop, value), `${label}: ${num} ${prop}`).toBe(true);
+      }
+      // forced colours: the marker is CanvasText; print: no marker
+      const all = rules(text);
+      const sel = num.replace(/^:root\[data-variant="data"\] /, '');
+      expect(all.some((r) => r.at.some((a) => /forced-colors:\s*active/.test(a)) && r.selectors.some((s) => s.endsWith(sel)) && decl(r.body, 'background') === 'CanvasText'), `forced: ${num}`).toBe(true);
+      expect(all.some((r) => r.at.some((a) => /^@media print\b/.test(a)) && r.selectors.some((s) => s.endsWith(sel)) && /^none\s*!important$/.test(decl(r.body, 'display') ?? '')), `print: ${num}`).toBe(true);
     }
   });
 

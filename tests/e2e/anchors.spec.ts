@@ -92,7 +92,7 @@ test.describe('/game/records/ and /en/game/records/ show the tagline', () => {
 });
 
 // T1 (motion audit): a figure reached through the body's "그림 N" link marks itself once — the game figure's corner
-// marks lock on (cue-lock-*), the general figure draws an accent line over its top rule (cue-rule).
+// marks lock on (cue-lock-*), the general figure draws an ink line over its top rule (cue-rule).
 const CUE_PAGES = [
   { variant: 'game', path: '/game/projects/school-zone-blindspots/', names: ['cue-lock-br', 'cue-lock-tl'], num: '.figure__num' },
   { variant: 'data', path: '/data/projects/school-zone-blindspots/', names: ['cue-rule'], num: '.ed-figcap__num' },
@@ -142,21 +142,32 @@ test.describe('T1: in-page arrival cue', () => {
     }
   });
 
-  test('T1: reduced motion — no animation; the figure number takes the accent colour', async ({ page }) => {
+  test('T1: reduced motion — no animation; the figure number gets an ink marker, its colour unchanged', async ({ page }) => {
     await page.emulateMedia({ reducedMotion: 'reduce' });
     for (const c of CUE_PAGES) {
       await page.goto(c.path, { waitUntil: 'load' });
       await settle(page);
       const fig = page.locator('#figure-2');
-      const idle = await fig.locator(c.num).evaluate((el) => getComputedStyle(el).color);
+      const num = fig.locator(c.num);
+      const marker = () => num.evaluate((el) => {
+        const cs = getComputedStyle(el, '::before');
+        return { content: cs.content, width: parseFloat(cs.width) || 0, bg: cs.backgroundColor };
+      });
+      const idle = await num.evaluate((el) => getComputedStyle(el).color);
+      expect((await marker()).content, `${c.variant}: no marker before the jump`).toBe('none');
       await page.locator('main a[href="#figure-2"]').first().click();
       await expect(page).toHaveURL(/#figure-2$/);
       await page.waitForTimeout(100);
       expect(await cueNames(page, 'figure-2'), c.variant).toEqual([]);
-      const accent = await resolved(page, 'figure-2', c.variant === 'game' ? 'var(--accent-deep)' : 'var(--ed-accent)');
-      expect(accent).not.toBe(idle);
-      expect(await fig.locator(c.num).evaluate((el) => getComputedStyle(el).color), c.variant).toBe(accent);
-      if (c.variant === 'data') expect(await fig.evaluate((el) => getComputedStyle(el).borderTopColor)).toBe(accent);
+      // the number keeps its own (ink) colour; the cue is the square marker in that colour, never a link colour
+      expect(await num.evaluate((el) => getComputedStyle(el).color), c.variant).toBe(idle);
+      const ink = await resolved(page, 'figure-2', c.variant === 'game' ? 'var(--read-text)' : 'var(--ed-ink)');
+      const link = await resolved(page, 'figure-2', c.variant === 'game' ? 'var(--accent-deep)' : 'var(--ed-accent)');
+      const m = await marker();
+      expect(m.width, `${c.variant}: marker box`).toBeGreaterThan(0);
+      expect(m.bg, c.variant).toBe(ink);
+      expect(m.bg, c.variant).not.toBe(link);
+      if (c.variant === 'data') expect(await fig.evaluate((el) => getComputedStyle(el).borderTopColor)).toBe(ink);
     }
   });
 });
