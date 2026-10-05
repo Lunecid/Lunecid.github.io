@@ -3,7 +3,8 @@
 // is remembered (sb:variant, P1-14) before the navigation. Pointing at or focusing the game file slides the printout
 // aside in CSS (:has, works without JS); this script measures where the sheet goes, and adds the touch rule: the first
 // tap on the game file only reveals it (.is-aside), the second follows its link, a tap anywhere else (the aside sheet
-// included) or Escape puts the sheet back. A hint (touch and JS only) says what the next tap does.
+// included) or Escape puts the sheet back. A hint (touch and JS only) says what the next tap does. Entering the game
+// file (MO-25) inks and strikes its "기밀 해제" stamp, then follows the link after ENTER_DELAY_MS.
 import { rememberVariant } from '../lib/variant-pref';
 import { isVariantId } from '../variants/ids';
 
@@ -45,6 +46,65 @@ const matches = (query: string): boolean => {
     return false;
   }
 };
+
+/** The stamp's moment before the game page opens: the ring (--dur-strike-ring .42s) has spread; colour only under reduced motion. */
+export const ENTER_DELAY_MS = { full: 440, reduce: 150 } as const;
+
+const reducedMotion = (): boolean => matches('(prefers-reduced-motion: reduce)') || document.documentElement.dataset.motion === 'reduce';
+const plain = (e: MouseEvent): boolean => e.button === 0 && !e.ctrlKey && !e.metaKey && !e.shiftKey && !e.altKey;
+
+/**
+ * An unmodified primary activation of the game link that nothing else consumed (the first-tap rule calls
+ * preventDefault first) inks and strikes the stamp, remembers the choice and navigates after the delay. The strike
+ * comes at the press for mouse and pen (instant feedback), at the click for keyboard and assistive tech. Modified,
+ * middle and repeated clicks stay native; a second activation during the delay is ignored; a page restored from the
+ * back/forward cache starts clean.
+ */
+export function initEnter(link: HTMLAnchorElement, stamp: HTMLElement, opts: { reduced: () => boolean; navigate?: (href: string) => void }): void {
+  const navigate = opts.navigate ?? ((href: string) => window.location.assign(href));
+  let pending = false;
+  const strike = () => {
+    stamp.classList.add('is-declassified');
+    stamp.classList.remove('is-struck');
+    if (opts.reduced()) return;
+    void stamp.offsetWidth; // restart the keyframes
+    stamp.classList.add('is-struck');
+  };
+  const face = link.closest('.file') ?? link;
+  face.addEventListener('pointerdown', (e) => {
+    const ev = e as PointerEvent;
+    if (pending || (ev.pointerType !== 'mouse' && ev.pointerType !== 'pen') || !plain(ev)) return;
+    if (ev.target instanceof Element && ev.target.closest('a') === link) strike();
+  });
+  link.addEventListener('click', (e) => {
+    if (e.defaultPrevented) return; // the first tap only revealed the file
+    if (pending) {
+      e.preventDefault();
+      return;
+    }
+    if (!plain(e) || e.detail > 1) return;
+    e.preventDefault();
+    pending = true;
+    if (!stamp.classList.contains('is-declassified')) strike();
+    const variant = link.dataset.chooseVariant;
+    if (isVariantId(variant)) rememberVariant(variant);
+    const href = link.getAttribute('href') ?? link.href;
+    window.setTimeout(() => {
+      pending = false;
+      navigate(href);
+    }, opts.reduced() ? ENTER_DELAY_MS.reduce : ENTER_DELAY_MS.full);
+  });
+  // a stamp inked by a press that never became a click goes away with the next press elsewhere
+  document.addEventListener('pointerdown', (e) => {
+    if (!pending && !(e.target instanceof Element && e.target.closest('a') === link)) stamp.classList.remove('is-declassified', 'is-struck');
+  }, { capture: true });
+  window.addEventListener('pageshow', (e) => {
+    if (!(e as PageTransitionEvent).persisted) return;
+    pending = false;
+    stamp.classList.remove('is-declassified', 'is-struck');
+    link.closest('.desk')?.classList.remove('is-aside');
+  });
+}
 
 /** One wiring per desk (initChooser and a direct call share it). */
 const wired = new WeakMap<HTMLElement, () => void>();
@@ -126,7 +186,7 @@ export function initDesk(desk: HTMLElement, hint: HTMLElement | null): () => voi
   return cleanup;
 }
 
-export function initChooser(root: ParentNode = document): void {
+export function initChooser(root: ParentNode = document, opts: { navigate?: (href: string) => void } = {}): void {
   const container = root.querySelector<HTMLElement>('[data-chooser]');
   if (!container) return;
   const links = Array.from(container.querySelectorAll<HTMLAnchorElement>('a[data-choose-variant]'));
@@ -150,4 +210,7 @@ export function initChooser(root: ParentNode = document): void {
       if (isVariantId(variant)) rememberVariant(variant);
     });
   }
+  const gameLink = links.find((l) => l.dataset.chooseVariant === 'game');
+  const stamp = gameLink?.closest('.file')?.querySelector<HTMLElement>('.stamp');
+  if (gameLink && stamp) initEnter(gameLink, stamp, { reduced: reducedMotion, navigate: opts.navigate });
 }

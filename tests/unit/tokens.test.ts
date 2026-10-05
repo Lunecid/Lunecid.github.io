@@ -445,4 +445,11 @@ describe('the chooser desk (MO-23, v6.4)', () => {
     expect(d.get('--dur-aside')).toBe('.45s');
     expect(parseFloat(d.get('--dur-aside')!)).toBeLessThanOrEqual(parseFloat(d.get('--dur-morph')!) + 0.05 + 1e-9);
   });
+
+  it('MO-25: --dur-strike .32s, --dur-strike-ring .42s (no --dur-stamp: the general version owns that name)', () => {
+    const d = declsOf(':root');
+    expect(d.get('--dur-strike')).toBe('.32s');
+    expect(d.get('--dur-strike-ring')).toBe('.42s');
+    expect(d.has('--dur-stamp')).toBe(false);
+  });
 });

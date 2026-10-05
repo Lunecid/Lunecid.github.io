@@ -259,6 +259,17 @@ test.describe('MO-24: the reveal', () => {
     const page = await context.newPage();
     await page.goto('/?choose', { waitUntil: 'networkidle' });
     await expect(page.locator('.desk__hint')).toHaveText('뒤의 게임 파일을 누르면 앞으로 꺼냅니다');
+    // its line is reserved before the script fills it: filling it shifts nothing
+    const shifted = await page.evaluate(
+      () =>
+        new Promise<number>((resolve) => {
+          let sum = 0;
+          const po = new PerformanceObserver((list) => { for (const e of list.getEntries() as (PerformanceEntry & { value: number; hadRecentInput: boolean })[]) if (!e.hadRecentInput) sum += e.value; });
+          po.observe({ type: 'layout-shift', buffered: true });
+          setTimeout(() => { po.disconnect(); resolve(sum); }, 300);
+        }),
+    );
+    expect(shifted).toBeLessThanOrEqual(0.005);
     const g = await rectOf(page, '.file--game');
     await page.touchscreen.tap(g.left + g.width / 2, g.top + 20);
     await expect(page.locator('.desk')).toHaveClass(/is-aside/);
@@ -326,5 +337,91 @@ test.describe('MO-24: the reveal', () => {
     await openAt(page, '/?choose', 1280, 800);
     await expect(page.locator('.desk__hint')).toHaveText('');
     await expect(page.locator('.desk__hint')).toHaveAttribute('aria-live', 'polite');
+  });
+});
+
+/** Records, across the navigation, how long the page lived after the activating click (sessionStorage survives it). */
+const timeToLeave = (page: Page) =>
+  page.evaluate(() => {
+    let t0 = 0;
+    document.addEventListener('click', () => { t0 = performance.now(); }, { capture: true });
+    window.addEventListener('pagehide', () => sessionStorage.setItem('mo25:dt', String(performance.now() - t0)));
+  });
+const GAME_HIT = '.file--game .cta__hit';
+
+test.describe('MO-25: the declassify stamp', () => {
+  test('the stamp is invisible at rest and has no layout box change when it appears', async ({ page }) => {
+    await openAt(page, '/?choose', 1280, 800);
+    const stamp = page.locator('.file--game .stamp');
+    expect(await stamp.evaluate((el) => getComputedStyle(el).opacity)).toBe('0');
+    const before = await stamp.evaluate((el) => el.getBoundingClientRect().toJSON());
+    const title = await rectOf(page, '#file-game-title');
+    await stamp.evaluate((el) => el.classList.add('is-declassified'));
+    expect(await stamp.evaluate((el) => getComputedStyle(el).opacity)).toBe('1');
+    expect(await stamp.evaluate((el) => el.getBoundingClientRect().toJSON())).toEqual(before);
+    expect(await rectOf(page, '#file-game-title')).toEqual(title);
+  });
+
+  test('click on the game cover: the stamp turns lime (bg --accent) with a ring, then /game/ loads after ~440 ms', async ({ page }) => {
+    await openAt(page, '/?choose', 1280, 800);
+    await timeToLeave(page);
+    const g = await rectOf(page, '.file--game');
+    await page.mouse.move(g.left + 30, g.top + 120);
+    await page.waitForTimeout(520);
+    await page.mouse.down();
+    const stamp = page.locator('.file--game .stamp');
+    await expect(stamp).toHaveClass(/is-declassified/);
+    await expect(stamp).toHaveClass(/is-struck/);
+    const look = await stamp.evaluate((el) => ({ ring: getComputedStyle(el, '::after').animationName, strike: getComputedStyle(el).animationName }));
+    expect(look).toEqual({ ring: 'stamp-ring', strike: 'stamp-strike' });
+    // the colour change runs over --dur-hover (the button is still held: nothing navigates yet)
+    await expect.poll(() => stamp.evaluate((el) => getComputedStyle(el).backgroundColor), { timeout: 400 }).toBe('rgb(200, 240, 60)');
+    await page.mouse.up();
+    await page.waitForURL(/\/game\/$/);
+    const dt = Number(await page.evaluate(() => sessionStorage.getItem('mo25:dt')));
+    expect(dt).toBeGreaterThanOrEqual(430);
+    expect(dt).toBeLessThan(900);
+    expect(await page.evaluate(() => localStorage.getItem('sb:variant'))).toBe('game');
+  });
+
+  test('reduced motion: no animation on the stamp; navigation within 300 ms', async ({ page }) => {
+    await openAt(page, '/?choose', 1280, 800, { reducedMotion: true });
+    await timeToLeave(page);
+    await page.locator(DATA).focus();
+    await page.keyboard.press('Tab');
+    await page.waitForTimeout(260);
+    const leaving = page.waitForURL(/\/game\/$/);
+    await page.keyboard.press('Enter');
+    const stamp = page.locator('.file--game .stamp');
+    await expect(stamp).toHaveClass(/is-declassified/);
+    expect(await stamp.evaluate((el) => [getComputedStyle(el).animationName, getComputedStyle(el, '::after').animationName])).toEqual(['none', 'none']);
+    await leaving;
+    const dt = Number(await page.evaluate(() => sessionStorage.getItem('mo25:dt')));
+    expect(dt).toBeGreaterThanOrEqual(140);
+    expect(dt).toBeLessThanOrEqual(300);
+  });
+
+  test('ctrl+click opens no stamp and does not block', async ({ page, context }) => {
+    await openAt(page, '/?choose', 1280, 800);
+    await page.evaluate(() => document.addEventListener('click', (e) => { (window as unknown as { __prevented: boolean }).__prevented = e.defaultPrevented; }));
+    const popup = context.waitForEvent('page', { timeout: 3000 }).catch(() => null);
+    await page.locator(GAME_HIT).click({ modifiers: ['Control'], position: { x: 24, y: 12 } });
+    expect(await page.evaluate(() => (window as unknown as { __prevented: boolean }).__prevented)).toBe(false);
+    expect(await page.locator('.file--game .stamp').getAttribute('class')).toBe('stamp');
+    await page.waitForTimeout(600);
+    await expect(page).toHaveURL(/\?choose$/);
+    (await popup)?.close();
+  });
+
+  test('back navigation (bfcache): the stamp is gone again', async ({ page }) => {
+    await openAt(page, '/?choose', 1280, 800);
+    await page.locator(GAME_HIT).click({ position: { x: 24, y: 12 } });
+    await page.waitForURL(/\/game\/$/);
+    await page.goBack();
+    await expect(page).toHaveURL(/\?choose$/);
+    const stamp = page.locator('.file--game .stamp');
+    await expect(stamp).not.toHaveClass(/is-declassified|is-struck/);
+    expect(await stamp.evaluate((el) => getComputedStyle(el).opacity)).toBe('0');
+    await expect(page.locator('.desk')).not.toHaveClass(/is-aside/);
   });
 });

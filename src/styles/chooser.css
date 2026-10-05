@@ -74,9 +74,12 @@
 }
 :root[data-motion="reduce"] .desk { --aside-t: none; --aside-o: 0; }
 
-/* the touch hint (filled by chooser.ts on touch screens only; empty, it takes no room) */
+/* the touch hint (filled by chooser.ts on touch screens only). Its line is reserved under the same media condition the
+   script tests, so filling it never moves the centred desk (no layout shift); elsewhere it takes no room */
 .desk__hint { font: 500 var(--fs-label)/1.5 var(--font-sans); color: var(--hud-muted); text-align: center; }
-.desk__hint:not(:empty) { margin-top: 18px; }
+@media (hover: none) and (pointer: coarse) {
+  .desk__hint { min-height: 1.5em; margin-top: 18px; }
+}
 
 /* print: the two files flat, one below the other in DOM order (data, then game) */
 @media print {
@@ -260,7 +263,20 @@
   outline: 1px solid color-mix(in srgb, var(--hud-muted) 45%, transparent);
   outline-offset: 2px;
   opacity: 0;
+  transition: color var(--dur-hover) linear, background-color var(--dur-hover) linear, border-color var(--dur-hover) linear, outline-color var(--dur-hover) linear;
 }
+/* entering the game file declassifies it (chooser.ts): the stamp inks in lime (the click's own feedback), is struck
+   (scale and a slight turn, the overshoot as a keyframe) and a lime ring spreads once; reduced motion: colour only */
+.file--game .stamp.is-declassified { opacity: 1; color: var(--accent-ink); background-color: var(--accent); border-color: var(--accent); outline-color: var(--accent); }
+.file--game .stamp::after { content: ""; position: absolute; inset: -6px; border: 2px solid var(--accent); opacity: 0; pointer-events: none; }
+.file--game .stamp.is-struck { animation: stamp-strike var(--dur-strike) var(--ease-out) 1; }
+.file--game .stamp.is-struck::after { animation: stamp-ring var(--dur-strike-ring) var(--ease-out) 1; }
+@keyframes stamp-strike { 0% { transform: scale(1.55) rotate(-8deg); opacity: .4; } 60% { transform: scale(.96) rotate(-2deg); opacity: 1; } 100% { transform: none; opacity: 1; } }
+@keyframes stamp-ring { 0% { transform: scale(.85); opacity: 1; } 100% { transform: scale(1.7); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) {
+  .file--game .stamp.is-struck, .file--game .stamp.is-struck::after { animation: none; }
+}
+:root[data-motion="reduce"] .file--game .stamp.is-struck, :root[data-motion="reduce"] .file--game .stamp.is-struck::after { animation: none; }
 /* the tagline sits right under the Korean title at the subtitle size, so it holds the cover's middle */
 .file--game .intro { grid-area: intro; max-width: 22em; font: 500 var(--fs-sub)/1.45 var(--font-sans); color: var(--hud-text); text-wrap: pretty; }
 .file--game .cl { display: inline-block; }

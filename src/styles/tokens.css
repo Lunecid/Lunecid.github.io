@@ -202,6 +202,8 @@
   --dur-lift: .25s;      /* cartridge lift on hover (spec §6's 0.25 s) */
   --dur-fade-out: .15s;  /* reduced-motion exit fade (ImageViewer, CharacterStage, the page turn) */
   --dur-aside: .45s;     /* the chooser's printout slides aside to reveal the game file (MO-24) */
+  --dur-strike: .32s;    /* the chooser's "기밀 해제" stamp is struck on the entering click (MO-25) */
+  --dur-strike-ring: .42s; /* its lime ring spreads once; ENTER_DELAY_MS.full (440 ms) waits for it */
   --dur-stroke: .2s;     /* the chooser printout's link stroke sweeps in (MO-23); the same name and value as the general version's (DS-2): dedupe at merge (MO-29) */
 
   /* ── layout ── */

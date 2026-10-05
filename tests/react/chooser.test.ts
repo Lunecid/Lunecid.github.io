@@ -2,7 +2,8 @@
 // isStacked layout test is gone: its two tests are merged into the arrows test), the slide-aside geometry, the touch
 // first-tap reveal, tap-outside and Escape, and the touch hint.
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { asideGeometry, initChooser, initDesk } from '../../src/scripts/chooser';
+import { readFileSync } from 'node:fs';
+import { ENTER_DELAY_MS, asideGeometry, initChooser, initDesk } from '../../src/scripts/chooser';
 
 let navigations: string[] = [];
 // jsdom would try to navigate: count the default actions instead (bubble phase on the document: after every listener
@@ -17,21 +18,23 @@ function mount() {
   document.body.innerHTML = `
     <div class="desk" data-chooser data-desk>
       <article class="file file--data"><div class="face"><a class="cta" href="/data/" data-choose-variant="data">D<span class="cta__hit"></span></a></div></article>
-      <article class="file file--game"><div class="face"><a class="cta" href="/game/" data-choose-variant="game">G<span class="cta__hit"></span></a></div></article>
+      <article class="file file--game"><div class="face device"><span class="stamp" aria-hidden="true">S</span><a class="cta" href="/game/" data-choose-variant="game">G<span class="cta__hit"></span></a></div></article>
     </div>
     <p class="desk__hint" aria-live="polite" data-rest="REST" data-aside="ASIDE"></p>
     <button id="elsewhere">x</button>`;
   const desk = document.querySelector<HTMLElement>('.desk')!;
   const [data, game] = Array.from(document.querySelectorAll<HTMLAnchorElement>('a'));
-  return { desk, hint: document.querySelector<HTMLElement>('.desk__hint')!, game: game!, data: data!, gameFile: desk.querySelector<HTMLElement>('.file--game')!, dataFile: desk.querySelector<HTMLElement>('.file--data')! };
+  return { desk, hint: document.querySelector<HTMLElement>('.desk__hint')!, game: game!, data: data!, gameFile: desk.querySelector<HTMLElement>('.file--game')!, dataFile: desk.querySelector<HTMLElement>('.file--data')!, stamp: desk.querySelector<HTMLElement>('.stamp')! };
 }
 const key = (el: Element, k: string, init: KeyboardEventInit = {}): boolean => el.dispatchEvent(new KeyboardEvent('keydown', { key: k, bubbles: true, cancelable: true, ...init }));
-const pointerdown = (el: Element, pointerType: string): void => {
-  const ev = new MouseEvent('pointerdown', { bubbles: true, cancelable: true });
+const pointerdown = (el: Element, pointerType: string, init: MouseEventInit = {}): void => {
+  const ev = new MouseEvent('pointerdown', { bubbles: true, cancelable: true, ...init });
   Object.defineProperty(ev, 'pointerType', { value: pointerType });
   el.dispatchEvent(ev);
 };
-const click = (el: Element, detail = 1): boolean => el.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, detail }));
+const click = (el: Element, detail = 1, init: MouseEventInit = {}): boolean => el.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, detail, ...init }));
+/** Game-link activations go through the stamp delay (MO-25): let it run out. */
+const settle = () => vi.advanceTimersByTime(ENTER_DELAY_MS.full + 10);
 const coarse = (on: boolean) => {
   window.matchMedia = vi.fn().mockImplementation((q: string) => ({ matches: on && /hover: none|pointer: coarse/.test(q), media: q, addEventListener() {}, removeEventListener() {} })) as unknown as typeof window.matchMedia;
 };
@@ -43,11 +46,15 @@ describe('chooser desk (MO-24)', () => {
     navigations = [];
     localStorage.clear();
     coarse(true);
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
     m = mount();
-    initChooser();
+    initChooser(document, { navigate: (href) => navigations.push(href) });
     cleanup = initDesk(m.desk, m.hint);
   });
-  afterEach(() => cleanup());
+  afterEach(() => {
+    cleanup();
+    vi.useRealTimers();
+  });
 
   it('asideGeometry: side-by-side clears the game cover by the gap incl. the turned spill; stacked drops below', () => {
     const game = { x: 0, y: 0, w: 618, h: 593 };
@@ -85,7 +92,8 @@ describe('chooser desk (MO-24)', () => {
     click(m.data);
     expect(localStorage.getItem('sb:variant')).toBe('data');
     click(m.game, 0);
-    expect(localStorage.getItem('sb:variant')).toBe('game');
+    expect(localStorage.getItem('sb:variant')).toBe('game'); // before the delayed navigation
+    expect(navigations).toEqual(['/data/']);
   });
 
   it('touch: first tap on the game link reveals without navigating; the second activates', () => {
@@ -96,6 +104,7 @@ describe('chooser desk (MO-24)', () => {
     expect(localStorage.getItem('sb:variant')).toBeNull(); // a reveal is not a choice
     pointerdown(m.gameFile, 'touch');
     click(m.game);
+    settle();
     expect(navigations).toEqual(['/game/']);
   });
 
@@ -124,15 +133,19 @@ describe('chooser desk (MO-24)', () => {
 
   it('keyboard Enter and a click without a touch pointerdown never take the first-tap path', () => {
     click(m.game, 0); // keyboard / AT activation
+    settle();
     expect(navigations).toEqual(['/game/']);
     pointerdown(m.gameFile, 'mouse');
     click(m.game);
+    settle();
     expect(navigations).toEqual(['/game/', '/game/']);
     click(m.game); // synthetic, no pointerdown at all
+    settle();
     expect(navigations).toHaveLength(3);
     // a touch pointerdown on the other file does not arm the game link
     pointerdown(m.dataFile, 'touch');
     click(m.game);
+    settle();
     expect(navigations).toHaveLength(4);
     expect(m.desk.classList.contains('is-aside')).toBe(false);
   });
@@ -143,6 +156,7 @@ describe('chooser desk (MO-24)', () => {
       pointerdown(m.gameFile, 'touch');
       now.mockReturnValue(1700);
       click(m.game);
+      settle();
       expect(navigations).toEqual(['/game/']);
     } finally {
       now.mockRestore();
@@ -177,5 +191,127 @@ describe('chooser desk (MO-24)', () => {
     expect(m.desk.style.getPropertyValue('--ax')).toBe(`${want.ax}px`);
     expect(m.desk.style.getPropertyValue('--ay')).toBe(`${want.ay}px`);
     expect(m.desk.style.getPropertyValue('--cx')).toBe(`${want.cx}px`);
+  });
+});
+
+describe('the declassify stamp on the entering click (MO-25)', () => {
+  let m: ReturnType<typeof mount>;
+  let reduce = false;
+  beforeEach(() => {
+    navigations = [];
+    localStorage.clear();
+    reduce = false;
+    window.matchMedia = vi.fn().mockImplementation((q: string) => ({ matches: reduce && /reduced-motion: reduce/.test(q), media: q, addEventListener() {}, removeEventListener() {} })) as unknown as typeof window.matchMedia;
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    m = mount();
+    initChooser(document, { navigate: (href) => navigations.push(href) });
+  });
+  afterEach(() => {
+    initDesk(m.desk, m.hint)();
+    vi.useRealTimers();
+  });
+
+  it('a click inks and strikes the stamp, then navigates after 440 ms', () => {
+    pointerdown(m.game.querySelector('.cta__hit')!, 'mouse', { button: 0 });
+    expect(m.stamp.classList.contains('is-declassified')).toBe(true); // at the press: instant feedback
+    expect(m.stamp.classList.contains('is-struck')).toBe(true);
+    click(m.game);
+    expect(navigations).toEqual([]); // default prevented: the page opens after the delay
+    expect(localStorage.getItem('sb:variant')).toBe('game');
+    vi.advanceTimersByTime(ENTER_DELAY_MS.full - 1);
+    expect(navigations).toEqual([]);
+    vi.advanceTimersByTime(1);
+    expect(navigations).toEqual(['/game/']);
+  });
+
+  it('reduced motion: colour only, navigation after 150 ms', () => {
+    reduce = true;
+    click(m.game);
+    expect(m.stamp.classList.contains('is-declassified')).toBe(true);
+    expect(m.stamp.classList.contains('is-struck')).toBe(false);
+    vi.advanceTimersByTime(ENTER_DELAY_MS.reduce);
+    expect(navigations).toEqual(['/game/']);
+    // the site toggle counts too
+    navigations = [];
+    m = mount();
+    reduce = false;
+    document.documentElement.dataset.motion = 'reduce';
+    try {
+      initChooser(document, { navigate: (href) => navigations.push(href) });
+      click(m.game);
+      expect(m.stamp.classList.contains('is-struck')).toBe(false);
+      vi.advanceTimersByTime(ENTER_DELAY_MS.reduce);
+      expect(navigations).toEqual(['/game/']);
+    } finally {
+      document.documentElement.dataset.motion = 'full';
+    }
+  });
+
+  it('Enter (detail 0) navigates in one activation with the stamp', () => {
+    click(m.game, 0);
+    expect(m.stamp.classList.contains('is-declassified')).toBe(true);
+    expect(m.stamp.classList.contains('is-struck')).toBe(true);
+    vi.advanceTimersByTime(ENTER_DELAY_MS.full);
+    expect(navigations).toEqual(['/game/']);
+  });
+
+  it('modified and middle clicks are native: no stamp, no preventDefault', () => {
+    const inits = [{ ctrlKey: true }, { metaKey: true }, { shiftKey: true }, { altKey: true }, { button: 1 }];
+    for (const init of inits) {
+      pointerdown(m.game.querySelector('.cta__hit')!, 'mouse', init);
+      click(m.game, 1, init);
+    }
+    expect(navigations).toEqual(inits.map(() => '/game/')); // native default action, at once
+    expect(m.stamp.className).toBe('stamp');
+    click(m.data); // the printout's link: native, no stamp
+    expect(navigations.at(-1)).toBe('/data/');
+    expect(m.stamp.className).toBe('stamp');
+  });
+
+  it('a second activation during the delay is ignored', () => {
+    click(m.game);
+    expect(click(m.game, 2)).toBe(false);
+    click(m.game, 0);
+    vi.advanceTimersByTime(ENTER_DELAY_MS.full + 100);
+    expect(navigations).toEqual(['/game/']);
+  });
+
+  it('the first touch tap only reveals (no stamp); the second strikes and navigates', () => {
+    pointerdown(m.gameFile, 'touch');
+    click(m.game);
+    expect(m.desk.classList.contains('is-aside')).toBe(true);
+    expect(m.stamp.classList.contains('is-declassified')).toBe(false);
+    vi.advanceTimersByTime(1000);
+    expect(navigations).toEqual([]);
+    pointerdown(m.gameFile, 'touch');
+    click(m.game);
+    expect(m.stamp.classList.contains('is-declassified')).toBe(true);
+    vi.advanceTimersByTime(ENTER_DELAY_MS.full);
+    expect(navigations).toEqual(['/game/']);
+  });
+
+  it('pageshow persisted resets the stamp', () => {
+    pointerdown(m.gameFile, 'touch');
+    click(m.game);
+    pointerdown(m.gameFile, 'touch');
+    click(m.game);
+    vi.advanceTimersByTime(ENTER_DELAY_MS.full);
+    const ev = new Event('pageshow') as Event & { persisted: boolean };
+    Object.defineProperty(ev, 'persisted', { value: true });
+    window.dispatchEvent(ev);
+    expect(m.stamp.classList.contains('is-declassified')).toBe(false);
+    expect(m.stamp.classList.contains('is-struck')).toBe(false);
+    expect(m.desk.classList.contains('is-aside')).toBe(false);
+    click(m.game); // not pending any more
+    vi.advanceTimersByTime(ENTER_DELAY_MS.full);
+    expect(navigations).toEqual(['/game/', '/game/']);
+  });
+
+  it('ENTER_DELAY_MS.full is at least --dur-strike-ring and at most 500 ms', () => {
+    const tokens = readFileSync('src/styles/tokens.css', 'utf8');
+    const ring = parseFloat(/--dur-strike-ring:\s*([\d.]+)s/.exec(tokens)?.[1] ?? 'NaN') * 1000;
+    expect(ENTER_DELAY_MS.full).toBeGreaterThanOrEqual(ring);
+    expect(ENTER_DELAY_MS.full).toBeLessThanOrEqual(500);
+    expect(ENTER_DELAY_MS).toEqual({ full: 440, reduce: 150 });
   });
 });
