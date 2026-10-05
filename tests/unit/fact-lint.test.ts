@@ -21,8 +21,13 @@ import { walk } from '../helpers/fs';
 const ROOT = process.cwd();
 const facts = loadFactSource();
 
-/** Contract §3.3 skipped keys, plus the structural Variant fields that hold ids, not copy. */
-const SKIP_KEYS = new Set(['href', 'num', 'id', 'figure', 'kind', 'frequency', 'asOf', 'orders', 'modules', 'prefix', 'layout', 'theme', 'jobfit', 'documents', 'nav']);
+/** Contract §3.3 skipped keys, plus the structural Variant fields that hold ids, not copy, plus `serial` (the chooser
+ *  covers' file serials: label numbers like `num`). */
+const SKIP_KEYS = new Set(['href', 'num', 'serial', 'id', 'figure', 'kind', 'frequency', 'asOf', 'orders', 'modules', 'prefix', 'layout', 'theme', 'jobfit', 'documents', 'nav']);
+/** Label-number values (`num`, `serial`): letters, digits and label punctuation only, never a fact. */
+const LABEL_NUMBER = /^[A-Z0-9 ./%-]*$/;
+/** Placeholders the chooser covers fill in code (file count, build year, site host), not fact tokens. */
+const CODE_FILLED = { where: 'src/data/copy/chooser-covers.ts coverCopy.', pattern: /\{(?:n|year|host|count)\}/g };
 /** CA-9: literals that are not common-frame facts; each must match exactly once. */
 const FACT_LINT_EXCEPTIONS: { where: string; literal: string; why: string }[] = [
   { where: 'src/data/jobfit.game.yaml rows[take-home].plan.ko', literal: '1쪽', why: "a planned deliverable's page count, pinned by tests/content/records.test.ts" },
@@ -86,7 +91,8 @@ describe('fact lint (R-4)', () => {
     const used = new Map<string, number>();
     const problems: string[] = [];
     for (const leaf of scanned()) {
-      let rest = leaf.text.replace(FACT_TOKEN, '');
+      const text = leaf.where.startsWith(CODE_FILLED.where) ? leaf.text.replace(CODE_FILLED.pattern, '') : leaf.text;
+      let rest = text.replace(FACT_TOKEN, '');
       for (const ex of FACT_LINT_EXCEPTIONS) {
         if (leaf.where === ex.where && rest.includes(ex.literal)) {
           rest = rest.replace(ex.literal, '');
@@ -99,7 +105,7 @@ describe('fact lint (R-4)', () => {
       if (/[{}]/.test(rest)) problems.push(`${leaf.where}: stray brace in "${leaf.text}"`);
       for (const lang of leaf.lang ? [leaf.lang] : (['ko', 'en'] as const)) {
         try {
-          resolveFacts(leaf.text, lang, facts, leaf.ctx);
+          resolveFacts(text, lang, facts, leaf.ctx);
         } catch (error) {
           problems.push(`${leaf.where} (${lang}): ${(error as Error).message}`);
         }
@@ -107,6 +113,25 @@ describe('fact lint (R-4)', () => {
     }
     expect(problems).toEqual([]);
     for (const ex of FACT_LINT_EXCEPTIONS) expect(used.get(ex.where), `exception ${ex.where} must match exactly once`).toBe(1);
+  });
+
+  it('serial and num values are label numbers only', () => {
+    const found: string[] = [];
+    const visit = (value: unknown, where: string, key: string | null): void => {
+      if (typeof value === 'string') {
+        if (key === 'num' || key === 'serial') {
+          found.push(where);
+          expect(value, where).toMatch(LABEL_NUMBER);
+        }
+      } else if (Array.isArray(value)) value.forEach((item, i) => visit(item, `${where}[${i}]`, key));
+      else if (value !== null && typeof value === 'object' && [Object.prototype, null].includes(Object.getPrototypeOf(value))) {
+        for (const [k, child] of Object.entries(value)) visit(child, `${where}.${k}`, k);
+      }
+    };
+    for (const [file, exports] of Object.entries(modules)) for (const [name, value] of Object.entries(exports)) visit(value, `${file.replace(/^(\.\.\/)+/, '')} ${name}`, null);
+    // not vacuous: the chooser's file number and both covers' serials in both languages
+    expect(found).toEqual(expect.arrayContaining(['src/data/copy/chooser.ts chooserCopy.ko.game.num', 'src/data/copy/chooser-covers.ts coverCopy.ko.game.serial', 'src/data/copy/chooser-covers.ts coverCopy.en.data.serial']));
+    expect('[ MODE 01 ]').not.toMatch(LABEL_NUMBER);
   });
 
   it('components, views and layouts never spell CoG 2026, IEEE or an award name (comments aside)', () => {
