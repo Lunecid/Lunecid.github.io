@@ -11,6 +11,7 @@ import { act, cleanup, render, screen, waitFor, within } from '@testing-library/
 import userEvent from '@testing-library/user-event';
 import { renderToString } from 'react-dom/server';
 import { afterEach, beforeEach, describe, expect, it, vi, type MockInstance } from 'vitest';
+import { ACCOUNT_ADMIN } from '../../src/config';
 import { adminCopy } from '../../src/i18n/accounts-admin';
 import ManagePanel, { type AdminApi, type ManagePanelProps } from '../../src/islands/account/ManagePanel';
 import { createFormStore, createHandleBox, createRelay, steamLoginUrl, type AdminDeps, type FormStore } from '../../src/lib/account-admin';
@@ -1337,7 +1338,7 @@ describe('progress', () => {
     await stageAfterPoll([finished('secrets-scan'), finished('fetch-accounts'), job('build', 'in_progress', null, 2, 9)], 'stage.build');
     const meta = buildArea(t).querySelector('.mp-build__meta') as HTMLElement;
     expect(meta).toHaveTextContent(fmt(C['label:steps'], { done: 2, total: 9 }));
-    expect(meta).toHaveTextContent(fmt(C['label:elapsed'], { n: 1, eta: 20 })); // three polls, 60 s after the start
+    expect(meta).toHaveTextContent(fmt(C['label:elapsed'], { n: 1, eta: ACCOUNT_ADMIN.etaMinutes })); // three polls, 60 s after the start
     expect(meta.closest('[role="status"], [aria-live]')).toBeNull();
     // more steps of the same stage: the live region is not touched, so nothing is announced again
     const touched: MutationRecord[] = [];
