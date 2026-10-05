@@ -201,6 +201,7 @@
   --dur-menu: .15s;      /* phone menu panel entrance (HudNav, DataNav) */
   --dur-lift: .25s;      /* cartridge lift on hover (spec §6's 0.25 s) */
   --dur-fade-out: .15s;  /* reduced-motion exit fade (ImageViewer, CharacterStage, the page turn) */
+  --dur-aside: .45s;     /* the chooser's printout slides aside to reveal the game file (MO-24) */
   --dur-stroke: .2s;     /* the chooser printout's link stroke sweeps in (MO-23); the same name and value as the general version's (DS-2): dedupe at merge (MO-29) */
 
   /* ── layout ── */

@@ -31,6 +31,7 @@ const person = await getPerson();
 const meta = pageMetaFor('chooser', lang, null, facts);
 const today = todayIso(new Date());
 const mast = coverCopy[lang].mast;
+const touch = coverCopy[lang].touch; // the touch hint (chooser.ts fills it on touch screens only)
 const files = mast.files.replace('{n}', String(VARIANT_IDS.length).padStart(2, '0'));
 const covers = COVER_ORDER.map((id) => buildCover(id, lang, today));
 ---
@@ -57,6 +58,7 @@ const covers = COVER_ORDER.map((id) => buildCover(id, lang, today));
       <div class="desk" data-chooser data-desk>
         {covers.map((cover) => (cover.id === 'data' ? <PrintoutCover cover={cover} /> : <GameCover cover={cover} />))}
       </div>
+      <p class="desk__hint" aria-live="polite" data-rest={touch.rest} data-aside={touch.aside}></p>
     </div>
   </section>
 </NeutralLayout>

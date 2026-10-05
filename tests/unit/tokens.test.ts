@@ -439,5 +439,10 @@ describe('the chooser desk (MO-23, v6.4)', () => {
     expect(sheet).toMatch(/(^|\n):root\[data-variant="neutral"\]\[data-page="chooser"\]\s*\{[^}]*color-scheme:\s*dark/);
     expect(read('src/styles/base.css')).toMatch(/:root\[data-variant="data"\], :root\[data-variant="neutral"\] \{ color-scheme: light; \}/);
   });
-});
 
+  it('MO-24: --dur-aside is .45s and at most --dur-morph + .05s', () => {
+    const d = declsOf(':root');
+    expect(d.get('--dur-aside')).toBe('.45s');
+    expect(parseFloat(d.get('--dur-aside')!)).toBeLessThanOrEqual(parseFloat(d.get('--dur-morph')!) + 0.05 + 1e-9);
+  });
+});

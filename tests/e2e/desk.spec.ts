@@ -204,3 +204,127 @@ test.describe('MO-23: the static desk', () => {
     await context.close();
   });
 });
+
+/** The printout's transform and opacity, and its left edge. */
+const sheetState = (page: Page) =>
+  page.locator('.file--data').evaluate((el) => ({ transform: getComputedStyle(el).transform, opacity: Number(getComputedStyle(el).opacity), left: el.getBoundingClientRect().left, top: el.getBoundingClientRect().top }));
+/** The topmost element at the centre of the game CTA belongs to the game link. */
+const gameCtaHit = (page: Page) =>
+  page.evaluate(() => {
+    const face = document.querySelector('.file--game .cta__face')!.getBoundingClientRect();
+    const vw = document.documentElement.clientWidth;
+    const inside = face.left >= 0 && face.right <= vw && face.top >= 0 && face.bottom <= window.innerHeight;
+    const el = document.elementFromPoint(face.left + face.width / 2, face.top + face.height / 2);
+    return { inside, hit: !!el?.closest('a[data-choose-variant="game"]') };
+  });
+
+test.describe('MO-24: the reveal', () => {
+  test('hover on the game cover slides the printout aside within --dur-aside and back on leave', async ({ page }) => {
+    await openAt(page, '/?choose', 1280, 800);
+    const rest = await sheetState(page);
+    const g = await rectOf(page, '.file--game');
+    await page.mouse.move(g.left + 30, g.top + 120);
+    await page.waitForTimeout(520); // --dur-aside .45s
+    const aside = await sheetState(page);
+    expect(aside.left - rest.left).toBeGreaterThan(200);
+    expect(await page.locator('.file--data').evaluate((el) => getComputedStyle(el).transitionDuration)).toContain('0.45s');
+    expect(await gameCtaHit(page)).toEqual({ inside: true, hit: true });
+    await page.mouse.move(5, 790);
+    await page.waitForTimeout(520);
+    expect((await sheetState(page)).left).toBeCloseTo(rest.left, 0);
+  });
+
+  test('keyboard: focus on the game link reveals; Enter navigates to /game/ in one activation; Shift+Tab returns the sheet', async ({ page }) => {
+    await openAt(page, '/?choose', 1280, 800);
+    const rest = await sheetState(page);
+    await page.locator('header a[hreflang]').focus();
+    await page.keyboard.press('Tab');
+    await page.keyboard.press('Tab');
+    await expect(page.locator(GAME)).toBeFocused();
+    await page.waitForTimeout(520);
+    expect((await sheetState(page)).left - rest.left).toBeGreaterThan(200);
+    expect(await gameCtaHit(page)).toEqual({ inside: true, hit: true });
+    await page.keyboard.press('Shift+Tab');
+    await expect(page.locator(DATA)).toBeFocused();
+    await page.waitForTimeout(520);
+    expect((await sheetState(page)).left).toBeCloseTo(rest.left, 0);
+    await page.keyboard.press('Tab');
+    await page.keyboard.press('Enter');
+    await expect(page).toHaveURL(/\/game\/$/);
+  });
+
+  test('touch (Pixel 7): first tap reveals, second navigates, tap elsewhere restores', async ({ browser }) => {
+    const { devices } = await import('@playwright/test');
+    const context = await browser.newContext({ ...devices['Pixel 7'] });
+    const page = await context.newPage();
+    await page.goto('/?choose', { waitUntil: 'networkidle' });
+    await expect(page.locator('.desk__hint')).toHaveText('뒤의 게임 파일을 누르면 앞으로 꺼냅니다');
+    const g = await rectOf(page, '.file--game');
+    await page.touchscreen.tap(g.left + g.width / 2, g.top + 20);
+    await expect(page.locator('.desk')).toHaveClass(/is-aside/);
+    await expect(page).toHaveURL(/\?choose$/);
+    await expect(page.locator('.desk__hint')).toHaveText('한 번 더 누르면 게임 버전으로 이동합니다');
+    await page.waitForTimeout(520);
+    // elsewhere: the caption above the desk
+    const cap = await rectOf(page, '.chooser__cap');
+    await page.touchscreen.tap(cap.left + 10, cap.top + 5);
+    await expect(page.locator('.desk')).not.toHaveClass(/is-aside/);
+    await page.touchscreen.tap(g.left + g.width / 2, g.top + 20);
+    await expect(page.locator('.desk')).toHaveClass(/is-aside/);
+    await page.waitForTimeout(520);
+    const cta = await rectOf(page, '.file--game .cta__face');
+    await page.touchscreen.tap(cta.left + cta.width / 2, cta.top + cta.height / 2);
+    await expect(page).toHaveURL(/\/game\/$/);
+    await context.close();
+  });
+
+  test('reduced motion: no transform on the printout; it crossfades out within 200 ms', async ({ page }) => {
+    await openAt(page, '/?choose', 1280, 800, { reducedMotion: true });
+    expect(await page.locator('.file--data').evaluate((el) => getComputedStyle(el).transitionProperty)).not.toContain('transform');
+    await page.locator(DATA).focus();
+    await page.keyboard.press('Tab');
+    await expect(page.locator(GAME)).toBeFocused();
+    await page.waitForTimeout(260);
+    const s = await sheetState(page);
+    expect(s.transform).toBe('none');
+    expect(s.opacity).toBe(0);
+    expect(await page.locator('.file--data').evaluate((el) => getComputedStyle(el).transitionDuration)).toBe('0.2s');
+    expect(await gameCtaHit(page)).toEqual({ inside: true, hit: true });
+  });
+
+  test('without JS hover and focus still reveal (CSS :has)', async ({ browser }) => {
+    const context = await browser.newContext({ javaScriptEnabled: false, viewport: { width: 1280, height: 800 } });
+    const page = await context.newPage();
+    await page.goto('/?choose', { waitUntil: 'networkidle' });
+    const rest = await sheetState(page);
+    const g = await rectOf(page, '.file--game');
+    await page.mouse.move(g.left + 30, g.top + 120);
+    await page.waitForTimeout(520);
+    expect((await sheetState(page)).left - rest.left).toBeGreaterThan(200);
+    await page.mouse.move(5, 790);
+    await page.waitForTimeout(520);
+    await page.locator(DATA).focus();
+    await page.keyboard.press('Tab');
+    await page.waitForTimeout(520);
+    expect((await sheetState(page)).left - rest.left).toBeGreaterThan(200);
+    await context.close();
+  });
+
+  for (const [width, height] of [[320, 640], [375, 812], [1280, 800], [2560, 1440]] as const) {
+    test(`revealed at ${width}: no horizontal scroll; the game CTA is fully visible and hit-testable`, async ({ page }) => {
+      await openAt(page, '/?choose', width, height);
+      await page.locator('.desk').evaluate((el) => el.classList.add('is-aside'));
+      await page.waitForTimeout(520);
+      await page.locator('.file--game .cta__face').scrollIntoViewIfNeeded();
+      const result = await horizontalOverflow(page);
+      expect(result.scrollWidth, result.offenders.join(', ')).toBeLessThanOrEqual(result.width);
+      expect(await gameCtaHit(page)).toEqual({ inside: true, hit: true });
+    });
+  }
+
+  test('the hint stays empty on a hover-capable pointer', async ({ page }) => {
+    await openAt(page, '/?choose', 1280, 800);
+    await expect(page.locator('.desk__hint')).toHaveText('');
+    await expect(page.locator('.desk__hint')).toHaveAttribute('aria-live', 'polite');
+  });
+});

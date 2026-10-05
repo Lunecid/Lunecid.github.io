@@ -46,10 +46,23 @@ test.describe('chooser (P2-10 intents on the MO-23 desk, Review Focus 4)', () =>
     await expect(page.locator('[data-chooser]')).toBeVisible();
   });
 
-  // MO-23: the side-by-side hover widening is gone with the desk; MO-24 replaces this with the slide-aside reveal.
-  test.fixme('hover widens a side — replaced by the reveal in MO-24', async ({ page }) => {
+  // MO-24 (replaces the P2-10 "hover widens a side" test, named): the reveal slides the printout aside
+  test('hover/focus reveal the game file in --dur-aside; under reduced motion only opacity changes', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto('/?choose', { waitUntil: 'networkidle' });
-    expect(await page.locator(DATA).count()).toBe(1);
+    const before = await box(page, '.file--data');
+    const g = await box(page, '.file--game');
+    await page.mouse.move(g.left + 30, g.top + 120);
+    await page.waitForTimeout(520);
+    expect((await box(page, '.file--data')).left - before.left).toBeGreaterThan(200);
+    expect(await page.locator('.file--data').evaluate((el) => getComputedStyle(el).transitionDuration)).toContain('0.45s');
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.goto('/?choose', { waitUntil: 'networkidle' });
+    await page.locator(DATA).focus();
+    await page.keyboard.press('Tab');
+    await page.waitForTimeout(300);
+    expect(await page.locator('.file--data').evaluate((el) => getComputedStyle(el).transform)).toBe('none');
+    expect(await page.locator('.file--data').evaluate((el) => getComputedStyle(el).opacity)).toBe('0');
   });
 
   for (const width of [320, 375, 768, 1440]) {

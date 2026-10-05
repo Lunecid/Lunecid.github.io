@@ -40,6 +40,11 @@
   --gw: 100%;
   --mx: 0px;
   --tilt: 1.5deg;
+  --arot: 4deg;            /* the extra turn when the sheet slides aside */
+  --ax: 12px;              /* the slide-aside offset without the script (chooser.ts measures the real one) */
+  --ay: 90%;
+  --aside-t: translate(var(--ax), var(--ay)) rotate(var(--arot));
+  --aside-o: 1;
   position: relative;
   display: grid;
   grid-template-columns: minmax(0, 1fr);
@@ -55,10 +60,23 @@
     --dy: 28px;
     --mx: calc((100% - var(--dx) - var(--dw)) / 2);
     --tilt: 3deg;
+    --arot: 6deg;
+    --ax: 360px;
+    --ay: 18px;
   }
 }
 @media (min-width: 1068px) { .desk { --dw: min(660px, calc(100svh - 160px - var(--nav-h)), 56%); } }
 @media (min-width: 1600px) { .desk { --dw: min(720px, calc(100svh - 160px - var(--nav-h)), 56%); } }
+
+/* reduced motion (OS or the site toggle): the reveal is a crossfade of the printout, no slide */
+@media (prefers-reduced-motion: reduce) {
+  .desk { --aside-t: none; --aside-o: 0; }
+}
+:root[data-motion="reduce"] .desk { --aside-t: none; --aside-o: 0; }
+
+/* the touch hint (filled by chooser.ts on touch screens only; empty, it takes no room) */
+.desk__hint { font: 500 var(--fs-label)/1.5 var(--font-sans); color: var(--hud-muted); text-align: center; }
+.desk__hint:not(:empty) { margin-top: 18px; }
 
 /* print: the two files flat, one below the other in DOM order (data, then game) */
 @media print {
@@ -337,6 +355,7 @@
   margin: var(--dy) 0 0 calc(var(--mx) + var(--dx));
   /* only the turned face takes the pointer (the untransformed box would steal the game cover's corners) */
   pointer-events: none;
+  transition: transform var(--dur-aside) var(--ease-out), opacity var(--dur-fade) linear;
 }
 @media (min-width: 1068px) { .file--data { aspect-ratio: 1; } }
 .file--data .face {
@@ -388,6 +407,22 @@
   .file--data > .face { transition: none; transform: rotate(var(--tilt)) perspective(1400px) rotate3d(1, -1, 0, 2.5deg); }
 }
 :root[data-motion="reduce"] .file--data > .face { transition: none; transform: rotate(var(--tilt)) perspective(1400px) rotate3d(1, -1, 0, 2.5deg); }
+
+/* the reveal: pointing at or focusing the game file (or a first tap on it: .is-aside) slides the printout aside; the
+   aside sheet takes no pointer, so leaving the game file always brings it back. Never during the opening (MO-26). */
+:root:not([data-intro]) .desk.is-aside > .file--data,
+:root:not([data-intro]) .desk:has(.file--game .cta:focus-visible) > .file--data { transform: var(--aside-t); opacity: var(--aside-o); }
+:root:not([data-intro]) .desk.is-aside > .file--data > .face,
+:root:not([data-intro]) .desk:has(.file--game .cta:focus-visible) > .file--data > .face { pointer-events: none; }
+@media (hover: hover) {
+  :root:not([data-intro]) .desk:has(.file--game:hover) > .file--data { transform: var(--aside-t); opacity: var(--aside-o); }
+  :root:not([data-intro]) .desk:has(.file--game:hover) > .file--data > .face { pointer-events: none; }
+}
+/* reduced motion: no slide (the sheet crossfades out over --dur-fade, linear) */
+@media (prefers-reduced-motion: reduce) {
+  .desk > .file--data { transition: opacity var(--dur-fade) linear; }
+}
+:root[data-motion="reduce"] .desk > .file--data { transition: opacity var(--dur-fade) linear; }
 
 /* the sheet: its own shadow, the paper, the print */
 .file--data .feed { position: relative; flex: 1; display: flex; flex-direction: column; min-width: 0; }
