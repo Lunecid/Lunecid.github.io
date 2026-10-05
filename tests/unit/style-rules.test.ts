@@ -482,7 +482,7 @@ describe('style rules over src/**', () => {
     expect(violationsOf('font-weight')).toEqual([]);
   });
 
-  it('--font-card only in MembershipCard.astro, --font-anton only in tokens.css and PlayerLogView.astro', () => {
+  it('--font-card only in MembershipCard.astro, --font-anton only in tokens.css and PlayerLogView.astro; --font-cover only in the chooser sheet (MO-23)', () => {
     const files = walk(join(ROOT, 'src')).filter((f) => /\.(css|astro|ts|tsx|mjs|js|md|mdx)$/.test(f));
     expect(files).toEqual(expect.arrayContaining(GLOBAL_STYLES));
     const cardUsers = files.filter((f) => read(f).includes('var(--font-card'));
@@ -490,6 +490,9 @@ describe('style rules over src/**', () => {
     expect(cardUsers.filter((f) => f !== 'src/components/player-log/MembershipCard.astro')).toEqual([]);
     expect(antonUsers.filter((f) => f !== 'src/styles/tokens.css' && f !== 'src/views/PlayerLogView.astro')).toEqual([]);
     expect(read('src/styles/tokens.css')).toMatch(/--font-card:\s*var\(--font-anton,/);
+    expect(read('src/styles/tokens.css')).toMatch(/--font-cover:\s*"SB Cover Display",/);
+    const coverUsers = files.filter((f) => read(f).includes('var(--font-cover'));
+    expect(coverUsers).toEqual(['src/styles/chooser.css']);
   });
 
   it('.prose max-width is the reading measure: 38em (ko) / 36em, about 66 characters (en) (P2-37)', () => {
@@ -528,6 +531,7 @@ describe('style rules over src/**', () => {
     { file: 'src/islands/CharacterStage.css', selector: '.char-stage__btn:lang(ko)', alsoZeroesTracking: true },
     { file: 'src/components/research/AucOverallChart.astro', selector: '.chart__summary:lang(ko)', alsoZeroesTracking: true },
     { file: 'src/components/hud/PlayerCard.astro', selector: '.player-card__class:lang(ko)', alsoZeroesTracking: true },
+    { file: 'src/styles/chooser.css', selector: '.file--game .toc:lang(ko)', alsoZeroesTracking: false },
   ];
   it.each(KO_MONO_TO_SANS)('$file $selector switches to the sans font for Korean', ({ file, selector, alsoZeroesTracking }) => {
     const css = stripComments(read(file));

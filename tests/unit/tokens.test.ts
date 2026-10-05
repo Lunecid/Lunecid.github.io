@@ -384,3 +384,60 @@ describe('editorial palette, neutral aliases and role tokens (P2-1, spec §8, co
     expect(focus?.decls.get('outline-color')).toBe('var(--page-focus)');
   });
 });
+
+describe('the chooser desk (MO-23, v6.4)', () => {
+  const tokenRules = () => parseCss(read('src/styles/tokens.css'));
+  const declsOf = (selector: string): Map<string, string> =>
+    new Map(tokenRules().filter((r) => r.selector === selector && r.media === null).flatMap((r) => [...r.decls]));
+
+  it('MO-23: chooser role block uses HUD tokens only; printout tokens exact; text pairs ≥ 4.5 (ink, ink-2, link and stamp on paper; white on the red field; ink on the yellow)', () => {
+    const chooser = declsOf(':root[data-variant="neutral"][data-page="chooser"]');
+    expect(Object.fromEntries(chooser)).toEqual({
+      '--page-bg': 'var(--hud-bg)', '--page-ink': 'var(--hud-text)', '--page-muted': 'var(--hud-muted)', '--page-focus': 'var(--accent)',
+      '--page-link': 'var(--accent)', '--page-rule': 'var(--hud-divider)', '--page-rule-strong': 'var(--hud-line-strong)',
+      '--page-fill': 'var(--accent)', '--page-fill-ink': 'var(--accent-ink)',
+      '--nt-bg': 'var(--hud-bg)', '--nt-ink': 'var(--hud-text)', '--nt-muted': 'var(--hud-muted)', '--nt-rule': 'var(--hud-divider)', '--nt-accent': 'var(--accent)',
+    });
+    for (const value of chooser.values()) expect(value).toMatch(/^var\(--(hud|accent)[\w-]*\)$/);
+    const d = declsOf(':root');
+    const printout: Record<string, string> = {
+      '--pr-paper': '#FBFAF6', '--pr-ink': 'var(--ed-ink)', '--pr-ink-2': 'var(--paper-muted)', '--pr-stamp': '#8A2416',
+      '--pr-plate': 'rgba(20, 20, 20, .075)', '--pr-lit': 'rgba(255, 255, 255, .95)',
+      '--pr-red': '#CC281C', '--pr-blue': '#1F3A93', '--pr-yellow': '#F5C400', '--pr-on-color': '#FFFFFF',
+      // MO-OQ16 stand-ins until the general version's type and link tokens arrive (MO-29 repoints them)
+      '--pr-font-text': 'var(--font-sans)', '--pr-font-banner': 'var(--font-sans)',
+      '--pr-link': 'var(--ed-ink)', '--pr-link-stroke': 'var(--pr-yellow)', '--pr-focus': 'var(--ed-ink)',
+      '--font-cover': '"SB Cover Display", Impact, "Arial Narrow Bold", sans-serif',
+      '--dur-stroke': '.2s',
+    };
+    // the covers' mono stack keeps monospace fallbacks ahead of the proportional sans (no re-wrap when the face swaps in)
+    const coverMono = d.get('--font-mono-cover') ?? '';
+    expect(coverMono.indexOf('"SB Cover Mono"')).toBe(0);
+    expect(coverMono.indexOf('Menlo')).toBeLessThan(coverMono.indexOf('"SB Sans"'));
+    expect(coverMono.indexOf('"DejaVu Sans Mono"')).toBeLessThan(coverMono.indexOf('"SB Sans"'));
+    for (const [name, value] of Object.entries(printout)) expect(squash(d.get(name)), name).toBe(squash(value));
+    const hex = (name: string): string => {
+      const v = d.get(name)!;
+      const ref = /^var\((--[\w-]+)\)$/.exec(v);
+      return ref ? hex(ref[1]!) : v;
+    };
+    const paper = hex('--pr-paper');
+    expect(contrast(hex('--pr-ink'), paper)).toBeGreaterThanOrEqual(7);
+    expect(contrast(hex('--pr-ink-2'), paper)).toBeGreaterThanOrEqual(4.5);
+    expect(contrast(hex('--pr-link'), paper)).toBeGreaterThanOrEqual(7);
+    expect(contrast(hex('--pr-focus'), paper)).toBeGreaterThanOrEqual(3);
+    expect(contrast(hex('--pr-stamp'), paper)).toBeGreaterThanOrEqual(7);
+    expect(contrast(hex('--pr-on-color'), hex('--pr-red'))).toBeGreaterThanOrEqual(5.3);
+    expect(contrast(hex('--pr-ink'), hex('--pr-yellow'))).toBeGreaterThanOrEqual(7);
+    // the game cover keeps the HUD pairs: muted labels on the panel, the reversed word in ink on lime
+    expect(contrast(hex('--hud-muted'), hex('--hud-panel'))).toBeGreaterThanOrEqual(4.5);
+    expect(contrast(hex('--hud-bg'), hex('--accent'))).toBeGreaterThanOrEqual(7);
+  });
+
+  it('MO-23: the chooser page is dark (color-scheme dark in the chooser sheet), the other neutral pages stay light', () => {
+    const sheet = read('src/styles/chooser.css');
+    expect(sheet).toMatch(/(^|\n):root\[data-variant="neutral"\]\[data-page="chooser"\]\s*\{[^}]*color-scheme:\s*dark/);
+    expect(read('src/styles/base.css')).toMatch(/:root\[data-variant="data"\], :root\[data-variant="neutral"\] \{ color-scheme: light; \}/);
+  });
+});
+

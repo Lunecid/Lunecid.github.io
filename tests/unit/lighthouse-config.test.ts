@@ -16,7 +16,28 @@ const mobile = read('lighthouserc.json');
 const secondary = read('lighthouserc.secondary.json');
 const desktop = read('lighthouserc.desktop.json');
 
+/**
+ * The chooser's own budget (motion plan amendment A.2: mobile, median of 3 Lighthouse CLI runs on the MO preview port;
+ * LCP = the reference median + 100 ms; LCP element inside .desk). Re-baselined 2026-10-05 after MO-23 (controller
+ * ruling): the v6.4 desk measured / 2105 ms (perf 0.99) and /en/ 1434 ms (perf 1.00) after the non-design fixes, so the
+ * MO-20 reference (/ 1670 ms, /en/ 1383 ms, measured on the old two-panel chooser) is replaced. MO-26/MO-31 compare
+ * against these values.
+ */
+const CHOOSER_BUDGET = {
+  '/': { referenceLcpMs: 2105, lcpMs: 2205, minPerformance: 0.95 },
+  '/en/': { referenceLcpMs: 1434, lcpMs: 1534, minPerformance: 0.95 },
+} as const;
+
 describe('Lighthouse budget (A-21, P1-19)', () => {
+  it('MO-23: the chooser budget is the re-baselined reference + 100 ms and stays within Core Web Vitals "good" (LCP ≤ 2.5 s)', () => {
+    for (const [route, b] of Object.entries(CHOOSER_BUDGET)) {
+      expect(b.lcpMs - b.referenceLcpMs, route).toBe(100);
+      expect(b.lcpMs, route).toBeLessThanOrEqual(2500);
+      expect(b.minPerformance, route).toBeGreaterThanOrEqual(0.95);
+      expect(paths(mobile).concat(paths(desktop)), route).toContain(route === '/en/' ? '/' : route);
+    }
+  });
+
   it('3 mobile runs for the chooser and both homes, 1 mobile run for the secondary list, 1 desktop run for all', () => {
     expect(paths(mobile)).toEqual(['/', '/game/', '/data/']);
     expect(mobile.ci.collect.numberOfRuns).toBe(3);

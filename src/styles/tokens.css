@@ -97,6 +97,34 @@
   --page-fill: var(--accent);
   --page-fill-ink: var(--accent-ink);
 
+  /* ── the chooser desk (MO-23, chooser v6.4): the game file's cyber cover and the general file's art-paper printout ── */
+  --font-cover: "SB Cover Display", Impact, "Arial Narrow Bold", sans-serif;  /* the game cover's display words: Anton subset (MO-23), chooser only */
+  --cover-shadow: #000000;                    /* the files' drop shadows */
+  --cover-scan: rgba(255, 255, 255, .025);    /* static scanlines: --hud-strong at 2.5% */
+  --cover-grid: rgba(255, 255, 255, .03);     /* the cover's crossword grid: --hud-strong at 3% */
+  --cover-blk-scan: rgba(11, 13, 17, .16);    /* scanlines inside the reversed title block: --hud-bg at 16% */
+  --neon-glow: rgba(232, 234, 237, .5);       /* --hud-text at 50%: a static glow, never animated */
+  --neon-halo: rgba(139, 147, 161, .42);      /* --hud-muted at 42% */
+  /* the printout: white cotton-rag art paper (finish B "판화지") with painted fields; text pairs on the paper:
+     ink 17.6:1, ink-2 8.6:1, stamp 8.6:1; white on the red field 5.4:1 flat; ink on the yellow 11.4:1 */
+  --pr-paper: #FBFAF6;
+  --pr-ink: var(--ed-ink);
+  --pr-ink-2: var(--paper-muted);
+  --pr-stamp: #8A2416;                        /* the rubber stamp's ink (decoration with text, never a link) */
+  --pr-plate: rgba(20, 20, 20, .075);         /* the plate mark's shaded wall */
+  --pr-lit: rgba(255, 255, 255, .95);         /* the plate mark's lit wall */
+  --pr-red: #CC281C;                          /* painted fields: paint only, never a link colour */
+  --pr-blue: #1F3A93;
+  --pr-yellow: #F5C400;
+  --pr-on-color: #FFFFFF;                     /* type reversed out of the red field */
+  /* MO-OQ16 role tokens: stand-ins until the general version's type and link tokens are merged (MO-29 repoints them:
+     the banner to the display face, the link and focus to the general version's link tokens) */
+  --pr-font-text: var(--font-sans);
+  --pr-font-banner: var(--font-sans);
+  --pr-link: var(--ed-ink);
+  --pr-link-stroke: var(--pr-yellow);
+  --pr-focus: var(--ed-ink);
+
   /* ── HUD labels (D8 / Task 0 Q13). Accent means "clickable" only, so labels are muted.
         Q13 = lime flips both lines: --hud-label: var(--accent); --read-label: var(--accent-deep). ── */
   --hud-label: var(--hud-muted);
@@ -120,6 +148,11 @@
   --font-mono: "JetBrains Mono Variable", "JetBrains Mono", "SB Sans", Pretendard,
                ui-monospace, SFMono-Regular, Consolas, monospace;   /* Hangul in mono labels falls back to SB Sans */
   --font-card: var(--font-anton, Impact, "Arial Narrow Bold", sans-serif);  /* membership card only; --font-anton comes from <Font> on Player Log pages */
+  /* the chooser covers' mono labels ("SB Cover Mono": JetBrains Mono subset, wght 600, chooser only): monospace
+     fallbacks before the sans (advance close to JetBrains Mono's .6em), so the face arriving late never re-wraps a cover
+     line (layout shift); Hangul still falls back to SB Sans */
+  --font-mono-cover: "SB Cover Mono", "JetBrains Mono Variable", "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, "DejaVu Sans Mono",
+                     "Liberation Mono", "Courier New", "SB Sans", Pretendard, monospace;
 
   /* G-015 (P-11): type sizes in rem, so the browser's default font size scales them (16px default = the px values in
      the comments); layout sizes stay px. */
@@ -168,6 +201,7 @@
   --dur-menu: .15s;      /* phone menu panel entrance (HudNav, DataNav) */
   --dur-lift: .25s;      /* cartridge lift on hover (spec §6's 0.25 s) */
   --dur-fade-out: .15s;  /* reduced-motion exit fade (ImageViewer, CharacterStage, the page turn) */
+  --dur-stroke: .2s;     /* the chooser printout's link stroke sweeps in (MO-23); the same name and value as the general version's (DS-2): dedupe at merge (MO-29) */
 
   /* ── layout ── */
   --container: 1180px;   /* includes gutters; the base width of every band's container */
@@ -196,6 +230,14 @@
   --page-bg: var(--ed-bg); --page-ink: var(--ed-ink); --page-muted: var(--ed-muted); --page-focus: var(--ed-accent);
   --page-link: var(--ed-accent); --page-rule: var(--ed-rule); --page-rule-strong: var(--ed-rule-strong);
   --page-fill: var(--ed-fill); --page-fill-ink: var(--ed-fill-ink);
+}
+:root[data-variant="neutral"][data-page="chooser"] {
+  /* MO-23: the chooser is a dark HUD page; its header, footer, skip link and focus ring repaint through the role and
+     --nt-* names (role tokens only here; color-scheme sits in ChooserView.astro) */
+  --page-bg: var(--hud-bg); --page-ink: var(--hud-text); --page-muted: var(--hud-muted); --page-focus: var(--accent);
+  --page-link: var(--accent); --page-rule: var(--hud-divider); --page-rule-strong: var(--hud-line-strong);
+  --page-fill: var(--accent); --page-fill-ink: var(--accent-ink);
+  --nt-bg: var(--hud-bg); --nt-ink: var(--hud-text); --nt-muted: var(--hud-muted); --nt-rule: var(--hud-divider); --nt-accent: var(--accent);
 }
 @media (min-width: 734px) {
   :root { --fs-name: 3.75rem; --fs-display: 3rem; --fs-h2: 1.75rem; --fs-sub: 1.3125rem; --gutter: 32px; --section-pad-y: 44px; } /* type: 60 / 48 / 28 / 21px */

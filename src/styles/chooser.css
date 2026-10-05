@@ -1,0 +1,595 @@
+/* src/styles/chooser.css — the chooser's own stylesheet (MO-23, chooser v6.4): the page, the desk, the game file and
+   the printout. One external, content-hashed file that only ChooserView links (tests/ops/layout-css.test.mjs), so the
+   chooser HTML stays small (first flight) and the textures are cached; no other page loads it. Every selector is
+   namespaced under .chooser / .desk / .file--game / .file--data (the classes inside the covers are short). Overrides
+   (reduced motion, forced colours, print) come after the rules they override, at equal or higher specificity. */
+
+/* ═══ the page and the desk (ChooserView) ═══ */
+:root[data-variant="neutral"][data-page="chooser"] { color-scheme: dark; }
+/* the HUD grid under the desk; overflow-x: clip keeps the turned sheet (and later the slid-aside one) from ever
+   widening the page */
+.chooser {
+  overflow-x: clip;
+  background-image: linear-gradient(var(--grid-line) 1px, transparent 1px), linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+.chooser__stage {
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100svh - var(--nav-h) - 1px);
+  max-width: var(--container-hud);
+  margin-inline: auto;
+  padding-inline: var(--gutter);
+  padding-block: clamp(20px, 4vh, 36px) 40px;
+}
+@media (min-width: 1068px) { .chooser__stage { max-width: calc(var(--container-hud) + 100px); padding-bottom: 34px; } }
+
+/* the archive caption: "[ ■ ] LABEL" (the square drawn, lime as the HUD's decoration) */
+.chooser__mast { display: grid; gap: 6px; padding-bottom: 18px; }
+.chooser__cap { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 14px; font: 600 var(--fs-min)/1.5 var(--font-mono-cover); letter-spacing: var(--ls-label); color: var(--hud-label); }
+.chooser__mark { white-space: nowrap; }
+.chooser__sq { display: inline-block; width: .6em; height: .6em; margin-inline: .45em; vertical-align: .04em; background: var(--accent); }
+
+/* the desk: both files share one grid cell; the printout is offset onto the game cover and turned. Phone first: the
+   game file full width, the printout 10px in from each side (its turned corners stay inside the gutter) and 96px down
+   (the game's title bar, hazard band, emblem and series line stay in view) */
+.desk {
+  --dx: 10px;
+  --dy: 96px;
+  --dw: calc(100% - 2 * var(--dx));
+  --gw: 100%;
+  --mx: 0px;
+  --tilt: 1.5deg;
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  margin-block: auto;
+}
+/* tablet and up: side by side, the printout covering the game cover's right three fifths, the pair centred; the
+   width follows the height left under the header and the caption, so both files fit the first screen */
+@media (min-width: 734px) {
+  .desk {
+    --dw: min(560px, calc(100svh - 160px - var(--nav-h)), 64%);
+    --gw: calc(var(--dw) * 1.03);
+    --dx: calc(var(--dw) * .4);
+    --dy: 28px;
+    --mx: calc((100% - var(--dx) - var(--dw)) / 2);
+    --tilt: 3deg;
+  }
+}
+@media (min-width: 1068px) { .desk { --dw: min(660px, calc(100svh - 160px - var(--nav-h)), 56%); } }
+@media (min-width: 1600px) { .desk { --dw: min(720px, calc(100svh - 160px - var(--nav-h)), 56%); } }
+
+/* print: the two files flat, one below the other in DOM order (data, then game) */
+@media print {
+  .chooser { background: none; }
+  .chooser__stage { min-height: 0; padding: 0; }
+  .desk { display: flex; flex-direction: column; gap: 16px; }
+}
+
+/* ═══ the emblems (CoverEmblem) ═══ */
+.desk .emblem { display: block; flex: none; width: 30px; height: 30px; }
+@container (min-width: 440px) { .desk .emblem { width: 44px; height: 44px; } }
+.desk .em__frame { fill: none; stroke: var(--hud-line); stroke-width: 1; }
+.desk .em__corner { fill: none; stroke: var(--accent); stroke-width: 2; }
+.desk .em__tick { fill: none; stroke: var(--hud-muted); stroke-width: 1; }
+.desk .em__line { fill: none; stroke: var(--hud-strong); stroke-width: 1.6; stroke-linejoin: round; stroke-linecap: round; }
+/* the bar chart, in ink: a dotted frame, ink corners, dot-shaded bars */
+.desk .emblem--ink .em__frame { stroke: var(--pr-ink-2); stroke-dasharray: 2 2; }
+.desk .emblem--ink .em__corner { stroke: var(--pr-ink); }
+.desk .emblem--ink .em__tick { stroke: var(--pr-ink-2); }
+.desk .emblem--ink .em__line { stroke: var(--pr-ink); }
+.desk .emblem--ink .em__bar { fill: url(#cover-em-dots); stroke: var(--pr-ink); stroke-width: 1.4; }
+.desk .emblem--ink .em__dots { fill: var(--pr-ink); }
+.desk .emblem--ink .em__dot { fill: var(--pr-paper); stroke: var(--pr-ink); stroke-width: 1.4; }
+@media (forced-colors: active) {
+  .desk .em__frame, .desk .em__corner, .desk .em__tick, .desk .em__line, .desk .emblem--ink .em__bar, .desk .emblem--ink .em__dot { stroke: CanvasText; }
+  .desk .emblem--ink .em__bar, .desk .emblem--ink .em__dot, .desk .emblem--ink .em__dots { fill: Canvas; }
+}
+
+/* ═══ the game file (GameCover) ═══ */
+/* the file: a size container (its cover lays itself out from its own width) sharing the desk's one grid cell; the
+   desk (ChooserView) sets --gw (width) and --mx (the pair's centring margin) */
+.file--game { position: relative; display: flex; min-width: 0; container-type: inline-size; }
+.file--game { grid-area: 1 / 1; align-self: start; z-index: 1; width: var(--gw); margin-left: var(--mx); }
+/* on a desktop the file stays about square; only where the desk's width follows the screen height, so it always fits */
+@media (min-width: 1068px) { .file--game { aspect-ratio: 1 / .96; } }
+.file--game .face {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  /* cover metrics (narrow first) */
+  --frame: 3px;
+  --bar-h: 32px;
+  --haz-h: 8px;
+  --haz-in: 5px;
+  --cv-pad-x: 14px;
+  --cv-pad-t: 10px;
+  --cv-pad-b: 10px;
+  --head-h: 34px;
+  --row-gap: 8px;
+  --rail: 0px;
+  --rail-gap: 0px;
+  /* the display words follow the file's width, and on a short screen its height */
+  --disp-fs: clamp(2.5rem, min(15cqi, 10.2vh), 7rem);
+}
+/* the screen: everything the cover shows, inside the device's frame (not positioned: the link's hit layer covers the
+   whole device) */
+.file--game .screen { flex: 1; display: flex; flex-direction: column; min-width: 0; background-color: var(--hud-panel); }
+
+/* ── the device frame (bezel). The one block that draws the game file's outer frame: its border, shadow, focus ring
+   and HUD bracket corners. A different bezel replaces only this block; the desk measures the outer .file--game box,
+   so a thicker frame moves nothing else. Placeholder: the v6.4 lime frame. ── */
+.file--game .device {
+  background-color: var(--hud-panel);
+  border: var(--frame) solid var(--accent);
+  box-shadow: 0 26px 52px -18px color-mix(in srgb, var(--cover-shadow) 85%, transparent), 0 2px 8px color-mix(in srgb, var(--cover-shadow) 55%, transparent);
+}
+.file--game:has(.cta:focus-visible) > .device { outline: 2px solid var(--accent); outline-offset: 5px; }
+.file--game .br { position: absolute; z-index: 5; width: 22px; height: 22px; border: 2px solid var(--accent); pointer-events: none; }
+.file--game .br--tl { left: calc(-1 * var(--frame) - 7px); top: calc(-1 * var(--frame) - 7px); border-right: 0; border-bottom: 0; }
+.file--game .br--br { right: calc(-1 * var(--frame) - 7px); bottom: calc(-1 * var(--frame) - 7px); border-left: 0; border-top: 0; }
+/* ── end of the device frame ── */
+@container (min-width: 440px) {
+  .file--game .face { --haz-h: 10px; --cv-pad-x: 18px; --cv-pad-t: 14px; --cv-pad-b: 12px; --head-h: 44px; --row-gap: 10px; }
+}
+@container (min-width: 540px) { .file--game .face { --cv-pad-x: 20px; --rail: 30px; --rail-gap: 20px; } }
+
+/* the title bar (the electronic panel) */
+.file--game .bar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  height: var(--bar-h);
+  padding: 0 12px 0 14px;
+  overflow: hidden;
+  background: var(--hud-bg);
+  border-bottom: 1px solid var(--hud-divider);
+  font: 600 var(--fs-min)/1.35 var(--font-mono-cover);
+  letter-spacing: .1em;
+  color: var(--hud-muted);
+  white-space: nowrap;
+}
+.file--game .bar__sq { flex: none; width: 8px; height: 8px; margin-right: -6px; background: var(--accent); }
+.file--game .bar__access { margin-left: auto; }
+.file--game .bar__ctl { display: flex; gap: 5px; }
+.file--game .bar__ctl i { width: 9px; height: 9px; border: 1px solid var(--hud-muted); }
+/* a static glow (MO-27 types these labels during the opening; the glow itself never animates) */
+.file--game .neon { color: var(--hud-strong); text-shadow: 0 0 1px var(--neon-glow), 0 0 6px var(--neon-glow), 0 0 16px var(--neon-halo); }
+.file--game .neon--dim { color: var(--hud-text); text-shadow: 0 0 7px var(--neon-halo); }
+@container (max-width: 459px) {
+  .file--game .bar { gap: 12px; letter-spacing: .06em; }
+  .file--game .bar__access, .file--game .bar__ctl { display: none; }
+  .file--game .bar__no { margin-left: auto; }
+}
+
+/* the printed cover: hazard bands, scanlines, a crossword grid */
+.file--game .cover {
+  display: flex;
+  flex-direction: column;
+  flex: 1 0 auto;
+  background-image: repeating-linear-gradient(to bottom, var(--cover-scan) 0 1px, transparent 1px 4px), linear-gradient(var(--cover-grid) 1px, transparent 1px), linear-gradient(90deg, var(--cover-grid) 1px, transparent 1px);
+  background-size: auto, 24px 24px, 24px 24px;
+}
+.file--game .haz {
+  display: block;
+  flex: none;
+  height: var(--haz-h);
+  margin: var(--haz-in) var(--haz-in) 0;
+  transform-origin: 0 50%;
+  background: repeating-linear-gradient(-45deg, var(--accent) 0 5px, transparent 5px 11px);
+}
+.file--game .haz--b { margin: 0 var(--haz-in) var(--haz-in); }
+
+/* one column: series line, display words, Korean title, the tagline, then (after the only flexible row) the contents
+   line with the link, and the foot line; from 540px a barcode rail runs down the right edge */
+.file--game .cv {
+  flex: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto auto auto auto 1fr auto auto;
+  grid-template-areas: "head" "disp" "title" "intro" "." "end" "foot";
+  row-gap: var(--row-gap);
+  padding: var(--cv-pad-t) var(--cv-pad-x) var(--cv-pad-b);
+}
+@container (min-width: 540px) {
+  .file--game .cv {
+    grid-template-columns: minmax(0, 1fr) var(--rail);
+    grid-template-areas: "head rail" "disp rail" "title rail" "intro rail" ". rail" "end rail" "foot rail";
+    column-gap: var(--rail-gap);
+  }
+}
+.file--game .cv__head { grid-area: head; display: flex; align-items: center; gap: 10px; min-height: var(--head-h); min-width: 0; }
+@container (min-width: 440px) { .file--game .cv__head { gap: 12px; } }
+.file--game .cv__series { min-width: 0; font: 600 var(--fs-min)/1.4 var(--font-mono-cover); letter-spacing: .08em; }
+@container (min-width: 440px) { .file--game .cv__series { letter-spacing: .12em; } }
+/* the line wraps only after a separator dot (a no-break space precedes it), never inside "[ MODE 01 ]" or "NO. 01";
+   on a narrow cover it always breaks after the first part, so a late mono face never re-wraps it (no layout shift) */
+.file--game .cv__pub, .file--game .cv__kicker, .file--game .cv__no { white-space: nowrap; }
+@container (max-width: 539px) { .file--game .cv__lead { display: block; } }
+.file--game .cv__sep { color: var(--hud-muted); text-shadow: none; }
+
+/* the display words: Anton caps are .87em tall; each line box is the cap height plus .1em above and below, so the
+   reversed block hugs its word evenly; the lines overlap by .08em */
+.file--game .disp { grid-area: disp; font: 400 var(--disp-fs)/.87 var(--font-cover); color: var(--hud-strong); letter-spacing: .005em; }
+.file--game .disp__row { display: flex; align-items: flex-start; gap: .25em; }
+.file--game .disp__row + .disp__row { margin-top: -.08em; }
+/* clipped to its box: Anton's ink sits inside it, and a late display face (or a fallback with other metrics) then
+   never moves anything outside the box */
+.file--game .disp__blk, .file--game .disp__w { display: block; padding-top: .2em; white-space: nowrap; overflow: clip; }
+.file--game .disp__blk {
+  padding-inline: .1em;
+  color: var(--hud-bg);
+  background-color: var(--accent);
+  background-image: repeating-linear-gradient(to bottom, var(--cover-blk-scan) 0 1px, transparent 1px 3px);
+}
+
+.file--game .cv__title { grid-area: title; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; min-width: 0; padding-top: 2px; }
+.file--game .title { font: 900 1.375rem/1.2 var(--font-sans); color: var(--hud-strong); }
+@container (min-width: 440px) { .file--game .title { font-size: var(--fs-h2); } }
+/* the declassify stamp is not there at rest (its box is: no shift when it appears); MO-25 inks and strikes it */
+.file--game .stamp {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  font: 700 var(--fs-min)/1.4 var(--font-sans);
+  color: var(--hud-text);
+  border: 1px solid var(--hud-muted);
+  outline: 1px solid color-mix(in srgb, var(--hud-muted) 45%, transparent);
+  outline-offset: 2px;
+  opacity: 0;
+}
+/* the tagline sits right under the Korean title at the subtitle size, so it holds the cover's middle */
+.file--game .intro { grid-area: intro; max-width: 22em; font: 500 var(--fs-sub)/1.45 var(--font-sans); color: var(--hud-text); text-wrap: pretty; }
+.file--game .cl { display: inline-block; }
+/* a thin rule, then the contents line with the link at its end */
+.file--game .cv__end { grid-area: end; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; padding-top: 10px; border-top: 1px solid var(--hud-line); }
+.file--game .toc { display: flex; flex-wrap: wrap; gap: 2px 16px; font: 600 var(--fs-min)/1.5 var(--font-mono-cover); color: var(--hud-text); }
+.file--game .toc:lang(ko) { font-family: var(--font-sans); letter-spacing: 0; }
+.file--game .toc__n { margin-right: 6px; font-family: var(--font-mono-cover); color: var(--hud-muted); }
+.file--game .cv__foot { grid-area: foot; min-width: 0; font: 600 var(--fs-min)/1.4 var(--font-mono-cover); letter-spacing: .06em; color: var(--hud-muted); text-transform: uppercase; }
+@container (min-width: 440px) { .file--game .cv__foot { letter-spacing: .12em; } }
+.file--game .cv__rail { display: none; }
+@container (min-width: 540px) {
+  /* the rail: a perforated stub with a barcode and the serial */
+  .file--game .cv__rail { grid-area: rail; display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 2px 0 0 calc(var(--rail-gap) / 2 - 2px); margin-left: calc(var(--rail-gap) / -2); border-left: 1px dashed var(--hud-line-dash); }
+  .file--game .cv__code { display: block; width: 20px; height: 84px; transform-origin: 0 0; background: repeating-linear-gradient(to bottom, var(--hud-muted) 0 2px, transparent 2px 4px, var(--hud-muted) 4px 5px, transparent 5px 9px, var(--hud-muted) 9px 12px, transparent 12px 14px); }
+  .file--game .cv__sn { writing-mode: vertical-rl; font: 600 var(--fs-min)/1 var(--font-mono-cover); letter-spacing: var(--ls-label); color: var(--hud-muted); }
+}
+
+/* the link: the house outline button (hud.css .btn--line .cut, drawn locally); its hit layer covers the face */
+.file--game .cta { margin-left: auto; text-decoration: none; white-space: nowrap; color: var(--accent); font: 800 .875rem/1 var(--font-sans); }
+.file--game .cta:focus-visible { outline: none; }
+.file--game .cta__face {
+  --c: var(--cut-btn);
+  --ci: calc(var(--c) - .59px);
+  position: relative;
+  isolation: isolate;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: var(--tap);
+  padding: 0 14px;
+  color: var(--accent);
+}
+@container (min-width: 440px) { .file--game .cta__face { padding: 0 18px; } }
+.file--game .cta__face::before, .file--game .cta__face::after { content: ""; position: absolute; }
+.file--game .cta__face::before { inset: 0; z-index: -3; background: var(--accent); clip-path: polygon(0 0, calc(100% - var(--c)) 0, 100% var(--c), 100% 100%, var(--c) 100%, 0 calc(100% - var(--c))); }
+.file--game .cta__face::after { inset: 1px; z-index: -2; background: var(--accent-wash); clip-path: polygon(0 0, calc(100% - var(--ci)) 0, 100% var(--ci), 100% 100%, var(--ci) 100%, 0 calc(100% - var(--ci))); }
+.file--game .cta__hov { position: absolute; inset: 1px; z-index: -1; opacity: 0; background: var(--accent-wash-strong); clip-path: polygon(0 0, calc(100% - var(--ci)) 0, 100% var(--ci), 100% 100%, var(--ci) 100%, 0 calc(100% - var(--ci))); transition: opacity var(--dur-hover) linear; }
+@media (hover: hover) { .file--game:hover .cta__hov { opacity: 1; } }
+.file--game:active .cta__hov, .file--game:has(.cta:focus-visible) .cta__hov { opacity: 1; }
+.file--game .cta__hit { position: absolute; inset: 0; z-index: 4; }
+
+/* forced colours: one 1px CanvasText frame; textures, bands and glows off (one step more specific than the rules
+   they override: the bundler may reorder blocks) */
+@media (forced-colors: active) {
+  .file--game.file--game > .device { border: 1px solid CanvasText; box-shadow: none; }
+  .file--game .cover, .file--game .disp__blk { background-image: none; }
+  .file--game .haz, .file--game .cv__code, .file--game .bar__sq { background: none; }
+  .file--game .neon, .file--game .neon--dim { text-shadow: none; }
+  .file--game .cta__face::before, .file--game .cta__face::after, .file--game .cta__hov { background: none; }
+  .file--game .cta__face { border: 1px solid LinkText; }
+}
+/* print: flat, under the printout (ChooserView stacks the desk), no shadow, no stamp */
+@media print {
+  .file--game.file--game { width: 100%; margin: 0; aspect-ratio: auto; break-inside: avoid; }
+  .file--game.file--game > .device { box-shadow: none; }
+  .file--game .stamp { display: none; }
+}
+
+/* ═══ the printout (PrintoutCover) ═══ */
+.file--data {
+  /* brush tiles per pigment and direction and the frayed outline: synced from ds paint.mjs output; dedupe at merge (MO-29).
+     Only the four tiles and the outline the printout paints with (tests/unit/chooser-paint.test.ts pins the bytes). */
+  --tex-rh: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='800' height='400'%3E%3Cfilter id='p' filterUnits='userSpaceOnUse' primitiveUnits='userSpaceOnUse' x='-40' y='-40' width='880' height='480' color-interpolation-filters='sRGB'%3E%3CfeTurbulence x='0' y='0' width='800' height='400' type='fractalNoise' baseFrequency='0.0017 0.045' numOctaves='2' seed='3' stitchTiles='stitch'/%3E%3CfeTile result='a'/%3E%3CfeTurbulence x='0' y='0' width='800' height='400' type='fractalNoise' baseFrequency='0.006 0.9' numOctaves='2' seed='7' stitchTiles='stitch'/%3E%3CfeTile result='b'/%3E%3CfeTurbulence x='0' y='0' width='800' height='400' type='fractalNoise' baseFrequency='0.004 0.012' numOctaves='1' seed='12' stitchTiles='stitch'/%3E%3CfeTile result='c'/%3E%3CfeTurbulence x='0' y='0' width='800' height='400' type='fractalNoise' baseFrequency='0.005 0.02' numOctaves='1' seed='5' stitchTiles='stitch'/%3E%3CfeTile result='w'/%3E%3CfeComposite in='a' in2='b' operator='arithmetic' k2='.55' k3='.45' result='ab'/%3E%3CfeComposite in='ab' in2='c' operator='arithmetic' k2='.78' k3='.22' result='n0'/%3E%3CfeDisplacementMap in='n0' in2='w' scale='26' xChannelSelector='R' yChannelSelector='G' result='n'/%3E%3CfeColorMatrix in='n' type='matrix' values='0 0 0 0 0.525 0 0 0 0 0.063 0 0 0 0 0.031 5 0 0 0 -2.45'/%3E%3CfeComponentTransfer result='d'%3E%3CfeFuncA type='table' tableValues='0 0.3'/%3E%3C/feComponentTransfer%3E%3CfeColorMatrix in='n' type='matrix' values='0 0 0 0 1.000 0 0 0 0 0.894 0 0 0 0 0.847 -5 0 0 0 2.5'/%3E%3CfeComponentTransfer result='l'%3E%3CfeFuncA type='table' tableValues='0 0.075'/%3E%3C/feComponentTransfer%3E%3CfeMerge%3E%3CfeMergeNode in='d'/%3E%3CfeMergeNode in='l'/%3E%3C/feMerge%3E%3C/filter%3E%3Crect x='-40' y='-40' width='880' height='480' filter='url(%23p)'/%3E%3C/svg%3E");
+  --tex-yh: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='800' height='400'%3E%3Cfilter id='p' filterUnits='userSpaceOnUse' primitiveUnits='userSpaceOnUse' x='-40' y='-40' width='880' height='480' color-interpolation-filters='sRGB'%3E%3CfeTurbulence x='0' y='0' width='800' height='400' type='fractalNoise' baseFrequency='0.0017 0.045' numOctaves='2' seed='15' stitchTiles='stitch'/%3E%3CfeTile result='a'/%3E%3CfeTurbulence x='0' y='0' width='800' height='400' type='fractalNoise' baseFrequency='0.006 0.9' numOctaves='2' seed='19' stitchTiles='stitch'/%3E%3CfeTile result='b'/%3E%3CfeTurbulence x='0' y='0' width='800' height='400' type='fractalNoise' baseFrequency='0.004 0.012' numOctaves='1' seed='24' stitchTiles='stitch'/%3E%3CfeTile result='c'/%3E%3CfeTurbulence x='0' y='0' width='800' height='400' type='fractalNoise' baseFrequency='0.005 0.02' numOctaves='1' seed='17' stitchTiles='stitch'/%3E%3CfeTile result='w'/%3E%3CfeComposite in='a' in2='b' operator='arithmetic' k2='.55' k3='.45' result='ab'/%3E%3CfeComposite in='ab' in2='c' operator='arithmetic' k2='.78' k3='.22' result='n0'/%3E%3CfeDisplacementMap in='n0' in2='w' scale='26' xChannelSelector='R' yChannelSelector='G' result='n'/%3E%3CfeColorMatrix in='n' type='matrix' values='0 0 0 0 0.784 0 0 0 0 0.525 0 0 0 0 0.000 5 0 0 0 -2.45'/%3E%3CfeComponentTransfer result='d'%3E%3CfeFuncA type='table' tableValues='0 0.2'/%3E%3C/feComponentTransfer%3E%3CfeColorMatrix in='n' type='matrix' values='0 0 0 0 1.000 0 0 0 0 0.957 0 0 0 0 0.753 -5 0 0 0 2.5'/%3E%3CfeComponentTransfer result='l'%3E%3CfeFuncA type='table' tableValues='0 0.12'/%3E%3C/feComponentTransfer%3E%3CfeMerge%3E%3CfeMergeNode in='d'/%3E%3CfeMergeNode in='l'/%3E%3C/feMerge%3E%3C/filter%3E%3Crect x='-40' y='-40' width='880' height='480' filter='url(%23p)'/%3E%3C/svg%3E");
+  --tex-yv: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='800'%3E%3Cfilter id='p' filterUnits='userSpaceOnUse' primitiveUnits='userSpaceOnUse' x='-40' y='-40' width='480' height='880' color-interpolation-filters='sRGB'%3E%3CfeTurbulence x='0' y='0' width='400' height='800' type='fractalNoise' baseFrequency='0.045 0.0017' numOctaves='2' seed='19' stitchTiles='stitch'/%3E%3CfeTile result='a'/%3E%3CfeTurbulence x='0' y='0' width='400' height='800' type='fractalNoise' baseFrequency='0.9 0.006' numOctaves='2' seed='23' stitchTiles='stitch'/%3E%3CfeTile result='b'/%3E%3CfeTurbulence x='0' y='0' width='400' height='800' type='fractalNoise' baseFrequency='0.012 0.004' numOctaves='1' seed='28' stitchTiles='stitch'/%3E%3CfeTile result='c'/%3E%3CfeTurbulence x='0' y='0' width='400' height='800' type='fractalNoise' baseFrequency='0.02 0.005' numOctaves='1' seed='21' stitchTiles='stitch'/%3E%3CfeTile result='w'/%3E%3CfeComposite in='a' in2='b' operator='arithmetic' k2='.55' k3='.45' result='ab'/%3E%3CfeComposite in='ab' in2='c' operator='arithmetic' k2='.78' k3='.22' result='n0'/%3E%3CfeDisplacementMap in='n0' in2='w' scale='26' xChannelSelector='R' yChannelSelector='G' result='n'/%3E%3CfeColorMatrix in='n' type='matrix' values='0 0 0 0 0.784 0 0 0 0 0.525 0 0 0 0 0.000 5 0 0 0 -2.45'/%3E%3CfeComponentTransfer result='d'%3E%3CfeFuncA type='table' tableValues='0 0.2'/%3E%3C/feComponentTransfer%3E%3CfeColorMatrix in='n' type='matrix' values='0 0 0 0 1.000 0 0 0 0 0.957 0 0 0 0 0.753 -5 0 0 0 2.5'/%3E%3CfeComponentTransfer result='l'%3E%3CfeFuncA type='table' tableValues='0 0.12'/%3E%3C/feComponentTransfer%3E%3CfeMerge%3E%3CfeMergeNode in='d'/%3E%3CfeMergeNode in='l'/%3E%3C/feMerge%3E%3C/filter%3E%3Crect x='-40' y='-40' width='480' height='880' filter='url(%23p)'/%3E%3C/svg%3E");
+  --tex-bv: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='800'%3E%3Cfilter id='p' filterUnits='userSpaceOnUse' primitiveUnits='userSpaceOnUse' x='-40' y='-40' width='480' height='880' color-interpolation-filters='sRGB'%3E%3CfeTurbulence x='0' y='0' width='400' height='800' type='fractalNoise' baseFrequency='0.045 0.0017' numOctaves='2' seed='12' stitchTiles='stitch'/%3E%3CfeTile result='a'/%3E%3CfeTurbulence x='0' y='0' width='400' height='800' type='fractalNoise' baseFrequency='0.9 0.006' numOctaves='2' seed='16' stitchTiles='stitch'/%3E%3CfeTile result='b'/%3E%3CfeTurbulence x='0' y='0' width='400' height='800' type='fractalNoise' baseFrequency='0.012 0.004' numOctaves='1' seed='21' stitchTiles='stitch'/%3E%3CfeTile result='c'/%3E%3CfeTurbulence x='0' y='0' width='400' height='800' type='fractalNoise' baseFrequency='0.02 0.005' numOctaves='1' seed='14' stitchTiles='stitch'/%3E%3CfeTile result='w'/%3E%3CfeComposite in='a' in2='b' operator='arithmetic' k2='.55' k3='.45' result='ab'/%3E%3CfeComposite in='ab' in2='c' operator='arithmetic' k2='.78' k3='.22' result='n0'/%3E%3CfeDisplacementMap in='n0' in2='w' scale='26' xChannelSelector='R' yChannelSelector='G' result='n'/%3E%3CfeColorMatrix in='n' type='matrix' values='0 0 0 0 0.039 0 0 0 0 0.086 0 0 0 0 0.322 5 0 0 0 -2.45'/%3E%3CfeComponentTransfer result='d'%3E%3CfeFuncA type='table' tableValues='0 0.32'/%3E%3C/feComponentTransfer%3E%3CfeColorMatrix in='n' type='matrix' values='0 0 0 0 0.847 0 0 0 0 0.886 0 0 0 0 1.000 -5 0 0 0 2.5'/%3E%3CfeComponentTransfer result='l'%3E%3CfeFuncA type='table' tableValues='0 0.09'/%3E%3C/feComponentTransfer%3E%3CfeMerge%3E%3CfeMergeNode in='d'/%3E%3CfeMergeNode in='l'/%3E%3C/feMerge%3E%3C/filter%3E%3Crect x='-40' y='-40' width='480' height='880' filter='url(%23p)'/%3E%3C/svg%3E");
+  --ragbox: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='132' height='132'%3E%3Cpath d='M2.40 2.40L6.00 2.50L8.00 2.46L10.00 2.39L12.00 2.58L14.00 2.72L16.00 2.65L18.00 2.97L20.00 3.50L22.00 3.50L24.00 3.41L26.00 3.41L28.00 3.28L30.00 2.73L32.00 2.34L34.00 2.29L36.00 2.24L38.00 2.13L40.00 2.23L42.00 2.34L44.00 2.17L46.00 2.08L48.00 2.32L50.00 2.50L52.00 2.47L54.00 2.50L56.00 2.46L58.00 2.14L60.00 1.90L62.00 2.06L64.00 2.26L66.00 2.29L68.00 2.42L70.00 2.55L72.00 2.41L74.00 2.28L76.00 2.45L78.00 2.52L80.00 2.27L82.00 2.05L84.00 1.91L86.00 1.60L88.00 1.43L90.00 1.66L92.00 1.89L94.00 1.82L96.00 1.77L98.00 1.80L100.00 1.63L102.00 1.48L104.00 1.63L106.00 1.73L108.00 1.52L110.00 1.40L112.00 1.52L114.00 1.59L116.00 1.74L118.00 2.19L120.00 2.55L122.00 2.51L124.00 2.43L126.00 2.50L129.60 2.40L129.20 6.00L129.18 8.00L129.03 10.00L129.11 12.00L129.48 14.00L129.65 16.00L129.54 18.00L129.50 20.00L129.43 22.00L129.18 24.00L129.15 26.00L129.44 28.00L129.60 30.00L129.54 32.00L129.64 34.00L129.79 36.00L129.77 38.00L129.87 40.00L130.15 42.00L130.16 44.00L129.84 46.00L129.63 48.00L129.55 50.00L129.39 52.00L129.41 54.00L129.72 56.00L129.86 58.00L129.71 60.00L129.71 62.00L129.84 64.00L129.82 66.00L129.82 68.00L129.98 70.00L129.94 72.00L129.63 74.00L129.54 76.00L129.75 78.00L129.90 80.00L130.10 82.00L130.47 84.00L130.63 86.00L130.45 88.00L130.23 90.00L130.05 92.00L130.20 94.00L130.40 96.00L130.43 98.00L130.32 100.00L129.94 102.00L129.59 104.00L129.56 106.00L129.62 108.00L129.86 110.00L130.17 112.00L130.13 114.00L129.70 116.00L129.45 118.00L129.50 120.00L129.42 122.00L129.22 124.00L129.20 126.00L129.60 129.60L126.00 130.33L124.00 130.14L122.00 130.16L120.00 130.21L118.00 129.80L116.00 129.27L114.00 128.99L112.00 128.88L110.00 128.86L108.00 129.13L106.00 129.51L104.00 129.50L102.00 129.29L100.00 129.30L98.00 129.33L96.00 129.22L94.00 129.26L92.00 129.40L90.00 129.22L88.00 128.81L86.00 128.76L84.00 128.90L82.00 129.24L80.00 129.67L78.00 130.13L76.00 130.04L74.00 129.77L72.00 129.76L70.00 129.85L68.00 129.75L66.00 129.72L64.00 129.80L62.00 129.68L60.00 129.49L58.00 129.67L56.00 129.97L54.00 130.03L52.00 130.02L50.00 130.04L48.00 129.81L46.00 129.48L44.00 129.50L42.00 129.71L40.00 129.73L38.00 129.75L36.00 129.93L34.00 129.99L32.00 129.96L30.00 130.24L28.00 130.59L26.00 130.58L24.00 130.42L22.00 130.37L20.00 130.21L18.00 130.00L16.00 130.13L14.00 130.43L12.00 130.43L10.00 130.32L8.00 130.37L6.00 130.33L2.40 129.60L1.63 126.00L1.64 124.00L1.98 122.00L2.23 120.00L2.41 118.00L2.72 116.00L2.84 114.00L2.69 112.00L2.70 110.00L2.93 108.00L2.94 106.00L2.78 104.00L2.74 102.00L2.64 100.00L2.40 98.00L2.43 96.00L2.76 94.00L2.90 92.00L2.80 90.00L2.77 88.00L2.64 86.00L2.29 84.00L2.15 82.00L2.27 80.00L2.21 78.00L1.97 76.00L1.92 74.00L1.97 72.00L1.92 70.00L2.08 68.00L2.46 66.00L2.56 64.00L2.35 62.00L2.23 60.00L2.17 58.00L2.07 56.00L2.18 54.00L2.56 52.00L2.74 50.00L2.45 48.00L2.36 46.00L2.70 44.00L2.65 42.00L2.36 40.00L2.41 38.00L2.28 36.00L1.83 34.00L1.58 32.00L1.55 30.00L1.46 28.00L1.47 26.00L1.71 24.00L1.77 22.00L1.59 20.00L1.61 18.00L1.83 16.00L1.89 14.00L1.88 12.00L1.99 10.00L1.92 8.00L1.63 6.00Z'/%3E%3C/svg%3E");
+  /* the art paper's cotton tooth (a fine neutral speckle, ink at up to about 2.5%) and formation (the pulp's soft,
+     wide cloudiness, up to about 2%); the rubber stamp's uneven ink (alpha about .83-1, so its text keeps 4.5:1 where
+     the ink is thinnest) and its frame's worn ink (alpha about .25-1, no text) */
+  --tooth: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='g' filterUnits='userSpaceOnUse' x='0' y='0' width='180' height='180'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' seed='4' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .12 0 0 0 0 .12 0 0 0 0 .12 0 0 0 .1 -.038'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23g)'/%3E%3C/svg%3E");
+  --formation: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='420' height='420'%3E%3Cfilter id='f' filterUnits='userSpaceOnUse' x='0' y='0' width='420' height='420'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.016' numOctaves='3' seed='9' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .2 0 0 0 0 .19 0 0 0 0 .17 0 0 0 .08 -.032'/%3E%3C/filter%3E%3Crect width='420' height='420' filter='url(%23f)'/%3E%3C/svg%3E");
+  --ink-tex: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='80'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' seed='11'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .45 0 0 0 .78'/%3E%3C/filter%3E%3Crect width='160' height='80' filter='url(%23n)'/%3E%3C/svg%3E");
+  --ink-worn: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='60'%3E%3Cfilter id='w'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.5' numOctaves='3' seed='23'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1.6 0 0 0 -.16'/%3E%3C/filter%3E%3Crect width='120' height='60' filter='url(%23w)'/%3E%3C/svg%3E");
+  --rag: var(--ragbox) 6 / 6px round;      /* -webkit-mask-box-image: the painted fields' frayed outline */
+  --rag-s: var(--ragbox) 6 / 3px round;    /* the same for marks under 20px */
+  --deckle: var(--ragbox) 6 / 4px round;   /* the art paper's soft deckle edge (the same outline, finer) */
+  --ul: 1px;                               /* the link's underline at rest, on hover and focus, below the baseline */
+  --ul-on: 2px;
+  --ul-off: .16em;
+  --rw: 5px;                               /* the paper gap between painted fields */
+  --ly: 0px;                               /* the lift on hover and focus */
+  position: relative;
+  display: flex;
+  min-width: 0;
+  container-type: inline-size;
+  grid-area: 1 / 1;
+  align-self: start;
+  z-index: 2;
+  width: var(--dw);
+  margin: var(--dy) 0 0 calc(var(--mx) + var(--dx));
+  /* only the turned face takes the pointer (the untransformed box would steal the game cover's corners) */
+  pointer-events: none;
+}
+@media (min-width: 1068px) { .file--data { aspect-ratio: 1; } }
+.file--data .face {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  pointer-events: auto;
+  /* lying askew, its top-left corner lifted off the desk (a small 3D turn about the opposite diagonal) */
+  transform: translateY(var(--ly)) rotate(var(--tilt)) perspective(1400px) rotate3d(1, -1, 0, 2.5deg);
+  transition: transform var(--dur-hover) var(--ease-out);
+  /* sheet metrics (narrow first): the clean side margin, the foot margin, the print's inner padding */
+  --strip: 22px;
+  --sliver: 22px;
+  --pr-pad-x: 14px;
+  --pr-pad-t: 16px;
+  --head-h: 34px;
+  --row-gap: 8px;
+  --pdisp-fs: clamp(2.25rem, min(15.4cqi, 10.4vh), 7rem);
+}
+/* from 440px the print's rows sit level with the game cover's */
+@container (min-width: 440px) {
+  .file--data .face { --strip: 26px; --sliver: 20px; --pr-pad-x: 20px; --pr-pad-t: 20px; --head-h: 44px; --row-gap: 10px; }
+}
+.file--data:has(.cta:focus-visible) > .face { outline: 2px solid var(--pr-focus); outline-offset: 3px; box-shadow: 0 0 0 7px var(--pr-paper); }
+/* the sheet's lift shadow (under the pointer or the keyboard focus at rest; in the air during the opening, MO-26) */
+.file--data::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0;
+  transform: rotate(var(--tilt)) translate(-6px, 22px);
+  box-shadow: 0 34px 56px -18px color-mix(in srgb, var(--cover-shadow) 95%, transparent), 0 14px 24px -10px color-mix(in srgb, var(--cover-shadow) 80%, transparent);
+  transition: opacity var(--dur-hover) linear;
+}
+@media (hover: hover) {
+  .file--data:hover { --ly: -4px; }
+  .file--data:hover::before { opacity: 1; }
+}
+.file--data:active, .file--data:has(.cta:focus-visible) { --ly: -4px; }
+.file--data:active::before, .file--data:has(.cta:focus-visible)::before { opacity: 1; }
+/* reduced motion (OS or the site toggle): no lift (the sheet keeps its rest transform; only the shadow shows). The
+   overrides below are written one step more specific than the rules they override (the bundler may reorder blocks) */
+@media (prefers-reduced-motion: reduce) {
+  .file--data > .face { transition: none; transform: rotate(var(--tilt)) perspective(1400px) rotate3d(1, -1, 0, 2.5deg); }
+}
+:root[data-motion="reduce"] .file--data > .face { transition: none; transform: rotate(var(--tilt)) perspective(1400px) rotate3d(1, -1, 0, 2.5deg); }
+
+/* the sheet: its own shadow, the paper, the print */
+.file--data .feed { position: relative; flex: 1; display: flex; flex-direction: column; min-width: 0; }
+.file--data .feed::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  box-shadow: 0 24px 44px -20px color-mix(in srgb, var(--cover-shadow) 85%, transparent), 0 2px 7px color-mix(in srgb, var(--cover-shadow) 55%, transparent);
+}
+/* the lifted corner (transform and shadow only): a shadow thrown wider under the top-left corner */
+.file--data .lift {
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: -1;
+  width: 46%;
+  height: 34%;
+  pointer-events: none;
+  transform-origin: 100% 100%;
+  transform: rotate(4deg) translate(-10px, -2px);
+  box-shadow: -12px 16px 26px -4px color-mix(in srgb, var(--cover-shadow) 80%, transparent);
+}
+/* the bend: a square turned 45° about the sheet's top-left corner, inside the paper (the paper's mask clips it). The
+   corner beyond its far edge is the lifted flap: lit a little, a soft shade inside the bend, its shadow on the paper */
+.file--data .curl {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 120px;
+  height: 120px;
+  transform-origin: 0 0;
+  transform: rotate(45deg) translate(-50%, -50%);
+  box-shadow:
+    5px 0 9px -5px color-mix(in srgb, var(--pr-ink) 30%, transparent),
+    inset -9px 0 12px -9px color-mix(in srgb, var(--pr-ink) 14%, transparent),
+    inset 0 0 0 200px color-mix(in srgb, var(--hud-strong) 30%, transparent);
+}
+/* the paper: white cotton-rag art paper with a soft deckle edge (Chrome / Safari; elsewhere a straight edge). Layers,
+   bottom to top: the paper colour, the tooth and formation (::after, so the sheet itself is not an image-backed
+   element), the plate mark (::before), the curl */
+.file--data .paper {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  isolation: isolate;
+  background-color: var(--pr-paper);
+  -webkit-mask-box-image: var(--deckle);
+}
+.file--data .paper::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image: var(--tooth), var(--formation);
+  background-size: 180px 180px, 420px 420px;
+}
+/* the plate mark: a shallow recess the press left round the print (lit from the top left: its top and left walls in
+   shade, its bottom and right walls lit); painted over the tooth, under the curl */
+.file--data .paper::before {
+  content: "";
+  position: absolute;
+  z-index: 1;
+  inset: calc(var(--pr-pad-t) * .5) calc(var(--strip) * .5) calc(var(--sliver) * .5);
+  pointer-events: none;
+  box-shadow:
+    inset 1px 1px 0 var(--pr-plate), inset -1px -1px 0 var(--pr-lit),
+    -1px -1px 0 var(--pr-lit), 1px 1px 0 color-mix(in srgb, var(--pr-plate) 60%, transparent),
+    inset 3px 3px 6px -4px var(--pr-plate);
+}
+.file--data .curl { z-index: 2; }
+
+/* the print, one column like the game cover: job header, series line, banner (with the stamp beside its short first
+   line), Korean title, the tagline, the contents line with the link, the foot line */
+.file--data .pr {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto auto auto auto auto 1fr auto auto;
+  grid-template-areas: "hdr" "head" "disp" "title" "intro" "." "end" "foot";
+  row-gap: var(--row-gap);
+  padding: var(--pr-pad-t) calc(var(--strip) + var(--pr-pad-x)) calc(var(--sliver) + 8px);
+  color: var(--pr-ink);
+  font-family: var(--pr-font-text);
+}
+/* job header: file name and number, then a printed double hairline */
+.file--data .pr__hdr { grid-area: hdr; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 0 16px; font: 600 var(--fs-label)/1.5 var(--pr-font-text); letter-spacing: .04em; color: var(--pr-ink-2); font-variant-numeric: tabular-nums; }
+.file--data .pr__hdr::after { content: ""; flex-basis: 100%; height: 4px; margin-top: 3px; border-block: 1px solid var(--pr-ink-2); }
+.file--data .pr__head { grid-area: head; display: flex; align-items: center; gap: 10px; min-height: var(--head-h); min-width: 0; }
+@container (min-width: 440px) { .file--data .pr__head { gap: 12px; } }
+.file--data .pr__series { min-width: 0; font: 600 var(--fs-label)/1.4 var(--pr-font-text); letter-spacing: .04em; color: var(--pr-ink); }
+.file--data .pr__kicker { letter-spacing: 0; font-weight: 700; }
+.file--data .pr__pub, .file--data .pr__kicker, .file--data .pr__sno { white-space: nowrap; }
+.file--data .pr__sep { color: var(--pr-ink-2); }
+
+/* the banner: heavy capitals; the first word painted out of a red field (horizontal strokes, frayed edge, white type,
+   as the game cover reverses its first word out of lime); a small yellow dab beside it, a paper gap between */
+.file--data .pr__disp { grid-area: disp; font: 900 var(--pdisp-fs)/.9 var(--pr-font-banner); color: var(--pr-ink); text-transform: uppercase; }
+.file--data .pr__disp > span { display: block; white-space: nowrap; }
+.file--data .pr__disp > span + span { margin-top: .08em; }
+.file--data .pr__row1 { display: flex; align-items: flex-end; gap: var(--rw); }
+.file--data .pr__disp > .pr__row1 { display: flex; }
+/* the red field runs out into the left margin (the blue does the same on the right): fields that touch the edge of
+   the print, as Mondrian's touch the edge of the canvas */
+.file--data .pr__red { display: block; margin-left: calc(4px - var(--pr-pad-x)); padding: .16em .24em .14em calc(var(--pr-pad-x) - 4px); color: var(--pr-on-color); background: var(--tex-rh), var(--pr-red); -webkit-mask-box-image: var(--rag); }
+.file--data .pr__dab { display: block; flex: none; width: max(14px, .3em); height: .52em; margin-bottom: .06em; background: var(--tex-yv), var(--pr-yellow); -webkit-mask-box-image: var(--rag-s); }
+
+/* the rubber stamp, applied by hand after printing: beside the banner's short first line, turned a little; on a narrow
+   sheet beside the Korean title, so it never lands on the paint */
+.file--data .rstamp { grid-area: disp; justify-self: end; align-self: start; margin: calc(var(--pdisp-fs) * .1) 0 0 0; transform: rotate(-7deg); pointer-events: none; }
+@container (max-width: 459px) { .file--data .rstamp { grid-area: title; align-self: center; margin: 0; } }
+.file--data .rstamp__ink {
+  position: relative;
+  display: inline-block;
+  padding: .46em .7em .38em .8em;
+  font: 900 clamp(.9375rem, 4.2cqi, 1.625rem)/1.15 var(--pr-font-text);
+  letter-spacing: .14em;
+  color: var(--pr-stamp);
+  -webkit-mask-image: var(--ink-tex);
+  mask-image: var(--ink-tex);
+  -webkit-mask-size: 160px 80px;
+  mask-size: 160px 80px;
+}
+/* the frame (a heavy rule and a thin inner rule) takes the ink worst: a patchier texture; it carries no text */
+.file--data .rstamp__ink::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border: .16em solid currentColor;
+  border-radius: .2em;
+  outline: .07em solid currentColor;
+  outline-offset: -.34em;
+  -webkit-mask-image: var(--ink-worn);
+  mask-image: var(--ink-worn);
+  -webkit-mask-size: 120px 60px;
+  mask-size: 120px 60px;
+}
+
+.file--data .pr__h2 { grid-area: title; padding-top: 4px; font: 800 1.375rem/1.25 var(--pr-font-text); color: var(--pr-ink); }
+@container (min-width: 440px) { .file--data .pr__h2 { font-size: var(--fs-h2); } }
+.file--data .pr__intro { grid-area: intro; max-width: 22em; font: 400 var(--fs-sub)/1.5 var(--pr-font-text); color: var(--pr-ink-2); text-wrap: pretty; }
+.file--data .cl { display: inline-block; }
+/* a printed hairline, then the contents line with the link at its end */
+.file--data .pr__end { grid-area: end; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 16px; }
+.file--data .pr__end::before { content: ""; flex-basis: 100%; height: 0; margin-bottom: 4px; border-top: 1px dashed var(--pr-ink-2); }
+.file--data .pr__toc { display: flex; flex-wrap: wrap; gap: 2px 18px; font: 700 var(--fs-label)/1.5 var(--pr-font-text); color: var(--pr-ink); }
+.file--data .toc__n { margin-right: 6px; font: 800 var(--fs-label)/1 var(--pr-font-banner); color: var(--pr-ink-2); font-variant-numeric: tabular-nums; }
+/* the foot line, and the blue field (vertical strokes) painted at its right, down to the foot margin */
+.file--data .pr__foot { grid-area: foot; display: flex; align-items: stretch; gap: 12px; min-width: 0; font: 600 var(--fs-label)/1.4 var(--pr-font-text); letter-spacing: .04em; color: var(--pr-ink-2); text-transform: uppercase; }
+.file--data .pr__foot-t { flex: none; align-self: center; white-space: nowrap; }
+.file--data .pr__blue { display: block; flex: 0 1 clamp(30px, 22%, 140px); min-width: 0; min-height: 30px; margin: -8px calc(4px - var(--pr-pad-x)) -4px auto; background: var(--tex-bv), var(--pr-blue); -webkit-mask-box-image: var(--rag); }
+@container (min-width: 440px) { .file--data .pr__blue { min-height: 40px; margin-top: -14px; } }
+/* a narrow file sets the job header and the foot line a size down and untracked, so each stays one printed line */
+@container (max-width: 439px) { .file--data .pr__hdr, .file--data .pr__foot { font-size: var(--fs-min); letter-spacing: 0; } .file--data .pr__foot { gap: 6px; } }
+
+/* the link (the museum label): ink like the text with a fine underline; hover, press and keyboard focus thicken the
+   underline and sweep a yellow brush stroke in under the words (transform only; no box, no colour on the type) */
+.file--data .cta--pr { margin-left: auto; text-decoration: none; white-space: nowrap; color: var(--pr-link); font: 700 .9375rem/1 var(--pr-font-text); }
+.file--data .cta--pr:focus-visible { outline: none; }
+.file--data .cta--pr .cta__face { position: relative; isolation: isolate; display: inline-flex; align-items: center; gap: 8px; min-height: var(--tap); padding: 0 2px; color: var(--pr-link); }
+.file--data .cta__t { text-decoration: underline var(--ul) var(--pr-link); text-underline-offset: var(--ul-off); text-decoration-skip-ink: auto; }
+.file--data .cta--pr .cta__hov {
+  position: absolute;
+  z-index: -1;
+  left: -2px;
+  right: -2px;
+  top: calc(50% + .1em);
+  height: max(.44em, 6px);
+  background: var(--tex-yh), var(--pr-link-stroke);
+  -webkit-mask-box-image: var(--rag-s);
+  transform: scaleX(0);
+  transform-origin: 0 50%;
+  transition: transform var(--dur-stroke) var(--ease-out);
+}
+@media (hover: hover) {
+  .file--data:hover .cta--pr .cta__hov { transform: none; }
+  .file--data:hover .cta__t { text-decoration-thickness: var(--ul-on); }
+}
+.file--data:active .cta--pr .cta__hov, .file--data:has(.cta:focus-visible) .cta--pr .cta__hov { transform: none; }
+.file--data:active .cta__t, .file--data:has(.cta:focus-visible) .cta__t { text-decoration-thickness: var(--ul-on); }
+@media (prefers-reduced-motion: reduce) {
+  .file--data .cta--pr .cta__hov { transition: none; }
+}
+:root[data-motion="reduce"] .file--data .cta--pr .cta__hov { transition: none; }
+.file--data .cta__hit { position: absolute; inset: 0; z-index: 4; }
+
+/* forced colours: one 1px CanvasText frame; paper texture, paint and shadows off */
+@media (forced-colors: active) {
+  .file--data.file--data > .face { border: 1px solid CanvasText; }
+  .file--data .paper::after { background-image: none; }
+  .file--data .paper::before, .file--data .feed::before, .file--data .lift, .file--data .curl, .file--data.file--data::before { box-shadow: none; }
+  .file--data .pr__red, .file--data .pr__dab, .file--data .pr__blue, .file--data .cta--pr .cta__hov { background: none; }
+  .file--data .pr__red { color: CanvasText; }
+}
+/* print: flat and untilted, above the game cover (ChooserView stacks the desk), a plain border instead of the paper
+   (no texture, no deckle), no shadow, no stamp */
+@media print {
+  .file--data.file--data { width: 100%; margin: 0; aspect-ratio: auto; break-inside: avoid; }
+  .file--data.file--data > .face { transform: none; transition: none; border: 1px solid var(--pr-ink); }
+  .file--data.file--data::before, .file--data .lift, .file--data .curl, .file--data .paper, .file--data .rstamp { display: none; }
+  .file--data .feed::before { box-shadow: none; }
+}

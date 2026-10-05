@@ -1,0 +1,51 @@
+---
+// Styles: src/styles/chooser.css (one external stylesheet for the chooser).
+// The general file on the chooser desk (MO-23, chooser v6.4, finish B "판화지"): a printout lying askew on the game
+// cover with one corner lifted, on white cotton-rag art paper (static tooth and formation, a blind plate mark, a soft
+// deckle edge; no sprocket holes, no green bars, no tear perforation). Three hand-brushed Mondrian fields painted on
+// after printing: red behind DATA (white type), a small yellow dab, a blue field at the foot. A typed job header and
+// series line, the Korean h2, a rubber stamp (decoration), the tagline, the contents line and the link — ink with a fine
+// underline; on hover or keyboard focus a yellow brush stroke sweeps in under it (transform only). One link; its hit
+// layer covers the print. Type: the site's sans (MO-OQ16 stand-ins; MO-29 moves the banner to the general version's
+// display face).
+import { chooserCopy } from '../../data/copy/chooser';
+import { coverCopy } from '../../data/copy/chooser-covers';
+import type { CoverData } from '../../lib/chooser-covers';
+import CoverEmblem from './CoverEmblem.astro';
+
+interface Props {
+  cover: CoverData;
+}
+const { cover } = Astro.props;
+const copy = coverCopy[cover.lang];
+const d = copy.data;
+const kicker = chooserCopy[cover.lang].data.kicker;
+const foot = copy.foot.replace('{year}', cover.foot.year).replace('{host}', cover.foot.host);
+const clauses = cover.tagline.split(/(?<=,) /);
+---
+<article class="file file--data" aria-labelledby={`file-${cover.id}-title`}>
+  <div class="face">
+    <i class="lift" aria-hidden="true"></i>
+    <div class="feed">
+      <div class="paper" aria-hidden="true"><i class="curl"></i></div>
+      <div class="pr">
+        <p class="pr__hdr" lang="en" aria-hidden="true"><span class="pr__file">{d.file}</span><span class="pr__no">{d.serial}</span></p>
+        <div class="pr__head">
+          <CoverEmblem kind="data" />
+          <p class="pr__series"><span class="pr__pub" lang="en">{d.series}</span>&nbsp;<span class="pr__sep" aria-hidden="true">·</span> <span class="pr__kicker">{kicker}</span>&nbsp;<span class="pr__sep" aria-hidden="true">·</span> <span class="pr__sno" lang="en">{d.num}</span></p>
+        </div>
+        <p class="pr__disp" lang="en" aria-hidden="true"><span class="pr__row1"><span class="pr__red">{d.banner[0]}</span><i class="pr__dab"></i></span><span>{d.banner[1]}</span></p>
+        <h2 class="pr__h2" id={`file-${cover.id}-title`}>{cover.title}</h2>
+        <span class="rstamp" aria-hidden="true"><span class="rstamp__ink">{d.stamp}</span></span>
+        <p class="pr__intro">{clauses.map((clause, i) => <>{i > 0 && ' '}<span class="cl">{clause}</span></>)}</p>
+        <div class="pr__end">
+          <ol class="pr__toc" role="list">
+            {cover.contents.map((item) => <li><span class="toc__n" aria-hidden="true">{item.num}</span><span class="toc__t">{item.label}</span></li>)}
+          </ol>
+          <a class="cta cta--pr" href={cover.href} data-choose-variant={cover.id} aria-labelledby={`file-${cover.id}-title file-${cover.id}-cta`}><span class="cta__face"><i class="cta__hov" aria-hidden="true"></i><span id={`file-${cover.id}-cta`} class="cta__t">{cover.cta}</span> <span aria-hidden="true">→</span></span><span class="cta__hit" aria-hidden="true"></span></a>
+        </div>
+        <p class="pr__foot" lang="en" aria-hidden="true"><span class="pr__foot-t">{foot}</span><i class="pr__blue"></i></p>
+      </div>
+    </div>
+  </div>
+</article>

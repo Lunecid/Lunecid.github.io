@@ -4,7 +4,7 @@
 // A sheet's "own" classes are the classes it defines that no other stylesheet in src/ names (other src/**/*.css files,
 // <style> blocks of src/**/*.astro); they reach a page's inlined CSS only through that sheet.
 import assert from 'node:assert/strict';
-import { readdirSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join, relative, sep } from 'node:path';
 import { test } from 'node:test';
 
@@ -75,4 +75,22 @@ test('data pages inline neither hud.css nor read.css (P2-9: the D-7 transition i
     assert.deepEqual(HUD_OWN.filter((c) => has(p.css, c)), [], `${p.path}: hud.css leaked into a general page`);
     assert.deepEqual(READ_OWN.filter((c) => has(p.css, c)), [], `${p.path}: read.css leaked into a general page`);
   }
+});
+
+// MO-23 (controller ruling): the chooser's page, desk and cover styles are one external, content-hashed stylesheet that
+// only the two chooser pages link; no page inlines its rules.
+test('only the chooser pages link the chooser sheet; no page inlines it', () => {
+  const sheetRe = /<link rel="stylesheet" href="(\/_astro\/chooser\.[\w-]+\.css)"/g;
+  const linked = [];
+  for (const file of walk('dist').filter((f) => f.endsWith('.html'))) {
+    const html = readFileSync(file, 'utf8');
+    const path = posix(relative('dist', file));
+    const hrefs = [...html.matchAll(sheetRe)].map((m) => m[1]);
+    const chooser = path === 'index.html' || path === 'en/index.html';
+    assert.equal(hrefs.length, chooser ? 1 : 0, `${path}: ${hrefs.length} chooser sheet links`);
+    if (chooser) linked.push(hrefs[0]);
+    assert.doesNotMatch(styleText(html), /\.file--data|\.file--game|--tex-rh|\.chooser__stage/, `${path}: chooser rules inlined`);
+  }
+  assert.equal(new Set(linked).size, 1, 'both chooser pages share one cached file');
+  assert.ok(existsSync(join('dist', ...linked[0].split('/').filter(Boolean))), `${linked[0]} is in dist`);
 });

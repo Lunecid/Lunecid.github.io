@@ -4,30 +4,28 @@ const GAME = '[data-choose-variant="game"]';
 const DATA = '[data-choose-variant="data"]';
 const box = (page: import('@playwright/test').Page, sel: string) => page.locator(sel).evaluate((el) => el.getBoundingClientRect().toJSON() as DOMRect);
 
-test.describe('chooser (P2-10, Review Focus 4)', () => {
-  test('side by side from 734px, stacked below; arrows follow the layout; Tab goes game → data', async ({ page }) => {
+test.describe('chooser (P2-10 intents on the MO-23 desk, Review Focus 4)', () => {
+  test('MO-23: the printout lies over the game cover at every width; ←/→ move between the two files; Tab goes data → game', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto('/?choose', { waitUntil: 'networkidle' });
-    const [g, d] = [await box(page, GAME), await box(page, DATA)];
-    expect(d.left).toBeGreaterThan(g.left);
-    expect(Math.abs(d.top - g.top)).toBeLessThan(2);
-    await page.locator(GAME).focus();
+    const [g, d] = [await box(page, '.file--game'), await box(page, '.file--data')];
+    expect(d.left).toBeGreaterThan(g.left); // the game cover peeks out at the left
+    expect(d.top).toBeGreaterThan(g.top); // and above
+    expect(d.left).toBeLessThan(g.right); // the sheet covers most of it
+    await page.locator(DATA).focus();
     await page.keyboard.press('ArrowRight');
-    await expect(page.locator(DATA)).toBeFocused();
+    await expect(page.locator(GAME)).toBeFocused();
     await page.keyboard.press('ArrowLeft');
-    await expect(page.locator(GAME)).toBeFocused();
-    await page.keyboard.press('ArrowDown');
-    await expect(page.locator(GAME)).toBeFocused();
-    await page.keyboard.press('Tab');
     await expect(page.locator(DATA)).toBeFocused();
+    await page.keyboard.press('Tab');
+    await expect(page.locator(GAME)).toBeFocused();
 
     await page.setViewportSize({ width: 375, height: 812 });
-    await expect(page.locator(DATA)).toBeFocused(); // focus survives the re-flow
-    const [g2, d2] = [await box(page, GAME), await box(page, DATA)];
-    expect(d2.top).toBeGreaterThanOrEqual(g2.bottom - 1);
-    await page.keyboard.press('ArrowUp');
-    await expect(page.locator(GAME)).toBeFocused();
-    await page.keyboard.press('ArrowDown');
+    await expect(page.locator(GAME)).toBeFocused(); // focus survives the re-flow
+    const [g2, d2] = [await box(page, '.file--game'), await box(page, '.file--data')];
+    expect(d2.top).toBeGreaterThan(g2.top + 60); // phone: the game cover shows as a strip above the sheet
+    expect(d2.top).toBeLessThan(g2.bottom);
+    await page.keyboard.press('ArrowLeft');
     await expect(page.locator(DATA)).toBeFocused();
   });
 
@@ -48,19 +46,10 @@ test.describe('chooser (P2-10, Review Focus 4)', () => {
     await expect(page.locator('[data-chooser]')).toBeVisible();
   });
 
-  test('hover widens a side in 0.25s; under reduced motion only its colours change', async ({ page }) => {
-    await page.setViewportSize({ width: 1440, height: 900 });
+  // MO-23: the side-by-side hover widening is gone with the desk; MO-24 replaces this with the slide-aside reveal.
+  test.fixme('hover widens a side — replaced by the reveal in MO-24', async ({ page }) => {
     await page.goto('/?choose', { waitUntil: 'networkidle' });
-    await page.locator(DATA).hover();
-    await page.waitForTimeout(400);
-    expect(await page.locator(DATA).evaluate((el) => getComputedStyle(el).transform)).not.toBe('none');
-    expect(await page.locator(DATA).evaluate((el) => getComputedStyle(el).transitionDuration)).toContain('0.25s');
-    await page.emulateMedia({ reducedMotion: 'reduce' });
-    await page.goto('/?choose', { waitUntil: 'networkidle' });
-    await page.locator(DATA).hover();
-    await page.waitForTimeout(400);
-    expect(await page.locator(DATA).evaluate((el) => getComputedStyle(el).transform)).toBe('none');
-    expect(await page.locator(DATA).evaluate((el) => getComputedStyle(el).transitionProperty)).not.toContain('transform');
+    expect(await page.locator(DATA).count()).toBe(1);
   });
 
   for (const width of [320, 375, 768, 1440]) {
@@ -91,6 +80,8 @@ test.describe('chooser (P2-10, Review Focus 4)', () => {
     await expect(page.locator(GAME)).toHaveAttribute('href', '/game/');
     await expect(page.locator(DATA)).toHaveAttribute('href', '/data/');
     await expect(page.locator(DATA)).toBeVisible();
+    await expect(page.locator(GAME)).toHaveAttribute('aria-labelledby', 'file-game-title file-game-cta');
+    await expect(page.locator(DATA)).toHaveAttribute('aria-labelledby', 'file-data-title file-data-cta');
     await context.close();
   });
 
@@ -101,6 +92,7 @@ test.describe('chooser (P2-10, Review Focus 4)', () => {
     expect(images).toEqual([]);
     const preloads = await page.locator('link[rel="preload"]').evaluateAll((els) => els.map((el) => el.getAttribute('href') ?? ''));
     expect(preloads.every((href) => /sb-sans/.test(href))).toBe(true);
+    expect(preloads.some((href) => /jetbrains|anton|cover|serif/i.test(href)), 'MO-23: mono and Anton are not preloaded').toBe(false);
     await expect(page.locator('header a[hreflang]')).toHaveCount(1);
     await expect(page.locator('header a[href="/"]')).toHaveCount(0);
   });

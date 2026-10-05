@@ -15,7 +15,13 @@ export const SERIF_KO_FAMILY = 'SB Serif KR';
  * [data-serif]; separate from the paper's variable "SB Serif KR". Declared by DataLayout, never preloaded (§9). */
 export const SERIF_KO_HEAD_FAMILY = 'SB Serif KR Head';
 
-export type FontFace = 'sans' | 'mono' | 'serifKo' | 'serifKoHead';
+/** The chooser covers (MO-23): JetBrains Mono pinned to wght 600 and Anton, each subset to the characters the chooser
+ * pages show (plus printable ASCII), declared only by ChooserView (swap, not preloaded). OFL 1.1, no Reserved Font
+ * Name; renamed families so they never stand in for the site-wide faces. */
+export const COVER_MONO_FAMILY = 'SB Cover Mono';
+export const COVER_DISPLAY_FAMILY = 'SB Cover Display';
+
+export type FontFace = 'sans' | 'mono' | 'serifKo' | 'serifKoHead' | 'coverMono' | 'coverDisplay';
 
 /** Placeholder URL per face (replaced by the hashed file in dist). */
 export const FONT_URL: Record<FontFace, string> = {
@@ -23,6 +29,8 @@ export const FONT_URL: Record<FontFace, string> = {
   mono: '/_fonts/jetbrains-mono.woff2',
   serifKo: '/_fonts/sb-serif-kr.woff2',
   serifKoHead: '/_fonts/sb-serif-kr-head.woff2',
+  coverMono: '/_fonts/sb-cover-mono.woff2',
+  coverDisplay: '/_fonts/sb-cover-display.woff2',
 };
 
 /** The Hangul blocks (Jamo, Compatibility Jamo, Jamo Extended-A, Syllables, Jamo Extended-B). */
@@ -33,6 +41,8 @@ const DESCRIPTORS: Record<FontFace, string> = {
   mono: `font-family:"${MONO_FAMILY}";font-style:normal;font-weight:100 800;font-display:swap`,
   serifKo: `font-family:"${SERIF_KO_FAMILY}";font-style:normal;font-weight:200 900;font-display:swap`,
   serifKoHead: `font-family:"${SERIF_KO_HEAD_FAMILY}";font-style:normal;font-weight:700;font-display:swap`,
+  coverMono: `font-family:"${COVER_MONO_FAMILY}";font-style:normal;font-weight:600;font-display:swap`,
+  coverDisplay: `font-family:"${COVER_DISPLAY_FAMILY}";font-style:normal;font-weight:400;font-display:swap`,
 };
 
 /** The Korean serifs draw Hangul only, so Latin text keeps its Times face. */
