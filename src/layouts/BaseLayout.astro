@@ -21,6 +21,7 @@ import HudNav from '../components/hud/HudNav.astro';
 import SiteFooter from '../components/hud/SiteFooter.astro';
 import CrtIntro from '../components/hud/CrtIntro.astro';
 import AchievementHost from '../components/hud/AchievementHost.astro';
+import EdgeFrame from '../components/hud/EdgeFrame.astro';
 import HeadMeta from './partials/HeadMeta.astro';
 import { getVariant } from '../variants';
 import type { ModuleId, VariantId } from '../variants/ids';
@@ -95,6 +96,7 @@ const achievementLabels = {
   </head>
   <body>
     <a class="skip-link" href="#main">{t(lang, 'site.skipToContent')}</a>
+    <EdgeFrame />
     {page === 'home' && on('crtIntro') && <CrtIntro />}
     <HudNav lang={lang} variant={variant} current={section} exact={sectionIndex} altLangHref={altHref} cvHref={cv.href} cvLabel={cv.label} bgmAvailable={bgm} base={route?.kind === 'variant' ? route.base : null} />
     <main id="main" tabindex="-1"><slot /></main>

@@ -1,0 +1,6 @@
+Edge frame strokes of the game version (palette v3/v4, owner-approved 2026-10-05; sources in
+owner-assets/game-palette/v4/). edge.mjs is a Node port of the prototype's brush.py + brush-raster.cjs: it draws the four
+dry-brush strokes as SVG in memory (seeded with the DS port of Python's random, so the SVGs equal the prototype's byte for
+byte) and renders them with sharp to src/styles/edge/edge-{l,tr,br,s}.webp and -2x.webp, which src/styles/edge.css
+names through image-set(). Run `node scripts/edge/edge.mjs --write` after changing a stroke, `--check` to compare the
+committed files with a fresh render (tests/unit/edge-assets.test.ts runs it), `--svg <dir>` to look at the sources.

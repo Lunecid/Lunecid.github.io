@@ -1,0 +1,11 @@
+---
+// The game palette's edge frame (palette v3): pre-rendered yellow brush strokes (src/styles/edge/*.webp, drawn by
+// scripts/edge/edge.mjs) and cyan inline-SVG line-art fixed to the viewport edges; styles in src/styles/edge.css.
+// Decoration only: aria-hidden, no text, no link, nothing focusable.
+---
+<div class="edge" aria-hidden="true">
+  <i class="edge__l"></i><i class="edge__tr"></i><i class="edge__s"></i><i class="edge__br"></i>
+  <svg class="edge__rail" viewBox="0 0 28 240" focusable="false"><path class="f" d="M6 0l7 4v4L6 4zM6 10l7 4v4l-7-4zM6 20l7 4v4l-7-4zM6 30l7 4v4l-7-4z"/><path d="M9.5 52V150l8 8v76"/><path class="b" d="M9.5 74v48"/><path class="f" d="M15.5 234h4v4h-4z"/></svg>
+  <svg class="edge__brk" viewBox="0 0 16 220" focusable="false"><path d="M0 1h5l9 9v186l-8 8"/><path class="b" d="M14 34v52"/><path class="f" d="M7 120h2v2H7zM7 127h2v2H7zM7 134h2v2H7z"/></svg>
+  <svg class="edge__ckt" viewBox="0 0 72 180" focusable="false"><path d="M72 22H48L34 36v70l-14 14v60M72 46H58l-10 10v124M72 96l-10 10v74M34 74H18M62 140H54"/><circle cx="14.5" cy="74" r="3.5"/><circle cx="50.5" cy="140" r="3.5"/><path class="f" d="M72 18v8h-4v-8z"/><path class="y" d="M16 152h14l-3 5H13z"/></svg>
+</div>

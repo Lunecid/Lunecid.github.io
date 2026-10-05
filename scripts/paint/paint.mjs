@@ -142,7 +142,15 @@ export function pyRandom(seed) {
     return y >>> 0;
   };
   const random = () => ((genrand() >>> 5) * 67108864 + (genrand() >>> 6)) / 2 ** 53;
-  return { random, uniform: (/** @type {number} */ a, /** @type {number} */ b) => a + (b - a) * random() };
+  /** random.choice: _randbelow(n) by getrandbits(n.bit_length()) with rejection (n < 2^32) */
+  const choice = (/** @type {readonly any[]} */ seq) => {
+    const n = seq.length;
+    const k = 32 - Math.clz32(n);
+    let r = genrand() >>> (32 - k);
+    while (r >= n) r = genrand() >>> (32 - k);
+    return seq[r];
+  };
+  return { random, uniform: (/** @type {number} */ a, /** @type {number} */ b) => a + (b - a) * random(), choice };
 }
 
 /**

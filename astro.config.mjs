@@ -84,7 +84,12 @@ export default defineConfig({
     },
   },
   i18n: { defaultLocale: 'ko', locales: ['ko', 'en'], routing: { prefixDefaultLocale: false } },
-  vite: { resolve: { alias: { '@generated': GENERATED_DIR } } },
+  vite: {
+    resolve: { alias: { '@generated': GENERATED_DIR } },
+    // The game palette's edge strokes (src/styles/edge/) stay files: a tier that hides a stroke must not download it
+    // inlined in the shared sheet, and each one is cached once. Everything else keeps Vite's default limit.
+    build: { assetsInlineLimit: (file) => (/[\\/]src[\\/]styles[\\/]edge[\\/]/.test(file) ? false : undefined) },
+  },
   fonts: [
     {
       provider: fontProviders.local(),

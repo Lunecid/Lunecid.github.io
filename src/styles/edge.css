@@ -1,0 +1,64 @@
+/* src/styles/edge.css — the game palette's edge frame (palette v3, owner-approved 2026-10-05): yellow dry-brush paint
+   and cyan angular line-art at the OUTER edges of the viewport only. Imported by game.css (and, for the chooser's tablet
+   screen, by the chooser sheet once that cover takes it). The layer (EdgeFrame.astro) is aria-hidden, takes no pointer,
+   never animates, and is removed in print and in forced colours.
+   · Fixed to the viewport like a HUD bezel; paint lives only in the gutter outside the content column.
+   · Strokes are pre-rendered WebP (scripts/edge/edge.mjs), so no SVG filter ever rasterises on the main thread; the
+     cyan lines are a few inline SVG paths. An element with display: none never requests its image.
+   · Tiers by the layer's width: phone < 734 = one 8 px corner sliver; slim 734–1259 = + the cyan left rail;
+     full ≥ 1260 (gutter ≥ ~96 px) = bottom-left sweep, top-right streak, bottom-right stroke, rail, right bracket,
+     circuit cluster (paint within 84 px of the left edge, 68 px of the right); ≥ 1600 a taller sweep. */
+.edge {
+  position: fixed; inset: 0; z-index: 40; pointer-events: none; overflow: hidden;
+  container: edge / size; contain: strict;
+  color: var(--gp-edge-cy);
+}
+.edge > * { position: absolute; display: none; }
+.edge svg { overflow: visible; }
+.edge svg path, .edge svg circle { fill: none; stroke: currentColor; stroke-width: 1.5; opacity: .75; }
+.edge svg .b { stroke-width: 4; opacity: .9; }
+.edge svg .f { fill: currentColor; stroke: none; opacity: .8; }
+.edge svg .y { fill: var(--gp-edge-y); stroke: none; opacity: 1; }
+/* The strokes paint the token yellow through their alpha (a mask over a token fill), not as background images: a plain
+   url() mask is never a largest-contentful-paint candidate, so the frame never becomes a page's LCP element (Chromium
+   does count a background image, and a mask written with image-set(); hence one url() per resolution). */
+.edge__l, .edge__tr, .edge__s, .edge__br {
+  background-color: var(--gp-edge-y);
+  -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat;
+  -webkit-mask-size: 100% 100%; mask-size: 100% 100%;
+}
+.edge__l { -webkit-mask-image: url("./edge/edge-l.webp"); mask-image: url("./edge/edge-l.webp"); }
+.edge__tr { -webkit-mask-image: url("./edge/edge-tr.webp"); mask-image: url("./edge/edge-tr.webp"); }
+.edge__br { -webkit-mask-image: url("./edge/edge-br.webp"); mask-image: url("./edge/edge-br.webp"); }
+.edge__s { -webkit-mask-image: url("./edge/edge-s.webp"); mask-image: url("./edge/edge-s.webp"); }
+@media (min-resolution: 2dppx) {
+  .edge__l { -webkit-mask-image: url("./edge/edge-l-2x.webp"); mask-image: url("./edge/edge-l-2x.webp"); }
+  .edge__tr { -webkit-mask-image: url("./edge/edge-tr-2x.webp"); mask-image: url("./edge/edge-tr-2x.webp"); }
+  .edge__br { -webkit-mask-image: url("./edge/edge-br-2x.webp"); mask-image: url("./edge/edge-br-2x.webp"); }
+  .edge__s { -webkit-mask-image: url("./edge/edge-s-2x.webp"); mask-image: url("./edge/edge-s-2x.webp"); }
+}
+
+/* phone: one 8 px sliver rising from the bottom-left corner (content starts at 16 px) */
+.edge__s { display: block; left: 0; bottom: 0; width: 8px; height: min(200px, 28cqh); }
+/* slim: + the cyan rail with hazard ticks on the left edge (x ≤ 20; content starts at 32 px). The right edge stays
+   empty here: at these widths the hero art runs to the viewport edge. */
+.edge__rail { left: 0; top: calc(var(--nav-h) + 72px); width: 28px; height: min(240px, 30cqh); }
+.edge__brk { right: 0; width: 16px; height: min(220px, 34cqh); }
+@container edge (min-width: 734px) { .edge__rail { display: block; } }
+@container edge (min-width: 1260px) {
+  .edge__s { display: none; }
+  .edge__l { display: block; left: 0; bottom: 0; height: min(58cqh, 460px); aspect-ratio: 96 / 460; }
+  .edge__tr { display: block; right: 0; top: calc(var(--nav-h) + 8px); width: 80px; height: 120px; }
+  .edge__ckt { display: block; right: 0; bottom: 0; width: 72px; height: 180px; }
+  .edge__br { display: block; right: 0; bottom: 0; width: 18px; height: min(220px, 28cqh); }
+  .edge__brk { display: block; top: calc(var(--nav-h) + 172px); }
+}
+@container edge (min-width: 1600px) {
+  .edge__l { height: min(60cqh, 540px); }
+}
+
+/* the cross-document page transition keeps the frame still (named only while a page transition runs) */
+:root:active-view-transition-type(page) .edge { view-transition-name: game-edge; }
+
+@media print { .edge { display: none !important; } }
+@media (forced-colors: active) { .edge { display: none !important; } }

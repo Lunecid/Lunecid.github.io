@@ -84,6 +84,13 @@ describe('BaseLayout.astro', () => {
     expect(html.slice(html.indexOf('</head>'))).not.toMatch(/<link rel="stylesheet"/);
   });
 
+  it('GP-6: mounts the edge frame right after the skip link, once, aria-hidden', async () => {
+    const html = await render();
+    const body = html.slice(html.indexOf('<body'));
+    expect(body).toMatch(/<body[^>]*>\s*<a class="skip-link"[^>]*>[^<]*<\/a>\s*<div class="edge" aria-hidden="true">/);
+    expect(body.match(/class="edge"/g)).toHaveLength(1);
+  });
+
   it('D-7: the nav CV button opens the Academic CV on research pages and the résumé in the page language elsewhere', async () => {
     const cvTag = (html: string) => firstTag(html, /<a [^>]*class="hud-nav__cv"[^>]*>/);
     const projects = await render();

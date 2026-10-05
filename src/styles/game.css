@@ -5,6 +5,9 @@
    tokens). Decoration drawn here (hazard tab, barcodes, ticks) is pseudo-elements with pointer-events: none and no
    motion. Blocks: GLOBAL · WHITE PANELS · ACHIEVEMENTS · COMPONENTS · EDGE · MEDIA TILT · FORCED COLOURS · PRINT. */
 
+/* EDGE: the fixed edge frame (EdgeFrame.astro); its rules are a partial the chooser can share. */
+@import './edge.css';
+
 /* ═══ GLOBAL ═══════════════════════════════════════════════════════════════════════════════════════════════════ */
 
 /* The reading bands are dark too (one step lighter than the page): native controls and scrollbars follow. */
