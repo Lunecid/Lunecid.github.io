@@ -3,7 +3,7 @@
 // first-tap reveal, tap-outside and Escape, and the touch hint.
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { readFileSync } from 'node:fs';
-import { ENTER_DELAY_MS, asideGeometry, initChooser, initDesk } from '../../src/scripts/chooser';
+import { EXIT_MS, asideGeometry, attachExitSheet, initChooser, initDesk } from '../../src/scripts/chooser';
 
 let navigations: string[] = [];
 // jsdom would try to navigate: count the default actions instead (bubble phase on the document: after every listener
@@ -21,6 +21,7 @@ function mount() {
       <article class="file file--game"><div class="dev"><div class="dev__body"><div class="dev__screen"><div class="face"><span class="stamp" aria-hidden="true">S</span><a class="cta" href="/game/" data-choose-variant="game">G<span class="cta__hit"></span></a></div></div></div></div></article>
     </div>
     <p class="desk__hint" aria-live="polite" data-rest="REST" data-aside="ASIDE"></p>
+    <div class="xnav" aria-hidden="true"><i class="xnav__bg"></i><i class="xnav__ln"></i></div>
     <button id="elsewhere">x</button>`;
   const desk = document.querySelector<HTMLElement>('.desk')!;
   const [data, game] = Array.from(document.querySelectorAll<HTMLAnchorElement>('a'));
@@ -33,8 +34,14 @@ const pointerdown = (el: Element, pointerType: string, init: MouseEventInit = {}
   el.dispatchEvent(ev);
 };
 const click = (el: Element, detail = 1, init: MouseEventInit = {}): boolean => el.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, detail, ...init }));
-/** Game-link activations go through the stamp delay (MO-25): let it run out. */
-const settle = () => vi.advanceTimersByTime(ENTER_DELAY_MS.full + 10);
+/** Game-link activations go through the exit (MO-38): let it run out, then come back to the page as the back/forward
+ *  cache would restore it (jsdom never leaves the page, so the desk would stay in its leaving state). */
+const settle = () => {
+  vi.advanceTimersByTime(EXIT_MS.game + 10);
+  const ev = new Event('pageshow') as Event & { persisted: boolean };
+  Object.defineProperty(ev, 'persisted', { value: true });
+  window.dispatchEvent(ev);
+};
 const coarse = (on: boolean) => {
   window.matchMedia = vi.fn().mockImplementation((q: string) => ({ matches: on && /hover: none|pointer: coarse/.test(q), media: q, addEventListener() {}, removeEventListener() {} })) as unknown as typeof window.matchMedia;
 };
@@ -225,14 +232,18 @@ describe('the tablet (MO-34)', () => {
   });
 });
 
-describe('the declassify stamp on the entering click (MO-25)', () => {
+// MO-38 (named rewrite of the MO-25 block): the stamp strikes as before, then the game exit plays (data-exit="game" on
+// the desk, CSS keyframes) and the page opens after EXIT_MS.game; ENTER_DELAY_MS is gone.
+describe('the stamp and the game exit (MO-25, MO-38)', () => {
   let m: ReturnType<typeof mount>;
   let reduce = false;
+  let forced = false;
   beforeEach(() => {
     navigations = [];
     localStorage.clear();
     reduce = false;
-    window.matchMedia = vi.fn().mockImplementation((q: string) => ({ matches: reduce && /reduced-motion: reduce/.test(q), media: q, addEventListener() {}, removeEventListener() {} })) as unknown as typeof window.matchMedia;
+    forced = false;
+    window.matchMedia = vi.fn().mockImplementation((q: string) => ({ matches: (reduce && /reduced-motion: reduce/.test(q)) || (forced && /forced-colors: active/.test(q)), media: q, addEventListener() {}, removeEventListener() {} })) as unknown as typeof window.matchMedia;
     vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
     m = mount();
     initChooser(document, { navigate: (href) => navigations.push(href) });
@@ -242,47 +253,58 @@ describe('the declassify stamp on the entering click (MO-25)', () => {
     vi.useRealTimers();
   });
 
-  it('a click inks and strikes the stamp, then navigates after 440 ms', () => {
+  it('MO-38: an unmodified activation strikes, sets data-exit=game and navigates after EXIT_MS.game (880)', () => {
     pointerdown(m.game.querySelector('.cta__hit')!, 'mouse', { button: 0 });
     expect(m.stamp.classList.contains('is-declassified')).toBe(true); // at the press: instant feedback
     expect(m.stamp.classList.contains('is-struck')).toBe(true);
     click(m.game);
-    expect(navigations).toEqual([]); // default prevented: the page opens after the delay
+    expect(navigations).toEqual([]); // default prevented: the page opens after the exit
     expect(localStorage.getItem('sb:variant')).toBe('game');
-    vi.advanceTimersByTime(ENTER_DELAY_MS.full - 1);
+    expect(m.desk.dataset.exit).toBe('game');
+    expect(m.desk.classList.contains('is-aside')).toBe(true); // the sheet makes way for the screen
+    // the line across the page starts on the screen: its geometry is written once, at the click
+    const ln = document.querySelector<HTMLElement>('.xnav')!;
+    for (const name of ['--xl-x', '--xl-y', '--xl-w', '--xl-k']) expect(ln.style.getPropertyValue(name), name).not.toBe('');
+    vi.advanceTimersByTime(EXIT_MS.game - 1);
     expect(navigations).toEqual([]);
     vi.advanceTimersByTime(1);
     expect(navigations).toEqual(['/game/']);
   });
 
-  it('reduced motion: colour only, navigation after 150 ms', () => {
+  it('MO-38: reduced motion (either path) or forced colours → data-exit=fade, navigation at 150 ms, no strike keyframes', () => {
     reduce = true;
     click(m.game);
     expect(m.stamp.classList.contains('is-declassified')).toBe(true);
     expect(m.stamp.classList.contains('is-struck')).toBe(false);
-    vi.advanceTimersByTime(ENTER_DELAY_MS.reduce);
+    expect(m.desk.dataset.exit).toBe('fade');
+    expect(m.desk.dataset.exitTo).toBe('game');
+    vi.advanceTimersByTime(EXIT_MS.reduce);
     expect(navigations).toEqual(['/game/']);
-    // the site toggle counts too
-    navigations = [];
-    m = mount();
-    reduce = false;
-    document.documentElement.dataset.motion = 'reduce';
-    try {
-      initChooser(document, { navigate: (href) => navigations.push(href) });
-      click(m.game);
-      expect(m.stamp.classList.contains('is-struck')).toBe(false);
-      vi.advanceTimersByTime(ENTER_DELAY_MS.reduce);
-      expect(navigations).toEqual(['/game/']);
-    } finally {
-      document.documentElement.dataset.motion = 'full';
+    for (const set of [() => { document.documentElement.dataset.motion = 'reduce'; }, () => { forced = true; }]) {
+      navigations = [];
+      reduce = false;
+      m = mount();
+      set();
+      try {
+        initChooser(document, { navigate: (href) => navigations.push(href) });
+        click(m.game);
+        expect(m.stamp.classList.contains('is-struck')).toBe(false);
+        expect(m.desk.dataset.exit).toBe('fade');
+        vi.advanceTimersByTime(EXIT_MS.reduce);
+        expect(navigations).toEqual(['/game/']);
+      } finally {
+        document.documentElement.dataset.motion = 'full';
+        forced = false;
+      }
     }
   });
 
-  it('Enter (detail 0) navigates in one activation with the stamp', () => {
+  it('MO-38: Enter runs the same exit; modified/middle/detail>1 clicks are native', () => {
     click(m.game, 0);
     expect(m.stamp.classList.contains('is-declassified')).toBe(true);
     expect(m.stamp.classList.contains('is-struck')).toBe(true);
-    vi.advanceTimersByTime(ENTER_DELAY_MS.full);
+    expect(m.desk.dataset.exit).toBe('game');
+    vi.advanceTimersByTime(EXIT_MS.game);
     expect(navigations).toEqual(['/game/']);
   });
 
@@ -294,55 +316,82 @@ describe('the declassify stamp on the entering click (MO-25)', () => {
     }
     expect(navigations).toEqual(inits.map(() => '/game/')); // native default action, at once
     expect(m.stamp.className).toBe('stamp');
-    click(m.data); // the printout's link: native, no stamp
-    expect(navigations.at(-1)).toBe('/data/');
-    expect(m.stamp.className).toBe('stamp');
+    expect(m.desk.dataset.exit).toBeUndefined();
+    click(m.game, 2); // a repeated click (detail 2) stays native too
+    expect(navigations.at(-1)).toBe('/game/');
+    expect(m.desk.dataset.exit).toBeUndefined();
   });
 
-  it('a second activation during the delay is ignored', () => {
+  it('MO-38: a second activation while leaving is ignored; the desk takes no pointer while leaving', () => {
     click(m.game);
     expect(click(m.game, 2)).toBe(false);
     click(m.game, 0);
-    vi.advanceTimersByTime(ENTER_DELAY_MS.full + 100);
+    expect(click(m.data)).toBe(false); // the other link too
+    vi.advanceTimersByTime(EXIT_MS.game + 100);
     expect(navigations).toEqual(['/game/']);
+    const css = readFileSync('src/styles/chooser.css', 'utf8');
+    expect(css).toMatch(/\.desk\[data-exit\],\s*\.desk\[data-exit\] \*\s*\{\s*pointer-events:\s*none/);
   });
 
-  it('the first touch tap only reveals (no stamp); the second strikes and navigates', () => {
+  it('MO-38: the first touch tap still only reveals', () => {
     pointerdown(m.gameFile, 'touch');
     click(m.game);
     expect(m.desk.classList.contains('is-aside')).toBe(true);
     expect(m.stamp.classList.contains('is-declassified')).toBe(false);
+    expect(m.desk.dataset.exit).toBeUndefined();
     vi.advanceTimersByTime(1000);
     expect(navigations).toEqual([]);
     pointerdown(m.gameFile, 'touch');
     click(m.game);
     expect(m.stamp.classList.contains('is-declassified')).toBe(true);
-    vi.advanceTimersByTime(ENTER_DELAY_MS.full);
+    expect(m.desk.dataset.exit).toBe('game');
+    vi.advanceTimersByTime(EXIT_MS.game);
     expect(navigations).toEqual(['/game/']);
   });
 
-  it('pageshow persisted resets the stamp', () => {
-    pointerdown(m.gameFile, 'touch');
+  it('MO-38: pageshow persisted clears data-exit, is-aside, the stamp and every exit style', () => {
     click(m.game);
-    pointerdown(m.gameFile, 'touch');
-    click(m.game);
-    vi.advanceTimersByTime(ENTER_DELAY_MS.full);
+    vi.advanceTimersByTime(EXIT_MS.game);
     const ev = new Event('pageshow') as Event & { persisted: boolean };
     Object.defineProperty(ev, 'persisted', { value: true });
     window.dispatchEvent(ev);
     expect(m.stamp.classList.contains('is-declassified')).toBe(false);
     expect(m.stamp.classList.contains('is-struck')).toBe(false);
     expect(m.desk.classList.contains('is-aside')).toBe(false);
-    click(m.game); // not pending any more
-    vi.advanceTimersByTime(ENTER_DELAY_MS.full);
+    expect(m.desk.dataset.exit).toBeUndefined();
+    expect(m.desk.dataset.exitTo).toBeUndefined();
+    expect(document.querySelector<HTMLElement>('.xnav')!.getAttribute('style') ?? '').toBe('');
+    click(m.game); // not leaving any more
+    vi.advanceTimersByTime(EXIT_MS.game);
     expect(navigations).toEqual(['/game/', '/game/']);
   });
 
-  it('ENTER_DELAY_MS.full is at least --dur-strike-ring and at most 500 ms', () => {
+  it('MO-38: EXIT_MS.game equals the end of the last game exit keyframe (token sum)', () => {
     const tokens = readFileSync('src/styles/tokens.css', 'utf8');
-    const ring = parseFloat(/--dur-strike-ring:\s*([\d.]+)s/.exec(tokens)?.[1] ?? 'NaN') * 1000;
-    expect(ENTER_DELAY_MS.full).toBeGreaterThanOrEqual(ring);
-    expect(ENTER_DELAY_MS.full).toBeLessThanOrEqual(500);
-    expect(ENTER_DELAY_MS).toEqual({ full: 440, reduce: 150 });
+    const t = (name: string) => parseFloat(new RegExp(`${name}:\\s*([\\d.]+)s`).exec(tokens)?.[1] ?? 'NaN') * 1000;
+    expect(EXIT_MS.game).toBeCloseTo(t('--x-line-at') + t('--x-line'), 5);
+    expect(EXIT_MS.game).toBeCloseTo(t('--x-game'), 5);
+    expect(EXIT_MS.reduce).toBe(150);
+    expect(EXIT_MS.reduce).toBeGreaterThanOrEqual(t('--x-fade'));
   });
 });
+
+describe('the exit sheet (MO-38)', () => {
+  it('MO-38: the exit sheet is attached once, only after the page has loaded', () => {
+    document.head.querySelectorAll('link[data-chooser-exit]').forEach((l) => l.remove());
+    const state = vi.spyOn(document, 'readyState', 'get').mockReturnValue('interactive');
+    try {
+      attachExitSheet();
+      expect(document.head.querySelectorAll('link[data-chooser-exit]')).toHaveLength(0);
+      window.dispatchEvent(new Event('load'));
+      expect(document.head.querySelectorAll('link[data-chooser-exit]')).toHaveLength(1);
+      attachExitSheet();
+      window.dispatchEvent(new Event('load'));
+      expect(document.head.querySelectorAll('link[data-chooser-exit]')).toHaveLength(1);
+      expect(document.head.querySelector<HTMLLinkElement>('link[data-chooser-exit]')!.rel).toBe('stylesheet');
+    } finally {
+      state.mockRestore();
+    }
+  });
+});
+

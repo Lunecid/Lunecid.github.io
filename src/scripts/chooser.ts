@@ -4,7 +4,9 @@
 // aside in CSS (:has, works without JS); this script measures where the sheet goes, and adds the touch rule: the first
 // tap on the game file only reveals it (.is-aside), the second follows its link, a tap anywhere else (the aside sheet
 // included) or Escape puts the sheet back. A hint (touch and JS only) says what the next tap does. Entering the game
-// file (MO-25) inks and strikes its "기밀 해제" stamp, then follows the link after ENTER_DELAY_MS.
+// file inks and strikes its "기밀 해제" stamp (MO-25), then plays its exit, the waveform (MO-38), before the link is
+// followed.
+import exitSheet from '../styles/chooser-exit.css?url';
 import { rememberVariant } from '../lib/variant-pref';
 import { isVariantId } from '../variants/ids';
 
@@ -56,62 +58,88 @@ const matches = (query: string): boolean => {
   }
 };
 
-/** The stamp's moment before the game page opens: the ring (--dur-strike-ring .42s) has spread; colour only under reduced motion. */
-export const ENTER_DELAY_MS = { full: 440, reduce: 150 } as const;
+/** How long each exit plays before the next page loads (ms): the game file's waveform (MO-38, the sum of its --x-*
+ *  tokens), the general file's page turn (MO-39), and the reduced form of either (a 140 ms fade, --x-fade). */
+export const EXIT_MS = { game: 880, data: 800, reduce: 150 } as const;
+export type ExitKind = 'game' | 'data';
 
 const reducedMotion = (): boolean => matches('(prefers-reduced-motion: reduce)') || document.documentElement.dataset.motion === 'reduce';
 const plain = (e: MouseEvent): boolean => e.button === 0 && !e.ctrlKey && !e.metaKey && !e.shiftKey && !e.altKey;
 
+/** Where the game exit's line leaves the screen and how far it must stretch to cross the page (four custom properties
+ *  on the page layer, written once at the click). */
+function lineGeometry(desk: HTMLElement, layer: HTMLElement | null): void {
+  if (!layer) return;
+  const screen = desk.querySelector<HTMLElement>('.file--game .dev__screen') ?? desk.querySelector<HTMLElement>('.file--game');
+  const r = screen?.getBoundingClientRect();
+  if (!r) return;
+  const w = Math.max(1, r.width);
+  const cx = r.left + w / 2;
+  const vw = document.documentElement.clientWidth || window.innerWidth;
+  layer.style.setProperty('--xl-x', `${Math.round(r.left)}px`);
+  layer.style.setProperty('--xl-y', `${Math.round(r.top + r.height / 2 - 1)}px`);
+  layer.style.setProperty('--xl-w', `${Math.round(w)}px`);
+  layer.style.setProperty('--xl-k', ((2 * Math.max(cx, vw - cx)) / w + 0.05).toFixed(3));
+}
+
 /**
- * An unmodified primary activation of the game link that nothing else consumed (the first-tap rule calls
- * preventDefault first) inks and strikes the stamp, remembers the choice and navigates after the delay. The strike
- * comes at the press for mouse and pen (instant feedback), at the click for keyboard and assistive tech. Modified,
- * middle and repeated clicks stay native; a second activation during the delay is ignored; a page restored from the
- * back/forward cache starts clean.
+ * The exit of one link (MO-38): an unmodified primary activation that nothing else consumed (the first-tap rule calls
+ * preventDefault first) remembers the choice and plays the exit: data-exit="game" on the desk (CSS keyframes; the
+ * game file's stamp strikes first, at the press for mouse and pen, at the click for keyboard and assistive tech), or
+ * data-exit="fade" under either reduced-motion path or forced colours; the page opens after EXIT_MS. Modified, middle
+ * and repeated clicks stay native; while leaving, every other activation on the desk is ignored; a page restored from
+ * the back/forward cache starts clean.
  */
-export function initEnter(link: HTMLAnchorElement, stamp: HTMLElement, opts: { reduced: () => boolean; navigate?: (href: string) => void }): void {
+export function initExit(desk: HTMLElement, link: HTMLAnchorElement, kind: ExitKind, opts: { stamp?: HTMLElement | null; reduced?: () => boolean; navigate?: (href: string) => void }): void {
   const navigate = opts.navigate ?? ((href: string) => window.location.assign(href));
-  let pending = false;
+  const reduced = opts.reduced ?? reducedMotion;
+  const stamp = opts.stamp ?? null;
+  const layer = document.querySelector<HTMLElement>('.xnav');
+  const leaving = () => desk.hasAttribute('data-exit');
   const strike = () => {
+    if (!stamp) return;
     stamp.classList.add('is-declassified');
     stamp.classList.remove('is-struck');
-    if (opts.reduced()) return;
+    if (reduced() || matches('(forced-colors: active)')) return;
     void stamp.offsetWidth; // restart the keyframes
     stamp.classList.add('is-struck');
   };
-  const face = link.closest('.file') ?? link;
-  face.addEventListener('pointerdown', (e) => {
-    const ev = e as PointerEvent;
-    if (pending || (ev.pointerType !== 'mouse' && ev.pointerType !== 'pen') || !plain(ev)) return;
-    if (ev.target instanceof Element && ev.target.closest('a') === link) strike();
-  });
+  if (stamp) {
+    const face = link.closest('.file') ?? link;
+    face.addEventListener('pointerdown', (e) => {
+      const ev = e as PointerEvent;
+      if (leaving() || (ev.pointerType !== 'mouse' && ev.pointerType !== 'pen') || !plain(ev)) return;
+      if (ev.target instanceof Element && ev.target.closest('a') === link) strike();
+    });
+    // a stamp inked by a press that never became a click goes away with the next press elsewhere
+    document.addEventListener('pointerdown', (e) => {
+      if (!leaving() && !(e.target instanceof Element && e.target.closest('a') === link)) stamp.classList.remove('is-declassified', 'is-struck');
+    }, { capture: true });
+  }
   link.addEventListener('click', (e) => {
-    if (e.defaultPrevented) return; // the first tap only revealed the file
-    if (pending) {
-      e.preventDefault();
-      return;
-    }
+    if (e.defaultPrevented) return; // the first tap only revealed the file, or the desk is already leaving
     if (!plain(e) || e.detail > 1) return;
     e.preventDefault();
-    pending = true;
-    if (!stamp.classList.contains('is-declassified')) strike();
     const variant = link.dataset.chooseVariant;
     if (isVariantId(variant)) rememberVariant(variant);
+    const fade = reduced() || matches('(forced-colors: active)');
+    if (!stamp?.classList.contains('is-declassified')) strike();
+    desk.dataset.exitTo = kind;
+    desk.dataset.exit = fade ? 'fade' : kind;
+    if (!fade && kind === 'game') {
+      desk.classList.add('is-aside'); // the sheet makes way for the screen
+      lineGeometry(desk, layer);
+    }
     const href = link.getAttribute('href') ?? link.href;
-    window.setTimeout(() => {
-      pending = false;
-      navigate(href);
-    }, opts.reduced() ? ENTER_DELAY_MS.reduce : ENTER_DELAY_MS.full);
+    window.setTimeout(() => navigate(href), fade ? EXIT_MS.reduce : EXIT_MS[kind]);
   });
-  // a stamp inked by a press that never became a click goes away with the next press elsewhere
-  document.addEventListener('pointerdown', (e) => {
-    if (!pending && !(e.target instanceof Element && e.target.closest('a') === link)) stamp.classList.remove('is-declassified', 'is-struck');
-  }, { capture: true });
   window.addEventListener('pageshow', (e) => {
     if (!(e as PageTransitionEvent).persisted) return;
-    pending = false;
-    stamp.classList.remove('is-declassified', 'is-struck');
-    link.closest('.desk')?.classList.remove('is-aside');
+    delete desk.dataset.exit;
+    delete desk.dataset.exitTo;
+    desk.classList.remove('is-aside');
+    stamp?.classList.remove('is-declassified', 'is-struck');
+    layer?.removeAttribute('style');
   });
 }
 
@@ -197,6 +225,22 @@ export function initDesk(desk: HTMLElement, hint: HTMLElement | null): () => voi
   return cleanup;
 }
 
+/** The exits' sheet (looks and keyframes of the exit layers) is attached once the page has loaded: exits only follow a
+ *  click, so their bytes stay out of the first render. */
+export function attachExitSheet(doc: Document = document): void {
+  if (doc.querySelector('link[data-chooser-exit]')) return;
+  const add = () => {
+    if (doc.querySelector('link[data-chooser-exit]')) return;
+    const link = doc.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = exitSheet;
+    link.dataset.chooserExit = '';
+    doc.head.append(link);
+  };
+  if (doc.readyState === 'complete') add();
+  else window.addEventListener('load', add, { once: true });
+}
+
 export function initChooser(root: ParentNode = document, opts: { navigate?: (href: string) => void } = {}): void {
   const container = root.querySelector<HTMLElement>('[data-chooser]');
   if (!container) return;
@@ -221,7 +265,11 @@ export function initChooser(root: ParentNode = document, opts: { navigate?: (hre
       if (isVariantId(variant)) rememberVariant(variant);
     });
   }
+  // while the desk is leaving, every other activation on it is ignored (capture: before the links' own listeners)
+  container.addEventListener('click', (event) => {
+    if (container.hasAttribute('data-exit') && event.target instanceof Element && event.target.closest('a')) event.preventDefault();
+  }, { capture: true });
+  attachExitSheet();
   const gameLink = links.find((l) => l.dataset.chooseVariant === 'game');
-  const stamp = gameLink?.closest('.file')?.querySelector<HTMLElement>('.stamp');
-  if (gameLink && stamp) initEnter(gameLink, stamp, { reduced: reducedMotion, navigate: opts.navigate });
+  if (gameLink) initExit(container, gameLink, 'game', { stamp: gameLink.closest('.file')?.querySelector<HTMLElement>('.stamp'), navigate: opts.navigate });
 }

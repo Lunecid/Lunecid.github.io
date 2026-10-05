@@ -925,3 +925,13 @@
   .file--data.file--data::before, .file--data .lift, .file--data .curl, .file--data .paper, .file--data .rstamp, .file--data .folder, .file--data .clip, .file--data .tab { display: none; }
   .file--data .feed::before { box-shadow: none; }
 }
+
+/* ═══ the exits (MO-38 / MO-39; chooser v6.10–v6.11) ═══
+   An activation sets data-exit on the desk (chooser.ts): "game" (the waveform), "data" (the page turn) or "fade" (either
+   one under reduced motion or forced colours); the next page loads after EXIT_MS. The exit layers' looks and keyframes
+   live in src/styles/chooser-exit.css, which chooser.ts attaches after the page has loaded (they are only needed after a
+   click, so they stay out of the first render); this sheet keeps what must hold from the first frame: the layers take
+   no room at rest, and the desk takes no pointer while it is being left. */
+.desk[data-exit], .desk[data-exit] * { pointer-events: none !important; }
+.file--game .xg, .file--game .xg__off, .xnav { display: none; }
+@media print { .file--game .xg, .file--game .xg__off, .xnav { display: none !important; } }

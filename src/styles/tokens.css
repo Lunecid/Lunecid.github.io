@@ -389,7 +389,26 @@
   --dur-fade-out: .15s;  /* reduced-motion exit fade (ImageViewer, CharacterStage, the page turn) */
   --dur-aside: .45s;     /* the chooser's printout slides aside to reveal the game file (MO-24) */
   --dur-strike: .32s;    /* the chooser's "기밀 해제" stamp is struck on the entering click (MO-25) */
-  --dur-strike-ring: .42s; /* its lime ring spreads once; ENTER_DELAY_MS.full (440 ms) waits for it */
+  --dur-strike-ring: .42s; /* its ring spreads once (the game exit's first moment, MO-38) */
+  /* the chooser's exits (MO-38/MO-39; chooser v6.10): when each phase starts (--x-*-at, from the click) and how long
+     it runs. The game exit (the waveform) ends with its line at --x-game = EXIT_MS.game; --x-fade is the reduced form
+     of both exits (EXIT_MS.reduce waits for it). */
+  --x-game: .88s;
+  --x-scrim-at: .12s;    /* the screen dims */
+  --x-scrim: .26s;
+  --x-grat-at: .14s;     /* the oscilloscope graticule */
+  --x-grat: .24s;
+  --x-trace-at: .15s;    /* the trace sweeps across the screen */
+  --x-trace: .38s;
+  --x-grow: .43s;        /* … its amplitude builds */
+  --x-square-at: .28s;   /* the sine turns square */
+  --x-square: .26s;
+  --x-echo-lag: .06s;    /* the cyan echo runs this far behind */
+  --x-collapse-at: .54s; /* CRT collapse into one line */
+  --x-collapse: .17s;
+  --x-line-at: .69s;     /* the line leaves the tablet across the page, the page goes dark */
+  --x-line: .19s;
+  --x-fade: .14s;
 
   /* ── layout ── */
   --container: 1180px;   /* includes gutters; the base width of every band's container */

@@ -188,8 +188,10 @@ test.describe('MO-23: the static desk', () => {
     const preloads = await page.locator('link[rel="preload"]').evaluateAll((els) => els.map((el) => el.getAttribute('href') ?? ''));
     expect(preloads.length).toBeGreaterThan(0);
     for (const href of preloads) expect(href).toMatch(/sb-sans/);
-    const sheets = await page.locator('link[rel="stylesheet"]').evaluateAll((els) => els.map((el) => el.getAttribute('href') ?? ''));
+    // MO-38 (named change): the HTML links the one chooser sheet; after load the script attaches the exits' sheet
+    const sheets = await page.locator('link[rel="stylesheet"]:not([data-chooser-exit])').evaluateAll((els) => els.map((el) => el.getAttribute('href') ?? ''));
     expect(sheets).toEqual([expect.stringMatching(/^\/_astro\/chooser\.[\w-]+\.css$/)]);
+    await expect(page.locator('link[rel="stylesheet"][data-chooser-exit]')).toHaveAttribute('href', /^\/_astro\/chooser-exit\.[\w-]+\.css$/);
     expect(await page.evaluate(() => document.documentElement.outerHTML.length)).toBeLessThan(60_000);
   });
 
@@ -367,7 +369,8 @@ test.describe('MO-25: the declassify stamp', () => {
   });
 
   // MO-33 (named change): struck in yellow with ink, its ring yellow with a cyan echo outside it
-  test('click on the game cover: the stamp turns yellow (bg rgb(255, 230, 0), ink text) with a cyan echo ring, then /game/ loads after ~440 ms', async ({ page }) => {
+  // MO-38 (named change): the ~440 ms stamp delay became the 880 ms waveform exit
+  test('click on the game cover: the stamp turns yellow (bg rgb(255, 230, 0), ink text) with a cyan echo ring, then /game/ after ~880 ms', async ({ page }) => {
     await openAt(page, '/?choose', 1280, 800);
     await timeToLeave(page);
     const g = await rectOf(page, '.file--game');
@@ -380,14 +383,14 @@ test.describe('MO-25: the declassify stamp', () => {
     const look = await stamp.evaluate((el) => ({ ring: getComputedStyle(el, '::after').animationName, strike: getComputedStyle(el).animationName }));
     expect(look).toEqual({ ring: 'stamp-ring', strike: 'stamp-strike' });
     // the colour change runs over --dur-hover (the button is still held: nothing navigates yet)
-    await expect.poll(() => stamp.evaluate((el) => getComputedStyle(el).backgroundColor), { timeout: 400 }).toBe('rgb(255, 230, 0)');
+    await expect.poll(() => stamp.evaluate((el) => getComputedStyle(el).backgroundColor), { timeout: 1000 }).toBe('rgb(255, 230, 0)');
     expect(await stamp.evaluate((el) => getComputedStyle(el).color)).toBe('rgb(10, 10, 11)');
     expect(await stamp.evaluate((el) => [getComputedStyle(el, '::after').borderTopColor, getComputedStyle(el, '::after').outlineColor])).toEqual(['rgb(255, 230, 0)', 'rgb(0, 229, 255)']);
     await page.mouse.up();
     await page.waitForURL(/\/game\/$/);
     const dt = Number(await page.evaluate(() => sessionStorage.getItem('mo25:dt')));
-    expect(dt).toBeGreaterThanOrEqual(430);
-    expect(dt).toBeLessThan(900);
+    expect(dt).toBeGreaterThanOrEqual(860);
+    expect(dt).toBeLessThan(1100);
     expect(await page.evaluate(() => localStorage.getItem('sb:variant'))).toBe('game');
   });
 

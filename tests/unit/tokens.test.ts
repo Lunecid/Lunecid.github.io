@@ -607,6 +607,20 @@ describe('the chooser desk (MO-23, v6.4)', () => {
     for (const shell of ['--dev-shell', '--dev-shell-2', '--dev-hi']) expect(lstar(d.get('--ch-desk')!) - lstar(d.get(shell)!), shell).toBeGreaterThanOrEqual(15);
   });
 
+  it('MO-38: --x-* tokens exact and their last end = --x-game', () => {
+    const d = declsOf(':root');
+    const X: Record<string, string> = {
+      '--x-game': '.88s', '--x-scrim-at': '.12s', '--x-scrim': '.26s', '--x-grat-at': '.14s', '--x-grat': '.24s', '--x-trace-at': '.15s', '--x-trace': '.38s',
+      '--x-grow': '.43s', '--x-square-at': '.28s', '--x-square': '.26s', '--x-echo-lag': '.06s', '--x-collapse-at': '.54s', '--x-collapse': '.17s',
+      '--x-line-at': '.69s', '--x-line': '.19s', '--x-fade': '.14s',
+    };
+    for (const [name, value] of Object.entries(X)) expect(d.get(name), name).toBe(value);
+    const s = (n: string) => parseFloat(d.get(n)!);
+    const ends = [['--x-scrim-at', '--x-scrim'], ['--x-grat-at', '--x-grat'], ['--x-trace-at', '--x-trace'], ['--x-trace-at', '--x-grow'], ['--x-square-at', '--x-square'], ['--x-collapse-at', '--x-collapse'], ['--x-line-at', '--x-line']].map(([a, b]) => s(a!) + s(b!));
+    expect(Math.max(...ends)).toBeCloseTo(s('--x-game'), 5);
+    expect(s('--x-line-at') + s('--x-line')).toBeCloseTo(s('--x-game'), 5);
+  });
+
   it('MO-23: the chooser page is dark (color-scheme dark in the chooser sheet), the other neutral pages stay light', () => {
     const sheet = read('src/styles/chooser.css');
     expect(sheet).toMatch(/(^|\n):root\[data-variant="neutral"\]\[data-page="chooser"\]\s*\{[^}]*color-scheme:\s*dark/);

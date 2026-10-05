@@ -60,6 +60,7 @@ const covers = COVER_ORDER.map((id) => buildCover(id, lang, today));
         {covers.map((cover) => (cover.id === 'data' ? <PrintoutCover cover={cover} /> : <GameCover cover={cover} />))}
       </div>
       <p class="desk__hint" aria-live="polite" data-rest={touch.rest} data-aside={touch.aside}></p>
+      <div class="xnav" aria-hidden="true"><i class="xnav__bg"></i><i class="xnav__ln"></i></div>
     </div>
   </section>
 </NeutralLayout>

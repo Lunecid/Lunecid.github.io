@@ -80,7 +80,7 @@ describe('GameCover.astro (MO-23)', () => {
   // MO-34 (named rewrite of the MO-23 "device wrapper" test): the bezel is a tablet now
   it('MO-34: the cover sits in .dev__screen inside .dev__body; shell parts aria-hidden; one link; no logo/text in the shell', async () => {
     const html = await render('ko');
-    expect(html).toMatch(/<article class="file file--game"[^>]*>\s*<div class="dev"[^>]*>\s*<div class="dev__body"[^>]*>\s*<i class="dev__cam" aria-hidden="true"[^>]*><\/i>\s*<div class="dev__screen"[^>]*>\s*<div class="face"[^>]*>\s*<div class="bar"/);
+    expect(html).toMatch(/<article class="file file--game"[^>]*>\s*<div class="dev"[^>]*>\s*<div class="dev__body"[^>]*>\s*<i class="dev__cam" aria-hidden="true"[^>]*><\/i>\s*<div class="dev__screen"[^>]*>\s*(?:<i class="xg__off" aria-hidden="true"[^>]*><\/i>\s*)?<div class="face"[^>]*>\s*<div class="bar"/); // MO-38: the exit's screen-off layer may precede the window
     for (const part of ['dev__cam', 'dev__glass', 'dev__off', 'dev__pwr']) expect(html, part).toMatch(new RegExp(`<i class="${part}" aria-hidden="true"[^>]*></i>`));
     expect(html.match(/<a\b/g)).toHaveLength(1);
     // the shell carries no text and no mark: everything between the body and the screen, and after the window, is empty
@@ -106,4 +106,20 @@ describe('GameCover.astro (MO-23)', () => {
     expect(text(html)).toBe(text(html.replace(circuit, '')));
     expect(text(html)).not.toMatch(/circuit/i);
   });
+
+  it('MO-38: the exit layers are inside the screen, aria-hidden, and shown only while leaving; the traces are build-time paths', async () => {
+    const html = await render('ko');
+    expect(html).toMatch(/<div class="xg" aria-hidden="true"/);
+    expect(html).toMatch(/<i class="xg__off" aria-hidden="true"/);
+    // the traces live in the chooser sheet as mask images (out of the first flight): the page carries only empty layers
+    expect(html).not.toMatch(/<path\b[^>]*d="M-?\d+ 50/);
+    expect(html.match(/<i class="xg__l /g)).toHaveLength(9);
+    const exitCss = readSource('src/styles/chooser-exit.css');
+    expect(exitCss).toMatch(/--xg-s12: url\("data:image\/svg\+xml,/);
+    const xg = /<div class="xg"[\s\S]*?<\/div><\/div><\/div>/.exec(html)?.[0] ?? '';
+    expect(xg.replace(/<[^>]+>/g, '').trim()).toBe('');
+    expect(css).toMatch(/\.file--game \.xg, \.file--game \.xg__off, \.xnav \{ display: none; \}/);
+    expect(exitCss).toMatch(/\.desk\[data-exit="game"\] \.file--game \.xg, \.desk\[data-exit="game"\] \.file--game \.xg__off \{ display: block; \}/);
+  });
 });
+
