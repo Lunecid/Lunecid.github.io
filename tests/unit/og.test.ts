@@ -10,14 +10,16 @@ const file = (rel: string): string => fileURLToPath(new URL(`../../${rel}`, impo
 
 /** Which tokens.css custom property each OG colour mirrors. */
 const TOKEN_OF = {
-  bg: '--hud-bg',
-  panel: '--hud-panel',
-  text: '--hud-text',
-  strong: '--hud-strong',
-  accent: '--accent',
-  muted: '--hud-muted',
-  grid: '--grid-line',
-  line: '--hud-line',
+  // named change (GP-10): the HUD keys follow the game palette's raw values (the game pages re-point the HUD names
+  // to them); the editorial and paper keys are unchanged
+  bg: '--gp-k0',
+  panel: '--gp-k1',
+  text: '--gp-t1',
+  strong: '--gp-t0',
+  accent: '--gp-y',
+  muted: '--gp-t2',
+  grid: '--gp-grid',
+  line: '--gp-ln',
   paper: '--paper-bg',
   paperInk: '--paper-ink',
   paperMuted: '--paper-muted',
@@ -69,7 +71,9 @@ describe('renderOgPng', () => {
     const rightHalf = (buf: Buffer) => sharp(buf).extract({ left: 700, top: 60, width: 440, height: 510 }).removeAlpha().raw().toBuffer();
     const [a, b] = await Promise.all([rightHalf(png), rightHalf(plain)]);
     let changed = 0;
-    for (let i = 0; i < a.length; i += 3) if (Math.abs(a[i]! - b[i]!) + Math.abs(a[i + 1]! - b[i + 1]!) + Math.abs(a[i + 2]! - b[i + 2]!) > 30) changed += 1;
+    // named change (GP-10): the game palette's panel (#141416) sits 28 channel steps from its ground (#0B0B0C; was 35),
+    // so a changed pixel is one more than 20 steps away
+    for (let i = 0; i < a.length; i += 3) if (Math.abs(a[i]! - b[i]!) + Math.abs(a[i + 1]! - b[i + 1]!) + Math.abs(a[i + 2]! - b[i + 2]!) > 20) changed += 1;
     expect(changed / (a.length / 3)).toBeGreaterThan(0.08);
   }, 30_000);
 

@@ -42,14 +42,15 @@ const fontPath = (weight: 'Regular' | 'Bold'): string =>
 // literals outside tokens.css". Each equals the tokens.css value named in tests/unit/og.test.ts, which fails when either
 // side drifts.
 export const OG_COLORS = {
-  bg: '#0B0D11', // --hud-bg
-  panel: '#15181F', // --hud-panel
-  text: '#E8EAED', // --hud-text
-  strong: '#FFFFFF', // --hud-strong
-  accent: '#C8F03C', // --accent
-  muted: '#8B93A1', // --hud-muted
-  grid: 'rgba(255, 255, 255, .035)', // --grid-line
-  line: 'rgba(200, 240, 60, .24)', // --hud-line
+  // the game cards and the chooser card's game half: the game palette v4 (the --gp-* values the game pages use)
+  bg: '#0B0B0C', // --gp-k0
+  panel: '#141416', // --gp-k1
+  text: '#E6E6E1', // --gp-t1
+  strong: '#F4F4F0', // --gp-t0
+  accent: '#FFE600', // --gp-y
+  muted: '#A3A39C', // --gp-t2
+  grid: 'rgba(255, 255, 255, .03)', // --gp-grid
+  line: '#707078', // --gp-ln
   paper: '#FFFFFF', // --paper-bg
   paperInk: '#141414', // --paper-ink
   paperMuted: '#4A4A4A', // --paper-muted
@@ -117,7 +118,7 @@ async function imageData(path: string, width: number, height: number, fit: 'cove
   return `data:image/jpeg;base64,${buf.toString('base64')}`;
 }
 
-/** The two lime corner marks of a HUD bracket frame (hud.css .bracket), as absolutely placed children. */
+/** The two yellow corner marks of a HUD bracket frame (hud.css .bracket), as absolutely placed children. */
 function corners(size = 26): El[] {
   const mark = (pos: Record<string, unknown>, sides: Record<string, unknown>): El =>
     h('div', { position: 'absolute', width: size, height: size, ...pos, ...sides });

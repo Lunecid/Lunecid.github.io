@@ -146,3 +146,35 @@ test('P2-12 review: on the white cards the eyebrow stands alone (a long title ne
   }
   assert.deepEqual(merged, [], merged.join('\n'));
 });
+
+/** Count of pixels near an RGB colour (sum of channel distances ≤ tol), in the whole card. */
+async function pixelsNear(file, [r, g, b], tol = 24, width = 1200) {
+  const px = await sharp(file).extract({ left: 0, top: 0, width, height: 630 }).removeAlpha().raw().toBuffer();
+  let n = 0;
+  for (let i = 0; i < px.length; i += 3) if (Math.abs(px[i] - r) + Math.abs(px[i + 1] - g) + Math.abs(px[i + 2] - b) <= tol) n += 1;
+  return n;
+}
+
+// GP-10 (game palette v4, GP-OQ10): the game cards and the chooser card's game half are yellow on black, never lime; the
+// general (data) cards keep their editorial white and carry neither the game yellow nor lime. (Their bytes against the
+// GP-0 build were compared by the controller: identical.)
+test('GP-10: /og/game*.png has yellow and no lime pixels; /og/data*.png has neither', async () => {
+  const all = cards();
+  const game = all.filter((f) => TEMPLATE.get(key(f)) === 'hud');
+  const data = all.filter((f) => TEMPLATE.get(key(f)) === 'editorial');
+  assert.ok(game.length >= 9 && data.length >= 9, `${game.length} game, ${data.length} data cards`);
+  const YELLOW = [255, 230, 0];
+  const LIME = [200, 240, 60];
+  for (const f of game) {
+    assert.ok((await pixelsNear(f, YELLOW)) > 50, `${key(f)}: yellow marks`);
+    // the card's own marks (the artifact on the right is content: the school-zone maps hold yellow-green map data)
+    assert.equal(await pixelsNear(f, LIME, 24, 700), 0, `${key(f)}: lime`);
+  }
+  for (const f of data) {
+    assert.equal(await pixelsNear(f, YELLOW, 12), 0, `${key(f)}: game yellow on a data card`);
+    assert.equal(await pixelsNear(f, LIME, 24, 700), 0, `${key(f)}: lime on a data card`);
+  }
+  const home = join(OG, 'home.png');
+  assert.ok((await pixelsNear(home, YELLOW)) > 20, 'the chooser card shows the game half in yellow');
+  assert.equal(await pixelsNear(home, LIME), 0, 'the chooser card has no lime');
+});

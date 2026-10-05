@@ -271,11 +271,12 @@ describe('toolchain', () => {
     expect(types.PAGE_IDS).toContain('chooser');
   });
 
-  it('favicon.svg is the vector [SB] mark in accent on hud-bg', () => {
+  // named change (GP-10, GP-OQ8): the game palette's yellow on its page black (was lime on #0B0D11)
+  it('favicon.svg is the vector [SB] mark in the game yellow on the game black', () => {
     const svg = read('public/favicon.svg');
     expect(svg).toMatch(/^<svg xmlns="http:\/\/www\.w3\.org\/2000\/svg"/);
-    expect(svg).toContain('fill="#0B0D11"');
-    expect(svg).toContain('stroke="#C8F03C"');
+    expect(svg).toContain('fill="#0B0B0C"');
+    expect(svg).toContain('stroke="#FFE600"');
     expect(svg).toMatch(/>SB<\/text>/);
     expect(svg).not.toMatch(/<image|data:image/);
   });
