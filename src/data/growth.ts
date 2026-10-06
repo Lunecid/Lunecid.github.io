@@ -228,7 +228,7 @@ export const growthCopy = {
   },
   party: {
     kicker: { ko: 'PARTY LOG', en: 'PARTY LOG' },
-    title: { ko: '팀의 한 단계에서, 팀의 방향으로, 제1저자로', en: 'From one stage of a team, to its direction, to first author' },
+    title: { ko: '팀의 일부 단계에서, 팀의 방향으로, 제1저자로', en: 'From some stages of a team, to its direction, to first author' },
     lede: {
       ko: '모든 퀘스트는 파티 플레이였습니다. 내가 맡은 부분과 팀원이 맡은 부분을 프로젝트 페이지에 적힌 그대로 나눴습니다. 팀원의 작업은 내 기술로 적지 않습니다.',
       en: 'Every quest was party play. My part and my teammates’ part are split as the project pages state them; teammates’ work is never listed as my skill.',
@@ -243,7 +243,7 @@ export const growthCopy = {
     },
   },
   stages: {
-    1: { ko: '팀 파이프라인의 한 부분을 맡았습니다', en: 'I took one part of a team pipeline' },
+    1: { ko: '팀 파이프라인의 일부 단계를 맡았습니다', en: 'I took some stages of a team pipeline' },
     2: { ko: '팀의 문제 정의와 분석 방향을 이끌었습니다', en: 'I led a team’s problem framing and analysis direction' },
     3: { ko: '지도교수와의 공동 연구, 제1저자', en: 'Joint research with my advisor, as first author' },
   },

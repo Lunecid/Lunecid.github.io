@@ -187,13 +187,16 @@ describe('growth infographic data (GR-1)', () => {
     for (const lang of LANGS) {
       const first = model[lang].steps[0]!;
       expect(first.role.level).toBe(2);
-      for (const text of [model[lang].copy.lede, model[lang].copy.ledeData]) {
+      // the intros, the party-log title and the stage-1 heading (stage 1 holds level-1 and level-2 projects)
+      for (const text of [model[lang].copy.lede, model[lang].copy.ledeData, model[lang].copy.party.title, model[lang].copy.stages[1]]) {
         if (first.role.level >= 2) expect(text, `${lang}: ${text}`).not.toMatch(lang === 'ko' ? /한 부분|한 단계/ : /one part|one stage/i);
       }
     }
     expect(model.ko.copy.lede).toContain('모델링을 뺀 단계들');
     expect(model.ko.copy.ledeData).toContain('팀 파이프라인의 여러 단계를 맡는 데서');
     expect(model.en.copy.ledeData).toContain('several stages of a team pipeline');
+    expect(model.ko.copy.stages[1]).toBe('팀 파이프라인의 일부 단계를 맡았습니다');
+    expect(model.en.copy.party.title).toBe('From some stages of a team, to its direction, to first author');
   });
 
   it('copy: every entry has ko and en, none empty; the model resolves every token', () => {
