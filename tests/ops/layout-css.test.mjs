@@ -160,12 +160,15 @@ test('DS-2: data pages load paint.css; game and neutral pages never contain --te
     }
     assert.ok(!/--tex-|--ragbox/.test(p.inline), `${p.path}: paint.css is inlined again`);
   }
-  // The chooser sheet paints its printout with brush tokens of its own (same names, live SVG); paint.css's own
-  // marks (--ed-paint-*, the /_astro/paint-* tiles) never reach it, and nothing else on these pages carries any.
+  // The chooser sheet paints its printout with brush tokens of its own; named change (late-LCP fix): their values are
+  // the same pre-rendered tiles as paint.css's (scripts/paint/paint.mjs), only the four the printout paints with.
+  // paint.css's own marks (--ed-paint-*, the other tiles) never reach it, and nothing else on these pages carries any.
   for (const p of [...ofVariant('game'), ...ofVariant('neutral')]) {
     const css = `${p.inline}\n${otherLinks(p).map((href) => readFileSync(join('dist', ...href.split('/').filter(Boolean)), 'utf8')).join('\n')}`;
     assert.ok(!/--tex-|--ragbox|--ed-paint-/.test(css), `${p.path}: paint.css leaked`);
-    assert.ok(!/--ed-paint-|\/_astro\/paint-/.test(p.css), `${p.path}: paint.css leaked into the chooser sheet`);
+    assert.ok(!/--ed-paint-/.test(p.css), `${p.path}: paint.css leaked into the chooser sheet`);
+    const tiles = [...p.css.matchAll(/\/_astro\/(paint-[a-z]{2})(?:-2x)?\./g)].map((m) => m[1]);
+    assert.ok(tiles.every((t) => ['paint-rh', 'paint-yh', 'paint-yv', 'paint-bv'].includes(t)), `${p.path}: tiles the printout does not paint with: ${tiles}`);
   }
 });
 
