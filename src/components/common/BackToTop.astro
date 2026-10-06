@@ -1,0 +1,85 @@
+---
+// "맨 위로" (owner request 2026-10-06): a translucent button centred at the foot of the screen that fades in once the
+// footer scrolls into view and takes the reader back to the top. It is rendered by SiteFooter (game) and DataFooter
+// (data); the chooser and the neutral pages have no long scroll and no button. The dock is an in-flow spacer at the end
+// of the footer, as tall as the button's resting place, so at the very bottom of the page the fixed button sits over
+// empty footer ground and never covers a footer link. Without JS the button stays hidden (nojs).
+import type { Lang } from '../../i18n/ui';
+import { t } from '../../i18n/utils';
+
+interface Props {
+  lang: Lang;
+  tone: 'game' | 'data';
+}
+const { lang, tone } = Astro.props;
+---
+<div class="to-top-dock" data-to-top-dock>
+  <button type="button" class={`to-top to-top--${tone}`} data-to-top hidden>
+    <svg class="to-top__icon" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M3 10 8 5l5 5" /></svg>
+    {t(lang, 'action.backToTop')}
+  </button>
+</div>
+
+<script>
+  import { initBackToTop } from '../../scripts/back-to-top';
+  initBackToTop();
+</script>
+
+<style>
+  .to-top-dock {
+    height: calc(var(--tap) + 32px + env(safe-area-inset-bottom, 0px));
+  }
+  .to-top {
+    position: fixed;
+    z-index: 45;
+    left: 50%;
+    bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: var(--tap);
+    padding: 0 20px;
+    border-radius: 999px;
+    font: 700 var(--fs-caption)/1 var(--font-sans);
+    letter-spacing: 0;
+    cursor: pointer;
+    -webkit-backdrop-filter: blur(10px) saturate(130%);
+    backdrop-filter: blur(10px) saturate(130%);
+    opacity: 0;
+    transform: translate(-50%, 12px);
+    transition: opacity var(--dur-rise) var(--ease-out), transform var(--dur-rise) var(--ease-out), background-color var(--dur-hover) linear, border-color var(--dur-hover) linear;
+  }
+  .to-top[hidden] { display: none; }
+  .to-top[data-shown] { opacity: 1; transform: translate(-50%, 0); }
+  .to-top__icon { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+  /* Translucent grounds: 66 % of the page ground keeps the label ≥ 4.5:1 over any surface it can float above (the
+     game's white reading panels, the data pages' ink and paint fields). */
+  .to-top--game {
+    border: 1px solid color-mix(in srgb, var(--hud-text) 45%, transparent);
+    background: color-mix(in srgb, var(--hud-bg) 66%, transparent);
+    color: var(--hud-text);
+  }
+  .to-top--data {
+    border: 1px solid color-mix(in srgb, var(--ed-ink) 55%, transparent);
+    background: color-mix(in srgb, var(--ed-bg) 66%, transparent);
+    color: var(--ed-ink);
+  }
+  .to-top--game:focus-visible { outline-color: var(--accent); }
+  .to-top--data:focus-visible { outline-color: var(--ed-focus); }
+  @media (hover: hover) {
+    .to-top--game:hover { border-color: var(--accent); background: color-mix(in srgb, var(--hud-bg) 82%, transparent); }
+    .to-top--data:hover { border-color: var(--ed-ink); background: color-mix(in srgb, var(--ed-bg) 86%, transparent); }
+  }
+
+  :global(:root[data-motion="reduce"]) .to-top { transition: opacity var(--dur-fade) linear; transform: translate(-50%, 0); }
+  @media (prefers-reduced-motion: reduce) {
+    .to-top { transition: opacity var(--dur-fade) linear; transform: translate(-50%, 0); }
+  }
+  @media (forced-colors: active) {
+    .to-top { border: 1px solid ButtonText; background: Canvas; color: ButtonText; }
+  }
+  @media print {
+    .to-top-dock { display: none; }
+  }
+</style>

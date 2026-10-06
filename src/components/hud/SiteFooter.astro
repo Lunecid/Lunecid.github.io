@@ -13,6 +13,7 @@ import { noticeLines as linesFor } from '../../lib/notices';
 import { SITE } from '../../config';
 import type { NoticeKey } from '../../types';
 import { SHARED_NAV } from '../../variants/neutral';
+import BackToTop from '../common/BackToTop.astro';
 
 interface Props {
   lang: Lang;
@@ -77,6 +78,7 @@ links.push({ href: chooserHref(lang, { choose: true }), label: t(lang, 'nav.choo
     )}
     <p class="site-footer__canonical" lang="en">{canonicalUrl}</p>
   </div>
+  <BackToTop lang={lang} tone="game" />
 </footer>
 
 <script>

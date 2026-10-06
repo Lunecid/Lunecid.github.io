@@ -16,6 +16,7 @@ import type { NoticeKey } from '../../types';
 import { SHARED_NAV } from '../../variants/neutral';
 import Folio from './Folio.astro';
 import PaintMark from './PaintMark.astro';
+import BackToTop from '../common/BackToTop.astro';
 
 interface Props {
   lang: Lang;
@@ -60,6 +61,7 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
     )}
     <p class="data-footer__canonical" lang="en">{canonicalUrl}</p>
   </div>
+  <BackToTop lang={lang} tone="data" />
 </footer>
 
 <script>
