@@ -98,7 +98,7 @@ test.describe('growth infographic (GR)', () => {
       // reach the first mark from the element before it with Tab
       await marks.first().evaluate((el) => {
         const all = Array.from(document.querySelectorAll<HTMLElement>('a[href], button, summary, [tabindex="0"]'));
-        all[all.indexOf(el) - 1]?.focus();
+        all[all.indexOf(el as HTMLElement) - 1]?.focus();
       });
       await page.keyboard.press('Tab');
       await expect(marks.first()).toBeFocused();
