@@ -116,8 +116,9 @@ describe('brush paint (scripts/paint/paint.mjs → src/styles/paint.css, DS-2)',
   });
 
   it('worst pixel of the committed tiles: white on red ≥ 4.5, white on blue ≥ 7, ink on yellow ≥ 7 (both scales)', async () => {
-    const lin = (v: number): number => (v / 255 <= 0.03928 ? v / 255 / 12.92 : ((v / 255 + 0.055) / 1.055) ** 2.4);
-    const lum = (r: number, g: number, b: number): number => 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
+    // one table of the 256 channel values: the per-pixel loop over 12 tiles stays well inside the test timeout under load
+    const LIN = Array.from({ length: 256 }, (_, v) => (v / 255 <= 0.03928 ? v / 255 / 12.92 : ((v / 255 + 0.055) / 1.055) ** 2.4));
+    const lum = (r: number, g: number, b: number): number => 0.2126 * LIN[r]! + 0.7152 * LIN[g]! + 0.0722 * LIN[b]!;
     const ratio = (a: number, b: number): number => (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
     const floor = { r: 4.5, b: 7, y: 7 } as const;
     const text = { r: lum(255, 255, 255), b: lum(255, 255, 255), y: lum(0x14, 0x14, 0x14) } as const;
