@@ -3,6 +3,7 @@
 // never takes a version, so the same token yields the same string on both versions (spec §1 success criterion 3).
 import type { AwardData, ProjectFrontmatter, PublicationFrontmatter, ResumeData } from '../content/schemas';
 import { AWARD_LEVEL_NAME } from '../data/award-levels';
+import { caseTokens } from '../data/research/cog-2026-case';
 import type { Lang } from '../i18n/ui';
 import { formatNumber, formatYm, formatYmLong, type Localized } from '../i18n/utils';
 import { AWARD_LEVELS } from '../types';
@@ -43,6 +44,7 @@ export const FACT_TOKEN_PATTERNS: readonly string[] = [
   'pub.<id>.venueShort', 'pub.<id>.venueAbbr', 'pub.<id>.year', 'pub.<id>.shortTitle', 'pub.<id>.format', 'pub.<id>.fact.<key>',
   'project.<slug>.title', 'project.<slug>.fact.<key>',
   'cert.<id>.short', 'cert.<id>.name',
+  'case.<key>',
   'table.count', 'table.years',
 ];
 
@@ -116,6 +118,8 @@ export function buildFactSource(input: FactInputs): FactSource {
     put(`cert.${c.id}.name`, c.name);
     put(`cert.${c.id}.short`, c.short ?? c.name);
   }
+  // The case-study overlay's numbers (src/data/research/cog-2026-case.ts), formatted per language.
+  for (const [key, value] of Object.entries(caseTokens())) put(`case.${key}`, value);
   return { values };
 }
 
