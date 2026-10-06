@@ -172,6 +172,13 @@ export const growthCopy = {
     3: { ko: '문제 정의 주도', en: 'Led problem framing' },
     4: { ko: '제1저자', en: 'First author' },
   },
+  /** Short role names for the narrow vertical chart's axis. */
+  roleShort: {
+    1: { ko: '한 단계', en: 'One stage' },
+    2: { ko: '여러 단계', en: 'Several' },
+    3: { ko: '주도', en: 'Led' },
+    4: { ko: '제1저자', en: 'First author' },
+  },
   method: {
     1: { ko: '시각화 중심', en: 'Visualization-led' },
     2: { ko: '모델 학습 + 공간 교차검증', en: 'Model training + spatial cross-validation' },

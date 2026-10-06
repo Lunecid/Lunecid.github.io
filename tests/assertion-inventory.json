@@ -28,6 +28,7 @@
   "tests/astro/GhostArt.test.ts": 5,
   "tests/astro/GitHubSection.test.ts": 50,
   "tests/astro/GrowthQuestLog.test.ts": 39,
+  "tests/astro/GrowthReport.test.ts": 36,
   "tests/astro/HelloProfile.test.ts": 46,
   "tests/astro/Hero.test.ts": 101,
   "tests/astro/HudNav.test.ts": 44,

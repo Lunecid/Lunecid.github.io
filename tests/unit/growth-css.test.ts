@@ -6,20 +6,31 @@ import { describe, expect, it } from 'vitest';
 const read = (rel: string) => readFileSync(rel, 'utf8').replace(/\r\n/g, '\n');
 const strip = (css: string) => css.replace(/\/\*[\s\S]*?\*\//g, '');
 
-/** Every selector of every rule (at-rule preludes excluded). */
+/** Every selector of every rule (at-rule preludes excluded; commas inside :is() stay). */
 function selectors(css: string): string[] {
   const out: string[] = [];
   const re = /([^{};]+)\{/g;
   for (const m of strip(css).matchAll(re)) {
     const prelude = (m[1] ?? '').trim();
     if (prelude.startsWith('@')) continue;
-    out.push(...prelude.split(',').map((s) => s.trim()).filter(Boolean));
+    let depth = 0;
+    let cur = '';
+    for (const ch of prelude) {
+      if (ch === '(') depth++;
+      if (ch === ')') depth--;
+      if (ch === ',' && depth === 0) {
+        out.push(cur.trim());
+        cur = '';
+      } else cur += ch;
+    }
+    if (cur.trim()) out.push(cur.trim());
   }
   return out;
 }
 
 const SHEETS = [
   { file: 'src/styles/growth-game.css', scope: ':root[data-variant="game"]', host: 'src/styles/game.css', wait: [/\.gq-q\.gr-wait/, /\.gq-node\.gr-wait \.gq-node__pop/, /line\.gr-wait/] },
+  { file: 'src/styles/growth-data.css', scope: ':root[data-variant="data"]', host: 'src/styles/data-site.css', wait: [/\.gd-line\.gr-wait/, /\.gd-mk\.gr-wait/, /\.gd-dot\.gr-wait/, /\.gd-smc\.gr-wait/] },
 ] as const;
 
 describe('growth infographic sheets (GR-2, GR-3)', () => {

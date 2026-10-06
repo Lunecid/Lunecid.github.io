@@ -1,4 +1,260 @@
 ---
-import type { GrowthModel } from '../../lib/growth';
-interface Props { model: GrowthModel }
+/**
+ * The growth infographic, general version: a research-report figure (owner-approved prototype 2026-10-06, Mondrian
+ * v5.1). From 1000 px, lanes side by side per project — result (painted fields), role (a step chart), method, data scale
+ * (log scale, only numbers the site states), source and team — with the open slots in a last column. Below 1000 px, a
+ * vertical role chart and one small card per project. Then the collaboration figure and the table view.
+ * Charts: SVG lines (preserveAspectRatio none, non-scaling strokes) under HTML marks placed by percentage x and px y, so
+ * nothing is measured in the browser. Markers on the role lane are links to their project's column (hover and focus
+ * show a tooltip). Rules: src/styles/growth-data.css (imported by data-site.css); motion: src/scripts/growth-reveal.ts.
+ * No scoped style block: the general version's rules live in its external sheet.
+ */
+import SectionHead from '../hud/SectionHead.astro';
+import type { GrowthModel, GrowthStep } from '../../lib/growth';
+import { GROWTH_LEVELS, type GrowthLevel } from '../../data/growth';
+
+interface Props {
+  model: GrowthModel;
+}
+
+const { model } = Astro.props;
+const { copy, steps, future, stages, scaleTicks, scaleDomain } = model;
+const n = steps.length;
+const r1 = (v: number) => Math.round(v * 10) / 10;
+const PAINT = { award: 'r', talk: 'b', rank: 'y' } as const;
+
+// role lane: y in px of a 204 px lane, x = column centre in % of the project columns
+const ROLE_H = 204;
+const yRole = (lv: GrowthLevel) => ROLE_H - 30 - (lv - 1) * 40;
+const xCol = (i: number) => ((i + 0.5) / n) * 100;
+const rolePath = steps.map((s, i) => (i === 0 ? `M${r1(xCol(i) * 10)} ${yRole(s.role.level)}` : `H${r1(xCol(i) * 10)} V${yRole(s.role.level)}`)).join(' ');
+
+// scale lane: log10 y in a 180 px lane
+const SCALE_H = 180;
+const [lo, hi] = scaleDomain;
+const yScale = (v: number) => r1(SCALE_H - 18 - ((Math.log10(v) - lo) / (hi - lo)) * (SCALE_H - 64));
+
+// phone: the vertical role chart, rows of 44 px, x = level across the plot (viewBox 300 wide)
+const ROW = 44;
+const vx = (lv: GrowthLevel) => ((lv - 1) / 3) * 100;
+const vPath = steps.map((s, i) => (i === 0 ? `M${r1(vx(s.role.level) * 3)} ${ROW / 2}` : `V${i * ROW + ROW / 2} H${r1(vx(s.role.level) * 3)}`)).join(' ');
+const vroleAlt = `${copy.laneAlt.role}: ${steps.map((s) => `${s.title} ${s.role.name}`).join(', ')}.`;
+const scaleAlt = `${copy.laneAlt.scale}. ${steps.filter((s) => s.scale.length).map((s) => `${s.title}: ${s.scale.map((p) => `${p.label} ${p.unit}`).join(' → ')}`).join('. ')}.`;
+const them = (s: GrowthStep) => s.teamNote ? { label: s.teamNote.label, text: s.teamPart ? `${s.teamNote.text} (${s.teamPart.text})` : s.teamNote.text } : s.teamPart;
+const roleFoot = GROWTH_LEVELS.map((lv) => `${lv} ${copy.role[lv]}`).join(' · ');
 ---
+<section id="growth" class="gd ed-sec" aria-labelledby="growth-title" data-growth>
+  <div class="container">
+    <SectionHead variant="data" id="growth-title" caption={copy.captionData} title={copy.title}>
+      <p>{copy.ledeData}</p>
+    </SectionHead>
+    <ul class="gd-key" role="list">
+      <li><i class="gd-sw gd-sw--r" aria-hidden="true"></i>{copy.legend.award}</li>
+      <li><i class="gd-sw gd-sw--b" aria-hidden="true"></i>{copy.legend.talk}</li>
+      <li><i class="gd-sw gd-sw--y" aria-hidden="true"></i>{copy.legend.rank}</li>
+      <li><i class="gd-sq gd-sq--me" aria-hidden="true"></i>{copy.legend.me} <i class="gd-sq" aria-hidden="true"></i>{copy.legend.others}</li>
+    </ul>
+  </div>
+
+  <div class="container gd-wide">
+    <div class="gd-lanes" data-gr-fig role="group" aria-label={copy.table.caption} style={`--gd-n: ${n}`}>
+      <div class="gd-l" style="grid-row: 1"><b>{copy.lanes.project}</b></div>
+      {steps.map((s, i) => (
+        <div class="gd-c gd-c--head" id={`gr-c-${s.id}`} style={`grid-row: 1; grid-column: ${i + 2}`}>
+          <p class="gd-hd__p">{s.period}</p>
+          <h3 class="gd-hd__t">{s.title}</h3>
+          {s.sub && <p class="gd-hd__sub">{s.sub}</p>}
+          <p class="gd-hd__o">{s.org}</p>
+        </div>
+      ))}
+
+      <div class="gd-l" style="grid-row: 2"><b>{copy.lanes.result}</b></div>
+      {steps.map((s, i) => (
+        <div class="gd-c" style={`grid-row: 2; grid-column: ${i + 2}`}>
+          {s.award && <p class={`gd-paint gd-paint--${PAINT[s.award.kind]}`} data-paint-text>{s.award.name}{s.award.sub && <small>{s.award.sub}</small>}</p>}
+        </div>
+      ))}
+
+      <div class="gd-l gd-l--axis" style={`grid-row: 3; height: ${ROLE_H}px`}>
+        <b>{copy.lanes.role}</b>
+        {GROWTH_LEVELS.map((lv) => <span class="gd-axis" aria-hidden="true" style={`top: ${yRole(lv)}px`}>{copy.role[lv]}</span>)}
+      </div>
+      <div class="gd-span" style={`grid-row: 3; height: ${ROLE_H}px`}>
+        <svg class="gd-chart" viewBox={`0 0 1000 ${ROLE_H}`} preserveAspectRatio="none" aria-hidden="true" focusable="false">
+          {GROWTH_LEVELS.map((lv) => <line class="gd-grid" x1="0" x2="1000" y1={yRole(lv)} y2={yRole(lv)} />)}
+          <path class="gd-line" data-gr-i="0" d={rolePath} />
+        </svg>
+        {steps.map((s, i) => (
+          <a class:list={['gd-mk', { 'gd-mk--key': s.role.level >= 3, 'gd-mk--end': i >= n - 2 }]} href={`#gr-c-${s.id}`} data-gr-i={i} style={`--x: ${r1(xCol(i))}; --y: ${yRole(s.role.level)}`}
+            aria-label={`${s.title}: ${copy.lanes.role} ${s.role.level}, ${s.role.name}`}>
+            <i aria-hidden="true"></i>
+            <span class="gd-tip" aria-hidden="true"><b>{s.title} · {s.period}</b>{s.role.name} — {s.role.text}</span>
+          </a>
+        ))}
+        {steps.map((s, i) => s.role.level >= 3 && (
+          <span class="gd-keylbl" aria-hidden="true" style={`--x: ${r1(xCol(i))}; --y: ${yRole(s.role.level)}`}>{s.role.name}</span>
+        ))}
+      </div>
+
+      <div class="gd-l" style="grid-row: 4"><b>{copy.lanes.method}</b></div>
+      {steps.map((s, i) => (
+        <div class="gd-c" style={`grid-row: 4; grid-column: ${i + 2}`}>
+          {s.method && <p><span class="gd-pips" aria-hidden="true">{GROWTH_LEVELS.map((lv) => <i class:list={[{ on: lv <= s.method!.level }]}></i>)}</span><span class="sr-only">{copy.lanes.method} {s.method.level}: </span>{s.method.text}</p>}
+          {s.teamNote && <p class="gd-tm"><b>{s.teamNote.label}</b> {s.teamNote.text}</p>}
+        </div>
+      ))}
+
+      <div class="gd-l gd-l--axis" style={`grid-row: 5; height: ${SCALE_H}px`}>
+        <b>{copy.lanes.scale}</b><span class="gd-l__sub">{copy.lanes.scaleSub}</span>
+        {scaleTicks.map((t) => <span class="gd-axis" aria-hidden="true" style={`top: ${yScale(t.value)}px`}>{t.label}</span>)}
+      </div>
+      <div class="gd-span" style={`grid-row: 5; height: ${SCALE_H}px`} role="img" aria-label={scaleAlt}>
+        <svg class="gd-chart" viewBox={`0 0 1000 ${SCALE_H}`} preserveAspectRatio="none" aria-hidden="true" focusable="false">
+          {scaleTicks.map((t) => <line class="gd-grid" x1="0" x2="1000" y1={yScale(t.value)} y2={yScale(t.value)} />)}
+          {steps.map((s, i) => s.scale.length === 2 && (
+            <line class="gd-arrow" x1={r1(xCol(i) * 10)} x2={r1(xCol(i) * 10)} y1={yScale(s.scale[0]!.value) - 8} y2={yScale(s.scale[1]!.value) + 8} />
+          ))}
+        </svg>
+        {steps.flatMap((s, i) => s.scale.map((p) => (
+          <span class:list={['gd-dot', { 'gd-dot--approx': p.approx }]} aria-hidden="true" data-gr-i={i} style={`--x: ${r1(xCol(i))}; --y: ${yScale(p.value)}`}>
+            <i></i><span><b>{p.label}</b> {p.unit}</span>
+          </span>
+        )))}
+      </div>
+
+      <div class="gd-l" style="grid-row: 6"><b>{copy.lanes.source}</b></div>
+      {steps.map((s, i) => <div class="gd-c" style={`grid-row: 6; grid-column: ${i + 2}`}>{s.data ?? <span class="gd-na">—</span>}</div>)}
+
+      <div class="gd-l" style="grid-row: 7"><b>{copy.lanes.team}</b></div>
+      {steps.map((s, i) => {
+        const t = them(s);
+        return (
+          <div class="gd-c" style={`grid-row: 7; grid-column: ${i + 2}`}>
+            {s.team ? (
+              <span class="gd-team" role="img" aria-label={s.team.label}>{Array.from({ length: s.team.size }, (_, k) => <i class:list={['gd-sq', { 'gd-sq--me': k === 0 }]}></i>)}</span>
+            ) : <span class="gd-na">{copy.teamUnknown}</span>}
+            {s.team && <p class="gd-team__l">{s.team.label}</p>}
+            {s.role.level === 3 && <p class="gd-strong">{s.role.name}</p>}
+            {t && <p class="gd-tm"><b>{t.label}</b> {t.text}</p>}
+          </div>
+        );
+      })}
+
+      <div class="gd-fut">
+        <p class="gd-fut__h">{copy.next}</p>
+        <ol role="list">
+          {future.map((f) => <li><span class="gd-paint gd-paint--y gd-paint--s" data-paint-text>{f.status}</span>{f.title}</li>)}
+        </ol>
+      </div>
+    </div>
+
+    <div class="gd-vrole">
+      <h3 class="gd-sub-h">{copy.vrole.title}</h3>
+      <p class="gd-note">{copy.vrole.note}</p>
+      <div class="gd-vrole__fig" role="img" aria-label={vroleAlt}>
+        <div class="gd-vrole__ticks" aria-hidden="true">{GROWTH_LEVELS.map((lv) => <span style={`--x: ${r1(vx(lv))}`}>{copy.roleShort[lv]}</span>)}</div>
+        <div class="gd-vrole__rows" aria-hidden="true" style={`--gd-rows: ${n}`}>
+          {steps.map((s) => <span class="gd-vrole__lbl">{s.title}</span>)}
+          <div class="gd-vrole__plot">
+            <svg class="gd-chart" viewBox={`0 0 300 ${n * ROW}`} preserveAspectRatio="none" focusable="false">
+              {GROWTH_LEVELS.map((lv) => <line class="gd-grid" x1={r1(vx(lv) * 3)} x2={r1(vx(lv) * 3)} y1="0" y2={n * ROW} />)}
+              <path class="gd-line" d={vPath} />
+            </svg>
+            {steps.map((s, i) => <span class:list={['gd-vdot', { 'gd-vdot--key': s.role.level >= 3 }]} style={`--x: ${r1(vx(s.role.level))}; --y: ${i * ROW + ROW / 2}`}></span>)}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="gd-sm" data-gr-fig>
+      {steps.map((s, i) => {
+        const t = them(s);
+        return (
+          <article class="gd-smc" id={`gr-sm-${s.id}`} data-gr-i={i} aria-labelledby={`gr-smt-${s.id}`}>
+            <div class="gd-smc__h"><h3 class="gd-hd__t" id={`gr-smt-${s.id}`}>{s.title}</h3><span class="gd-hd__p">{s.period}</span></div>
+            {s.sub && <p class="gd-hd__sub">{s.sub}</p>}
+            <p class="gd-hd__o">{s.org}</p>
+            {s.award && <p class={`gd-paint gd-paint--${PAINT[s.award.kind]}`} data-paint-text>{s.award.name}{s.award.sub && <small>{s.award.sub}</small>}</p>}
+            <dl>
+              <dt>{copy.lanes.role}</dt>
+              <dd><span class="gd-pips" aria-hidden="true">{GROWTH_LEVELS.map((lv) => <i class:list={[{ on: lv <= s.role.level }]}></i>)}</span>{s.role.name}<span class="gd-tm gd-tm--block">{s.role.text}</span></dd>
+              <dt>{copy.lanes.method}</dt>
+              <dd>{s.method ? <Fragment><span class="gd-pips" aria-hidden="true">{GROWTH_LEVELS.map((lv) => <i class:list={[{ on: lv <= s.method!.level }]}></i>)}</span>{s.method.text}</Fragment> : <span class="gd-na">—</span>}{s.teamNote && <span class="gd-tm gd-tm--block"><b>{s.teamNote.label}</b> {s.teamNote.text}</span>}</dd>
+              <dt>{copy.lanes.scale}</dt>
+              <dd>{s.scale.length > 0 && <Fragment>{s.scale.map((p, k) => <Fragment>{k > 0 && ' → '}<b>{p.label}</b> {p.unit}</Fragment>)}<br /></Fragment>}{s.data ?? <span class="gd-na">—</span>}</dd>
+              <dt>{copy.lanes.team}</dt>
+              <dd>
+                {s.team ? <span class="gd-team" role="img" aria-label={s.team.label}>{Array.from({ length: s.team.size }, (_, k) => <i class:list={['gd-sq', { 'gd-sq--me': k === 0 }]}></i>)}<span class="gd-team__n" aria-hidden="true">{s.team.label}</span></span> : <span class="gd-na">{copy.teamUnknown}</span>}
+                {s.teamPart && <span class="gd-tm gd-tm--block"><b>{s.teamPart.label}</b> {s.teamPart.text}</span>}
+              </dd>
+            </dl>
+          </article>
+        );
+      })}
+      <article class="gd-smc gd-smc--fut" aria-labelledby="gr-sm-next">
+        <h3 class="gd-hd__t" id="gr-sm-next">{copy.next}</h3>
+        <ol role="list">{future.map((f) => <li><span class="gd-paint gd-paint--y gd-paint--s" data-paint-text>{f.status}</span>{f.title}</li>)}</ol>
+      </article>
+    </div>
+    <p class="gd-note">{copy.foot.role}: {roleFoot}. {copy.foot.scale} {copy.foot.blank}</p>
+
+    <section class="gd-collab" aria-labelledby="growth-collab">
+      <h3 class="gd-sub-h" id="growth-collab">{copy.collab.title}</h3>
+      <p class="gd-collab__lede">{copy.collab.lede}</p>
+      <ol class="gd-cstep" role="list">
+        {stages.map((st) => (
+          <li class="gd-cs">
+            <div class="gd-cs__h"><span class="gd-cs__n">{st.n}</span><span class="gd-cs__yr">{st.years}</span><h4>{st.head}</h4></div>
+            <ul role="list">
+              {st.items.map((s) => {
+                const t = them(s);
+                return (
+                  <li>
+                    <p class="gd-cs__p">{s.team && <span class="gd-team" role="img" aria-label={s.team.label}>{Array.from({ length: s.team.size }, (_, k) => <i class:list={['gd-sq', { 'gd-sq--me': k === 0 }]}></i>)}</span>}<b>{s.title}</b></p>
+                    <p class="gd-cs__l"><b>{copy.mine}</b> {s.role.text}</p>
+                    {t && <p class="gd-cs__l gd-tm"><b>{t.label}</b> {t.text}</p>}
+                  </li>
+                );
+              })}
+            </ul>
+          </li>
+        ))}
+      </ol>
+    </section>
+
+    <details class="gd-tv">
+      <summary>{copy.table.toggle}</summary>
+      <div class="gd-tv__scroll" tabindex="0" role="region" aria-label={copy.table.region}>
+        <table>
+          <caption>{copy.table.caption}</caption>
+          <thead><tr><th scope="col">{copy.table.period}</th><th scope="col">{copy.table.project}</th><th scope="col">{copy.table.org}</th><th scope="col">{copy.table.team}</th><th scope="col">{copy.table.role}</th><th scope="col">{copy.table.mine}</th><th scope="col">{copy.table.others}</th><th scope="col">{copy.table.method}</th><th scope="col">{copy.table.data}</th><th scope="col">{copy.table.result}</th></tr></thead>
+          <tbody>
+            {steps.map((s) => {
+              const t = them(s);
+              return (
+                <tr>
+                  <td>{s.period}</td>
+                  <th scope="row">{s.title}{s.sub && <Fragment><br />{s.sub}</Fragment>}</th>
+                  <td>{s.org}</td>
+                  <td>{s.team ? s.team.label : copy.teamUnknown}</td>
+                  <td>{s.role.level} · {s.role.name}</td>
+                  <td>{s.role.text}</td>
+                  <td>{t ? `${t.label}: ${t.text}` : '—'}</td>
+                  <td>{s.method ? `${s.method.level} · ${s.method.text}` : '—'}</td>
+                  <td>{[s.scale.map((p) => `${p.label} ${p.unit}`).join(' → '), s.data].filter(Boolean).join(' · ') || '—'}</td>
+                  <td>{s.award ? [s.award.name, s.award.sub].filter(Boolean).join(' · ') : '—'}</td>
+                </tr>
+              );
+            })}
+            {future.map((f) => <tr><td>{f.status}</td><th scope="row">{f.title}</th><td colspan="8">—</td></tr>)}
+          </tbody>
+        </table>
+      </div>
+    </details>
+  </div>
+</section>
+
+<script>
+  import { initGrowthReveal } from '../../scripts/growth-reveal';
+  initGrowthReveal();
+</script>
