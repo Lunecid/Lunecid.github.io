@@ -153,7 +153,7 @@
   "tests/ops/head-order.test.mjs": 11,
   "tests/ops/image-metadata.test.mjs": 5,
   "tests/ops/import-assets.test.mjs": 47,
-  "tests/ops/layout-css.test.mjs": 47,
+  "tests/ops/layout-css.test.mjs": 50,
   "tests/ops/legacy-redirects.test.mjs": 6,
   "tests/ops/markdown-links.test.mjs": 6,
   "tests/ops/og-images.test.mjs": 20,

@@ -91,10 +91,14 @@ test('the data CSS is one external, content-hashed stylesheet that every data pa
 const CHOOSER_PAGES = ['index.html', 'en/index.html'];
 const isChooserSheet = (href) => /^\/_astro\/chooser\.[\w-]+\.css$/.test(href);
 const isGameSheet = (href) => /^\/_astro\/game\.[\w-]{6,}\.css$/.test(href);
-/** The stylesheets a game or neutral page links besides the chooser's own sheet on the chooser pages and the game sheet
-    on game pages. */
+// Named change (GR): the game research pages also link the growth infographic's sheet, from the section itself.
+const GROWTH_PAGES = ['game/research/index.html', 'en/game/research/index.html'];
+const isGrowthSheet = (href) => /^\/_astro\/growth-game\.[\w-]{6,}\.css$/.test(href);
+/** The stylesheets a game or neutral page links besides the chooser's own sheet on the chooser pages, the game sheet
+    on game pages and the growth sheet on the game research pages. */
 const otherLinks = (p) =>
-  p.links.filter((href) => !(CHOOSER_PAGES.includes(p.path) && isChooserSheet(href)) && !(p.variant === 'game' && isGameSheet(href)));
+  p.links.filter((href) => !(CHOOSER_PAGES.includes(p.path) && isChooserSheet(href)) && !(p.variant === 'game' && isGameSheet(href))
+    && !(GROWTH_PAGES.includes(p.path) && isGrowthSheet(href)));
 
 // Named change (GP-2): game pages now link the game palette sheet (tested below); nothing else changes.
 test('game and neutral pages link no other stylesheet (the chooser pages: only the chooser sheet) and never name the data sheet', () => {
@@ -121,6 +125,16 @@ test('GP-2: game pages link exactly one /_astro/game.*.css; data and neutral pag
   }
   for (const p of [...ofVariant('data'), ...ofVariant('neutral')]) {
     assert.ok(!/_astro\/game\.[\w-]+\.css/.test(p.html), `${p.path}: names the game sheet`);
+  }
+});
+
+test('GR: only the two game research pages link the growth sheet, once, after the game sheet', () => {
+  const linking = pages.filter((p) => p.links.some(isGrowthSheet)).map((p) => p.path).sort();
+  assert.deepEqual(linking, [...GROWTH_PAGES].sort());
+  for (const path of GROWTH_PAGES) {
+    const p = pages.find((x) => x.path === path);
+    assert.equal(p.links.filter(isGrowthSheet).length, 1, `${path}: one growth sheet link`);
+    assert.ok(p.links.findIndex(isGameSheet) < p.links.findIndex(isGrowthSheet), `${path}: the game sheet (tokens) comes first`);
   }
 });
 
