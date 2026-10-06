@@ -128,7 +128,7 @@
 .cs-viz { position: relative; margin: 32px 0 0; padding: 12px 0; border-top: 1px solid var(--cs-ln); border-bottom: 1px solid var(--cs-ln-soft); }
 .cs-figrow .cs-viz { margin-top: 24px; }
 .cs-viz__bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 6px 10px; margin-bottom: 8px; }
-.cs-viz__replay, .cs-play { all: unset; cursor: pointer; font: 600 var(--cs-fs-12)/1 var(--cs-ui); color: var(--cs-y-text); padding: 8px 6px; margin: -8px -6px; min-height: 28px; display: inline-flex; align-items: center; gap: 4px; }
+.cs-viz__replay, .cs-play { all: unset; cursor: pointer; font: 600 var(--cs-fs-12)/1 var(--cs-ui); color: var(--cs-y-text); padding: 8px 6px; margin: -8px 0 -8px -6px; min-height: 28px; display: inline-flex; align-items: center; gap: 4px; }
 .cs-viz__replay:active, .cs-play:active { text-decoration: underline; }
 .cs-viz__plot { position: relative; width: 100%; }
 .cs-viz__plot svg { display: block; width: 100%; height: auto; overflow: visible; }
