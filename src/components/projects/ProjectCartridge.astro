@@ -109,8 +109,8 @@ const sizes = wide ? CARTRIDGE_SIZES.wide : CARTRIDGE_SIZES.normal;
       )
     }
   </div>
+  {caseId && href && <CaseTrigger />}
 </article>
-{caseId && href && <CaseTrigger />}
 
 <style>
   .cart { position: relative; isolation: isolate; }

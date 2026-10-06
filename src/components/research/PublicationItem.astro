@@ -50,8 +50,8 @@ const gloss = lang === 'ko' ? paper.titleGloss : null;
     <p class="pub__tldr">{paper.tldr}</p>
     <PaperLinks lang={lang} paper={paper} />
   </div>
+  {paper.caseId && paper.href && <CaseTrigger />}
 </article>
-{paper.caseId && paper.href && <CaseTrigger />}
 
 <style>
   .pub {

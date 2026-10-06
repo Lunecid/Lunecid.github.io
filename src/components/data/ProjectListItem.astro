@@ -54,6 +54,7 @@ const number = n === undefined ? null : String(n).padStart(2, '0');
     <div class="ed-card__body">
       <p class="ed-card__top">{number && <span class="ed-card__n" aria-hidden="true">{number}</span>}<span>{meta}</span></p>
       <Heading class="ed-card__title">{href ? <a class="hit" href={href} data-case={caseId}>{title}</a> : title}</Heading>
+      {caseId && href && <CaseTrigger />}
       {!href && summary && <p class="ed-card__text">{summary}</p>}
       {shownTags.length > 0 && (
         <ul class="ed-card__tags" role="list">
@@ -66,6 +67,7 @@ const number = n === undefined ? null : String(n).padStart(2, '0');
 <li class:list={['pli', 'ed-item', { 'pli--chart': !!chart, 'pli--text': !chart && !cover }]} data-tags={tagKeys.join(' ')}>
   <div class="pli__text">
     <Heading class="pli__title ed-item__title">{href ? <a class="pli__link hit" href={href} data-case={caseId}>{title}</a> : title}</Heading>
+    {caseId && href && <CaseTrigger />}
     <p class="ed-meta">{meta}</p>
     {!href && summary && <p class="ed-body">{summary}</p>}
     {shownTags.length > 0 && (
@@ -94,7 +96,6 @@ const number = n === undefined ? null : String(n).padStart(2, '0');
 </li>
 )}
 
-{caseId && href && <CaseTrigger />}
 
 <style>
   .pli { display: grid; grid-template-columns: minmax(0, 1fr) 96px; gap: 16px; align-items: start; }
