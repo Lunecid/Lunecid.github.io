@@ -1,0 +1,18 @@
+---
+// The growth infographic on the research pages, right after the page header: the quest log on the game version, the
+// research-report lanes on the general version (one model, src/lib/growth.ts, read through portfolio.ts).
+import GrowthQuestLog from './GrowthQuestLog.astro';
+import GrowthReport from './GrowthReport.astro';
+import type { Lang } from '../../i18n/ui';
+import { getGrowth } from '../../lib/portfolio';
+import type { VariantId } from '../../variants/ids';
+
+interface Props {
+  lang: Lang;
+  variant: VariantId;
+}
+
+const { lang, variant } = Astro.props;
+const model = await getGrowth(lang);
+---
+{variant === 'data' ? <GrowthReport model={model} /> : <GrowthQuestLog model={model} />}

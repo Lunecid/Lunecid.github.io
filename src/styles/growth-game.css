@@ -1,0 +1,220 @@
+/* src/styles/growth-game.css — the growth infographic, game version (GrowthQuestLog.astro; owner-approved prototype
+   2026-10-06). Imported by game.css, so only game pages load it. Every selector starts with :root[data-variant="game"];
+   colours are role tokens (they re-point on game pages and in print) and the --gp-* white-panel values; no literal.
+   Phones and tablets: a vertical rail, node beside card. From 1000 px: an 8-column grid, cards in two rows around a
+   168 px band where the path (SVG, preserveAspectRatio none, non-scaling strokes) and the absolutely placed nodes
+   share percentage x positions (--x) and px y positions (--y) set by the component.
+   Motion (src/scripts/growth-reveal.ts): .gr-wait is the hidden state of a part below the first screen; removing it
+   draws the part with a transform/opacity transition; both reduce paths and print show the final state. */
+
+:root[data-variant="game"] .gq { position: relative; }
+:root[data-variant="game"] .gq-defs { position: absolute; width: 0; height: 0; overflow: hidden; }
+:root[data-variant="game"] .gq__lede { max-width: var(--measure); }
+
+/* legend */
+:root[data-variant="game"] .gq-legend { margin-top: 20px; display: flex; flex-wrap: wrap; gap: 8px 20px; font-size: var(--fs-caption); line-height: 1.5; color: var(--read-muted); }
+:root[data-variant="game"] .gq-legend li { display: flex; align-items: center; gap: 8px; }
+:root[data-variant="game"] .gq-lg { display: block; width: 12px; height: 12px; transform: rotate(45deg); background: var(--read-text); }
+:root[data-variant="game"] .gq-lg--ach { background: var(--hud-bg); box-shadow: 0 0 0 2px var(--hl2); }
+:root[data-variant="game"] .gq-lg--lock { background: transparent; outline: 1.5px dashed var(--hud-line); }
+
+/* level pips: ordinal steps, never a percentage */
+:root[data-variant="game"] .gq-pips { display: inline-flex; gap: 3px; flex: none; }
+:root[data-variant="game"] .gq-pips i { width: 12px; height: 7px; box-shadow: inset 0 0 0 1px var(--hud-line); }
+:root[data-variant="game"] .gq-pips i.on { background: var(--hl2); box-shadow: none; }
+
+/* ── the map: phone and tablet rail ── */
+:root[data-variant="game"] .gq-map { position: relative; margin-top: 32px; display: grid; grid-template-columns: 44px minmax(0, 1fr); column-gap: 8px; row-gap: 18px; }
+:root[data-variant="game"] .gq-path, :root[data-variant="game"] .gq-mark { display: none; }
+:root[data-variant="game"] .gq-node {
+  position: relative; z-index: 2; grid-column: 1; align-self: start; display: grid; place-items: center;
+  width: 44px; height: 44px; color: inherit; text-decoration: none;
+}
+:root[data-variant="game"] .gq-node__pop { display: grid; place-items: center; width: 100%; height: 100%; }
+:root[data-variant="game"] .gq-node i { display: block; width: 16px; height: 16px; transform: rotate(45deg); background: var(--read-text); transition: background-color var(--dur-hover) var(--ease-out); }
+:root[data-variant="game"] .gq-node--ach i { background: var(--hud-bg); box-shadow: 0 0 0 2.5px var(--hl2); }
+:root[data-variant="game"] .gq-node--ach i::after { content: ""; display: block; width: 6px; height: 6px; margin: 5px; background: var(--hl2); pointer-events: none; }
+:root[data-variant="game"] .gq-node--lock i { background: var(--hud-bg); outline: 1.5px dashed var(--hud-line); }
+/* the node is a link to its card: yellow on focus, on hover and while its card is the target */
+:root[data-variant="game"] .gq-node:focus-visible { outline: 2px solid var(--accent); outline-offset: 0; }
+:root[data-variant="game"] .gq-node:focus-visible i { background: var(--accent); }
+:root[data-variant="game"] .gq-node--ach:focus-visible i, :root[data-variant="game"] .gq-node--lock:focus-visible i { background: var(--hud-bg); outline-color: var(--accent); box-shadow: 0 0 0 2.5px var(--accent); }
+:root[data-variant="game"] .gq-node:active i { background: var(--accent); }
+@media (hover: hover) {
+  :root[data-variant="game"] .gq-node:hover i { background: var(--accent); }
+  :root[data-variant="game"] .gq-node--ach:hover i, :root[data-variant="game"] .gq-node--lock:hover i { background: var(--hud-bg); box-shadow: 0 0 0 2.5px var(--accent); }
+}
+/* the tooltip (desktop): the step's number, title, period and role, on hover and on keyboard focus */
+:root[data-variant="game"] .gq-tip { display: none; }
+
+/* ── quest cards ── */
+:root[data-variant="game"] .gq-q {
+  position: relative; grid-column: 2; min-width: 0; padding: 14px 16px 16px;
+  background: var(--read-card); border: 1px solid var(--read-line); color: var(--read-text);
+}
+/* the rail from this card's node to the next (phones and tablets): cyan, dashed towards the locked slots */
+:root[data-variant="game"] .gq-q::before {
+  content: ""; position: absolute; left: -31px; top: 34px; bottom: -29px; width: 2px; background: var(--hl2); pointer-events: none;
+}
+:root[data-variant="game"] .gq-q:last-child::before { display: none; }
+:root[data-variant="game"] .gq-q--lock::before, :root[data-variant="game"] .gq-q--pre::before {
+  background: repeating-linear-gradient(to bottom, var(--hud-line) 0 6px, transparent 6px 11px);
+}
+:root[data-variant="game"] .gq-q:target { border-color: var(--accent); box-shadow: inset 0 3px 0 var(--accent); }
+:root[data-variant="game"] .gq-q__meta { display: flex; justify-content: space-between; gap: 8px; font-family: var(--font-mono); font-size: var(--fs-min); font-weight: 600; line-height: 1.4; color: var(--read-muted); }
+:root[data-variant="game"] .gq-q__no { color: var(--hl2); letter-spacing: .08em; }
+:root[data-variant="game"] .gq-q__t { margin-top: 6px; font-size: var(--fs-body); font-weight: 800; line-height: 1.35; color: var(--hud-strong); }
+:root[data-variant="game"] .gq-q__sub { margin-top: 2px; font-size: var(--fs-caption); font-weight: 600; line-height: 1.5; }
+:root[data-variant="game"] .gq-q__org { margin-top: 4px; font-size: var(--fs-min); line-height: 1.5; color: var(--read-muted); }
+:root[data-variant="game"] .gq-q__row { margin-top: 12px; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
+:root[data-variant="game"] .gq-badge { display: inline-flex; align-items: stretch; font-size: var(--fs-min); line-height: 1; border: 1px solid var(--hud-line); }
+:root[data-variant="game"] .gq-badge b { padding: 5px 6px; font-family: var(--font-mono); font-weight: 700; color: var(--hud-bg); background: var(--read-text); }
+:root[data-variant="game"] .gq-badge span { padding: 5px 7px; font-weight: 700; color: var(--hud-strong); }
+:root[data-variant="game"] .gq-party { display: inline-flex; align-items: center; gap: 3px; }
+:root[data-variant="game"] .gq-party svg { display: block; width: 15px; height: 17px; }
+:root[data-variant="game"] .gq-party .me { color: var(--hud-strong); }
+:root[data-variant="game"] .gq-party .tm { color: var(--read-muted); }
+:root[data-variant="game"] .gq-party__n { margin-left: 6px; font-family: var(--font-mono); font-size: var(--fs-min); font-weight: 600; }
+:root[data-variant="game"] .gq-split { margin-top: 12px; display: grid; gap: 8px; }
+:root[data-variant="game"] .gq-split > div { padding: 2px 0 2px 10px; }
+:root[data-variant="game"] .gq-split .me { border-left: 2px solid var(--read-text); }
+:root[data-variant="game"] .gq-split .tm { border-left: 2px dashed var(--hud-line); }
+:root[data-variant="game"] .gq-split dt { font-size: var(--fs-min); font-weight: 700; line-height: 1.4; color: var(--read-muted); }
+:root[data-variant="game"] .gq-split dd { font-size: var(--fs-caption); line-height: 1.6; }
+:root[data-variant="game"] .gq-split .tm dd { color: var(--read-muted); }
+:root[data-variant="game"] .gq-stats { margin-top: 12px; display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 6px 10px; align-items: center; font-size: var(--fs-min); line-height: 1.5; }
+:root[data-variant="game"] .gq-stats dt { font-weight: 700; color: var(--read-muted); align-self: start; }
+:root[data-variant="game"] .gq-stats dd { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; min-width: 0; }
+:root[data-variant="game"] .gq-lv { font-family: var(--font-mono); font-weight: 700; color: var(--hl2); }
+:root[data-variant="game"] .gq-txt { flex-basis: 100%; min-width: 0; }
+:root[data-variant="game"] .gq-na { color: var(--read-muted); }
+:root[data-variant="game"] .gq-na b { font-weight: 700; color: var(--read-text); }
+:root[data-variant="game"] .gq-ach {
+  margin-top: 12px; display: inline-flex; align-items: flex-start; gap: 7px; padding: 6px 9px;
+  font-size: var(--fs-caption); font-weight: 800; line-height: 1.35; color: var(--gold-ink); background: var(--hl2);
+}
+:root[data-variant="game"] .gq-ach::before { content: ""; flex: none; width: 7px; height: 7px; margin-top: 5px; transform: rotate(45deg); background: var(--gold-ink); pointer-events: none; }
+:root[data-variant="game"] .gq-ach small { display: block; font-size: var(--fs-min); font-weight: 600; }
+:root[data-variant="game"] .gq-ach--rank { color: var(--hl2); background: transparent; box-shadow: inset 0 0 0 1.5px var(--hl2); }
+:root[data-variant="game"] .gq-ach--rank::before { background: var(--hl2); }
+:root[data-variant="game"] .gq-q--lock { padding: 10px 12px; background: transparent; border: 1.5px dashed var(--hud-line); }
+:root[data-variant="game"] .gq-q--lock .gq-q__t { margin-top: 4px; font-size: var(--fs-small); color: var(--read-text); }
+:root[data-variant="game"] .gq-lockchip { display: inline-flex; align-items: center; gap: 6px; font-size: var(--fs-min); font-weight: 700; line-height: 1; color: var(--read-muted); }
+:root[data-variant="game"] .gq-lockchip svg { width: 11px; height: 13px; }
+
+/* ── desktop: the climbing path ── */
+@media (min-width: 1000px) {
+  :root[data-variant="game"] .gq-map {
+    grid-template-columns: repeat(8, minmax(0, 1fr)); grid-template-rows: auto var(--gq-band) auto auto auto 1fr;
+    column-gap: 0; row-gap: 0;
+  }
+  :root[data-variant="game"] .gq-q { margin-right: 16px; }
+  :root[data-variant="game"] .gq-q::before { display: none; }
+  :root[data-variant="game"] .gq-q--top { grid-row: 1; grid-column: var(--c) / span 2; align-self: end; }
+  :root[data-variant="game"] .gq-q--bot { grid-row: 3 / 7; grid-column: var(--c) / span 2; align-self: start; }
+  :root[data-variant="game"] .gq-q--lock { grid-row: var(--r); grid-column: 8; align-self: start; margin: 0 0 10px; }
+  :root[data-variant="game"] .gq-path { display: block; grid-row: 2; grid-column: 1 / -1; width: 100%; height: var(--gq-band); overflow: visible; }
+  :root[data-variant="game"] .gq-path line { vector-effect: non-scaling-stroke; }
+  :root[data-variant="game"] .gq-seg { stroke: var(--hl2); stroke-width: 2.5; stroke-linecap: square; }
+  :root[data-variant="game"] .gq-seg--lock { stroke: var(--hud-line); stroke-width: 2; stroke-dasharray: 6 5; }
+  :root[data-variant="game"] .gq-stem { stroke: var(--hud-line); stroke-width: 1; }
+  :root[data-variant="game"] .gq-node, :root[data-variant="game"] .gq-mark {
+    position: absolute; grid-row: 2; grid-column: 1 / -1; left: calc(var(--x) * 1% - 22px); top: calc(var(--y) * 1px - 22px);
+  }
+  :root[data-variant="game"] .gq-mark {
+    display: block; width: max-content; margin: 34px 0 0 22px; transform: translateX(-50%);
+    font-family: var(--font-mono); font-size: var(--fs-min); font-weight: 600; letter-spacing: .12em; color: var(--read-muted);
+  }
+  :root[data-variant="game"] .gq-mark--start { transform: none; margin-left: 0; }
+  :root[data-variant="game"] .gq-tip {
+    position: absolute; z-index: 3; bottom: calc(100% + 4px); left: 0; display: block; width: max-content; max-width: 260px;
+    padding: 7px 10px; font-size: var(--fs-min); line-height: 1.45; text-align: left; white-space: normal;
+    color: var(--gp-w-ink); background: var(--gp-w-card); box-shadow: inset 0 3px 0 var(--accent);
+    visibility: hidden; opacity: 0; pointer-events: none; transition: opacity var(--dur-fade) var(--ease-out);
+  }
+  :root[data-variant="game"] .gq-tip b { display: block; font-weight: 800; }
+  :root[data-variant="game"] .gq-node:nth-of-type(n + 6) .gq-tip { left: auto; right: 0; }
+  :root[data-variant="game"] .gq-node:focus-visible .gq-tip { visibility: visible; opacity: 1; }
+  @media (hover: hover) {
+    :root[data-variant="game"] .gq-node:hover .gq-tip { visibility: visible; opacity: 1; }
+  }
+}
+
+/* ── party log: a white reading panel ── */
+:root[data-variant="game"] .gq-plog {
+  position: relative; margin-top: 48px; padding: 24px 18px 26px;
+  color: var(--gp-w-ink); background: var(--gp-w-panel); box-shadow: inset 0 3px 0 var(--accent);
+}
+:root[data-variant="game"] .gq-kick { font-family: var(--font-mono); font-size: var(--fs-min); font-weight: 600; letter-spacing: .28em; color: var(--gp-w-ink-2); }
+:root[data-variant="game"] .gq-plog__h { margin-top: 8px; font-size: var(--fs-sub); font-weight: 800; line-height: 1.3; }
+:root[data-variant="game"] .gq-plog__lede { margin-top: 8px; max-width: var(--measure); font-size: var(--fs-small); line-height: 1.7; color: var(--gp-w-ink-2); }
+:root[data-variant="game"] .gq-stages { margin-top: 20px; display: grid; gap: 14px; }
+:root[data-variant="game"] .gq-stage { position: relative; padding: 14px 14px 16px; background: var(--gp-w-card); border: 1px solid var(--gp-w-rule); }
+:root[data-variant="game"] .gq-stage--3 { border: 2px solid var(--gp-w-ink); }
+:root[data-variant="game"] .gq-stage__h { display: flex; flex-wrap: wrap; align-items: baseline; gap: 10px; }
+:root[data-variant="game"] .gq-stage__lv { padding: 5px 7px; font-family: var(--font-mono); font-size: var(--fs-min); font-weight: 800; line-height: 1; letter-spacing: .06em; color: var(--gp-w-card); background: var(--gp-w-ink); }
+:root[data-variant="game"] .gq-stage__yr { font-family: var(--font-mono); font-size: var(--fs-min); font-weight: 600; color: var(--gp-w-ink-2); }
+:root[data-variant="game"] .gq-stage h4 { width: 100%; margin-top: 6px; font-size: var(--fs-body); font-weight: 800; line-height: 1.35; }
+:root[data-variant="game"] .gq-hand { margin-top: 10px; display: grid; gap: 8px; }
+:root[data-variant="game"] .gq-hand > li { display: grid; gap: 4px; padding-top: 8px; border-top: 1px solid var(--gp-w-line); font-size: var(--fs-caption); line-height: 1.55; }
+:root[data-variant="game"] .gq-hand__p { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-weight: 800; }
+:root[data-variant="game"] .gq-hand .gq-party .me { color: var(--gp-w-ink); }
+:root[data-variant="game"] .gq-hand .gq-party .tm { color: var(--gp-w-ink-2); }
+:root[data-variant="game"] .gq-hand__flow { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 2px 8px; }
+:root[data-variant="game"] .gq-hand__flow dt { font-size: var(--fs-min); font-weight: 700; line-height: 1.6; white-space: nowrap; color: var(--gp-w-ink-2); }
+:root[data-variant="game"] .gq-hand__flow dd.tm { color: var(--gp-w-ink-2); }
+@media (min-width: 900px) {
+  :root[data-variant="game"] .gq-plog { padding: 30px 32px 32px; }
+  :root[data-variant="game"] .gq-stages { grid-template-columns: 1.35fr 1fr 1fr; align-items: start; }
+}
+
+/* ── table view and footnote ── */
+:root[data-variant="game"] .gq-tv { margin-top: 28px; }
+:root[data-variant="game"] .gq-tv summary {
+  display: inline-flex; align-items: center; min-height: 44px; cursor: pointer; list-style: none;
+  font-family: var(--font-mono); font-size: var(--fs-caption); font-weight: 700; letter-spacing: .04em; color: var(--accent-deep);
+}
+:root[data-variant="game"] .gq-tv summary::-webkit-details-marker { display: none; }
+@media (hover: hover) {
+  :root[data-variant="game"] .gq-tv summary:hover { text-decoration: underline; text-underline-offset: .22em; }
+}
+:root[data-variant="game"] .gq-tv summary:active { text-decoration: underline; text-underline-offset: .22em; }
+:root[data-variant="game"] .gq-tv__scroll { margin-top: 10px; overflow-x: auto; padding: 12px; color: var(--gp-w-ink); background: var(--gp-w-panel); box-shadow: inset 0 3px 0 var(--accent); }
+:root[data-variant="game"] .gq-tv table { width: 100%; min-width: 980px; border-collapse: collapse; font-size: var(--fs-caption); line-height: 1.5; }
+:root[data-variant="game"] .gq-tv caption { padding: 0 0 8px; text-align: left; color: var(--gp-w-ink-2); }
+:root[data-variant="game"] .gq-tv th, :root[data-variant="game"] .gq-tv td { padding: 8px 10px; text-align: left; vertical-align: top; border-bottom: 1px solid var(--gp-w-code-line); }
+:root[data-variant="game"] .gq-tv thead th { font-weight: 800; background: var(--gp-w-code); }
+:root[data-variant="game"] .gq-tv td:first-child { white-space: nowrap; }
+:root[data-variant="game"] .gq-foot { margin-top: 18px; max-width: var(--measure); font-size: var(--fs-min); line-height: 1.6; color: var(--read-muted); }
+
+/* ── motion: the draw-on (classes from growth-reveal.ts; transform and opacity only) ── */
+:root[data-variant="game"] .gq-map[data-gr-anim] .gq-q { transition: opacity var(--dur-enter) var(--ease-out), transform var(--dur-enter) var(--ease-out); transition-delay: calc(var(--gr-k, 0) * 90ms); }
+:root[data-variant="game"] .gq-map[data-gr-anim] .gq-node__pop { transition: opacity var(--dur-fade) linear, transform var(--dur-rise) var(--ease-out); transition-delay: calc(var(--gr-k, 0) * 90ms); }
+:root[data-variant="game"] .gq-map[data-gr-anim] .gq-path line { transition: transform var(--dur-rise) var(--ease-out); transition-delay: calc(var(--gr-k, 0) * 90ms); }
+:root[data-variant="game"] .gq-map .gq-q.gr-wait { opacity: 0; transform: translateY(14px); }
+:root[data-variant="game"] .gq-map .gq-node.gr-wait .gq-node__pop { opacity: 0; transform: scale(.2); }
+:root[data-variant="game"] .gq-map .gq-path line.gr-wait { transform: scale(0); }
+:root[data-variant="game"][data-motion="reduce"] .gq-map .gq-q.gr-wait,
+:root[data-variant="game"][data-motion="reduce"] .gq-map .gq-node.gr-wait .gq-node__pop,
+:root[data-variant="game"][data-motion="reduce"] .gq-map .gq-path line.gr-wait { opacity: 1; transform: none; }
+@media (prefers-reduced-motion: reduce) {
+  :root[data-variant="game"] .gq-map .gq-q.gr-wait,
+  :root[data-variant="game"] .gq-map .gq-node.gr-wait .gq-node__pop,
+  :root[data-variant="game"] .gq-map .gq-path line.gr-wait { opacity: 1; transform: none; }
+}
+
+/* ── forced colours and print ── */
+@media (forced-colors: active) {
+  :root[data-variant="game"] .gq-node i, :root[data-variant="game"] .gq-pips i.on, :root[data-variant="game"] .gq-lg { forced-color-adjust: none; background: CanvasText; }
+  :root[data-variant="game"] .gq-ach { border: 1px solid CanvasText; }
+}
+@media print {
+  :root[data-variant="game"] .gq-map .gq-q.gr-wait,
+  :root[data-variant="game"] .gq-map .gq-node.gr-wait .gq-node__pop,
+  :root[data-variant="game"] .gq-map .gq-path line.gr-wait { opacity: 1; transform: none; }
+  :root[data-variant="game"] .gq-q, :root[data-variant="game"] .gq-stage, :root[data-variant="game"] .gq-hand > li { break-inside: avoid; }
+  :root[data-variant="game"] .gq-plog, :root[data-variant="game"] .gq-tv__scroll, :root[data-variant="game"] .gq-stage { color: var(--gp-print-ink); background: var(--gp-print-paper); box-shadow: none; }
+  :root[data-variant="game"] .gq-plog__lede, :root[data-variant="game"] .gq-kick, :root[data-variant="game"] .gq-stage__yr, :root[data-variant="game"] .gq-hand__flow dt, :root[data-variant="game"] .gq-hand__flow dd.tm { color: var(--gp-print-muted); }
+  :root[data-variant="game"] .gq-ach { color: var(--read-text); background: transparent; box-shadow: inset 0 0 0 1.5px var(--read-text); }
+  :root[data-variant="game"] .gq-tv:not([open]) { display: none; }
+}

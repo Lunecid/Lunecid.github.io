@@ -35,8 +35,8 @@ export interface GrowthStep {
   role: { level: GrowthLevel; name: string; text: string };
   /** Teammates' tools (teamTools) or the co-author: never the owner's skill. */
   teamPart: { label: string; text: string } | null;
-  /** Whose part the modelling or analysis was, when not the owner's. */
-  teamNote: string | null;
+  /** The modelling or analysis that was not the owner's, labelled 팀원 담당 or 팀 작업. */
+  teamNote: { label: string; text: string } | null;
   method: { level: GrowthLevel; name: string; text: string } | null;
   data: string | null;
   scale: GrowthScalePoint[];
@@ -106,7 +106,7 @@ function stepFrom(def: GrowthStepDef, input: GrowthInputs, lang: Lang, copy: Gro
   const res = (l: Localized | undefined): string | null => (l ? resolveFacts(l[lang], lang, input.facts) : null);
   const base = {
     id: def.id,
-    teamNote: res(def.teamNote),
+    teamNote: def.teamNote ? { label: copy[def.teamNoteBy ?? 'teamPart'], text: res(def.teamNote) ?? '' } : null,
     data: res(def.data),
     scale: (def.scale ?? []).map((p) => {
       const label = resolveFacts(p.token, lang, input.facts);

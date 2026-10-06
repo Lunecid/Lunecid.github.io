@@ -8,6 +8,8 @@
 /* EDGE: the fixed edge frame (EdgeFrame.astro); its rules are a partial the chooser can share. */
 @import './game-tokens.css';
 @import './edge.css';
+/* the growth infographic on the research pages (GrowthQuestLog.astro) */
+@import './growth-game.css';
 
 /* ═══ GLOBAL ═══════════════════════════════════════════════════════════════════════════════════════════════════ */
 

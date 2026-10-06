@@ -1,0 +1,187 @@
+---
+/**
+ * The growth infographic, game version: a quest log (owner-approved prototype 2026-10-06). Phones and tablets read a
+ * vertical rail (node beside card); from 1000 px the cards sit in two rows around a path that climbs left to right, the
+ * locked slots stacked at its end. Nodes are in-page links to their card (keyboard reachable, with a tooltip on hover
+ * and focus). The party log (collaboration) is a white reading panel; the table view repeats every fact.
+ * Rules: src/styles/growth-game.css (imported by game.css, game pages only); motion: src/scripts/growth-reveal.ts.
+ */
+import SectionHead from '../hud/SectionHead.astro';
+import type { GrowthModel, GrowthStep } from '../../lib/growth';
+import { GROWTH_LEVELS } from '../../data/growth';
+
+interface Props {
+  model: GrowthModel;
+}
+
+const { model } = Astro.props;
+const { copy, steps, future, stages } = model;
+const total = steps.length + future.length;
+const no = (i: number) => `Q${String(i + 1).padStart(2, '0')}`;
+
+// Desktop path geometry: x in % of the map width (card i starts at column i of 8), y in px inside the 168 px band.
+const BAND = 168;
+const Y_TOP = 26;
+const Y_BOT = BAND - 26;
+const xOf = (i: number): number => {
+  if (i < steps.length) return (i + 0.22) * 12.5;
+  const x0 = (steps.length - 1 + 0.22) * 12.5;
+  return x0 + ((i - steps.length + 1) * (97.6 - x0)) / future.length;
+};
+const yOf = (i: number): number => Y_BOT - (i * (Y_BOT - Y_TOP)) / (total - 1);
+const pts = Array.from({ length: total }, (_, i) => ({ x: xOf(i), y: yOf(i) }));
+const r1 = (n: number) => Math.round(n * 10) / 10;
+const them = (s: GrowthStep) => s.teamNote ? { label: s.teamNote.label, text: s.teamPart ? `${s.teamNote.text} (${s.teamPart.text})` : s.teamNote.text } : s.teamPart;
+const roleFoot = GROWTH_LEVELS.map((lv) => `${lv} ${copy.role[lv]}`).join(' · ');
+const methodFoot = GROWTH_LEVELS.map((lv) => `${lv} ${copy.method[lv]}`).join(' · ');
+---
+<section id="growth" class="gq read read-sec" aria-labelledby="growth-title" data-growth>
+  <svg class="gq-defs" width="0" height="0" aria-hidden="true" focusable="false">
+    <symbol id="gq-pp" viewBox="0 0 15 17"><circle cx="7.5" cy="4.2" r="3.4" fill="currentColor"/><path d="M1 16.5c0-4 2.9-6.6 6.5-6.6S14 12.5 14 16.5z" fill="currentColor"/></symbol>
+    <symbol id="gq-po" viewBox="0 0 15 17"><circle cx="7.5" cy="4.2" r="2.9" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M1.6 16c.2-3.6 2.7-5.6 5.9-5.6s5.7 2 5.9 5.6z" fill="none" stroke="currentColor" stroke-width="1.3"/></symbol>
+    <symbol id="gq-lock" viewBox="0 0 11 13"><rect x=".75" y="5.25" width="9.5" height="7" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M2.8 5.2V3.6a2.7 2.7 0 0 1 5.4 0v1.6" fill="none" stroke="currentColor" stroke-width="1.5"/></symbol>
+  </svg>
+  <div class="container">
+    <SectionHead variant="game" id="growth-title" caption={copy.captionGame} title={copy.title}>
+      <p class="gq__lede">{copy.lede}</p>
+    </SectionHead>
+    <ul class="gq-legend" role="list">
+      <li><i class="gq-lg gq-lg--node" aria-hidden="true"></i>{copy.legend.quest}</li>
+      <li><i class="gq-lg gq-lg--ach" aria-hidden="true"></i>{copy.legend.achievement}</li>
+      <li><i class="gq-lg gq-lg--lock" aria-hidden="true"></i>{copy.legend.locked}</li>
+      <li><span class="gq-pips" aria-hidden="true"><i class="on"></i><i class="on"></i><i></i><i></i></span>{copy.legend.levels}</li>
+    </ul>
+
+    <div class="gq-map" data-gr-fig style={`--gq-band: ${BAND}px`}>
+      <svg class="gq-path" viewBox={`0 0 1000 ${BAND}`} preserveAspectRatio="none" aria-hidden="true" focusable="false">
+        {steps.map((_, i) => {
+          const p = pts[i]!;
+          const y2 = i % 2 === 0 ? 0 : BAND;
+          return <line class="gq-stem" data-gr-i={i} x1={r1(p.x * 10)} y1={r1(p.y)} x2={r1(p.x * 10)} y2={y2} style={`transform-origin: ${r1(p.x * 10)}px ${r1(p.y)}px`} />;
+        })}
+        {pts.slice(1).map((p, k) => {
+          const a = pts[k]!;
+          return <line class:list={['gq-seg', { 'gq-seg--lock': k + 1 >= steps.length }]} data-gr-i={k + 1} x1={r1(a.x * 10)} y1={r1(a.y)} x2={r1(p.x * 10)} y2={r1(p.y)} style={`transform-origin: ${r1(a.x * 10)}px ${r1(a.y)}px`} />;
+        })}
+      </svg>
+      <span class="gq-mark gq-mark--start" aria-hidden="true" style={`--x: ${r1(pts[0]!.x)}; --y: ${r1(pts[0]!.y)}`}>{copy.start} {steps[0]?.period.split('–')[0]}</span>
+      <span class="gq-mark gq-mark--next" aria-hidden="true" style={`--x: ${r1(pts[steps.length]!.x)}; --y: ${r1(pts[steps.length]!.y)}`}>{copy.next}</span>
+
+      {steps.map((s, i) => (
+        <Fragment>
+          <a class:list={['gq-node', { 'gq-node--ach': s.award !== null }]} href={`#gr-q-${s.id}`} data-gr-i={i} style={`--x: ${r1(pts[i]!.x)}; --y: ${r1(pts[i]!.y)}`}
+            aria-label={`${no(i)} ${s.title}, ${s.period}${s.award ? `, ${s.award.name}` : ''}`}>
+            <span class="gq-node__pop" aria-hidden="true"><i></i></span>
+            <span class="gq-tip" aria-hidden="true"><b>{no(i)} · {s.title}</b>{s.period} · Lv.{s.role.level} {s.role.name}</span>
+          </a>
+          <article class:list={['gq-q', i % 2 === 0 ? 'gq-q--top' : 'gq-q--bot', { 'gq-q--pre': i === steps.length - 1 }]} id={`gr-q-${s.id}`} data-gr-i={i} style={`--c: ${i + 1}`} aria-labelledby={`gr-qt-${s.id}`}>
+            <p class="gq-q__meta"><span class="gq-q__no">{no(i)}</span><span>{s.period}</span></p>
+            <h3 class="gq-q__t" id={`gr-qt-${s.id}`}>{s.title}</h3>
+            {s.sub && <p class="gq-q__sub">{s.sub}</p>}
+            <p class="gq-q__org">{s.org} · {s.type}</p>
+            <div class="gq-q__row">
+              <span class="gq-badge"><b>Lv.{s.role.level}</b><span>{s.role.name}</span></span>
+              {s.team && (
+                <span class="gq-party" role="img" aria-label={s.team.label}>
+                  {Array.from({ length: s.team.size }, (_, k) => <svg class:list={[k === 0 ? 'me' : 'tm']} aria-hidden="true" focusable="false"><use href={k === 0 ? '#gq-pp' : '#gq-po'} /></svg>)}
+                  <span class="gq-party__n" aria-hidden="true">{s.team.label}</span>
+                </span>
+              )}
+            </div>
+            <dl class="gq-split">
+              <div class="me"><dt>{copy.mine}</dt><dd>{s.role.text}</dd></div>
+              {s.teamPart && <div class="tm"><dt>{s.teamPart.label}</dt><dd>{s.teamPart.text}</dd></div>}
+            </dl>
+            <dl class="gq-stats">
+              <dt>{copy.roleLabel}</dt>
+              <dd><span class="gq-pips" aria-hidden="true">{GROWTH_LEVELS.map((lv) => <i class:list={[{ on: lv <= s.role.level }]}></i>)}</span><span class="gq-lv">Lv.{s.role.level}</span></dd>
+              <dt>{copy.methodLabel}</dt>
+              <dd>
+                {s.method && <Fragment><span class="gq-pips" aria-hidden="true">{GROWTH_LEVELS.map((lv) => <i class:list={[{ on: lv <= s.method!.level }]}></i>)}</span><span class="gq-lv">Lv.{s.method.level}</span><span class="gq-txt">{s.method.text}</span></Fragment>}
+                {s.teamNote && <span class="gq-txt gq-na"><b>{s.teamNote.label}</b> {s.teamNote.text}</span>}
+              </dd>
+            </dl>
+            {s.award && <p class:list={['gq-ach', { 'gq-ach--rank': s.award.kind === 'rank' }]}><span>{s.award.name}{s.award.sub && <small>{s.award.sub}</small>}</span></p>}
+          </article>
+        </Fragment>
+      ))}
+      {future.map((f, j) => {
+        const i = steps.length + j;
+        return (
+          <Fragment>
+            <a class="gq-node gq-node--lock" href={`#gr-q-${f.id}`} data-gr-i={i} style={`--x: ${r1(pts[i]!.x)}; --y: ${r1(pts[i]!.y)}`} aria-label={`${f.title}, ${f.status}`}>
+              <span class="gq-node__pop" aria-hidden="true"><i></i></span>
+              <span class="gq-tip" aria-hidden="true"><b>{f.title}</b>{f.status}</span>
+            </a>
+            <article class="gq-q gq-q--lock" id={`gr-q-${f.id}`} data-gr-i={i} style={`--r: ${j + 3}`} aria-labelledby={`gr-qt-${f.id}`}>
+              <p class="gq-lockchip"><svg aria-hidden="true" focusable="false"><use href="#gq-lock" /></svg>{f.status}</p>
+              <h3 class="gq-q__t" id={`gr-qt-${f.id}`}>{f.title}</h3>
+            </article>
+          </Fragment>
+        );
+      })}
+    </div>
+
+    <section class="gq-plog" aria-labelledby="growth-party">
+      <p class="gq-kick">{copy.party.kicker}</p>
+      <h3 id="growth-party" class="gq-plog__h">{copy.party.title}</h3>
+      <p class="gq-plog__lede">{copy.party.lede}</p>
+      <ol class="gq-stages" role="list">
+        {stages.map((st) => (
+          <li class={`gq-stage gq-stage--${st.n}`}>
+            <div class="gq-stage__h"><span class="gq-stage__lv">{copy.party.stage} {st.n}</span><span class="gq-stage__yr">{st.years}</span><h4>{st.head}</h4></div>
+            <ul class="gq-hand" role="list">
+              {st.items.map((s) => {
+                const t = them(s);
+                return (
+                  <li>
+                    <p class="gq-hand__p">{s.title}{s.team && <span class="gq-party" role="img" aria-label={s.team.label}>{Array.from({ length: s.team.size }, (_, k) => <svg class:list={[k === 0 ? 'me' : 'tm']} aria-hidden="true" focusable="false"><use href={k === 0 ? '#gq-pp' : '#gq-po'} /></svg>)}</span>}</p>
+                    <dl class="gq-hand__flow"><dt>{copy.mine}</dt><dd>{s.role.text}</dd>{t && <Fragment><dt>{t.label}</dt><dd class="tm">{t.text}</dd></Fragment>}</dl>
+                  </li>
+                );
+              })}
+            </ul>
+          </li>
+        ))}
+      </ol>
+    </section>
+
+    <details class="gq-tv">
+      <summary>[ {copy.table.toggle} ]</summary>
+      <div class="gq-tv__scroll" tabindex="0" role="region" aria-label={copy.table.region}>
+        <table>
+          <caption>{copy.table.caption}</caption>
+          <thead><tr><th scope="col">{copy.table.period}</th><th scope="col">{copy.table.project}</th><th scope="col">{copy.table.org}</th><th scope="col">{copy.table.team}</th><th scope="col">{copy.table.role}</th><th scope="col">{copy.table.mine}</th><th scope="col">{copy.table.others}</th><th scope="col">{copy.table.method}</th><th scope="col">{copy.table.data}</th><th scope="col">{copy.table.result}</th></tr></thead>
+          <tbody>
+            {steps.map((s) => {
+              const t = them(s);
+              return (
+                <tr>
+                  <td>{s.period}</td>
+                  <th scope="row">{s.title}{s.sub && <Fragment><br />{s.sub}</Fragment>}</th>
+                  <td>{s.org}</td>
+                  <td>{s.team ? s.team.label : copy.teamUnknown}</td>
+                  <td>{s.role.level} · {s.role.name}</td>
+                  <td>{s.role.text}</td>
+                  <td>{t ? `${t.label}: ${t.text}` : '—'}</td>
+                  <td>{s.method ? `${s.method.level} · ${s.method.text}` : '—'}</td>
+                  <td>{[s.scale.map((p) => `${p.label} ${p.unit}`).join(' → '), s.data].filter(Boolean).join(' · ') || '—'}</td>
+                  <td>{s.award ? [s.award.name, s.award.sub].filter(Boolean).join(' · ') : '—'}</td>
+                </tr>
+              );
+            })}
+            {future.map((f) => (
+              <tr><td>{f.status}</td><th scope="row">{f.title}</th><td colspan="8">—</td></tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </details>
+    <p class="gq-foot">{copy.foot.role}: {roleFoot}. {copy.foot.method}: {methodFoot}. {copy.foot.blank}</p>
+  </div>
+</section>
+
+<script>
+  import { initGrowthReveal } from '../../scripts/growth-reveal';
+  initGrowthReveal();
+</script>

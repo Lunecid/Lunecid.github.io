@@ -46,8 +46,9 @@ export interface GrowthStepDef {
   roleText?: Localized;
   /** Method lane text where method is not null. */
   methodText?: Localized;
-  /** Whose part the modelling or analysis was, when it was not the owner's (from the summary / role sentence). */
+  /** The modelling or analysis that was not the owner's (from the summary / role sentence), and whose it was. */
   teamNote?: Localized;
+  teamNoteBy?: 'teamPart' | 'teamWork';
   /** The data lane's qualitative source line. */
   data?: Localized;
   scale?: readonly GrowthScaleDef[];
@@ -68,7 +69,7 @@ export const growthSteps: readonly GrowthStepDef[] = [
     method: 1,
     methodText: { ko: 'Tableau 시각화', en: 'Tableau visualization' },
     // summary: "4인 팀이 AutoML로 … 모델을 골랐고"; role: "모델링을 제외한 전 과정"
-    teamNote: { ko: 'AutoML 모델 선택은 팀원 담당', en: 'Model selection with AutoML was the team’s part' },
+    teamNote: { ko: 'AutoML 모델 선택', en: 'Model selection with AutoML' },
   },
   {
     id: 'kickick-park',
@@ -76,7 +77,7 @@ export const growthSteps: readonly GrowthStepDef[] = [
     role: 2,
     method: null,
     // summary: "5인 팀이 반납 사진 주차 판정 모델을 학습했고"; teamTools YOLOv8, PyTorch
-    teamNote: { ko: '주차 판정 모델은 팀원 담당', en: 'The parking-judgement model was the team’s part' },
+    teamNote: { ko: '주차 판정 모델', en: 'The parking-judgement model' },
     // audience.research: "공공데이터로 자치구·행정동의 입지 우선순위를 매긴 뒤"
     data: { ko: '공공데이터(입지 탐색)', en: 'Public data (site search)' },
   },
@@ -86,7 +87,8 @@ export const growthSteps: readonly GrowthStepDef[] = [
     role: 1,
     method: null,
     // summary: "구단 성적과 관중 수의 관계를 4인 팀이 통계적으로 검정한"
-    teamNote: { ko: '통계 검정은 팀 작업', en: 'The statistical tests were team work' },
+    teamNote: { ko: '구단 성적과 관중 수의 통계 검정', en: 'Statistical tests of team performance and attendance' },
+    teamNoteBy: 'teamWork',
     data: { ko: '웹 크롤링 수집', en: 'Web crawling' },
   },
   {
@@ -107,7 +109,7 @@ export const growthSteps: readonly GrowthStepDef[] = [
     role: 1,
     method: null,
     // summary: "4인 팀이 … 음식점 매출을 예측한 프로젝트로, 저는 데이터 탐색과 엔지니어링을"; teamTools
-    teamNote: { ko: '군집 분석·매출 예측 모델링은 팀원 담당', en: 'Clustering and sales-forecast modeling were the team’s part' },
+    teamNote: { ko: '군집 분석·매출 예측 모델링', en: 'Clustering and sales-forecast modeling' },
     data: { ko: '생활인구·소비매출·음식점 데이터', en: 'Floating-population, spending and restaurant data' },
   },
   {

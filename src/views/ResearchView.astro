@@ -1,9 +1,10 @@
 ---
-// /research/ and /en/research/: PageHeader → #interests → #publications (year groups) → #in-progress → #for-labs.
+// /research/ and /en/research/: PageHeader → #growth → #interests → #publications (year groups) → #in-progress → #for-labs.
 import type { PageLayout } from '../layouts/page-layout';
 import GhostArt from '../components/hud/GhostArt.astro';
 import PageHeader from '../components/hud/PageHeader.astro';
 import SectionHead from '../components/hud/SectionHead.astro';
+import GrowthSection from '../components/research/GrowthSection.astro';
 import InterestCards from '../components/research/InterestCards.astro';
 import InProgressList from '../components/research/InProgressList.astro';
 import PublicationItem from '../components/research/PublicationItem.astro';
@@ -47,6 +48,7 @@ const academicCv = DOCUMENTS[v.documents.academic];
       <p class="research-cv"><a class="btn btn--line cut cut--line" href={academicCv} title={t(lang, 'nav.cvAcademic')} download>{t(lang, 'nav.cvAcademic')} <span aria-hidden="true">↓</span></a></p>
     )}
   </PageHeader>
+  <GrowthSection lang={lang} variant={variant} />
   {editorial && <div class="container"><Folio /></div>}<InterestCards lang={lang} variant={variant} interests={resolveLocalizedDeep(researchPage.interests, facts)} />
   {editorial && <div class="container"><Folio /></div>}<section id="publications" class:list={['pub__section', editorial ? 'ed-sec' : ['read', 'read-sec']]} aria-labelledby="publications-title">
     {getVariant(variant).modules.includes('characterArt') && <GhostArt side="left" />}

@@ -13,6 +13,7 @@ import type { JobfitId } from '../types';
 import { VARIANT_IDS, type VariantId } from '../variants/ids';
 import { parseOrderItem, type OrderItem } from '../variants/types';
 import { buildFactSource, graduationEntry, type FactSource } from './facts';
+import { buildGrowth, type GrowthModel } from './growth';
 import { paperBase } from './links';
 import { hasProjectPage, projectSlug } from './projects';
 import { PROJECT_SLUGS, type ProjectSlug } from './routes';
@@ -195,6 +196,18 @@ export function getFactSource(): Promise<FactSource> {
   if (!import.meta.env.PROD) return buildFromCollections();
   factSource ??= buildFromCollections();
   return factSource;
+}
+
+/** The growth infographic's model in one language (src/lib/growth.ts; the research pages, GrowthSection.astro). */
+export async function getGrowth(lang: Lang): Promise<GrowthModel> {
+  const [projects, awards, resume, publications, facts] = await Promise.all([getProjects(lang), getAwards(), getResume(), getPublications(), getFactSource()]);
+  return buildGrowth({
+    projects: projects.map((entry) => ({ slug: splitEntryId(entry.id).slug, data: entry.data })),
+    awards,
+    resume,
+    publications: publications.map((entry) => ({ id: entry.id, data: entry.data })),
+    facts,
+  }, lang);
 }
 
 /** Every (version × paper page) pair; paperPathsFor filters it for one version's page module (P2-2a). */
