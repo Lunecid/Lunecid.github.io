@@ -120,4 +120,14 @@ describe('DS-4: the research figure facts of the CoG paper', () => {
     const neural = overallAuc.filter((row) => row.group === 'neural').map((row) => row.auc);
     expect(`${Math.min(...neural).toFixed(3)}–${Math.max(...neural).toFixed(3)}`).toBe('0.569–0.581');
   });
+
+  it("GR-1: pub.cog-2026-engagement.fact.engagements is the site's own wording (abstractKo 약 100만, resume ~1M)", async () => {
+    const { readFileSync } = await import('node:fs');
+    const md = readFileSync('src/content/publications/cog-2026-engagement.md', 'utf8').replace(/\s+/g, ' ');
+    const resume = readFileSync('src/data/resume.yaml', 'utf8');
+    expect(both('{pub.cog-2026-engagement.fact.engagements}')).toEqual(['약 100만', '~1M']);
+    expect(md).toContain('약 100만 개의 라벨된 교전');
+    expect(resume).toContain('~1M labeled engagements');
+    expect(resume).toContain('약 100만 개의 교전');
+  });
 });

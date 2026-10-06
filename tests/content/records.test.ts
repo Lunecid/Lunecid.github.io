@@ -387,7 +387,7 @@ describe('records data files', () => {
   });
 
   it('P2-28: one form per term in the site copy (석사 학위논문, Ph.D., public match records (Riot API), lab full name first)', () => {
-    const copyFiles = ['src/data/resume.yaml', 'src/data/jobfit.game.yaml', 'src/data/research-page.ts', 'src/data/copy/pages.ts', 'src/data/copy/home.ts', 'src/data/copy/hero.ts'];
+    const copyFiles = ['src/data/resume.yaml', 'src/data/jobfit.game.yaml', 'src/data/research-page.ts', 'src/data/growth.ts', 'src/data/copy/pages.ts', 'src/data/copy/home.ts', 'src/data/copy/hero.ts'];
     for (const file of copyFiles) {
       const content = readFileSync(join(ROOT, file), 'utf8');
       expect(content, file).not.toMatch(/석사학위|석사 학위 논문/);

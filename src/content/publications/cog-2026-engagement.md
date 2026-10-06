@@ -93,4 +93,6 @@ facts:
   matches: { ko: "206,442", en: "206,442" }
   bestAuc: { ko: "0.675", en: "0.675" }
   neuralRange: { ko: "0.569–0.581", en: "0.569–0.581" }
+  # the growth infographic's data lane: the abstract's "약 100만 개" and the resume's "~1M" (owner, 2026-10-06: keep this wording)
+  engagements: { ko: "약 100만", en: "~1M" }
 ---

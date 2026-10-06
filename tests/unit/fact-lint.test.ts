@@ -32,6 +32,10 @@ const CODE_FILLED = { where: 'src/data/copy/chooser-covers.ts coverCopy.', patte
 const FACT_LINT_EXCEPTIONS: { where: string; literal: string; why: string }[] = [
   { where: 'src/data/jobfit.game.yaml rows[take-home].plan.ko', literal: '1쪽', why: "a planned deliverable's page count, pinned by tests/content/records.test.ts" },
 ];
+/** Terms whose digit is part of the word, not a fact (stripped everywhere before the digit check). */
+const TERMS: { literal: string; why: string }[] = [
+  { literal: '제1저자', why: '"first author": a term (the growth infographic, src/data/growth.ts), not a count' },
+];
 const MONTH = /\b(?:January|February|March|April|May|June|July|August|September|October|November|December)\b/;
 const awards = parseYamlList(readFileSync(join(ROOT, 'src/data/awards.yaml'), 'utf8')).map((a) => awardSchema.parse(a));
 const AWARD_NAMES = [...new Set([...Object.values(AWARD_LEVEL_NAME).flatMap((n) => [n.ko, n.en]), ...awards.flatMap((a) => [a.name.ko, a.name.en])])];
@@ -52,6 +56,7 @@ const modules = {
   ...import.meta.glob('../../src/data/copy/**/*.ts', { eager: true }),
   ...import.meta.glob('../../src/variants/*.ts', { eager: true }),
   ...import.meta.glob('../../src/data/research-page.ts', { eager: true }),
+  ...import.meta.glob('../../src/data/growth.ts', { eager: true }),
 } as Record<string, Record<string, unknown>>;
 
 function scanned(): Leaf[] {
@@ -93,6 +98,7 @@ describe('fact lint (R-4)', () => {
     for (const leaf of scanned()) {
       const text = leaf.where.startsWith(CODE_FILLED.where) ? leaf.text.replace(CODE_FILLED.pattern, '') : leaf.text;
       let rest = text.replace(FACT_TOKEN, '');
+      for (const term of TERMS) rest = rest.split(term.literal).join('');
       for (const ex of FACT_LINT_EXCEPTIONS) {
         if (leaf.where === ex.where && rest.includes(ex.literal)) {
           rest = rest.replace(ex.literal, '');
