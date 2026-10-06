@@ -10,6 +10,7 @@ import type { PaperCardData } from '../../lib/publications';
 import type { Lang } from '../../i18n/ui';
 import { t } from '../../i18n/utils';
 import PaperLinks from './PaperLinks.astro';
+import CaseTrigger from './CaseTrigger.astro';
 import type { VariantId } from '../../variants/ids';
 
 interface Props {
@@ -33,7 +34,7 @@ const gloss = lang === 'ko' ? paper.titleGloss : null;
     </div>
   )}
   <div class="pub__body">
-    <Heading class="pub__title" lang="en">{paper.href ? <a class={variant === 'data' ? 'hit' : undefined} href={paper.href}>{paper.title}</a> : paper.title}</Heading>
+    <Heading class="pub__title" lang="en">{paper.href ? <a class={variant === 'data' ? 'hit' : undefined} href={paper.href} data-case={paper.caseId ?? undefined}>{paper.title}</a> : paper.title}</Heading>
     {gloss && <p class="pub__gloss">{gloss} <span class="pub__gloss-mark">({t(lang, 'research.gloss')})</span></p>}
     <p class="pub__authors" lang="en">
       {paper.authors.map((author, i) => (
@@ -50,6 +51,7 @@ const gloss = lang === 'ko' ? paper.titleGloss : null;
     <PaperLinks lang={lang} paper={paper} />
   </div>
 </article>
+{paper.caseId && paper.href && <CaseTrigger />}
 
 <style>
   .pub {

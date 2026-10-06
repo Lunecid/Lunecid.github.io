@@ -32,6 +32,8 @@ export interface CartridgeProps {
   sticker?: { text: string; sr?: string; kind: 'oral' | 'award' };
   wide?: boolean;
   headingLevel?: 2 | 3;
+  /** The case-study overlay the card's link opens on a plain click (D1; data-case, src/scripts/case-trigger.ts). */
+  caseId?: string;
 }
 
 /** 'ko/kickick-park' → 'kickick-park'. Throws for ids without a locale folder. */

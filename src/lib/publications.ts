@@ -11,10 +11,12 @@ import { CASE_ID } from '../data/research/cog-2026-case';
 
 /** Publications with a case-study overlay (src/lib/case/*): their cards and lists open it; /case/<id>/<lang>.json. */
 export const CASE_IDS = [CASE_ID] as const;
+const hasCase = (id: string): boolean => (CASE_IDS as readonly string[]).includes(id);
 
 export interface PaperCardData {
   id: string;
   href: string | null; // caseStudy page (pageHref) or null
+  caseId: string | null; // the case-study overlay this card's paper link opens (D1), when it has a page and a case
   title: string;
   titleGloss: string | null; // titleKo on ko pages only
   authors: { name: string; me: boolean }[]; // English names on both languages (paper byline)
@@ -41,6 +43,7 @@ export function toPaperCard(entry: CollectionEntry<'publications'>, ctx: HrefCon
   return {
     id: entry.id,
     href: d.caseStudy ? pageHref(d.caseStudy, ctx) : null,
+    caseId: d.caseStudy && hasCase(entry.id) ? entry.id : null,
     title: d.title,
     titleGloss: lang === 'ko' ? (d.titleKo ?? null) : null,
     authors: d.authors.map((a) => ({ name: a.name, me: a.me })),
@@ -132,5 +135,6 @@ export function toPaperCartridge(entry: CollectionEntry<'publications'>, lang: L
     coverFit: 'contain',
     ...(d.format === 'Oral' ? { sticker: { text: 'ORAL', sr: FORMAT_PHRASE[lang].Oral, kind: 'oral' as const } } : {}),
     wide: true,
+    ...(href !== null && hasCase(entry.id) ? { caseId: entry.id } : {}),
   };
 }

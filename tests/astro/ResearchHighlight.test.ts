@@ -8,6 +8,7 @@ import { readSource, renderAstro } from './helpers';
 const paper: PaperCardData = {
   id: 'cog-2026-engagement',
   href: '/game/research/cog-2026-engagement/',
+  caseId: 'cog-2026-engagement',
   title: 'Kill-Conditioned Engagement Outcome Prediction in League of Legends Under Minute-Resolution Public Telemetry',
   titleGloss: '1분 해상도 공개 텔레메트리에서의 리그 오브 레전드 킬 조건부 교전 결과 예측',
   authors: [
@@ -141,5 +142,14 @@ describe('ResearchHighlight.astro', () => {
     expect(at('chart--editorial')).toBeLessThan(at('class="ed-now"'));
     expect(html).toMatch(/<h3 class="ed-paper__title" lang="en"[^>]*><a class="ed-paper__link" href="\/game\/research\/cog-2026-engagement\/"/);
     expect(html).toContain('data-disclosure');
+  });
+});
+
+describe('ResearchHighlight: the case-study trigger (D1)', () => {
+  it('the paper title link carries data-case on both versions', async () => {
+    for (const variant of ['game', 'data'] as const) {
+      const html = await renderAstro(ResearchHighlight, { props: { variant, lang: 'ko', paper, nowPlaying: 'x', figureLabel: 'FIG' } });
+      expect(html, variant).toMatch(/<a\b[^>]*href="\/game\/research\/cog-2026-engagement\/"[^>]*data-case="cog-2026-engagement"/);
+    }
   });
 });

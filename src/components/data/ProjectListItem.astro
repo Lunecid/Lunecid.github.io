@@ -8,6 +8,7 @@
 // ProjectCartridge's props, so a section only picks the component (contract §4.4); data-tags drives the tag filter.
 import { Picture } from 'astro:assets';
 import AucLabel from '../research/AucLabel.astro';
+import CaseTrigger from '../research/CaseTrigger.astro';
 import { CARD_FORMATS, fitWidths, sourceSize } from '../../lib/images';
 import type { CartridgeProps } from '../../lib/projects';
 
@@ -23,7 +24,7 @@ type Props = CartridgeProps & {
   sizes?: string;
 };
 
-const { href, title, meta, summary, tagKeys, tags, cover, coverPosition = '50% 50%', coverFit = 'cover', chart, headingLevel = 3, priority = false, eager = false, variant = 'row', n, sizes } = Astro.props;
+const { href, title, meta, summary, tagKeys, tags, cover, coverPosition = '50% 50%', coverFit = 'cover', chart, headingLevel = 3, priority = false, eager = false, variant = 'row', n, sizes, caseId } = Astro.props;
 const Heading = headingLevel === 2 ? 'h2' : 'h3';
 const shownTags = tags.slice(0, 4);
 const card = variant !== 'row';
@@ -52,7 +53,7 @@ const number = n === undefined ? null : String(n).padStart(2, '0');
     ) : null}
     <div class="ed-card__body">
       <p class="ed-card__top">{number && <span class="ed-card__n" aria-hidden="true">{number}</span>}<span>{meta}</span></p>
-      <Heading class="ed-card__title">{href ? <a class="hit" href={href}>{title}</a> : title}</Heading>
+      <Heading class="ed-card__title">{href ? <a class="hit" href={href} data-case={caseId}>{title}</a> : title}</Heading>
       {!href && summary && <p class="ed-card__text">{summary}</p>}
       {shownTags.length > 0 && (
         <ul class="ed-card__tags" role="list">
@@ -64,7 +65,7 @@ const number = n === undefined ? null : String(n).padStart(2, '0');
 ) : (
 <li class:list={['pli', 'ed-item', { 'pli--chart': !!chart, 'pli--text': !chart && !cover }]} data-tags={tagKeys.join(' ')}>
   <div class="pli__text">
-    <Heading class="pli__title ed-item__title">{href ? <a class="pli__link hit" href={href}>{title}</a> : title}</Heading>
+    <Heading class="pli__title ed-item__title">{href ? <a class="pli__link hit" href={href} data-case={caseId}>{title}</a> : title}</Heading>
     <p class="ed-meta">{meta}</p>
     {!href && summary && <p class="ed-body">{summary}</p>}
     {shownTags.length > 0 && (
@@ -92,6 +93,8 @@ const number = n === undefined ? null : String(n).padStart(2, '0');
   ) : null}
 </li>
 )}
+
+{caseId && href && <CaseTrigger />}
 
 <style>
   .pli { display: grid; grid-template-columns: minmax(0, 1fr) 96px; gap: 16px; align-items: start; }

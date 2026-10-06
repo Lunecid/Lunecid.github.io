@@ -7,6 +7,7 @@ import { readSource, renderAstro } from './helpers';
 const ko: PaperCardData = {
   id: 'cog-2026-engagement',
   href: '/game/research/cog-2026-engagement/',
+  caseId: 'cog-2026-engagement',
   title: 'Kill-Conditioned Engagement Outcome Prediction in League of Legends Under Minute-Resolution Public Telemetry',
   titleGloss: '1분 해상도 공개 텔레메트리에서의 리그 오브 레전드 킬 조건부 교전 결과 예측',
   authors: [
@@ -183,5 +184,17 @@ describe('PublicationItem.astro', () => {
     expect(html).not.toMatch(/ed-stamp|data-paint-text/);
     const css = (await import('node:fs')).readFileSync('src/styles/editorial.css', 'utf8');
     expect(css).toMatch(/\.ed-tbox \{[^}]*box-shadow: inset 0 0 0 2px var\(--ed-ink\)/);
+  });
+});
+
+describe('PublicationItem: the case-study trigger (D1)', () => {
+  it('the title link carries data-case on both versions and renders the trigger script; a paper without a case does not', async () => {
+    for (const variant of ['game', 'data'] as const) {
+      const html = await render({ variant, lang: 'ko', paper: ko });
+      expect(html).toMatch(/<a\b[^>]*href="\/game\/research\/cog-2026-engagement\/"[^>]*data-case="cog-2026-engagement"/);
+      expect(html).toMatch(/<script\b/);
+      const plain = await render({ variant, lang: 'ko', paper: { ...ko, caseId: null } });
+      expect(plain).not.toContain('data-case');
+    }
   });
 });

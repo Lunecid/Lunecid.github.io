@@ -6,7 +6,7 @@ import { describe, expect, it } from 'vitest';
 import { publicationSchema } from '../../src/content/schemas';
 import { figureCopy } from '../../src/data/research/cog-2026';
 import { tagLabel } from '../../src/content/tags';
-import { bibtexField, toPaperCard, toPaperCartridge, toPaperPage } from '../../src/lib/publications';
+import { CASE_IDS, bibtexField, toPaperCard, toPaperCartridge, toPaperPage } from '../../src/lib/publications';
 import { readFrontmatter } from '../content/helpers';
 
 const file = fileURLToPath(new URL('../../src/content/publications/cog-2026-engagement.md', import.meta.url));
@@ -61,6 +61,19 @@ describe('toPaperCard', () => {
     expect(withDoi.statusNote).toBeNull();
     expect(withDoi.doi).toBe('10.1109/CoG00000.2026.0000000');
     expect(toPaperCard(entry({ caseStudy: undefined }), { lang: 'en', variant: 'game' }).href).toBeNull();
+  });
+});
+
+describe('case-study ids (D1)', () => {
+  it('the CoG card and paper card carry the overlay id; a publication without a case does not', () => {
+    expect(CASE_IDS).toEqual(['cog-2026-engagement']);
+    expect(toPaperCard(entry(), { lang: 'ko', variant: 'game' }).caseId).toBe('cog-2026-engagement');
+    expect(toPaperCartridge(entry(), 'en', '/x/').caseId).toBe('cog-2026-engagement');
+    const other = { ...entry(), id: 'another-paper' } as CollectionEntry<'publications'>;
+    expect(toPaperCard(other, { lang: 'ko', variant: 'data' }).caseId).toBeNull();
+    expect(toPaperCartridge(other, 'ko', '/x/').caseId).toBeUndefined();
+    // no page, no overlay link: the card is not a link
+    expect(toPaperCard(entry({ caseStudy: undefined }), { lang: 'ko', variant: 'game' }).caseId).toBeNull();
   });
 });
 
@@ -133,6 +146,7 @@ describe('toPaperCartridge', () => {
         coverFit: 'contain',
         sticker: { text: 'ORAL', sr: lang === 'ko' ? '구두 발표' : 'oral presentation', kind: 'oral' },
         wide: true,
+        caseId: 'cog-2026-engagement',
       });
     }
     expect(toPaperCartridge(entry(), 'ko', '/x/').title).toBe('리그 오브 레전드 교전 결과 예측');
