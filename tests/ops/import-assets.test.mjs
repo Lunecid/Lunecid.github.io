@@ -28,10 +28,17 @@ const BYTE_COPIES = 'src/assets/game-records/';
  */
 const CARD_CROPS = 'src/assets/account-cards/';
 
+/**
+ * The Riot showcase art (src/assets/characters/showcase-<n>.png) is a byte copy of its download (Ezreal's JPEG only
+ * re-encoded as PNG, pixel for pixel), not an output of this pipeline (no JOBS entry). tests/unit/showcase-art.test.ts
+ * pins the files, their size, the absence of EXIF/XMP/IPTC/ICC and their sha256 against src/assets/characters/sources.json.
+ */
+const SHOWCASE_COPIES = /^src\/assets\/characters\/showcase-\d+\.png$/;
+
 function assetFiles() {
   const dir = join(ROOT, 'src/assets');
   return existsSync(dir)
-    ? readdirSync(dir, { recursive: true }).map(String).filter((f) => /\.(webp|png|jpe?g|avif)$/i.test(f)).map((f) => `src/assets/${f.replace(/\\/g, '/')}`).filter((f) => !f.startsWith(BYTE_COPIES) && !f.startsWith(CARD_CROPS)).sort()
+    ? readdirSync(dir, { recursive: true }).map(String).filter((f) => /\.(webp|png|jpe?g|avif)$/i.test(f)).map((f) => `src/assets/${f.replace(/\\/g, '/')}`).filter((f) => !f.startsWith(BYTE_COPIES) && !f.startsWith(CARD_CROPS) && !SHOWCASE_COPIES.test(f)).sort()
     : [];
 }
 

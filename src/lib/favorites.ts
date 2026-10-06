@@ -3,7 +3,7 @@ import type { FavoriteGameData } from '../content/schemas';
 import type { Lang } from '../i18n/ui';
 import type { FavoriteGame } from '../islands/FavoriteGames';
 import type { CharacterId } from '../types';
-import { CHARACTER_GAME_LABEL, POSITIONS, SHOWCASE_SIZES, SHOWCASE_SIZES_LIST, SHOWCASE_WIDTHS, characters } from './characters';
+import { CHARACTER_GAME_LABEL, POSITIONS, SHOWCASE_ART, SHOWCASE_ONLY, SHOWCASE_SIZES, SHOWCASE_SIZES_LIST, SHOWCASE_WIDTHS, characters } from './characters';
 import type { createCharacterLookup } from './characters';
 import { islandImage } from './island-image.server';
 
@@ -62,8 +62,10 @@ export async function buildFavoriteGames(
       if (withArt && src) {
         // The island shows two or three games as a tab row over a 520px stage, four or more as a tab column beside a
         // 600px one (FavoriteGames tabsRow); the taller stage paints the portrait art wider.
-        const sizes = games.length <= 3 ? SHOWCASE_SIZES : SHOWCASE_SIZES_LIST;
-        game.art = { image: await islandImage(src, SHOWCASE_WIDTHS, sizes), objectPosition: withArt.position };
+        // The narrower showcase-only art paints narrower: its own ladder and sizes (characters.ts SHOWCASE_ART).
+        const own = SHOWCASE_ART[withArt.id];
+        const sizes = games.length <= 3 ? (own?.row ?? SHOWCASE_SIZES) : (own?.list ?? SHOWCASE_SIZES_LIST);
+        game.art = { image: await islandImage(src, own?.widths ?? SHOWCASE_WIDTHS, sizes), objectPosition: withArt.position };
       }
       // The tint is the showcase's colour for the game (D-1): the art's character, or without art the game's first
       // favourite character, so the stage is never flat black.
@@ -74,7 +76,7 @@ export async function buildFavoriteGames(
   );
 }
 
-/** One tile per character whose PNG exists, in favorites order (Player Log intro). */
+/** One tile per favourite character whose PNG exists, in favorites order (Player Log intro); showcase-only art has none. */
 export function buildFavoriteTiles(
   games: readonly FavoriteGameData[],
   lang: Lang,
@@ -83,6 +85,7 @@ export function buildFavoriteTiles(
   const tiles: FavoriteTile[] = [];
   for (const g of games) {
     for (const c of g.characters) {
+      if (SHOWCASE_ONLY.includes(c.id)) continue; // stage art only, not a favourite character
       const image = lookup.art(c.id);
       if (!image) continue;
       tiles.push({

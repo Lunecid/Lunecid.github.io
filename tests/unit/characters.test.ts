@@ -79,6 +79,25 @@ describe('character art lookup', () => {
     expect(none.notices(['remielle', 'eula', 'mona'])).toEqual([]);
   });
 
+  it('Riot art: neutral file names map to ezreal/pengu, a character-named file is ignored, and it adds the riot-assets notice', () => {
+    const riot = createCharacterLookup({
+      '../assets/characters/eula.png': meta(1600, 937),
+      '../assets/characters/showcase-1.png': meta(1280, 720),
+      '../assets/characters/showcase-2.png': meta(1232, 978),
+    });
+    expect(riot.available(['eula', 'ezreal', 'pengu'])).toEqual(['eula', 'ezreal', 'pengu']);
+    expect(riot.art('pengu')?.width).toBe(1232);
+    expect(createCharacterLookup({ '../assets/characters/ezreal.png': meta(10, 10) }).available(['ezreal'])).toEqual([]);
+    expect(createCharacterLookup({ '../assets/characters/showcase-1.png': meta(10, 10) }).available(['remielle', 'eula', 'mona', 'pengu'])).toEqual([]);
+    expect(riot.notices(['eula', 'ezreal', 'pengu'])).toEqual(['cognosphere', 'fan-content', 'riot-assets']);
+    expect(riot.notices(['ezreal'])).toEqual(['riot-assets']);
+    expect(riot.notices(['eula'])).toEqual(['cognosphere', 'fan-content']);
+    expect(withoutArt({ '../assets/characters/showcase-1.png': 1, '../assets/characters/eula.png': 2 }, 'ezreal')).toEqual({ '../assets/characters/eula.png': 2 });
+    expect(characterCredit(['eula', 'ezreal'], 'ko', riot)).toBe('캐릭터 이미지 © COGNOSPHERE · 팬 콘텐츠, 공식 제휴 아님 · © Riot Games');
+    expect(characterCredit(['eula'], 'en', riot)).toBe('Character art © COGNOSPHERE · Fan content, not officially affiliated');
+    expect(characterCredit(['ezreal', 'pengu'], 'en', riot)).toBeNull();
+  });
+
   it('characterCredit: null without art; COGNOSPHERE credit; adds © miHoYo when remielle is available', () => {
     expect(characterCredit(['remielle', 'eula'], 'ko', none)).toBeNull();
     expect(characterCredit(['eula'], 'ko', eulaOnly)).toBe('캐릭터 이미지 © COGNOSPHERE · 팬 콘텐츠, 공식 제휴 아님');
@@ -93,11 +112,15 @@ describe('character art lookup', () => {
       remielle: { ko: '레미엘', en: 'Remielle' },
       eula: { ko: '유라', en: 'Eula' },
       mona: { ko: '모나', en: 'Mona' },
+      ezreal: { ko: '이즈리얼', en: 'Ezreal' },
+      pengu: { ko: '펭구', en: 'Pengu' },
     });
     expect(CHARACTER_GAME_LABEL).toEqual({
       remielle: { ko: 'ZZZ', en: 'ZZZ' },
       eula: { ko: '원신', en: 'Genshin' },
       mona: { ko: '원신', en: 'Genshin' },
+      ezreal: { ko: '리그 오브 레전드', en: 'League of Legends' },
+      pengu: { ko: '전략적 팀 전투', en: 'Teamfight Tactics' },
     });
   });
 

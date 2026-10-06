@@ -460,8 +460,8 @@ describe('records data files', () => {
     expect(text(FILES.favorites)).not.toContain('src/data/accounts/');
   });
 
-  it('favorite character tints equal the tokens.css tint RGB', () => {
-    const tokens = readFileSync(join(ROOT, 'src/styles/tokens.css'), 'utf8');
+  it('favorite character tints equal the tokens.css (HoYoverse) or game-tokens.css (Riot showcase art) tint RGB', () => {
+    const tokens = readFileSync(join(ROOT, 'src/styles/tokens.css'), 'utf8') + readFileSync(join(ROOT, 'src/styles/game-tokens.css'), 'utf8');
     let checked = 0;
     for (const game of favorites()) {
       for (const character of game.characters) {
@@ -472,7 +472,7 @@ describe('records data files', () => {
         checked += 1;
       }
     }
-    expect(checked).toBe(3);
+    expect(checked).toBe(5);
   });
 
   it('no phone, birthdate-like date or e-mail other than the school address anywhere in src/data (src/data/generated/** excluded)', () => {

@@ -90,6 +90,12 @@ describe('design tokens (src/styles/tokens.css)', () => {
       '--tint-mona': 'rgba(122,108,240,.16)',
     });
     expect(tints).toHaveLength(3);
+    // the Riot showcase tints are game-only (the Player Log is a game page): game-tokens.css, never the inlined sheet
+    const gameTints = parseRules(read('src/styles/game-tokens.css'))
+      .flatMap((r) => [...r.decls])
+      .filter(([k]) => k.startsWith('--tint-'))
+      .map(([k, v]) => [k, squash(v)]);
+    expect(Object.fromEntries(gameTints)).toEqual({ '--tint-ezreal': 'rgba(200,155,60,.16)', '--tint-pengu': 'rgba(105,87,255,.16)' });
   });
 
   it('AL-9: the two account tints exist with alpha .16–.18 and are never a text colour', () => {

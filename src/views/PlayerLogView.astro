@@ -15,7 +15,7 @@ import { ui } from '../i18n/ui';
 import AccountLinks from '../islands/AccountLinks';
 import FavoriteGames from '../islands/FavoriteGames';
 import ImageViewer from '../islands/ImageViewer';
-import { characterCredit, characters } from '../lib/characters';
+import { SHOWCASE_ONLY, characterCredit, characters } from '../lib/characters';
 import { TILE_SOURCES, accountLinksLabels, accountStatus, accountStatusJson, buildAccountView } from '../lib/account-view';
 import { relayOrigin } from '../lib/csp';
 import { buildFavoriteGames, buildFavoriteTiles } from '../lib/favorites';
@@ -71,9 +71,11 @@ const records = await Promise.all(
     evidence: await evidence.build(recordData[i]),
   })),
 );
-const shownNotices = new Set([...characters.notices(['remielle', 'eula', 'mona']), ...(steamShown ? (['valve'] as const) : []), ...(riotCardShown ? (['riot-assets'] as const) : []), ...records.flatMap((r) => r.notices)]);
+// the showcase's art: the HoYoverse favourites plus the LoL/TFT stage art (whose Riot notice joins the footer's)
+const showcaseArt = ['remielle', 'eula', 'mona', 'ezreal', 'pengu'] as const;
+const shownNotices = new Set([...characters.notices(showcaseArt), ...(steamShown ? (['valve'] as const) : []), ...(riotCardShown ? (['riot-assets'] as const) : []), ...records.flatMap((r) => r.notices)]);
 const notices = NOTICE_KEYS.filter((key) => shownNotices.has(key));
-const credit = characterCredit(['remielle', 'eula', 'mona'], lang);
+const credit = characterCredit(showcaseArt, lang);
 const labels = {
   tablist: t(lang, 'favorites.tablist'),
   fetchedAt: t(lang, 'favorites.fetchedAt'),
@@ -88,7 +90,7 @@ const labels = {
     lang={lang}
     membership={membershipCard(copy.membership, identity.headline)}
     tiles={tiles}
-    tileSlots={games.reduce((n, g) => n + g.characters.length, 0)}
+    tileSlots={games.reduce((n, g) => n + g.characters.filter((c) => !SHOWCASE_ONLY.includes(c.id)).length, 0)}
     achievements={siteAchievements}
   >
     {anyAccountEnabled && (

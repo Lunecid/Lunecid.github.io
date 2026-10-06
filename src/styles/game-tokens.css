@@ -71,6 +71,10 @@
   --tilt-deg: 2deg;         /* cartridge thumbnails, alternating sign per card */
   --tilt-deg-wide: 1.25deg; /* the wide cartridge */
   --tilt-deg-fig: .8deg;    /* a chart: leans, does not tip */
+  /* showcase tints for the Riot stage art (Player Log only, a game page): the reference board's LoL gold and TFT
+     violet at the HoYoverse tints' .16 (favorites.yaml tint = the same RGB) */
+  --tint-ezreal: rgba(200, 155, 60, .16);
+  --tint-pengu: rgba(105, 87, 255, .16);
   --gp-edge-cy: var(--gp-cy);   /* the edge frame's line-art */
   --gp-edge-y: var(--gp-y);
 }
