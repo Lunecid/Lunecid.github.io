@@ -58,7 +58,7 @@ rows:
         href: /research/cog-2026-engagement/
       - label: { ko: PUBG 시공간 그래프 연구, en: PUBG spatiotemporal graph study }
         short: { ko: 'PUBG 시공간 그래프 연구', en: 'PUBG spatiotemporal graph' }
-        note: { ko: 진행 중, en: in progress }
+        note: { ko: 예정, en: planned } # research-page.ts RESEARCH_STATUS (owner, 2026-10-06)
         href: /research/#in-progress
     status: met
     plan: null

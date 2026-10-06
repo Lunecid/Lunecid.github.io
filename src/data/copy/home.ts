@@ -12,12 +12,12 @@ interface HomeCopy {
 export const homeCopy: Localized<HomeCopy> = {
   ko: {
     moreProjects: '프로젝트 전체 보기',
-    researchNowPlaying: '준비 중: 석사 학위논문 · CoG 논문 저널 확장 / 진행 중: PUBG 생존 모델',
+    researchNowPlaying: '진행 중: 석사 학위논문 · CoG 논문 저널 확장 / 예정: PUBG 생존 모델',
     helloRecords: ['{pub.cog-2026-engagement.venueShort} 구두 발표', '{awards.name:top} ×{awards.count:top} · {awards.name:encouragement} ×{awards.count:encouragement}', '{cert.adsp.short} · {cert.cds-bigdata-2.short}'],
   },
   en: {
     moreProjects: 'See all projects',
-    researchNowPlaying: 'In preparation: M.S. thesis · journal extension of the CoG paper / Ongoing: PUBG survival model',
+    researchNowPlaying: 'In progress: M.S. thesis · journal extension of the CoG paper / Planned: PUBG survival model',
     helloRecords: ['{pub.cog-2026-engagement.venueShort} oral presentation', '{awards.name:top} ×{awards.count:top} · {awards.name:encouragement} ×{awards.count:encouragement}', '{cert.adsp.short} · {cert.cds-bigdata-2.short}'],
   },
 };

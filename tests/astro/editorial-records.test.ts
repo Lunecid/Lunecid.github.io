@@ -120,7 +120,7 @@ describe('records components on the general version (P2-8)', () => {
     expect(html).toMatch(/<section id="job-fit" class="jobfit jobfit--ed ed-sec"/);
     expect(html.match(/role="rowheader"/g)).toHaveLength(jobfit.rows.length);
     expect(html).not.toMatch(/read-sec|\{table\./);
-    expect(html).toMatch(/class="jobfit__ev-note"[^>]*>[^<]*진행 중/); // P-09 (G-022): the qualifier is visible, not only in a tooltip
+    expect(html).toMatch(/class="jobfit__ev-note"[^>]*>[^<]*예정/); // P-09 (G-022): the qualifier is visible, not only in a tooltip
     const pending = await renderAstro(JobFitTable, { props: { variant: 'data', lang: 'ko', data: null, facts: loadFactSource() } });
     expect(pending).toMatch(/<section id="job-fit" class="jobfit jobfit--ed ed-sec"/);
     expect(pending).toContain('공고 조사를 마친 뒤 이 표를 채웁니다.');

@@ -731,7 +731,7 @@ for (const [label, use] of [
       test(route, async ({ page }) => {
         await page.goto(route, { waitUntil: 'networkidle' });
         const ko = !route.startsWith('/en/');
-        const inProgress = page.locator('#job-fit .jobfit__ev-note', { hasText: ko ? '(진행 중)' : '(in progress)' });
+        const inProgress = page.locator('#job-fit .jobfit__ev-note', { hasText: ko ? '(예정)' : '(planned)' }); // the PUBG study (RESEARCH_STATUS.planned)
         const graduation = page.locator('#job-fit .jobfit__ev-note', { hasText: ko ? /\(\d{4}년 \d{1,2}월 졸업 예정\)/ : /\(expected [A-Z][a-z]+ \d{4}\)/ });
         await expect(inProgress).toBeVisible();
         await expect(graduation).toBeVisible();

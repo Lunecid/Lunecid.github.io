@@ -134,13 +134,13 @@ describe('JobFitTable.astro', () => {
     const ko = await render('ko');
     const en = await render('en');
     const notes = (html: string) => [...html.matchAll(/<\/a><span class="jobfit__ev-note"[^>]*>([^<]+)<\/span>/g)].map((m) => m[1]);
-    expect(notes(ko)).toEqual(['(진행 중)', `(${resolveFacts('{person.graduation}', 'ko', facts)} 졸업 예정)`]);
-    expect(notes(en)).toEqual(['(in progress)', `(expected ${resolveFacts('{person.graduation}', 'en', facts)})`]);
+    expect(notes(ko)).toEqual(['(예정)', `(${resolveFacts('{person.graduation}', 'ko', facts)} 졸업 예정)`]);
+    expect(notes(en)).toEqual(['(planned)', `(expected ${resolveFacts('{person.graduation}', 'en', facts)})`]);
     // the qualifier left the title (hover-only) text; the note data holds the timing as a token, never a literal date
-    expect(ko).not.toMatch(/title="[^"]*(진행 중|졸업 예정)/);
-    expect(en).not.toMatch(/title="[^"]*(in progress|expected)/);
+    expect(ko).not.toMatch(/title="[^"]*(예정\)|졸업 예정)/);
+    expect(en).not.toMatch(/title="[^"]*(planned|expected)/);
     const raw = jobfit.rows.flatMap((row) => row.evidence).filter((e) => e.note);
-    expect(raw.map((e) => e.note)).toEqual([{ ko: '진행 중', en: 'in progress' }, { ko: '{person.graduation} 졸업 예정', en: 'expected {person.graduation}' }]);
+    expect(raw.map((e) => e.note)).toEqual([{ ko: '예정', en: 'planned' }, { ko: '{person.graduation} 졸업 예정', en: 'expected {person.graduation}' }]);
     // mono in both branches, with the Korean-mono rule
     const src = readSource('src/components/records/JobFitTable.astro');
     expect(src).toMatch(/\.jobfit__ev-note \{[^}]*font-family: var\(--font-mono\)/);

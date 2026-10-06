@@ -144,14 +144,14 @@ export const growthSteps: readonly GrowthStepDef[] = [
   },
 ];
 
-/** Open slots after the timeline. Statuses: owner, 2026-10-06 (journal and thesis 진행 중, the PUBG study 예정). */
-export const growthFuture: readonly { id: string; ongoing: string | null; label?: Localized; status: 'inProgress' | 'planned' }[] = [
-  // title: research-page.ts ongoing[cog-journal]
-  { id: 'cog-journal', ongoing: 'cog-journal', status: 'inProgress' },
-  // title: research-page.ts ongoing[ms-thesis], the part before the colon
-  { id: 'ms-thesis', ongoing: 'ms-thesis', status: 'inProgress' },
+/** Open slots after the timeline: titles and statuses from research-page.ts ongoing (statuses: RESEARCH_STATUS, owner
+ *  ruling 2026-10-06). The PUBG slot keeps the owner's short label instead of the study's working title. */
+export const growthFuture: readonly { id: string; ongoing: string; label?: Localized }[] = [
+  { id: 'cog-journal', ongoing: 'cog-journal' },
+  // the part of the thesis title before the colon
+  { id: 'ms-thesis', ongoing: 'ms-thesis' },
   // owner, 2026-10-06: no title and no claims yet, only the label
-  { id: 'pubg', ongoing: null, label: { ko: '배틀그라운드 연구', en: 'PUBG study' }, status: 'planned' },
+  { id: 'pubg', ongoing: 'pubg-survival', label: { ko: '배틀그라운드 연구', en: 'PUBG study' } },
 ];
 
 export const growthCopy = {
@@ -195,10 +195,6 @@ export const growthCopy = {
     rank: { ko: '순위 · 진행 중', en: 'Rank · in progress' },
     me: { ko: '나', en: 'Me' },
     others: { ko: '팀원·공저자', en: 'Teammates, co-author' },
-  },
-  status: {
-    inProgress: { ko: '진행 중', en: 'In progress' },
-    planned: { ko: '예정', en: 'Planned' },
   },
   mine: { ko: '내 담당', en: 'My part' },
   teamPart: { ko: '팀원 담당', en: 'Team’s part' },

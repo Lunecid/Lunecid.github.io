@@ -68,8 +68,8 @@ education:
       en: Data Science Lab (DataLab) · Advisor Prof. Joonho Kwon
       href: https://datalab.pusan.ac.kr/datalab/index.do
     thesis:
-      ko: 석사 학위논문(준비 중) — 리그 오브 레전드 교전의 전략적 가치
-      en: M.S. thesis (in preparation) — the strategic value of League of Legends engagements
+      ko: 석사 학위논문(진행 중) — 리그 오브 레전드 교전의 전략적 가치
+      en: M.S. thesis (in progress) — the strategic value of League of Legends engagements
       pdf: { ko: false, en: false, academic: true }
     pdf: { ko: true, en: true, academic: true }
   - id: bs-pnu
@@ -90,17 +90,17 @@ publications:
   - ref: cog-2026-engagement
     pdf: { ko: true, en: true, academic: true }
 
-# 진행 중인 연구(Academic CV 전용). 투고 전이므로 '준비 중'으로만 적는다.
+# 진행 중인 연구(Academic CV 전용). 상태는 research-page.ts RESEARCH_STATUS와 같다(소유자 결정 2026-10-06: 저널 확장·학위논문 진행 중, PUBG 예정).
 researchInProgress:
   - id: cog-journal-extension
     text:
-      ko: CoG 2026 논문의 저널 확장판(준비 중)
-      en: Journal extension of the CoG 2026 paper (in preparation)
+      ko: CoG 2026 논문의 저널 확장판(진행 중)
+      en: Journal extension of the CoG 2026 paper (in progress)
     pdf: { ko: false, en: false, academic: true }
   - id: pubg-spatiotemporal
     text:
-      ko: PUBG 시공간 그래프 기반 생존 분석(진행 중)
-      en: Spatiotemporal graph survival modeling in PUBG (in progress)
+      ko: PUBG 시공간 그래프 기반 생존 분석(예정)
+      en: Spatiotemporal graph survival modeling in PUBG (planned)
     pdf: { ko: false, en: false, academic: true }
 
 # 이력서 PDF의 첫 프로젝트: CoG 논문(P1-20). projects 컬렉션이 아니라 publications를 가리키므로 별도 필드로 둔다

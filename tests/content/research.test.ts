@@ -7,7 +7,10 @@ import { parseYamlDocument } from '../../src/content/yaml-loader';
 import { homeCopy } from '../../src/data/copy/home';
 import { CHANCE_AUC, figureCopy, overallAuc } from '../../src/data/research/cog-2026';
 import { GITHUB_EXCLUDED } from '../../src/data/github-repos';
-import { researchPage } from '../../src/data/research-page';
+import { RESEARCH_STATUS, researchPage } from '../../src/data/research-page';
+import { load } from 'js-yaml';
+import { buildGrowth } from '../../src/lib/growth';
+import { loadGrowthInputs } from '../helpers/growth-inputs';
 import { isKnownInternalHref } from '../../src/lib/routes';
 import { findDates, listMarkdown, readFrontmatter, resolveFromFile } from './helpers';
 
@@ -202,5 +205,43 @@ describe('final review fix 1: one wording per research fact across pages', () =>
     expect(topic.ko).not.toBe(research!.title.ko);
     expect(topic.en).not.toBe(research!.title.en);
     for (const lang of langs) expect(thesis![lang].split(' — ')[1], lang).toBe(topic[lang]);
+  });
+});
+
+// Owner ruling 2026-10-06: one status per ongoing item everywhere — journal extension and M.S. thesis 진행 중 / In
+// progress, the PUBG study 예정 / Planned. research-page.ts holds the state; everything else reads or matches it.
+describe('ongoing research statuses: one source (owner ruling 2026-10-06)', () => {
+  const langs = ['ko', 'en'] as const;
+  const stateOf = (id: string) => researchPage.ongoing.find((o) => o.id === id)?.state;
+  const paren = (state: keyof typeof RESEARCH_STATUS) => ({ ko: `(${RESEARCH_STATUS[state].ko})`, en: `(${RESEARCH_STATUS[state].en.toLowerCase()})` });
+
+  it('the ongoing list: journal and thesis in progress, the PUBG study planned; each status starts with its state label', () => {
+    expect(RESEARCH_STATUS).toEqual({ inProgress: { ko: '진행 중', en: 'In progress' }, planned: { ko: '예정', en: 'Planned' } });
+    expect(researchPage.ongoing.map((o) => [o.id, o.state])).toEqual([['cog-journal', 'inProgress'], ['ms-thesis', 'inProgress'], ['pubg-survival', 'planned']]);
+    for (const o of researchPage.ongoing) for (const lang of langs) expect(o.status[lang].split(' · ')[0], `${o.id} ${lang}`).toBe(RESEARCH_STATUS[o.state][lang]);
+  });
+
+  it('the growth infographic and the ongoing list agree', () => {
+    for (const lang of langs) {
+      const future = buildGrowth(loadGrowthInputs(lang), lang).future;
+      expect(future.map((f) => f.status)).toEqual(researchPage.ongoing.map((o) => RESEARCH_STATUS[o.state][lang]));
+    }
+  });
+
+  it('resume.yaml (records, the PDFs) and the job-fit note carry the same status', () => {
+    const resume = resumeSchema.parse(parseYamlDocument(readFileSync('src/data/resume.yaml', 'utf8'), 'resume'));
+    const thesis = resume.education.find((e) => e.id === 'ms-pnu')?.thesis;
+    const rip = Object.fromEntries(resume.researchInProgress.map((r) => [r.id, r.text]));
+    const jobfit = load(readFileSync('src/data/jobfit.game.yaml', 'utf8')) as { rows: { evidence: { label: { en: string }; note?: { ko: string; en: string } }[] }[] };
+    const pubgNote = jobfit.rows.flatMap((r) => r.evidence).find((e) => /PUBG/.test(e.label.en))?.note;
+    for (const lang of langs) {
+      expect(thesis?.[lang]).toContain(paren(stateOf('ms-thesis')!)[lang]);
+      expect(rip['cog-journal-extension']?.[lang]).toContain(paren(stateOf('cog-journal')!)[lang]);
+      expect(rip['pubg-spatiotemporal']?.[lang]).toContain(paren(stateOf('pubg-survival')!)[lang]);
+      expect(`(${pubgNote?.[lang]})`).toBe(paren(stateOf('pubg-survival')!)[lang]);
+    }
+    for (const file of ['src/data/resume.yaml', 'src/data/research-page.ts', 'src/data/copy/home.ts', 'src/data/jobfit.game.yaml']) {
+      expect(readFileSync(file, 'utf8').replace(/#.*$/gm, ''), file).not.toMatch(/준비 중|[Ii]n preparation/);
+    }
   });
 });

@@ -3,7 +3,7 @@
 import type { AwardData, ProjectFrontmatter, PublicationFrontmatter, ResumeData } from '../content/schemas';
 import { growthCopy, growthFuture, growthPairings, growthSteps, type GrowthLevel, type GrowthStepDef } from '../data/growth';
 import { overallAuc } from '../data/research/cog-2026';
-import { researchPage } from '../data/research-page';
+import { RESEARCH_STATUS, researchPage } from '../data/research-page';
 import type { Lang } from '../i18n/ui';
 import { formatDate, formatYm, type Localized } from '../i18n/utils';
 import { FORMAT_PHRASE, resolveFacts, type FactSource } from './facts';
@@ -203,12 +203,12 @@ export function buildGrowth(input: GrowthInputs, lang: Lang): GrowthModel {
   }
 
   const future = growthFuture.map((f): GrowthFuture => {
-    const ongoing = f.ongoing ? researchPage.ongoing.find((o) => o.id === f.ongoing) : undefined;
-    if (f.ongoing && !ongoing) throw new Error(`growth: no research-page ongoing item ${f.ongoing}`);
-    const full = ongoing ? resolveFacts(ongoing.title[lang], lang, input.facts) : (f.label?.[lang] ?? '');
+    const ongoing = researchPage.ongoing.find((o) => o.id === f.ongoing);
+    if (!ongoing) throw new Error(`growth: no research-page ongoing item ${f.ongoing}`);
+    const full = f.label?.[lang] ?? resolveFacts(ongoing.title[lang], lang, input.facts);
     // the thesis title "석사 학위논문: …" → the slot names the kind of work only
     const title = f.id === 'ms-thesis' ? (full.split(':')[0] ?? full) : full;
-    return { id: f.id, title, status: copy.status[f.status], kind: f.status };
+    return { id: f.id, title, status: RESEARCH_STATUS[ongoing.state][lang], kind: ongoing.state };
   });
 
   const stageOf = (lv: GrowthLevel): 1 | 2 | 3 => (lv <= 2 ? 1 : lv === 3 ? 2 : 3);

@@ -3,7 +3,7 @@
 import { describe, expect, it } from 'vitest';
 import { GROWTH_LEVELS, growthCopy, growthFuture, growthSteps } from '../../src/data/growth';
 import { overallAuc } from '../../src/data/research/cog-2026';
-import { researchPage } from '../../src/data/research-page';
+import { RESEARCH_STATUS, researchPage } from '../../src/data/research-page';
 import type { Lang } from '../../src/i18n/ui';
 import { formatYm } from '../../src/i18n/utils';
 import { FORMAT_PHRASE, resolveFacts } from '../../src/lib/facts';
@@ -152,10 +152,10 @@ describe('growth infographic data (GR-1)', () => {
     expect(model.en.scaleTicks.map((t) => t.label)).toEqual(['10K', '100K', '1M']);
   });
 
-  it('future slots: titles from research-page.ts ongoing, statuses as the owner answered (진행 중, 진행 중, 예정)', () => {
+  it('future slots: titles from research-page.ts ongoing, statuses from RESEARCH_STATUS (진행 중, 진행 중, 예정)', () => {
     for (const lang of LANGS) {
       const future = model[lang].future;
-      expect(future.map((f) => f.status)).toEqual([growthCopy.status.inProgress[lang], growthCopy.status.inProgress[lang], growthCopy.status.planned[lang]]);
+      expect(future.map((f) => f.status)).toEqual([RESEARCH_STATUS.inProgress[lang], RESEARCH_STATUS.inProgress[lang], RESEARCH_STATUS.planned[lang]]);
       const journal = researchPage.ongoing.find((o) => o.id === 'cog-journal');
       expect(future[0]?.title).toBe(resolveFacts(journal?.title[lang] ?? '', lang, inputs[lang].facts));
       const thesis = researchPage.ongoing.find((o) => o.id === 'ms-thesis');

@@ -79,7 +79,7 @@
   "tests/content/legal.test.ts": 133,
   "tests/content/projects.test.ts": 170,
   "tests/content/records.test.ts": 135,
-  "tests/content/research.test.ts": 60,
+  "tests/content/research.test.ts": 69,
   "tests/content/schemas.test.ts": 145,
   "tests/e2e/accounts.spec.ts": 214,
   "tests/e2e/anchors.spec.ts": 25,

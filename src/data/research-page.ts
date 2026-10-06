@@ -2,7 +2,17 @@
 // The three interest titles are also the Academic CV research interests (resume.yaml profile.researchInterests,
 // P1-19; tests/content/records.test.ts keeps the two lists equal).
 // `ongoing` lists work that is still in progress only.
+// Ongoing statuses: one source for the whole site (owner ruling 2026-10-06) — `state` picks the label from
+// RESEARCH_STATUS; the growth infographic, the home NOW PLAYING line, resume.yaml and the job-fit note follow it
+// (tests/content/research.test.ts).
 // The #for-labs block text is version copy: identity.labNote in src/variants/{game,data}.ts (R-3); the e-mail is SITE.email.
+
+/** The ongoing statuses (owner ruling 2026-10-06): 진행 중 / In progress, 예정 / Planned. */
+export const RESEARCH_STATUS = {
+  inProgress: { ko: '진행 중', en: 'In progress' },
+  planned: { ko: '예정', en: 'Planned' },
+} as const;
+const S = RESEARCH_STATUS;
 
 export const researchPage = {
   intro: {
@@ -44,7 +54,8 @@ export const researchPage = {
   ongoing: [
     {
       id: 'cog-journal',
-      status: { ko: '준비 중', en: 'In preparation' },
+      state: 'inProgress',
+      status: S.inProgress,
       title: { ko: '{pub.cog-2026-engagement.venueAbbr} 논문의 저널 확장', en: 'Journal extension of the {pub.cog-2026-engagement.venueAbbr} paper' },
       body: {
         ko: '교전을 나누는 기준을 데이터 분포로 점검하고, 교전 가치의 정의와 평가를 넓히고 있습니다.',
@@ -54,7 +65,8 @@ export const researchPage = {
     },
     {
       id: 'ms-thesis',
-      status: { ko: '준비 중 · {person.graduation} 졸업 예정', en: 'In preparation · expected {person.graduationShort}' },
+      state: 'inProgress',
+      status: { ko: `${S.inProgress.ko} · {person.graduation} 졸업 예정`, en: `${S.inProgress.en} · expected {person.graduationShort}` },
       title: { ko: '석사 학위논문: 리그 오브 레전드 교전의 전략적 가치', en: 'M.S. thesis: the strategic value of League of Legends engagements' },
       body: {
         ko: '공개 경기 기록(Riot API)으로 교전을 구성하고, 교전 전후 추정 승리 확률의 변화로 교전의 가치를 정의한 뒤, 교전 전 정보로 그 변화를 예측합니다.',
@@ -64,7 +76,8 @@ export const researchPage = {
     },
     {
       id: 'pubg-survival',
-      status: { ko: '진행 중', en: 'Ongoing' },
+      state: 'planned',
+      status: S.planned,
       title: { ko: 'PUBG 시공간 그래프 생존 모델', en: 'PUBG spatiotemporal graph survival model' },
       body: {
         ko: '배틀그라운드 경기를 시간 단계별 그래프(플레이어, 팀, 자기장)로 만들고, 플레이어가 언제 탈락할지 위험도를 예측하는 생존 모델을 만들고 있습니다.',
