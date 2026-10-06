@@ -201,15 +201,30 @@ test.describe('D-1 no-art build', () => {
         window.dispatchEvent(new CustomEvent('sb:achievement-unlocked', { detail: { id } }));
         return id;
       });
-    const popOf = (id: string) =>
-      page.locator(`[data-ach-slot="${id}"] .medal`).evaluate((el) =>
-        el.getAnimations().map((a) => {
-          const effect = a.effect as KeyframeEffect;
-          const timing = effect.getComputedTiming();
-          return { name: (a as CSSAnimation).animationName, delay: timing.delay, duration: timing.duration, from: String(effect.getKeyframes()[0]?.transform ?? '') };
-        }),
-      );
+    // The pop ends --dur-enter + 360 ms after the unlock and fills backwards only, so a round trip that starts later
+    // finds no animation: each slot's animations are recorded in the page when it flips to unlocked (the pop is then in
+    // its delay, its timing readable), never sampled afterwards.
+    type Pop = { name: string; delay: unknown; duration: unknown; from: string };
+    const popOf = async (id: string): Promise<Pop[]> => {
+      const read = () => page.evaluate((slot) => (window as Window & { __pops?: Record<string, Pop[]> }).__pops?.[slot] ?? null, id);
+      await expect.poll(read, { message: `slot ${id} recorded at its unlock` }).not.toBeNull();
+      return (await read())!;
+    };
     await openAt(page, noArt('/game/player-log/'), 1440);
+    await page.evaluate(() => {
+      const pops: Record<string, unknown> = ((window as Window & { __pops?: Record<string, unknown> }).__pops = {});
+      new MutationObserver((records) => {
+        for (const r of records) {
+          const slot = r.target as HTMLElement;
+          if (slot.dataset.unlocked !== 'true' || !slot.dataset.achSlot || slot.dataset.achSlot in pops) continue;
+          pops[slot.dataset.achSlot] = (slot.querySelector('.medal')?.getAnimations() ?? []).map((a) => {
+            const effect = a.effect as KeyframeEffect;
+            const timing = effect.getComputedTiming();
+            return { name: (a as CSSAnimation).animationName, delay: timing.delay, duration: timing.duration, from: String(effect.getKeyframes()[0]?.transform ?? '') };
+          });
+        }
+      }).observe(document.body, { subtree: true, attributes: true, attributeFilter: ['data-unlocked'] });
+    });
     const fillMs = await page.locator('.ach-meter__fill').evaluate((el) => parseFloat(getComputedStyle(el).transitionDuration) * 1000);
     expect(fillMs).toBeGreaterThan(0);
     const id = await unlockNext();
