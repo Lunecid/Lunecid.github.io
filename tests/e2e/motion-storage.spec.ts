@@ -30,69 +30,69 @@ test('without reduced motion the CRT intro plays once per session on the home pa
   await expect(html).not.toHaveAttribute('data-intro');
 });
 
-/** t: ms since the key press; ct: currentTime of the running opacity transition on .crt (null when none). */
-type CrtSample = { t: number; ct: number | null; intro: string | null; opacity: number; display: string };
+/** What the page recorded around the press (see F1). */
+type F1Record = {
+  intro: string | null;
+  fade: { at0: number; at100: number } | null;
+  goneBy: number | null;
+};
 
 test('F1: after a key press the CRT overlay is below 0.5 opacity within 100 ms and gone by 200 ms', async ({ page }) => {
-  // Registered before the head script, so this window capture listener runs before its skip listener: the first
-  // sample is the state at the press, and every later one is one animation frame of the skip fade.
-  await page.addInitScript(() => {
-    window.addEventListener(
-      'keydown',
-      () => {
-        const w = window as Window & { __crtSamples?: CrtSample[] };
-        const d = document.documentElement;
+  // Read on the intro's own clocks, never the runner's: a loaded runner fires timers late and commits frames late,
+  // which says nothing about the fade (a timed sampling attempt either missed the 400 ms "playing" window or saw no
+  // frame during the 150 ms skip). So the intro's own timers (release, done, safety) are held until the press, which
+  // therefore always comes while it plays; the skip fade's transition is seeked to 100 ms on its own clock; and "gone
+  // by 200 ms" is the requested delay of the timer whose callback removes the overlay.
+  await page.addInitScript((held: number[]) => {
+    const w = window as Window & { __f1?: F1Record };
+    const d = () => document.documentElement; // null while the init script runs
+    const rec: F1Record = (w.__f1 = { intro: null, fade: null, goneBy: null });
+    const set = window.setTimeout.bind(window);
+    const toHold = new Set(held);
+    let pressed = false;
+    let fake = -1;
+    window.setTimeout = ((fn: () => void, ms?: number) => {
+      if (!pressed && toHold.delete(Number(ms))) return fake--; // never fires; clearTimeout of it is harmless
+      return set(() => {
+        const before = d().hasAttribute('data-intro');
+        fn();
+        if (before && !d().hasAttribute('data-intro') && rec.goneBy === null) rec.goneBy = Number(ms ?? 0);
+      }, ms);
+    }) as typeof window.setTimeout;
+    // registered before the head script, so this capture listener runs before its skip listener
+    window.addEventListener('keydown', () => {
+      rec.intro = d().getAttribute('data-intro');
+      pressed = true;
+      // due before the skip's own timer: the fade has started (the skip set its attributes), the overlay is still on
+      set(() => {
         const crt = document.querySelector('.crt') as HTMLElement;
-        const t0 = performance.now();
-        const read = (): CrtSample => {
-          const cs = getComputedStyle(crt);
-          const fade = crt.getAnimations().find((a) => a instanceof CSSTransition && a.transitionProperty === 'opacity');
-          const ct = fade && fade.currentTime !== null ? Number(fade.currentTime) : null;
-          return { t: performance.now() - t0, ct, intro: d.getAttribute('data-intro'), opacity: Number(cs.opacity), display: cs.display };
+        void getComputedStyle(crt).opacity;
+        const fade = crt.getAnimations().find((a) => a instanceof CSSTransition && a.transitionProperty === 'opacity');
+        if (!fade) return;
+        fade.pause();
+        const at = (t: number) => {
+          fade.currentTime = t;
+          return Number(getComputedStyle(crt).opacity);
         };
-        const s = [read()];
-        const tick = (): void => {
-          s.push(read());
-          if (performance.now() - t0 < 260) requestAnimationFrame(tick);
-          else w.__crtSamples = s;
-        };
-        requestAnimationFrame(tick);
-      },
-      { capture: true, once: true },
-    );
-  });
-  // A loaded container sometimes presses only after the 400 ms release, or renders no frame at all during the
-  // 150 ms skip; such an attempt measures the machine, not the fade, so it is retried in a fresh session (max 4).
-  let samples: CrtSample[] = [];
-  for (let attempt = 0; attempt < 4; attempt++) {
-    if (attempt > 0) await page.evaluate(() => sessionStorage.clear());
-    await page.goto('/game/', { waitUntil: 'commit' });
-    // Press once the overlay is on screen (after FCP, which also arms the 400 ms release).
-    await page.waitForFunction(
-      () =>
-        document.documentElement.getAttribute('data-intro') === 'playing' &&
-        performance.getEntriesByName('first-contentful-paint').length > 0,
-      null,
-      { polling: 'raf' },
-    );
-    await page.keyboard.press('Shift');
-    const handle = await page.waitForFunction(() => (window as Window & { __crtSamples?: CrtSample[] }).__crtSamples, null, {
-      polling: 'raf',
-    });
-    samples = (await handle.jsonValue()) as CrtSample[];
-    if (samples[0].intro === 'playing' && samples.some((x) => x.ct !== null && x.ct > 0)) break;
-  }
-  const log = JSON.stringify(
-    samples.map((x) => [Math.round(x.t), x.ct === null ? null : Math.round(x.ct), x.intro, x.display, x.opacity.toFixed(2)]),
+        rec.fade = { at0: at(0), at100: at(100) };
+      }, 0);
+    }, { capture: true, once: true });
+  }, [400, 700, 3000]); // INTRO_TIMING.releaseMs, doneMs, safetyMs (src/lib/head-init.ts)
+  await page.goto('/game/', { waitUntil: 'commit' });
+  // the overlay is on screen (after FCP, which arms the held release)
+  await page.waitForFunction(
+    () => document.documentElement.getAttribute('data-intro') === 'playing' && performance.getEntriesByName('first-contentful-paint').length > 0,
   );
-  expect(samples[0].intro, `the press came while the intro was playing ${log}`).toBe('playing');
-  // "Within 100 ms" is read on the fade's own clock: a container's headless Chromium starts a transition only at its
-  // next committed frame (often 60-100 ms after the style change here), which says nothing about the curve. The old
-  // --dur-exit/--ease-in exit was still at about 0.9 at 100 ms; the skip fade is well below 0.5.
-  expect(samples.some((x) => x.ct !== null && x.ct <= 100 && x.display !== 'none' && x.opacity < 0.5), log).toBe(true);
-  const late = samples.filter((x) => x.t >= 200);
-  expect(late.length, log).toBeGreaterThan(0);
-  expect(late.every((x) => x.display === 'none'), log).toBe(true);
+  await page.keyboard.press('Shift');
+  await expect(page.locator('html')).not.toHaveAttribute('data-intro');
+  const rec = await page.evaluate(() => (window as Window & { __f1?: F1Record }).__f1!);
+  const log = JSON.stringify(rec);
+  expect(rec.intro, `the press came while the intro was playing ${log}`).toBe('playing');
+  // The old --dur-exit/--ease-in exit was still at about 0.9 at 100 ms; the skip fade is well below 0.5.
+  expect(rec.fade !== null && rec.fade.at0 > 0.9 && rec.fade.at100 < 0.5, log).toBe(true);
+  expect(rec.goneBy, log).not.toBeNull();
+  expect(rec.goneBy!, log).toBeLessThanOrEqual(200);
+  expect(await page.locator('.crt').evaluate((el) => getComputedStyle(el).display), log).toBe('none');
 });
 
 test('H1: the hero copy rises on the first game-home view of the session only', async ({ page }) => {
