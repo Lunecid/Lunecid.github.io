@@ -203,6 +203,31 @@ export function initExit(desk: HTMLElement, link: HTMLAnchorElement, kind: ExitK
   });
 }
 
+/**
+ * The game cover's display words fit its plate in whatever face the browser shows. chooser.css sizes them for the
+ * display face's metrics (.disp__row); a fallback face (the display face still loading, or blocked) is far wider, so
+ * the rows are measured against the plate (.cv::after: its margins and the step --ps right of 58 %, about .2em to
+ * spare) and condensed by --fit (scaleX: no layout moves when the face changes) when they would cross it; with the
+ * display face it stays 1 (no property).
+ */
+export function fitCoverWords(desk: HTMLElement): void {
+  const cv = desk.querySelector<HTMLElement>('.file--game .cv');
+  const disp = cv?.querySelector<HTMLElement>('.disp');
+  const rows = disp ? Array.from(disp.querySelectorAll<HTMLElement>('.disp__row')) : [];
+  if (!cv || !disp || rows.length !== 2) return;
+  const a = getComputedStyle(cv, '::after');
+  const ml = -(parseFloat(a.marginLeft) || 0);
+  const mr = -(parseFloat(a.marginRight) || 0);
+  const w = disp.clientWidth + ml + mr;
+  const left = disp.getBoundingClientRect().left;
+  const fit = parseFloat(disp.style.getPropertyValue('--fit')) || 1;
+  const gap = 0.2 * (parseFloat(getComputedStyle(rows[1]!).fontSize) || 0);
+  const room = [w - ml - gap, 0.58 * w - ml - (parseFloat(a.getPropertyValue('--ps')) || 0) - gap];
+  const k = Math.min(1, ...rows.map((row, i) => (room[i]! * fit) / Math.max(1, (row.lastElementChild?.getBoundingClientRect().right ?? left) - left)));
+  if (k < 0.999) disp.style.setProperty('--fit', k.toFixed(3));
+  else disp.style.removeProperty('--fit');
+}
+
 /** One wiring per desk (initChooser and a direct call share it). */
 const wired = new WeakMap<HTMLElement, () => void>();
 
@@ -228,8 +253,11 @@ export function initDesk(desk: HTMLElement, hint: HTMLElement | null): () => voi
     desk.style.setProperty('--ax', `${g.ax}px`);
     desk.style.setProperty('--ay', `${g.ay}px`);
     desk.style.setProperty('--cx', `${g.cx}px`);
+    fitCoverWords(desk);
   };
   measure();
+  // a face that arrives late (the display face after its swap period) changes the words' width, not the desk's
+  if (document.fonts) on(document.fonts, 'loadingdone', measure);
   if ('ResizeObserver' in window) {
     const ro = new ResizeObserver(() => measure());
     ro.observe(desk);
