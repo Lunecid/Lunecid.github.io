@@ -17,9 +17,9 @@ for (const route of ROUTES) {
         expect(Math.abs(section.x - other.x), `${selector} left edge`).toBeLessThanOrEqual(1);
         expect(Math.abs(section.x + section.width - (other.x + other.width)), `${selector} right edge`).toBeLessThanOrEqual(1);
       }
-      // centred in the viewport (the scrollbar, if any, excluded)
-      const clientWidth = await page.evaluate(() => document.documentElement.clientWidth);
-      expect(Math.abs(section.x - (clientWidth - (section.x + section.width))), 'centred').toBeLessThanOrEqual(1);
+      // centred in the page's main column (its box excludes the scrollbar gutter, whatever the browser reports)
+      const main = await box(page.locator('main#main'));
+      expect(Math.abs(section.x - main.x - (main.x + main.width - (section.x + section.width))), 'centred').toBeLessThanOrEqual(1);
 
       // the content column: list and showcases span the container's content box, like the site achievements list
       const pad = await page.locator('#game-achievements > .container').evaluate((el) => parseFloat(getComputedStyle(el).paddingLeft));
