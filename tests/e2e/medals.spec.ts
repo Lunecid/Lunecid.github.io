@@ -46,6 +46,36 @@ const animationsOf = (page: Page, selector: string): Promise<Anim[]> =>
     }),
   );
 
+/**
+ * Records the animations of the first element matching `selector` at their animationstart (the listener is set before
+ * the unlock): a reduced-motion fade is short and its data-pop goes at animationend, so a later round trip can find
+ * it already over. The returned getter waits for the record.
+ */
+async function animationsAtStart(page: Page, selector: string): Promise<() => Promise<Anim[]>> {
+  await page.evaluate((sel) => {
+    const w = window as Window & { __atStart?: Record<string, unknown> };
+    const rec = (w.__atStart ??= {});
+    document.addEventListener('animationstart', (e) => {
+      const el = e.target as Element;
+      if (sel in rec || !el.matches(sel)) return;
+      rec[sel] = el.getAnimations().map((a) => {
+        const effect = a.effect as KeyframeEffect;
+        const timing = effect.getComputedTiming();
+        const props = new Set<string>();
+        for (const frame of effect.getKeyframes()) {
+          for (const key of Object.keys(frame)) if (!['offset', 'computedOffset', 'easing', 'composite'].includes(key)) props.add(key);
+        }
+        return { name: (a as CSSAnimation).animationName, delay: Number(timing.delay), duration: Number(timing.duration), props: [...props].sort() };
+      });
+    }, { capture: true });
+  }, selector);
+  const read = () => page.evaluate((sel) => ((window as Window & { __atStart?: Record<string, Anim[]> }).__atStart ?? {})[sel] ?? null, selector);
+  return async () => {
+    await expect.poll(read, { message: `an animation starts on ${selector}` }).not.toBeNull();
+    return (await read())!;
+  };
+}
+
 const firstLocked = (page: Page): Promise<string> =>
   page.evaluate(
     (secret) =>
@@ -84,9 +114,10 @@ test.describe('PL-2: medals in the list and the meter', () => {
     const id = await firstLocked(page);
     const medal = page.locator(listMedal(id));
     await expect(medal).toHaveAttribute('data-state', 'locked');
+    const started = await animationsAtStart(page, listMedal(id));
     await unlockLive(page, id);
     await expect(medal).toHaveAttribute('data-state', 'unlocked');
-    const [pop, ...rest] = await animationsOf(page, listMedal(id));
+    const [pop, ...rest] = await started();
     expect(rest, 'a single animation').toEqual([]);
     expect(pop?.name).toBe('medal-mint');
     expect(pop!.delay).toBe(0);
@@ -126,8 +157,9 @@ test.describe('PL-2: medals in the list and the meter', () => {
     // the site's switch
     await page.evaluate(() => document.documentElement.setAttribute('data-motion', 'reduce'));
     const first = await firstLocked(page);
+    const firstStarted = await animationsAtStart(page, listMedal(first));
     await unlockLive(page, first);
-    const [fade, ...more] = await animationsOf(page, listMedal(first));
+    const [fade, ...more] = await firstStarted();
     expect(more).toEqual([]);
     expect(fade?.name).toBe('medal-fade');
     expect(fade!.props).toEqual(['opacity']);
@@ -136,8 +168,9 @@ test.describe('PL-2: medals in the list and the meter', () => {
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await page.evaluate(() => document.documentElement.setAttribute('data-motion', 'full'));
     const second = await firstLocked(page);
+    const secondStarted = await animationsAtStart(page, listMedal(second));
     await unlockLive(page, second);
-    const [fade2, ...more2] = await animationsOf(page, listMedal(second));
+    const [fade2, ...more2] = await secondStarted();
     expect(more2).toEqual([]);
     expect(fade2?.name).toBe('medal-fade');
     expect(fade2!.props).toEqual(['opacity']);
