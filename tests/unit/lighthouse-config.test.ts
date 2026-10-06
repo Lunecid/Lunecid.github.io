@@ -22,17 +22,20 @@ const desktop = read('lighthouserc.desktop.json');
  * ruling): the v6.4 desk measured / 2105 ms (perf 0.99) and /en/ 1434 ms (perf 1.00) after the non-design fixes, so the
  * MO-20 reference (/ 1670 ms, /en/ 1383 ms, measured on the old two-panel chooser) is replaced. MO-26/MO-31 compare
  * against these values. /en/ re-baselined again 2026-10-05 (owner ruling, chooser v6.12 desk after MO-36): measured
- * 1656 ms (median of six runs, bimodal 1505/1731; perf 0.99-1.00), was 1434.
+ * 1656 ms (median of six runs, bimodal 1505/1731; perf 0.99-1.00), was 1434. / re-baselined 2026-10-06 (controller
+ * ruling): measured 2413 ms (idle median of five, 2407-2487; perf 0.97), was 2105. The budget is the reference + 100 ms
+ * capped at the Core Web Vitals "good" ceiling of 2500 ms, which stays a guard on the budget itself (motion plan B.3:
+ * a re-baseline needs perf >= 0.97 and LCP <= 2500 ms; controller ruling 2026-10-06 on the cap).
  */
 const CHOOSER_BUDGET = {
-  '/': { referenceLcpMs: 2105, lcpMs: 2205, minPerformance: 0.95 },
+  '/': { referenceLcpMs: 2413, lcpMs: 2500, minPerformance: 0.95 },
   '/en/': { referenceLcpMs: 1656, lcpMs: 1756, minPerformance: 0.95 },
 } as const;
 
 describe('Lighthouse budget (A-21, P1-19)', () => {
-  it('MO-23: the chooser budget is the re-baselined reference + 100 ms and stays within Core Web Vitals "good" (LCP ≤ 2.5 s)', () => {
+  it('MO-23: the chooser budget is the re-baselined reference + 100 ms, capped at, and within, Core Web Vitals "good" (LCP ≤ 2.5 s)', () => {
     for (const [route, b] of Object.entries(CHOOSER_BUDGET)) {
-      expect(b.lcpMs - b.referenceLcpMs, route).toBe(100);
+      expect(b.lcpMs, route).toBe(Math.min(b.referenceLcpMs + 100, 2500));
       expect(b.lcpMs, route).toBeLessThanOrEqual(2500);
       expect(b.minPerformance, route).toBeGreaterThanOrEqual(0.95);
       expect(paths(mobile).concat(paths(desktop)), route).toContain(route === '/en/' ? '/' : route);
