@@ -217,4 +217,7 @@
   :root[data-variant="game"] .gq-plog__lede, :root[data-variant="game"] .gq-kick, :root[data-variant="game"] .gq-stage__yr, :root[data-variant="game"] .gq-hand__flow dt, :root[data-variant="game"] .gq-hand__flow dd.tm { color: var(--gp-print-muted); }
   :root[data-variant="game"] .gq-ach { color: var(--read-text); background: transparent; box-shadow: inset 0 0 0 1.5px var(--read-text); }
   :root[data-variant="game"] .gq-tv:not([open]) { display: none; }
+  /* inverted plates print as ink on paper with a rule */
+  :root[data-variant="game"] .gq-badge b { color: var(--read-text); background: transparent; border-right: 1px solid var(--read-text); }
+  :root[data-variant="game"] .gq-stage__lv { color: var(--gp-print-ink); background: transparent; box-shadow: inset 0 0 0 1px var(--gp-print-ink); }
 }

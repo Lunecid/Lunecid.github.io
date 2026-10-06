@@ -180,18 +180,19 @@
 
 /* ── motion: the draw-on (classes from growth-reveal.ts; transform and opacity only) ── */
 :root[data-variant="data"] .gd-lanes[data-gr-anim] .gd-line { transform-origin: 0 0; transition: transform var(--dur-enter) var(--ease-out); }
-:root[data-variant="data"] .gd-lanes[data-gr-anim] :is(.gd-mk, .gd-dot) { transition: opacity var(--dur-fade) linear, transform var(--dur-rise) var(--ease-out); transition-delay: calc(var(--gr-k, 0) * 90ms); }
+:root[data-variant="data"] .gd-lanes[data-gr-anim] :is(.gd-mk i, .gd-dot) { transition: opacity var(--dur-fade) linear, transform var(--dur-rise) var(--ease-out); transition-delay: calc(var(--gr-k, 0) * 90ms); }
 :root[data-variant="data"] .gd-sm[data-gr-anim] .gd-smc { transition: opacity var(--dur-enter) var(--ease-out), transform var(--dur-enter) var(--ease-out); transition-delay: calc(var(--gr-k, 0) * 60ms); }
 :root[data-variant="data"] .gd-line.gr-wait { transform: scaleX(0); }
-:root[data-variant="data"] .gd-mk.gr-wait, :root[data-variant="data"] .gd-dot.gr-wait { opacity: 0; transform: scale(.4); }
+/* a mark's box keeps its 44 px target while it waits: only the dot inside scales */
+:root[data-variant="data"] .gd-mk.gr-wait i, :root[data-variant="data"] .gd-dot.gr-wait { opacity: 0; transform: scale(.4); }
 :root[data-variant="data"] .gd-smc.gr-wait { opacity: 0; transform: translateY(12px); }
 :root[data-variant="data"][data-motion="reduce"] .gd-line.gr-wait,
-:root[data-variant="data"][data-motion="reduce"] .gd-mk.gr-wait,
+:root[data-variant="data"][data-motion="reduce"] .gd-mk.gr-wait i,
 :root[data-variant="data"][data-motion="reduce"] .gd-dot.gr-wait,
 :root[data-variant="data"][data-motion="reduce"] .gd-smc.gr-wait { opacity: 1; transform: none; transition: none; }
 @media (prefers-reduced-motion: reduce) {
   :root[data-variant="data"] .gd-line.gr-wait,
-  :root[data-variant="data"] .gd-mk.gr-wait,
+  :root[data-variant="data"] .gd-mk.gr-wait i,
   :root[data-variant="data"] .gd-dot.gr-wait,
   :root[data-variant="data"] .gd-smc.gr-wait { opacity: 1; transform: none; transition: none; }
 }
@@ -202,7 +203,7 @@
 }
 @media print {
   :root[data-variant="data"] .gd-line.gr-wait,
-  :root[data-variant="data"] .gd-mk.gr-wait,
+  :root[data-variant="data"] .gd-mk.gr-wait i,
   :root[data-variant="data"] .gd-dot.gr-wait,
   :root[data-variant="data"] .gd-smc.gr-wait { opacity: 1; transform: none; transition: none; }
   :root[data-variant="data"] :is(.gd-smc, .gd-cs, .gd-cs li) { break-inside: avoid; }

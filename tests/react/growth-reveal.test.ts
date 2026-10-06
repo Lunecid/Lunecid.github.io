@@ -65,6 +65,25 @@ describe('initGrowthReveal (src/scripts/growth-reveal.ts)', () => {
     expect(obs.observed.size).toBe(0);
   });
 
+  it('a part that a fast scroll carried above the fold line without an observer callback draws on the next scroll frame', () => {
+    Object.defineProperty(window, 'innerHeight', { configurable: true, value: 800 });
+    const raf = window.requestAnimationFrame;
+    window.requestAnimationFrame = ((cb: FrameRequestCallback) => { cb(0); return 0; }) as typeof window.requestAnimationFrame;
+    try {
+      const { items } = figure();
+      initGrowthReveal(document, { io, reduced: () => false });
+      at(items[2]!, -200);
+      at(items[3]!, 300);
+      window.dispatchEvent(new Event('scroll'));
+      expect(items.map((el) => el.classList.contains('gr-wait'))).toEqual([false, false, false, false, true, false]);
+      at(items[4]!, 100);
+      window.dispatchEvent(new Event('scroll'));
+      expect(document.querySelectorAll('.gr-wait')).toHaveLength(0);
+    } finally {
+      window.requestAnimationFrame = raf;
+    }
+  });
+
   it('reduced motion or no IntersectionObserver: the final state, nothing hidden, no data-gr-anim', () => {
     Object.defineProperty(window, 'innerHeight', { configurable: true, value: 800 });
     let { fig } = figure();
