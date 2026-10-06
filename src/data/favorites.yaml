@@ -4,6 +4,10 @@
 #   쇼케이스에서 고른 게임은 URL에 반영하지 않는다.
 # - 캐릭터 이미지는 장식이므로 화면에서는 alt=""로 둔다. 저작권 표기는 notices(ui.ts의 notice.*)로 따로 보여 준다.
 # - 캐릭터 이미지는 HoYoverse 공식 홈페이지 원본을 사용자 허락을 받은 뒤 받아 src/assets/characters/<id>.png로 직접 호스팅한다(spec §8, §13). 핫링크 금지.
+# - LoL(이즈리얼)·TFT(펭구) 캐릭터는 쇼케이스 무대 그림 전용이다(2026-10-06 주인 결정): 최애 타일·타일 칸을 만들지 않고
+#   (src/lib/characters.ts SHOWCASE_ONLY), 파일 이름은 중립(showcase-<n>.png, 출처는 src/assets/characters/sources.json),
+#   라이엇 그림이 보이는 페이지에는 Legal Jibber Jabber 고지(notice.riotAssets)가 붙는다. 하스스톤·이터널 리턴은 그림 없음.
+#   tint 값은 참조 보드의 LoL 금색(#C89B3C)과 TFT 보라(#6957FF).
 # - tint는 쇼케이스 배경 색조와 계정 아이콘 배경에만 쓴다. 글자 색으로 쓰지 않는다(spec §4: 캐릭터 고유색은 플레이 로그·쇼케이스에만).
 # - 계정 연동(LINKED ACCOUNTS 줄, account-link 설계 §9.4):
 #   - integration.enabled는 커밋된 주 스위치다. 켠 게임도 빌드가 정상·신선한 데이터를 받았을 때만 아이콘이 보인다(두 스위치).
@@ -95,7 +99,13 @@ games:
       ko: 리그 오브 레전드
       en: League of Legends
     studio: Riot Games
-    characters: []
+    characters:
+      - id: ezreal
+        name:
+          ko: 이즈리얼
+          en: Ezreal
+        position: 45% 20%
+        tint: '#C89B3C'
     why: null
     meta:
       - label: { ko: 플레이, en: Playing since }
@@ -114,7 +124,13 @@ games:
       ko: 전략적 팀 전투
       en: Teamfight Tactics
     studio: Riot Games
-    characters: []
+    characters:
+      - id: pengu
+        name:
+          ko: 펭구
+          en: Pengu
+        position: 50% 30%
+        tint: '#6957FF'
     why:
       ko: 한정된 상황 속에서 머리를 써 최적의 판단을 내리는 전략 요소를 좋아합니다.
       en: 'I like the strategy in it: using my head to make the best call within the limits of each situation.'

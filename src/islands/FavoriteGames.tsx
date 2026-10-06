@@ -45,7 +45,7 @@ type Bezier = [number, number, number, number];
 const EASE_OUT: Bezier = [0.22, 1, 0.36, 1];
 const EASE_IN: Bezier = [0.4, 0, 1, 1];
 const EASE_WIPE: Bezier = [0.65, 0, 0.35, 1];
-const TINTS: readonly CharacterId[] = ['remielle', 'eula', 'mona'];
+const TINTS: readonly CharacterId[] = ['remielle', 'eula', 'mona', 'ezreal', 'pengu'];
 
 /** Seconds from the new scene's mount (spec §4: the account card finishes within 2 s). The copy settles within
  *  0.75 s of a tab click (exit + gap + 3 staggers + enter) so games can be compared quickly; the art enters a little

@@ -36,6 +36,25 @@ export const SHOWCASE_WIDTHS = [480, 800, 1000, 1200, 1520];
 export const SHOWCASE_SIZES = '(min-width: 734px) 980px, 100vw';
 /** Four or more games (the tab column beside a 600px stage from 1068px): the portrait art is painted ~1125px wide there. */
 export const SHOWCASE_SIZES_LIST = '(min-width: 1068px) 1130px, (min-width: 734px) 980px, 100vw';
+/**
+ * Showcase-only art (owner ruling 2026-10-06: League of Legends and TFT get stage art, never a favourite-character
+ * tile). Their sources are narrower than the HoYoverse art the shared values above assume (Ezreal's centred splash
+ * 1280x720 = 1.78, Pengu's render 1232x978 = 1.26), so each gets its own ladder and painted widths from the same
+ * boxes (the 520px stage on tablets and in the tab row, the 600px stage beside the tab column from 1068px; at least
+ * the ~760px art box there): Pengu 655/760px, Ezreal 924/1067px. Phones keep 100vw like the rest. Each ladder ends at
+ * the source width.
+ */
+export const SHOWCASE_ART: Partial<Record<CharacterId, { widths: number[]; row: string; list: string }>> = {
+  ezreal: { widths: [480, 800, 930, 1070, 1280], row: '(min-width: 734px) 930px, 100vw', list: '(min-width: 1068px) 1070px, (min-width: 734px) 930px, 100vw' },
+  pengu: { widths: [480, 660, 760, 1000, 1232], row: '(min-width: 734px) 660px, 100vw', list: '(min-width: 1068px) 760px, (min-width: 734px) 660px, 100vw' },
+};
+/** Characters whose art serves only the showcase stage: no favourite tile, no tile slot. */
+export const SHOWCASE_ONLY: readonly CharacterId[] = ['ezreal', 'pengu'];
+/**
+ * Art file stem per character when it is not the id: Riot art keeps a neutral name (showcase-<n>), so no game or
+ * character name reaches a built asset URL. Provenance: src/assets/characters/sources.json.
+ */
+export const ART_FILES: Partial<Record<CharacterId, string>> = { ezreal: 'showcase-1', pengu: 'showcase-2' };
 export const TILE_WIDTHS = [240, 360, 560, 800, 1080];
 export const TILE_SIZES = '(min-width: 734px) 525px, 40vw';
 
@@ -55,20 +74,30 @@ export const CHARACTER_NAMES: Record<CharacterId, { ko: string; en: string }> = 
   remielle: { ko: '레미엘', en: 'Remielle' },
   eula: { ko: '유라', en: 'Eula' },
   mona: { ko: '모나', en: 'Mona' },
+  ezreal: { ko: '이즈리얼', en: 'Ezreal' },
+  pengu: { ko: '펭구', en: 'Pengu' },
 };
 
 export const CHARACTER_GAME_LABEL: Record<CharacterId, { ko: string; en: string }> = {
   remielle: { ko: 'ZZZ', en: 'ZZZ' },
   eula: { ko: '원신', en: 'Genshin' },
   mona: { ko: '원신', en: 'Genshin' },
+  ezreal: { ko: '리그 오브 레전드', en: 'League of Legends' },
+  pengu: { ko: '전략적 팀 전투', en: 'Teamfight Tactics' },
 };
 
 const DEFAULT_POSITION = '50% 10%';
 const ZZZ_CREDIT = ' · © miHoYo (Zenless Zone Zero)';
+const RIOT_CREDIT = ' · © Riot Games';
+const HOYO_IDS: readonly CharacterId[] = ['remielle', 'eula', 'mona'];
+const RIOT_IDS: readonly CharacterId[] = ['ezreal', 'pengu'];
 
 function idFromPath(path: string): CharacterId | null {
   const stem = (path.split('/').pop() ?? '').replace(/\.png$/i, '');
-  return (CHARACTER_IDS as readonly string[]).includes(stem) ? (stem as CharacterId) : null;
+  const mapped = CHARACTER_IDS.find((id) => ART_FILES[id] === stem);
+  if (mapped) return mapped;
+  // a character with a neutral file name is found only by that name
+  return (CHARACTER_IDS as readonly string[]).includes(stem) && ART_FILES[stem as CharacterId] === undefined ? (stem as CharacterId) : null;
 }
 
 /** Factory over an import.meta.glob map of '../assets/characters/*.png' (tests pass a plain object). */
@@ -88,8 +117,13 @@ export function createCharacterLookup(files: Record<string, ImageMetadata>): {
     available,
     notices(ids) {
       const shown = available(ids);
-      if (shown.length === 0) return [];
-      return shown.includes('remielle') ? ['cognosphere', 'zzz-fan-guide', 'fan-content'] : ['cognosphere', 'fan-content'];
+      const hoyo: NoticeKey[] = !shown.some((id) => HOYO_IDS.includes(id))
+        ? []
+        : shown.includes('remielle')
+          ? ['cognosphere', 'zzz-fan-guide', 'fan-content']
+          : ['cognosphere', 'fan-content'];
+      // Riot's Legal Jibber Jabber notice goes wherever Riot art shows
+      return shown.some((id) => RIOT_IDS.includes(id)) ? [...hoyo, 'riot-assets'] : hoyo;
     },
   };
 }
@@ -143,6 +177,9 @@ export function characterCredit(
 ): string | null {
   const shown = lookup.available(ids);
   if (shown.length === 0) return null;
+  const riot = shown.some((id) => RIOT_IDS.includes(id)) ? RIOT_CREDIT : '';
+  // the line opens with the COGNOSPHERE credit; Riot art alone relies on the footer's Legal Jibber Jabber notice
+  if (!shown.some((id) => HOYO_IDS.includes(id))) return null;
   const credit = t(lang, 'favorites.characterCredit');
-  return shown.includes('remielle') ? `${credit}${ZZZ_CREDIT}` : credit;
+  return `${credit}${shown.includes('remielle') ? ZZZ_CREDIT : ''}${riot}`;
 }

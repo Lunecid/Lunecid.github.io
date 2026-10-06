@@ -1,0 +1,35 @@
+[
+  {
+    "file": "showcase-1.png",
+    "game": "lol",
+    "character": "Ezreal",
+    "use": "Player Log showcase stage art (owner ruling 2026-10-06)",
+    "source": {
+      "kind": "download",
+      "url": "https://ddragon.leagueoflegends.com/cdn/img/champion/centered/Ezreal_0.jpg",
+      "note": "Data Dragon centred splash, 1280x720 JPEG; converted to PNG without changing a pixel (the art glob reads PNG only)"
+    },
+    "sourceSha256": "69014c910705444e6e65f71cac60e7800affd43419dbed7ce1bb8f2e580fc87c",
+    "width": 1280,
+    "height": 720,
+    "outputSha256": "2c7f83a1291bfa8f87457e53dd4bb781bf40f31f6407e9648cfbbe13c27b5760",
+    "retrieved": "2026-10-06"
+  },
+  {
+    "file": "showcase-2.png",
+    "game": "tft",
+    "character": "Pengu (Featherknight)",
+    "use": "Player Log showcase stage art (owner ruling 2026-10-06)",
+    "source": {
+      "kind": "download",
+      "url": "https://cmsassets.rgpub.io/sanity/images/dsfx7636/news/12210015038f15148d157c5a4facdd8bd5cb5e78-1232x978.png",
+      "page": "https://teamfighttactics.leagueoflegends.com/en-us/",
+      "note": "transparent render from the official TFT homepage, used as downloaded (no logo in the image)"
+    },
+    "sourceSha256": "fc2cd1922fb7374a8d34c1e1172c1e7a871e37db0f5e1db06c7ff3551234e3e3",
+    "width": 1232,
+    "height": 978,
+    "outputSha256": "fc2cd1922fb7374a8d34c1e1172c1e7a871e37db0f5e1db06c7ff3551234e3e3",
+    "retrieved": "2026-10-06"
+  }
+]

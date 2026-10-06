@@ -37,6 +37,8 @@ updated: '2026-10-05'
 
 **라이엇 게임즈 에셋.** 플레이 로그 연동 계정 카드의 이즈리얼(리그 오브 레전드)과 펭구(전략적 팀 전투) 그림은 라이엇 게임즈가 <span lang="en">Data Dragon</span>으로 공개한 라이엇 게임즈 에셋을 잘라 쓴 것입니다. 라이엇 게임즈의 [“Legal Jibber Jabber” 정책](https://www.riotgames.com/en/legal)에 따라 무료로, 광고 없이 씁니다.
 
+**쇼케이스 그림.** 플레이 로그 '좋아하는 게임' 쇼케이스의 이즈리얼 그림은 라이엇 게임즈가 <span lang="en">Data Dragon</span>으로 공개한 이즈리얼 기본 일러스트(가운데 맞춤판)이고, 펭구 그림은 전략적 팀 전투 공식 홈페이지(<https://teamfighttactics.leagueoflegends.com/>)에 실린 펭구 그림입니다. 둘 다 같은 정책에 따라 씁니다.
+
 <span lang="en">Seongeun Baek's portfolio was created under Riot Games' "Legal Jibber Jabber" policy using assets owned by Riot Games. Riot Games does not endorse or sponsor this project.</span>
 
 **하스스톤 그림.** 연동 계정 카드의 하스스톤 그림은 블리자드 엔터테인먼트의 하스스톤 공식 소식 글(<https://hearthstone.blizzard.com/en-us/news/24008694>) 머리 이미지에서 여관주인 부분을 잘라 쓴 것입니다.

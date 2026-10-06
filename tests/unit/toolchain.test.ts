@@ -214,7 +214,7 @@ describe('toolchain', () => {
     }
     // Plain Node (type stripping, Node >= 22.18) must load both files, as scripts/*.mjs do.
     const out = execFileSync(process.execPath, ['-e', "Promise.all([import('./src/config.ts'), import('./src/types.ts')]).then(([c, t]) => console.log(c.DOCUMENTS['resume-ko'] + ' ' + t.CHARACTER_IDS.join(',')))"], { encoding: 'utf8' });
-    expect(out.trim()).toBe('/cv/seongeun-baek-resume-ko.pdf remielle,eula,mona');
+    expect(out.trim()).toBe('/cv/seongeun-baek-resume-ko.pdf remielle,eula,mona,ezreal,pengu');
     const accounts = execFileSync(
       process.execPath,
       ['--input-type=module', '-e', "const [i, c] = await Promise.all([import('./src/lib/account-ids.ts'), import('./src/lib/account-config.ts')]); console.log(i.ACCOUNT_VARS.length + ' ' + i.RIOT_REGION + ' ' + c.STEAM_SHOW_GAMES + ' ' + i.validateVar('ACCOUNT_GENSHIN_UID', ' 618285856 ').ok)"],
@@ -256,7 +256,7 @@ describe('toolchain', () => {
 
   it('shared id lists', async () => {
     const types = await import('../../src/types');
-    expect(types.CHARACTER_IDS).toEqual(['remielle', 'eula', 'mona']);
+    expect(types.CHARACTER_IDS).toEqual(['remielle', 'eula', 'mona', 'ezreal', 'pengu']);
     expect(types.NAV_SECTIONS).toEqual(['research', 'projects', 'records', 'player-log']);
     expect(new Set(types.ACHIEVEMENT_TRIGGERS).size).toBe(types.ACHIEVEMENT_TRIGGERS.length);
     expect(types.ACHIEVEMENT_TRIGGERS).not.toContain('visit-404');

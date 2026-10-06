@@ -15,7 +15,7 @@ vi.mock('../../src/lib/island-image.server', () => ({
 
 import { favoriteGameSchema } from '../../src/content/schemas';
 import { parseYamlList } from '../../src/content/yaml-loader';
-import { CHARACTER_GAME_LABEL, POSITIONS, SHOWCASE_SIZES, SHOWCASE_SIZES_LIST, SHOWCASE_WIDTHS, createCharacterLookup } from '../../src/lib/characters';
+import { CHARACTER_GAME_LABEL, POSITIONS, SHOWCASE_ART, SHOWCASE_SIZES, SHOWCASE_SIZES_LIST, SHOWCASE_WIDTHS, createCharacterLookup } from '../../src/lib/characters';
 import { ACCOUNT_HEADS, buildFavoriteGames, buildFavoriteTiles } from '../../src/lib/favorites';
 import { islandImage } from '../../src/lib/island-image.server';
 
@@ -109,6 +109,55 @@ describe('buildFavoriteGames', () => {
       'battle-net': 'BATTLE.NET PROFILE',
       steam: 'STEAM PROFILE',
     });
+  });
+});
+
+describe('showcase art for League of Legends and TFT only (owner ruling 2026-10-06)', () => {
+  const riot = createCharacterLookup({
+    '../assets/characters/remielle.png': meta('remielle'),
+    '../assets/characters/showcase-1.png': meta('showcase-1'),
+    '../assets/characters/showcase-2.png': meta('showcase-2'),
+  });
+
+  it('LoL shows Ezreal and TFT Pengu at their yaml positions; Hearthstone and Eternal Return stay without art', async () => {
+    const ko = await buildFavoriteGames(games, 'ko', riot);
+    const by = (id: string) => ko.find((g) => g.id === id)!;
+    expect(by('lol').art?.objectPosition).toBe('45% 20%');
+    expect(by('lol').art?.image.srcSet).toContain('/_astro/showcase-1.png?w=1280 1280w');
+    expect(by('lol').tint).toBe('ezreal');
+    expect(by('tft').art?.objectPosition).toBe('50% 30%');
+    expect(by('tft').art?.image.srcSet).toContain('/_astro/showcase-2.png?w=1232 1232w');
+    expect(by('tft').tint).toBe('pengu');
+    for (const id of ['hearthstone', 'eternal-return', 'dnf', 'steam']) expect(by(id).art, id).toBeUndefined();
+    expect(games.find((g) => g.id === 'hearthstone')!.characters).toEqual([]);
+    expect(games.find((g) => g.id === 'eternal-return')!.characters).toEqual([]);
+  });
+
+  it('the narrower Riot art gets its own ladder and painted sizes (no 1520w file, no 1130px request)', async () => {
+    await buildFavoriteGames(games, 'ko', riot);
+    expect(islandImage).toHaveBeenCalledWith(meta('showcase-1'), SHOWCASE_ART.ezreal!.widths, SHOWCASE_ART.ezreal!.list);
+    expect(islandImage).toHaveBeenCalledWith(meta('showcase-2'), SHOWCASE_ART.pengu!.widths, SHOWCASE_ART.pengu!.list);
+    expect(islandImage).toHaveBeenCalledWith(meta('remielle'), SHOWCASE_WIDTHS, SHOWCASE_SIZES_LIST);
+    // painted width = box height x aspect (cover) at least the ~760px art box: 600px stage beside the tab column, 520px else
+    const px = (sizes: string, query: string) => Number(new RegExp(`${query.replace(/[()]/g, '\\$&')} (\\d+)px`).exec(sizes)?.[1]);
+    for (const [id, w, h] of [['ezreal', 1280, 720], ['pengu', 1232, 978]] as const) {
+      const art = SHOWCASE_ART[id]!;
+      expect(px(art.list, '(min-width: 1068px)'), id).toBeGreaterThanOrEqual(Math.max(760, Math.ceil((600 * w) / h)));
+      expect(px(art.list, '(min-width: 1068px)'), id).toBeLessThan(Math.max(760, Math.ceil((600 * w) / h)) + 10);
+      expect(px(art.list, '(min-width: 734px)'), id).toBeGreaterThanOrEqual(Math.ceil((520 * w) / h));
+      expect(px(art.row, '(min-width: 734px)'), id).toBe(px(art.list, '(min-width: 734px)'));
+      expect(art.list.endsWith(', 100vw') && art.row.endsWith(', 100vw'), id).toBe(true);
+      expect(Math.max(...art.widths), `${id}: the ladder ends at the source width`).toBe(w);
+      for (const value of [...art.list.matchAll(/(\d+)px/g)].map((m) => Number(m[1]))) {
+        const next = Math.min(...art.widths.filter((x) => x >= value));
+        expect(next / value, `${id} ${value}px -> ${next}w`).toBeLessThan(1.2);
+      }
+    }
+    expect(SHOWCASE_ART.remielle).toBeUndefined();
+  });
+
+  it('showcase-only art never becomes a favourite tile', () => {
+    expect(buildFavoriteTiles(games, 'ko', riot).map((t) => t.id)).toEqual(['remielle']);
   });
 });
 

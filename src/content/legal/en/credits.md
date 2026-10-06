@@ -29,6 +29,8 @@ Notice required by the Zenless Zone Zero Fan Creations Guide v1.0 (HoYoLAB, 2024
 
 **Riot Games assets.** The Ezreal (League of Legends) and Pengu (Teamfight Tactics) pictures on the Player Log's linked-account cards are crops of Riot Games assets published through Riot's Data Dragon. They are used free of charge and without ads under Riot Games' [“Legal Jibber Jabber” policy](https://www.riotgames.com/en/legal).
 
+**Showcase art.** The Ezreal picture in the Player Log's “Games I play” showcase is his base splash art (the centred version) published through Riot's Data Dragon; the Pengu picture is from the official Teamfight Tactics website (<https://teamfighttactics.leagueoflegends.com/>). Both are used under the same policy.
+
 Seongeun Baek's portfolio was created under Riot Games' "Legal Jibber Jabber" policy using assets owned by Riot Games. Riot Games does not endorse or sponsor this project.
 
 **Hearthstone art.** The Hearthstone picture on the linked-account cards is a crop of the Innkeeper from the header image of Blizzard Entertainment's official Hearthstone news post (<https://hearthstone.blizzard.com/en-us/news/24008694>).

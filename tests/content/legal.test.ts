@@ -481,6 +481,15 @@ describe('character cards, Riot assets and game screenshots in credits', () => {
     expect(enb).toContain(
       "**Riot Games assets.** The Ezreal (League of Legends) and Pengu (Teamfight Tactics) pictures on the Player Log's linked-account cards are crops of Riot Games assets published through Riot's Data Dragon. They are used free of charge and without ads under Riot Games' “Legal Jibber Jabber” policy.",
     );
+    // the showcase art (owner ruling 2026-10-06): Ezreal's Data Dragon splash and Pengu from the TFT website
+    if (has('ezreal') && has('pengu')) {
+      expect(kob).toContain(
+        "**쇼케이스 그림.** 플레이 로그 '좋아하는 게임' 쇼케이스의 이즈리얼 그림은 라이엇 게임즈가 <span lang=\"en\">Data Dragon</span>으로 공개한 이즈리얼 기본 일러스트(가운데 맞춤판)이고, 펭구 그림은 전략적 팀 전투 공식 홈페이지(<https://teamfighttactics.leagueoflegends.com/>)에 실린 펭구 그림입니다. 둘 다 같은 정책에 따라 씁니다.",
+      );
+      expect(enb).toContain(
+        "**Showcase art.** The Ezreal picture in the Player Log's “Games I play” showcase is his base splash art (the centred version) published through Riot's Data Dragon; the Pengu picture is from the official Teamfight Tactics website (<https://teamfighttactics.leagueoflegends.com/>). Both are used under the same policy.",
+      );
+    }
     expect(ko).toContain('[“Legal Jibber Jabber” 정책](https://www.riotgames.com/en/legal)');
     expect(en).toContain('[“Legal Jibber Jabber” policy](https://www.riotgames.com/en/legal)');
     expect(ko).toContain(`\n<span lang="en">${ui.ko['notice.riotAssets']}</span>\n`);

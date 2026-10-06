@@ -1,5 +1,5 @@
 // Shared id lists and union types. Import-free and erasable TypeScript only (plain Node imports this file).
-export const CHARACTER_IDS = ['remielle', 'eula', 'mona'] as const;
+export const CHARACTER_IDS = ['remielle', 'eula', 'mona', 'ezreal', 'pengu'] as const;
 export type CharacterId = (typeof CHARACTER_IDS)[number];
 export const NAV_SECTIONS = ['research', 'projects', 'records', 'player-log'] as const;
 export type NavSection = (typeof NAV_SECTIONS)[number];
