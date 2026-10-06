@@ -752,9 +752,24 @@ describe('neon typing (MO-27)', () => {
 
   it('MO-27: while the opening plays the targets type in glyph spans (seeded variants, a start each); read labels keep an sr-only copy; the plain text is back at sb:intro-done', async () => {
     const { typeNeon } = await import('../../src/scripts/chooser');
+    const { NEON_LEAD_MS, NEON_TARGETS } = await import('../../src/lib/neon');
     mountLabels();
     root.setAttribute('data-intro', 'opening');
-    typeNeon(document);
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'performance'] });
+    try {
+      typeNeon(document);
+      // one short task per line, just before its first glyph: nothing is split up front
+      expect(document.querySelectorAll('.ng')).toHaveLength(0);
+      const atOf = (sel: string) => NEON_TARGETS.find((t) => t.sel === sel)!.atMs;
+      vi.advanceTimersByTime(atOf('.ov__t') - NEON_LEAD_MS);
+      expect(document.querySelector('.ov__t .ng')).not.toBeNull();
+      expect(document.querySelector('.bar__name .ng')).toBeNull();
+      // a line built later still keeps the opening's clock: its first glyph starts the lead after the build
+      expect(parseFloat(document.querySelector<HTMLElement>('.ov__t .ng')!.style.getPropertyValue('--d'))).toBeCloseTo(NEON_LEAD_MS, 0);
+      vi.advanceTimersByTime(atOf('.cv__sn'));
+    } finally {
+      vi.useRealTimers();
+    }
     const name = document.querySelector<HTMLElement>('.bar__name')!;
     const glyphs = [...name.querySelectorAll<HTMLElement>('.ng')];
     expect(glyphs.map((g) => g.textContent).join('')).toBe('GAME_ANALYST.DOC');
@@ -775,6 +790,25 @@ describe('neon typing (MO-27)', () => {
     expect(document.querySelector('.ov__rq')!.textContent).toBe('> 열람 요청');
     expect(document.querySelectorAll('.ng')).toHaveLength(0);
     expect(name.getAttribute('style')).toBeNull();
+  });
+
+  it('an opening ended early (a skip) splits no line that had not started yet', async () => {
+    const { typeNeon } = await import('../../src/scripts/chooser');
+    mountLabels();
+    root.setAttribute('data-intro', 'opening');
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'performance'] });
+    try {
+      typeNeon(document);
+      vi.advanceTimersByTime(600);
+      expect(document.querySelector('.ov__t .ng')).not.toBeNull();
+      root.removeAttribute('data-intro');
+      window.dispatchEvent(new Event('sb:intro-done'));
+      vi.advanceTimersByTime(3000);
+      expect(document.querySelectorAll('.ng')).toHaveLength(0);
+      expect(document.querySelector('.bar__name')!.innerHTML).toBe('GAME_ANALYST.DOC');
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('MO-27: without the opening nothing is split', async () => {
