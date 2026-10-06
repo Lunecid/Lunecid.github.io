@@ -179,7 +179,7 @@
   "tests/react/data-paint.test.ts": 8,
   "tests/react/data-reveal.test.ts": 13,
   "tests/react/en-404.test.ts": 19,
-  "tests/react/growth-reveal.test.ts": 16,
+  "tests/react/growth-reveal.test.ts": 20,
   "tests/react/head-init.test.ts": 105,
   "tests/react/motion-pref.test.ts": 43,
   "tests/react/motion-toggle.test.ts": 21,
