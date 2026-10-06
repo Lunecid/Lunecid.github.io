@@ -74,10 +74,9 @@
   --ed-fill-ink: #FFFFFF;
   --ed-rule-w: 1px;
   --ed-rule-w-strong: 2px;
-  /* Latin headings in the system Times stack (as on the paper page); Korean headings in "SB Serif KR Head", the
-     build-time static wght-700 subset of Noto Serif KR over the Hangul inside [data-serif] (scripts/fonts/build.mjs). */
+  /* Latin headings in the system Times stack (as on the paper page); Korean headings in the system serif. */
   --font-ed-serif: "Times New Roman", Times, "TeX Gyre Termes", "Nimbus Roman", "Liberation Serif", serif;
-  --font-ed-head: "Times New Roman", Times, "TeX Gyre Termes", "Nimbus Roman", "Liberation Serif", "SB Serif KR Head", serif;
+  --font-ed-head: "Times New Roman", Times, "TeX Gyre Termes", "Nimbus Roman", "Liberation Serif", serif;
   /* DS-1: Latin display words, numerals, section numbers and folios of the general version in "SB Display" (the
      build-time Archivo subset, width 112 %, weight 700–900; src/lib/fonts.ts); Hangul inside them falls to SB Sans. */
   --font-ed-display: "SB Display", var(--font-sans);
@@ -127,12 +126,76 @@
 
   /* ── the chooser desk (MO-23, chooser v6.4): the game file's cyber cover and the general file's art-paper printout ── */
   --font-cover: "SB Cover Display", Impact, "Arial Narrow Bold", sans-serif;  /* the game cover's display words: Anton subset (MO-23), chooser only */
+  --font-chooser-banner: "SB Cover Banner", var(--font-ed-display);  /* the printout's banner: the display face's chooser subset (MO-29) */
   --cover-shadow: #000000;                    /* the files' drop shadows */
   --cover-scan: rgba(255, 255, 255, .025);    /* static scanlines: --hud-strong at 2.5% */
   --cover-grid: rgba(255, 255, 255, .03);     /* the cover's crossword grid: --hud-strong at 3% */
   --cover-blk-scan: rgba(11, 13, 17, .16);    /* scanlines inside the reversed title block: --hud-bg at 16% */
   --neon-glow: rgba(232, 234, 237, .5);       /* --hud-text at 50%: a static glow, never animated */
   --neon-halo: rgba(139, 147, 161, .42);      /* --hud-muted at 42% */
+  /* ── the chooser's game cover in the approved game palette (MO-33, chooser v6.11): black ground, yellow for what you
+     click, cyan for the rest. Chooser only: the screen-only chooser rule below re-points the HUD names the cover uses to
+     these literals, so --accent is yellow on / and /en/ while the game pages stay lime until the game palette ships
+     (GP-9 replaces these duplicates with its --gp-* tokens). Pairs: off-white on the panel 14.7:1, muted 7.3:1, cyan
+     11.9:1, ink on yellow 15.6:1; yellow as text (the language switch) #FFE14A. ── */
+  --ch-k0: #0A0A0B;                           /* the ground; ink on yellow */
+  --ch-k1: #141416;                           /* the cover window */
+  --ch-k2: #1C1C1F;                           /* raised: the title bar, the plate */
+  --ch-t0: #F4F4F0;                           /* titles */
+  --ch-t1: #E6E6E1;                           /* text */
+  --ch-t2: #A3A39C;                           /* muted labels */
+  --ch-line: #707078;                         /* component lines, neutral */
+  --ch-dash: #3A3A40;                         /* decorative rules */
+  --ch-divider: #24242A;
+  --ch-frame: #2C2C31;
+  --ch-panel-92: rgba(20, 20, 22, .92);
+  --ch-y: #FFE600;                            /* yellow: fills and strokes of what you click, and the listed marks */
+  --ch-y-hover: #FFF06B;                      /* the filled link under the pointer: ink on it 17.0:1 */
+  --ch-y-text: #FFE14A;                       /* yellow as text on dark (the language switch) */
+  --ch-ink: #0A0A0B;                          /* text on yellow */
+  --ch-cy: #00E5FF;                           /* cyan: line-art, numbers, data; never clickable */
+  --ch-cy-dim: rgba(0, 229, 255, .42);
+  --ch-cy-glow: rgba(0, 229, 255, .35);
+  --ch-neon-glow: rgba(230, 230, 225, .5);    /* --ch-t1 at 50%: a static glow */
+  --ch-neon-halo: rgba(163, 163, 156, .4);    /* --ch-t2 at 40% */
+  --ch-blk-scan: rgba(10, 10, 11, .12);       /* scanlines inside the yellow GAME block */
+  /* ── the chooser's tablet (MO-34, v6.5/v6.8): a generic graphite shell, darker than the desk so the screen reads as
+     the light source; the screen is the game black, lit a little at its middle ── */
+  --dev-shell: #1A1D22;                       /* graphite body */
+  --dev-shell-2: #101215;
+  --dev-hi: #24272D;                          /* the shell's lit corner */
+  --dev-rim: rgba(255, 255, 255, .09);        /* the chamfer catching light */
+  --dev-rim-top: rgba(255, 255, 255, .13);
+  --dev-edge: #030304;                        /* the outer dark line against the desk */
+  --dev-cam: #0A0C10;                         /* the front camera's lens */
+  --dev-cam-glint: #2B3A5C;
+  --scr: #0A0A0B;                             /* the screen: the game black (= --ch-k0) */
+  --scr-lit: #19191C;                         /* its lit middle */
+  --scr-off: #020203;                         /* the screen switched off (opening) */
+  --scr-spill: rgba(150, 160, 190, .06);      /* the screen's light on the desk */
+  --glare: rgba(255, 255, 255, .03);          /* the glass reflection (decoration over the content) */
+  /* ── the chooser's desk (MO-35, v6.9 navy felt A, v6.12 mat): a muted indigo felt mat (L* 33, 40 in its pool of
+     light; yellow's near-complement) on a darker desk, measured in real centimetres; the caption's ink on it ── */
+  --ch-desk: #444B73;                         /* the felt, L* 32.9 */
+  --ch-desk-lit: #545C89;                     /* its pool of light, L* 40.2 */
+  --ch-desk-night: rgba(7, 9, 20, .52);       /* the desk beyond the mat (one spread shadow round it) */
+  --ch-mat-edge: rgba(18, 22, 46, .42);       /* the mat's bound edge */
+  --ch-mat-lit: rgba(255, 255, 255, .025);
+  --ch-mat-contact: rgba(0, 0, 0, .5);        /* its thin contact shadow */
+  --ch-mat-stitch: rgba(178, 188, 236, .16);  /* the stitch line */
+  --ch-vignette: rgba(0, 0, 0, .22);
+  --ch-coat: rgba(255, 255, 255, .03);        /* one soft reflection from the top left */
+  --ch-coat-2: rgba(255, 255, 255, .012);
+  --ch-cap: #EEF1F5;                          /* the caption on the felt: 5.4:1 on --ch-desk-lit */
+  /* ── the printout's attachments (MO-37, v6.8/v6.12): a navy card folder under the sheet (L* about 19, deeper than
+     the felt) and a steel gem clip; the index flag is the printout's yellow (--pr-yellow, ink on it 11.4:1) ── */
+  --ch-folder-1: #2A3666;
+  --ch-folder-2: #1F2A55;
+  --ch-folder-3: #1A2349;
+  --ch-clip-dark: #3E444E;                    /* the clip's inner leg */
+  --ch-clip-edge: #4A515C;                    /* its dark outline */
+  --ch-clip-steel: #A3ABB6;                   /* the wire */
+  --ch-clip-hi: #F4F6F8;                      /* the wire's highlight */
   /* the printout: white cotton-rag art paper (finish B "판화지") with painted fields; text pairs on the paper:
      ink 17.6:1, ink-2 8.6:1, stamp 8.6:1; white on the red field 5.4:1 flat; ink on the yellow 11.4:1 */
   --pr-paper: #FBFAF6;
@@ -145,13 +208,13 @@
   --pr-blue: #1F3A93;
   --pr-yellow: #F5C400;
   --pr-on-color: #FFFFFF;                     /* type reversed out of the red field */
-  /* MO-OQ16 role tokens: stand-ins until the general version's type and link tokens are merged (MO-29 repoints them:
-     the banner to the display face, the link and focus to the general version's link tokens) */
+  /* the printout's type and link follow the general version (MO-OQ16 A): the banner in its display face, the link in
+     its ink with the yellow brush stroke, the focus ring in its ink */
   --pr-font-text: var(--font-sans);
-  --pr-font-banner: var(--font-sans);
-  --pr-link: var(--ed-ink);
-  --pr-link-stroke: var(--pr-yellow);
-  --pr-focus: var(--ed-ink);
+  --pr-font-banner: var(--font-chooser-banner);
+  --pr-link: var(--ed-link);
+  --pr-link-stroke: var(--ed-yellow);
+  --pr-focus: var(--ed-focus);
 
   /* ── HUD labels (D8 / Task 0 Q13). Accent means "clickable" only, so labels are muted.
         Q13 = lime flips both lines: --hud-label: var(--accent); --read-label: var(--accent-deep). ── */
@@ -246,69 +309,8 @@
   --skin-st-btn-b: #1A44C2;
   --skin-st-btn-hi: #66C0F4;
 
-  /* ── game palette v4 (owner-approved 2026-10-05; owner-assets/game-palette/v4/palette.md): raw values only. The game
-        block below re-points the HUD, read, gold and cartridge names to them on game pages; these names stay unused
-        elsewhere. Pairs (palette.md §2a–§2c): t1 on k0 15.71, t2 on the card 6.84, yellow text on the card 13.33, cyan on
-        k0 12.79, ink on yellow 15.52; on the white panel ink 14.95, ink-2 6.45, deep cyan 5.03 (5.14 on its wash). ── */
-  --gp-k0: #0B0B0C;             /* page and HUD bands */
-  --gp-k1: #141416;             /* HUD panels */
-  --gp-k2: #1C1C1F;             /* raised: chips, title bars */
-  --gp-k-read: #121214;         /* reading bands */
-  --gp-k-card: #1A1A1D;         /* cards on a reading band */
-  --gp-t0: #F4F4F0;             /* titles */
-  --gp-t1: #E6E6E1;             /* text */
-  --gp-t2: #A3A39C;             /* secondary text */
-  --gp-ln: #707078;             /* component boundaries (UI ≥ 3:1 on every dark surface) */
-  --gp-ln-strong: #9A9AA2;
-  --gp-ln-dash: #3A3A40;        /* dashed table rules (decoration) */
-  --gp-divider: #24242A;        /* band rules (decoration) */
-  --gp-frame: #2C2C31;          /* frames and soft separators (decoration) */
-  --gp-y: #FFE600;              /* the clickable colour: fills, strokes, focus ring; never a ground, never body text */
-  --gp-y-text: #FFE14A;         /* yellow as text (links in dark bands) */
-  --gp-y-hover: #FFF06B;        /* filled hover */
-  --gp-y-light: #FFF3A6;
-  --gp-y-wash-8: rgba(255, 230, 0, .08);
-  --gp-y-wash-12: rgba(255, 230, 0, .12);
-  --gp-y-streak: rgba(255, 230, 0, .6);
-  --gp-y-strip: rgba(255, 230, 0, .9);   /* the highlighter strip under links on the white panels */
-  --gp-cy: #00E5FF;             /* the second highlight: data, numbers, line-art, meters, achievements; never clickable */
-  --gp-cy-dim: rgba(0, 229, 255, .45);
-  --gp-cy-wash: rgba(0, 229, 255, .12);
-  --gp-cy-glow: rgba(0, 229, 255, .45); /* hover glow (text-shadow) */
-  --gp-cy-light: #99F5FF;       /* meter gradient end (cyan 40 % over white) */
-  --gp-ink: #0B0B0C;            /* text on a yellow or cyan plate */
-  --gp-w-panel: #EEEEE9;        /* white panels for dense and long text */
-  --gp-w-card: #F7F7F3;
-  --gp-w-ink: #1A1A1A;
-  --gp-w-ink-2: #55554F;
-  --gp-w-cy: #006F80;           /* deep cyan: the second highlight on white */
-  --gp-w-cy-wash: #E0F4F6;      /* status "met" ground */
-  --gp-w-line: rgba(26, 26, 26, .14);
-  --gp-w-line-strong: #85857F;  /* UI boundary on white (≥ 3:1) */
-  --gp-w-rule: #B9B9B3;
-  --gp-w-code: #E6E6E0;         /* BibTeX ground on white */
-  --gp-w-code-line: #CFCFC8;
-  --gp-nav-bg: rgba(11, 11, 12, .97);
-  --gp-panel-92: rgba(20, 20, 22, .92);
-  --gp-panel-75: rgba(20, 20, 22, .75);
-  --gp-fade: rgba(11, 11, 12, .95);
-  --gp-scrim: rgba(0, 0, 0, .55);
-  --gp-grid: rgba(255, 255, 255, .03);
-  --gp-cart-shell: #2A2A2E;     /* graphite cartridge shell */
-  --gp-cart-shell-hover: #323237;
-  --gp-cart-shell-shade: #1D1D21;
-  --gp-cart-shell-grip: #45454B;
-  --gp-paper-shadow: 0 0 0 1px #2C2C31, 0 18px 40px rgba(0, 0, 0, .5);
-  --gp-ach-rim: #0097A7;        /* medal rim and ribbon: 2.28:1 against the cyan disc, 4.95:1 on the card */
-  --gp-haz: repeating-linear-gradient(-45deg, var(--gp-y) 0 5px, transparent 5px 10px);
-  /* barcodes (original drawing): cyan for the page head, grey for the kicker tails */
-  --gp-bars-c: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='12'%3E%3Cpath fill='%2300E5FF' d='M0 0h2v12H0zM4 0h1v12H4zM7 0h3v12H7zM12 0h1v12h-1zM15 0h1v12h-1zM18 0h4v12h-4zM24 0h1v12h-1zM27 0h2v12h-2zM31 0h1v12h-1zM35 0h3v12h-3zM40 0h1v12h-1zM43 0h1v12h-1zM46 0h2v12h-2zM51 0h1v12h-1zM54 0h4v12h-4zM60 0h1v12h-1zM63 0h2v12h-2zM67 0h1v12h-1zM70 0h1v12h-1zM74 0h3v12h-3zM79 0h1v12h-1zM82 0h2v12h-2zM87 0h1v12h-1zM90 0h4v12h-4zM96 0h1v12h-1zM99 0h1v12h-1zM102 0h2v12h-2zM107 0h1v12h-1zM110 0h3v12h-3zM115 0h1v12h-1zM118 0h2v12h-2z'/%3E%3C/svg%3E");
-  --gp-bars-g: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='12'%3E%3Cpath fill='%235A5A62' d='M0 0h2v12H0zM4 0h1v12H4zM7 0h3v12H7zM12 0h1v12h-1zM15 0h1v12h-1zM18 0h4v12h-4zM24 0h1v12h-1zM27 0h2v12h-2zM31 0h1v12h-1zM35 0h3v12h-3zM40 0h1v12h-1zM43 0h1v12h-1zM46 0h2v12h-2zM51 0h1v12h-1zM54 0h4v12h-4zM60 0h1v12h-1zM63 0h2v12h-2zM67 0h1v12h-1zM70 0h1v12h-1zM74 0h3v12h-3zM79 0h1v12h-1zM82 0h2v12h-2zM87 0h1v12h-1zM90 0h4v12h-4zM96 0h1v12h-1zM99 0h1v12h-1zM102 0h2v12h-2zM107 0h1v12h-1zM110 0h3v12h-3zM115 0h1v12h-1zM118 0h2v12h-2z'/%3E%3C/svg%3E");
-  --gp-print-paper: #FFFFFF;    /* print: the white panels and the paper sheet print black on white (game.css PRINT) */
-  --gp-print-ink: #000000;
-  --gp-print-muted: #333333;
-  --gp-edge-cy: var(--gp-cy);   /* the edge frame's line-art */
-  --gp-edge-y: var(--gp-y);
+  /* ── game palette v4: the raw --gp-* values and the game block that re-points the HUD, read, gold and cartridge
+        names live in game-tokens.css (game pages only; this sheet is inlined into every page). ── */
   /* role tokens: the second highlight (cyan on dark, deep cyan on white) and the medal rim. Outside game pages they
      resolve to today's colours, so the shared components that use them do not change there. */
   --hl2: var(--accent-deep);
@@ -389,19 +391,16 @@
   /* page transitions: fade-through, the old page out first, then the new one in (M2 crossover ≈ .35) */
   --dur-nav-out: .09s;
   --dur-nav-in: .16s;
-  --dur-morph: .4s;      /* the chosen chooser file grows into the version home (container transform) */
   --dur-reflow: .3s;     /* tag-filter cards move to their new places */
   --dur-menu: .15s;      /* phone menu panel entrance (HudNav, DataNav) */
   --dur-lift: .25s;      /* cartridge lift on hover (spec §6's 0.25 s) */
   --dur-fade-out: .15s;  /* reduced-motion exit fade (ImageViewer, CharacterStage, the page turn) */
   --dur-aside: .45s;     /* the chooser's printout slides aside to reveal the game file (MO-24) */
   --dur-strike: .32s;    /* the chooser's "기밀 해제" stamp is struck on the entering click (MO-25) */
-  --dur-strike-ring: .42s; /* its lime ring spreads once; ENTER_DELAY_MS.full (440 ms) waits for it */
-  /* the game version's media tilt: research and project media lean on hover and keyboard focus; out = --dur-panel-out */
-  --dur-tilt-in: .22s;
-  --tilt-deg: 2deg;         /* cartridge thumbnails, alternating sign per card */
-  --tilt-deg-wide: 1.25deg; /* the wide cartridge */
-  --tilt-deg-fig: .8deg;    /* a chart: leans, does not tip */
+  --dur-strike-ring: .42s; /* its ring spreads once (the game exit's first moment, MO-38) */
+  /* the chooser's own motion tokens are declared with the sheets that use them (only the chooser loads those; this
+     sheet is inlined into every page's first flight): its exits' --x-* (MO-38/MO-39) at the top of chooser-exit.css,
+     its opening's --at-op-* / --dur-op-* (MO-41) at the top of chooser.css */
 
   /* ── layout ── */
   --container: 1180px;   /* includes gutters; the base width of every band's container */
@@ -439,6 +438,19 @@
   --page-fill: var(--accent); --page-fill-ink: var(--accent-ink);
   --nt-bg: var(--hud-bg); --nt-ink: var(--hud-text); --nt-muted: var(--hud-muted); --nt-rule: var(--hud-divider); --nt-accent: var(--accent);
 }
+/* MO-33: the chooser's game cover in the game palette (the --ch-* group above). Screen only: print keeps the HUD print
+   values (black on white). */
+@media screen {
+  :root[data-variant="neutral"][data-page="chooser"] {
+    --hud-bg: var(--ch-k0); --hud-panel: var(--ch-k1); --hud-panel-2: var(--ch-k2); --hud-text: var(--ch-t1); --hud-strong: var(--ch-t0);
+    --hud-muted: var(--ch-t2); --hud-label: var(--ch-t2); --hud-line: var(--ch-line); --hud-line-strong: var(--ch-line); --hud-line-dash: var(--ch-dash);
+    --hud-divider: var(--ch-divider); --hud-frame: var(--ch-frame); --hud-panel-92: var(--ch-panel-92);
+    --accent: var(--ch-y); --accent-ink: var(--ch-ink); --accent-hover: var(--ch-y-hover); --accent-wash: var(--ch-k2); --accent-wash-strong: var(--ch-k2);
+    --neon-glow: var(--ch-neon-glow); --neon-halo: var(--ch-neon-halo); --cover-blk-scan: var(--ch-blk-scan);
+    --cover-cy: var(--ch-cy); --cover-cy-dim: var(--ch-cy-dim); --cover-cy-glow: var(--ch-cy-glow);
+    --nt-accent: var(--ch-y-text); --page-link: var(--ch-y-text);
+  }
+}
 @media (min-width: 734px) {
   :root { --fs-name: 3.75rem; --fs-display: 3rem; --fs-h2: 1.75rem; --fs-sub: 1.3125rem; --gutter: 32px; --section-pad-y: 44px;
     --fs-ed-display: 3.25rem; --fs-ed-h1: 2.875rem; --fs-ed-h2: 2rem; --fs-ed-num: 2rem; --ed-rw: 6px; } /* type: 60 / 48 / 28 / 21px */ /* general version: 52 / 46 / 32 / 32px */
@@ -457,27 +469,6 @@
   :root { --container-hud: 1440px; --gutter: 72px; --fs-name: 5.625rem; --fs-display: 4rem; --fs-h2: 2.25rem; --fs-sub: 1.625rem; } /* type: 90 / 64 / 36 / 26px */
 }
 :lang(en) { --lh-display: 1.07; --lh-h2: 1.125; --lh-sub: 1.2; --lh-body: 1.47; --measure: 36em; }
-:root[data-variant="game"] {
-  /* game palette v4: the game pages re-point the HUD, read, gold and cartridge names to the --gp-* values (the :root
-     values above stay for the non-game consumers). The paper sheet, tints, account tints and game skins keep theirs. */
-  color-scheme: dark;
-  --hud-bg: var(--gp-k0); --hud-panel: var(--gp-k1); --hud-text: var(--gp-t1); --hud-strong: var(--gp-t0);
-  --hud-muted: var(--gp-t2); --hud-label: var(--gp-t2);
-  --accent: var(--gp-y); --accent-ink: var(--gp-ink); --accent-deep: var(--gp-y-text); --accent-hover: var(--gp-y-hover);
-  --accent-light: var(--gp-y-light); --accent-wash: var(--gp-k1); --accent-wash-strong: var(--gp-k2);
-  --accent-wash-12: var(--gp-y-wash-8); --accent-wash-16: var(--gp-y-wash-12); --accent-streak: var(--gp-y-streak);
-  --hud-line: var(--gp-ln); --hud-line-strong: var(--gp-ln-strong); --hud-line-dash: var(--gp-ln-dash);
-  --hud-divider: var(--gp-divider); --hud-frame: var(--gp-frame); --hud-nav-bg: var(--gp-nav-bg);
-  --hud-panel-92: var(--gp-panel-92); --hud-panel-75: var(--gp-panel-75); --hud-fade: var(--gp-fade);
-  --grid-line: var(--gp-grid); --chip-bg: var(--gp-k2); --scrim: var(--gp-scrim);
-  --gold: var(--gp-cy); --gold-ink: var(--gp-ink); --gold-line: var(--gp-cy-dim); --gold-wash: var(--gp-cy-wash);
-  --gold-deep: var(--gp-cy);
-  --read-bg: var(--gp-k-read); --read-card: var(--gp-k-card); --read-text: var(--gp-t1); --read-muted: var(--gp-t2);
-  --read-label: var(--gp-t2); --read-line: var(--gp-frame); --read-line-strong: var(--gp-ln);
-  --cart-shell: var(--gp-cart-shell); --cart-shell-hover: var(--gp-cart-shell-hover);
-  --cart-shell-shade: var(--gp-cart-shell-shade); --cart-shell-grip: var(--gp-cart-shell-grip);
-  --hl2: var(--gp-cy); --hl2-deep: var(--gp-w-cy); --hl2-light: var(--gp-cy-light); --ach-rim: var(--gp-ach-rim);
-}
 /* Printed paper page (D-15): black on white. */
 @media print {
   :root { --paper-bg: #FFFFFF; --paper-ink: #000000; --paper-muted: #000000; }
@@ -493,16 +484,6 @@
     /* the game-achievement skins lose their dark grounds on paper, so their text turns dark */
     --gm-title: #000000; --gm-cream: #000000; --gm-amber: #000000; --gm-grey: #333333; --gm-gold: #333333;
     --skin-hs-text: #000000;
-  }
-  /* the game palette's dark bands and light text print black on white too; yellow and cyan text darken (olive 8.7:1,
-     deep cyan 5.9:1 on white). After the game block and the rule above, so it wins on game pages. */
-  :root[data-variant="game"] {
-    --hud-bg: #FFFFFF; --hud-panel: #FFFFFF; --hud-text: #000000; --hud-strong: #000000;
-    --hud-muted: #333333; --hud-label: #333333;
-    --read-bg: #FFFFFF; --read-card: #FFFFFF; --read-text: #000000; --read-muted: #333333; --read-label: #333333;
-    --read-line: #CCCCCC; --read-line-strong: #666666;
-    --accent: #3D5200; --accent-deep: #3D5200;
-    --hl2: #006F80; --hl2-deep: #006F80; --gold: #006F80; --gold-deep: #006F80; --gold-ink: #000000;
   }
   /* G-026 (P-12): the origin printed before a site-relative PDF link (base.css); the same value as SITE.url. */
   :root { --print-origin: "https://lunecid.github.io"; }

@@ -34,7 +34,7 @@ describe('edge frame assets (GP-6)', () => {
   }, 60_000);
 
   it('GP-6: the strokes are yellow --gp-y, drawn without filters or noise', () => {
-    const tokens = read('src/styles/tokens.css');
+    const tokens = read('src/styles/game-tokens.css');
     expect(tokens).toMatch(new RegExp(`--gp-y: ${EDGE_YELLOW};`));
     for (const [key, svg] of Object.entries(edgeSvgs())) {
       expect(svg, key).not.toMatch(/<filter|feTurbulence/);

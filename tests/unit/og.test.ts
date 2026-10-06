@@ -78,7 +78,8 @@ describe('renderOgPng', () => {
   }, 30_000);
 
   it('OG colour literals equal their tokens.css values and og.ts has no other colour literal', () => {
-    const tokens = readFileSync(new URL('../../src/styles/tokens.css', import.meta.url), 'utf8');
+    // the game palette's raw values live in game-tokens.css (game pages only)
+    const tokens = ['tokens.css', 'game-tokens.css'].map((f) => readFileSync(new URL(`../../src/styles/${f}`, import.meta.url), 'utf8')).join('\n');
     for (const [key, name] of Object.entries(TOKEN_OF) as [keyof typeof TOKEN_OF, string][]) {
       const value = new RegExp(`(?<![\\w-])${name}:\\s*([^;]+);`).exec(tokens)?.[1];
       expect(value, `${name} is defined in tokens.css`).toBeDefined();

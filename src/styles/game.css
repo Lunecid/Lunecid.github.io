@@ -6,6 +6,7 @@
    motion. Blocks: GLOBAL · WHITE PANELS · ACHIEVEMENTS · COMPONENTS · EDGE · MEDIA TILT · FORCED COLOURS · PRINT. */
 
 /* EDGE: the fixed edge frame (EdgeFrame.astro); its rules are a partial the chooser can share. */
+@import './game-tokens.css';
 @import './edge.css';
 
 /* ═══ GLOBAL ═══════════════════════════════════════════════════════════════════════════════════════════════════ */

@@ -36,7 +36,7 @@ describe('coverCopy (chooser covers, v6.2)', () => {
     expect(en).toEqual(ko);
     expect(Object.keys(COVER_COPY_STATUS).sort()).toEqual(ko);
     expect(Object.keys(COVER_LIMITS).sort()).toEqual(ko);
-    expect(ko).toHaveLength(25);
+    expect(ko).toHaveLength(28); // MO-40 (named): + sound.label, sound.on, sound.off
     for (const lang of LANGS) {
       expect(coverCopy[lang].game.display, lang).toHaveLength(3);
       expect(coverCopy[lang].data.banner, lang).toHaveLength(2);
@@ -109,4 +109,19 @@ describe('coverCopy (chooser covers, v6.2)', () => {
     expect(others.length).toBeGreaterThan(0);
     for (const [key, status] of others) expect(status, key).toBe('placeholder');
   });
+
+  it('MO-40: sound.label/on/off exist in ko and en with status and limits', () => {
+    for (const lang of ['ko', 'en'] as const) {
+      const sound = coverCopy[lang].sound;
+      expect(Object.keys(sound).sort()).toEqual(['label', 'off', 'on']);
+      for (const k of ['label', 'on', 'off'] as const) expect(sound[k].length, `${lang} sound.${k}`).toBeGreaterThan(0);
+    }
+    expect(COVER_LIMITS['sound.label']).toBe(10);
+    expect(COVER_LIMITS['sound.on']).toBe(6);
+    expect(COVER_LIMITS['sound.off']).toBe(6);
+    for (const k of ['sound.label', 'sound.on', 'sound.off']) expect(COVER_COPY_STATUS[k]).toBe('placeholder');
+    expect(coverCopy.ko.sound).toEqual({ label: '효과음', on: '켜짐', off: '꺼짐' });
+    expect(coverCopy.en.sound).toEqual({ label: 'Sound', on: 'On', off: 'Off' });
+  });
 });
+

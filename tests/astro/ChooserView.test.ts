@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it, vi } from 'vitest';
 import ChooserView from '../../src/views/ChooserView.astro';
-import { COVER_DISPLAY_FAMILY, COVER_MONO_FAMILY, MONO_FAMILY, SERIF_KO_HEAD_FAMILY } from '../../src/lib/fonts';
+import { COVER_BANNER_FAMILY, COVER_DISPLAY_FAMILY, COVER_MONO_FAMILY, DISPLAY_FAMILY, MONO_FAMILY } from '../../src/lib/fonts';
 import { coverCopy } from '../../src/data/copy/chooser-covers';
 import { readSource } from './helpers';
 import { renderAstro } from './helpers';
@@ -48,7 +48,11 @@ describe('ChooserView.astro (MO-23: the v6.4 desk; P2-10 header)', () => {
     expect(html).toMatch(/<link rel="stylesheet" href/); // vitest resolves the ?url import to an empty href; the build hashes it
     expect(readSource('src/views/ChooserView.astro')).toContain("from '../styles/chooser.css?url'");
     expect(html).not.toMatch(/<style[^>]*>[^<]*(\.file--data|--tex-rh|\.desk)/);
-    expect(html).not.toContain(SERIF_KO_HEAD_FAMILY);
+    expect(html).not.toContain('SB Serif KR Head');
+    // MO-29: the printout's banner takes the general version's display face as its chooser subset (wdth 112), declared
+    // with swap and never preloaded; the full display face is not declared on the chooser
+    expect(html).toMatch(new RegExp(`font-family:"${COVER_BANNER_FAMILY}";[^}]*font-stretch:112%;font-display:swap`));
+    expect(html).not.toContain(`font-family:"${DISPLAY_FAMILY}"`);
     expect(html).not.toContain('data-serif');
     const preloads = [...html.matchAll(/<link rel="preload"[^>]*href="([^"]+)"/g)].map((m) => m[1]);
     expect(preloads.length).toBeGreaterThan(0);
@@ -89,4 +93,31 @@ describe('ChooserView.astro (MO-23: the v6.4 desk; P2-10 header)', () => {
     expect(ko).toContain('nt-header__bar--lang-only');
     expect(ko).not.toMatch(/aria-describedby/);
   });
+
+  it('MO-35: one .props layer, aria-hidden, before the files; .mat inside it; no img', async () => {
+    const html = await renderAstro(ChooserView, { props: { lang: 'ko' }, url: '/' });
+    const desk = html.match(/<div class="desk"[^>]*>([\s\S]*)/)?.[1] ?? '';
+    expect(html.match(/<div class="props"/g)).toHaveLength(1);
+    expect(desk.indexOf('<div class="props"')).toBeGreaterThanOrEqual(0);
+    expect(desk.indexOf('<div class="props"')).toBeLessThan(desk.indexOf('<article'));
+    expect(html).toMatch(/<div class="props" aria-hidden="true"[^>]*>\s*<i class="mat"[^>]*><\/i>/);
+    expect(html).not.toMatch(/<img\b|<picture\b/);
+  });
+
+  it('MO-40: the mute button is a <button type=button> with aria-pressed, hidden in the server HTML', async () => {
+    const html = await renderAstro(ChooserView, { props: { lang: 'ko' }, url: '/' });
+    const b = /<button\b[^>]*data-sound-toggle[^>]*>[\s\S]*?<\/button>/.exec(html)?.[0] ?? '';
+    expect(b).toMatch(/type="button"/);
+    expect(b).toMatch(/aria-pressed="true"/);
+    expect(b).toMatch(/\shidden(?=[\s>])/);
+    expect(b).toContain(coverCopy.ko.sound.label);
+    expect(b).toContain(coverCopy.ko.sound.on);
+    expect(b).toMatch(new RegExp(`data-off="${coverCopy.ko.sound.off}"`));
+    // beside the archive caption, inside the mast row
+    expect(html.indexOf('chooser__cap')).toBeLessThan(html.indexOf('data-sound-toggle'));
+    expect(html.indexOf('data-sound-toggle')).toBeLessThan(html.indexOf('class="desk"'));
+    const en = await renderAstro(ChooserView, { props: { lang: 'en' }, url: '/en/' });
+    expect(/<button\b[^>]*data-sound-toggle[^>]*>[\s\S]*?<\/button>/.exec(en)?.[0]).toContain('Sound');
+  });
 });
+

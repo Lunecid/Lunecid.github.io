@@ -185,8 +185,11 @@ describe('legal content', () => {
     expect(row('en')).toBe('| [Archivo](https://github.com/Omnibus-Type/Archivo) | The Archivo Project Authors (Omnibus-Type) | SIL Open Font License 1.1 |');
     expect(raw('ko', 'credits')).toContain('“SB Display”는 이 사이트를 위해 Archivo(<span lang="en">SIL Open Font License 1.1</span>)에서 라틴 문자와 숫자만 추려 만든 서브셋이며, 원본의 저작권·라이선스 기록은 글꼴 파일 안에 그대로 두었습니다.');
     expect(raw('en', 'credits')).toContain('“SB Display”, the face of the general version\'s large English titles and numbers, is a subset of Archivo (SIL Open Font License 1.1) made for this site with Latin letters and numbers only; the original copyright and license records stay inside the font file.');
-    // the Korean heading serif now serves the paper page and the chooser only (DS-1: data pages left it)
-    expect(raw('ko', 'credits')).toContain('논문 페이지의 한글과 선택 화면 제목의 한글에 쓰는 Noto Serif KR');
+    // MO-29 (named): Noto Serif KR now serves the paper page only (DS-1: data pages left it; MO-23: the chooser did)
+    expect(raw('ko', 'credits')).toContain('논문 페이지의 한글에 쓰는 Noto Serif KR');
+    expect(raw('ko', 'credits')).not.toContain('선택 화면 제목의 한글');
+    expect(raw('en', 'credits')).toContain('Noto Serif KR, used for the Korean text of the paper page, is subset');
+    expect(raw('en', 'credits')).not.toContain('the page where you choose a portfolio');
     expect(raw('ko', 'credits')).not.toContain('일반 버전 제목의 한글');
     expect(raw('en', 'credits')).not.toContain('Korean headings of the general version');
     for (const lang of ['ko', 'en'] as const) expect(legalSchema.parse(readFrontmatter(file(lang, 'credits'))).updated >= '2026-10-05', lang).toBe(true);
@@ -272,6 +275,7 @@ describe('legal content', () => {
       '- 사이트 업적 달성 기록',
       '- 업적을 위해 둘러본 메뉴(연구·프로젝트·기록·플레이 로그)와 언어',
       'CRT 인트로',
+      '선택 화면의 문서 열람 연출', // MO-41: the chooser's opening shares sb:intro
       '첫 화면 문구 등장',
       '- 마지막으로 고른 포트폴리오 버전(게임·일반)',
       '- 배경음악을 이어 듣기 위한 재생 위치(sessionStorage, 창을 닫으면 사라지고 30분이 지나면 쓰지 않음)',
@@ -285,6 +289,7 @@ describe('legal content', () => {
       '- Site achievements you have unlocked',
       '- Which of the four menu sections and which languages you have opened (for achievements)',
       'CRT intro',
+      "the chooser's document-opening effect", // MO-41
       'home text entrance',
       '- The portfolio version you last chose (game or general)',
       '- The background-music position so it continues on the next page (sessionStorage; cleared when the tab closes, ignored after 30 minutes)',

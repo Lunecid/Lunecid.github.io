@@ -27,6 +27,8 @@ describe('variant runtime (§1.8)', () => {
   it('A-19: the inline CRT gate (which cannot import) agrees with VARIANT_MODULES', () => {
     expect(VARIANT_MODULES.game).toContain('crtIntro');
     expect(VARIANT_MODULES.data).not.toContain('crtIntro');
-    expect(HEAD_INIT_SCRIPT).toContain("d.getAttribute('data-variant') !== 'game'");
+    // named change (MO-41): the CRT branch reads the shared gameHome flag (the chooser's opening is the other branch)
+    expect(HEAD_INIT_SCRIPT).toContain("var gameHome = d.getAttribute('data-variant') === 'game' && d.getAttribute('data-page') === 'home';");
+    expect(HEAD_INIT_SCRIPT).toContain(': reduce || !gameHome) return;');
   });
 });

@@ -98,7 +98,7 @@ html.js .site-ach__nojs { display: none; }
 
 /* Light-page heads (general and neutral pages, P2-4, spec §7–8): a small caption over the title under a heavy top rule;
    no [ ■ ] mark, no mono label. Role tokens, so one set of rules serves both page kinds; the classes never appear on
-   game pages. The general version's titles also take the serif heading face ([data-serif], editorial.css). */
+   game pages. */
 .ed-head { display: grid; gap: 6px; padding-top: 10px; border-top: var(--ed-rule-w-strong) solid var(--page-rule-strong); }
 .ed-head__title { font-size: var(--fs-h2); font-weight: 700; line-height: var(--lh-h2); color: var(--page-ink); }
 .ed-head__intro { max-width: var(--measure); color: var(--page-muted); }

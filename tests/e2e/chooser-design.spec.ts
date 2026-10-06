@@ -22,11 +22,13 @@ test.describe('chooser (P2-10 intents on the MO-23 desk, Review Focus 4)', () =>
 
     await page.setViewportSize({ width: 375, height: 812 });
     await expect(page.locator(GAME)).toBeFocused(); // focus survives the re-flow
+    await page.keyboard.press('ArrowLeft');
+    await expect(page.locator(DATA)).toBeFocused();
+    // the rest geometry: the focused game file had slid the sheet aside; let it settle back (a race under load)
+    await page.waitForFunction(() => document.querySelector('.file--data')!.getAnimations().length === 0);
     const [g2, d2] = [await box(page, '.file--game'), await box(page, '.file--data')];
     expect(d2.top).toBeGreaterThan(g2.top + 60); // phone: the game cover shows as a strip above the sheet
     expect(d2.top).toBeLessThan(g2.bottom);
-    await page.keyboard.press('ArrowLeft');
-    await expect(page.locator(DATA)).toBeFocused();
   });
 
   test('Enter follows the focused side and remembers it', async ({ page }) => {

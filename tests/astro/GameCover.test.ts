@@ -77,13 +77,100 @@ describe('GameCover.astro (MO-23)', () => {
     expect(css).not.toMatch(/--gold/);
   });
 
-  it('the frame is a separate device wrapper around the screen, styled in one isolated block (a bezel can be swapped in)', async () => {
+  // MO-34 (named rewrite of the MO-23 "device wrapper" test): the bezel is a tablet now
+  it('MO-34: the cover sits in .dev__screen inside .dev__body; shell parts aria-hidden; one link; no logo/text in the shell', async () => {
     const html = await render('ko');
-    expect(html).toMatch(/<article class="file file--game"[^>]*>\s*<div class="face device"[^>]*>\s*<div class="screen"[^>]*>\s*<div class="bar"/);
-    const block = /\/\* ── the device frame[\s\S]*?end of the device frame ── \*\//.exec(css)?.[0] ?? '';
-    expect(block).toMatch(/\.device\s*\{[^}]*border:\s*var\(--frame\) solid var\(--accent\)/);
-    expect(block).toMatch(/\.br\s*\{/);
-    const outside = css.replace(block, '').replace(/@media \((forced-colors|print)[^{]*\{[\s\S]*?\n  \}/g, '');
-    expect(outside).not.toMatch(/border:\s*var\(--frame\)|\.br--tl|outline-offset:\s*5px/);
+    expect(html).toMatch(/<article class="file file--game"[^>]*>\s*<div class="dev"[^>]*>\s*<div class="dev__body"[^>]*>\s*<i class="dev__cam" aria-hidden="true"[^>]*><\/i>\s*<div class="dev__screen"[^>]*>\s*<div class="face"[^>]*>\s*<div class="bar"/); // MO-38: the exit's screen-off layer may precede the window
+    for (const part of ['dev__cam', 'dev__glass', 'dev__off', 'dev__pwr']) expect(html, part).toMatch(new RegExp(`<i class="${part}" aria-hidden="true"[^>]*></i>`));
+    expect(html.match(/<a\b/g)).toHaveLength(1);
+    // the shell carries no text and no mark: everything between the body and the screen, and after the window, is empty
+    const shell = html.replace(/<div class="face"[\s\S]*<\/div>\s*(?=<i class="dev__glass")/, '');
+    expect(shell.replace(/<[^>]+>/g, '').trim()).toBe('');
+    expect(css).toMatch(/\.file--game \.dev__body\s*\{[^}]*pointer-events:\s*auto/);
+    expect(css).toMatch(/\.file--game\s*\{[^}]*pointer-events:\s*none/);
+  });
+
+  it('MO-33: plate wraps the series line and display words; circuit and grid pseudo-items aria-hidden; no text added', async () => {
+    const html = await render('ko');
+    // the plate: two pseudo-items of the cover grid over its first two rows (the series line and the display words)
+    expect(css).toMatch(/\.file--game \.cv::before, \.file--game \.cv::after\s*\{[^}]*grid-row:\s*1 \/ 3;[^}]*pointer-events:\s*none/);
+    expect(css).toMatch(/\.file--game \.cv::before\s*\{[^}]*background:\s*var\(--accent\)/);
+    // the circuit trace: an inline SVG in cyan, decoration only, drawn from a 540px cover
+    const circuit = /<svg class="cv__circuit"[\s\S]*?<\/svg>/.exec(html)?.[0] ?? '';
+    expect(circuit).toMatch(/aria-hidden="true"/);
+    expect(circuit).toMatch(/focusable="false"/);
+    expect(circuit).not.toMatch(/<text|href=|#[0-9a-f]{3,6}\b/i);
+    expect(css).toMatch(/\.file--game \.cv__circuit\s*\{[^}]*display:\s*none/);
+    // no words were added: the cover's text is the v6.4 text
+    const text = (h: string) => h.replace(/<svg[\s\S]*?<\/svg>/g, '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+    expect(text(html)).toBe(text(html.replace(circuit, '')));
+    expect(text(html)).not.toMatch(/circuit/i);
+  });
+
+  // named change: the exit's layers are built by chooser.ts after load (out of the first flight); the server HTML has
+  // none of them, the sheets keep them out of the layout at rest
+  it('MO-38: the exit layers are not in the server HTML; the traces are mask images in the exit sheet', async () => {
+    const html = await render('ko');
+    expect(html).not.toMatch(/class="xg|class="xnav/);
+    expect(html).not.toMatch(/<path\b[^>]*d="M-?\d+ 50/);
+    const exitCss = readSource('src/styles/chooser-exit.css');
+    expect(exitCss).toMatch(/--xg-s12: url\("data:image\/svg\+xml,/);
+    expect(css).toMatch(/\.file--game \.xg, \.file--game \.xg__off, \.xnav \{ display: none; \}/);
+    expect(exitCss).toMatch(/\.desk\[data-exit="game"\] \.file--game \.xg, \.desk\[data-exit="game"\] \.file--game \.xg__off \{ display: block; \}/);
+  });
+
+  it('MO-41: the opening overlay: aria-hidden inside the cover window, its words from coverCopy.opening, shown only under data-intro=opening, never takes the pointer', async () => {
+    for (const lang of ['ko', 'en'] as const) {
+      const html = await render(lang);
+      const ov = /<div class="ov" aria-hidden="true"[^>]*>[\s\S]*?<p class="ov__st"[^>]*>[^<]*<\/p><\/div>/.exec(html)?.[0] ?? '';
+      expect(ov, lang).not.toBe('');
+      expect(html.indexOf(ov)).toBeLessThan(html.indexOf('class="dev__glass"')); // inside .face, before the glass
+      const op = coverCopy[lang].opening;
+      for (const word of [op.terminal, op.node.num, op.request.replace('{count}', '2'), op.decrypt, op.pct.num, op.granted]) expect(ov, `${lang}: ${word}`).toContain(`>${word.replace(/>/g, '&gt;')}</`);
+      expect(ov.match(/<i><\/i>/g), 'ten shutters').toHaveLength(10);
+      expect(ov).not.toMatch(/<a\b|<button|tabindex|<h\d/);
+    }
+    expect(css).toMatch(/\n\.ov \{[^}]*display: none;[^}]*pointer-events: none;/);
+    expect(css).toMatch(/\n:root\[data-intro="opening"\] \.ov, [^{]*\{ display: block; \}/);
+    // overlay text is small (≤ --fs-small)
+    const sizes = [...css.matchAll(/\.ov__\w+[^{]*\{[^}]*font: \d+ var\((--fs-[\w-]+)\)/g)].map((m) => m[1]);
+    expect(sizes.length).toBeGreaterThanOrEqual(3);
+    for (const size of sizes) expect(['--fs-min', '--fs-small', '--fs-caption', '--fs-label', '--fs-meta']).toContain(size);
+  });
+
+  it('MO-41: opening keyframes animate transform and opacity only, never infinitely; each opening animation fills both ways', () => {
+    const plain = css.replace(/\/\*[\s\S]*?\*\//g, '');
+    const frames = [...plain.matchAll(/@keyframes (op-[\w-]+) \{([\s\S]*?\})\s*\}/g)];
+    expect(frames.length).toBeGreaterThanOrEqual(14);
+    for (const [, name, body] of frames) {
+      const props = [...body!.matchAll(/([\w-]+):/g)].map((m) => m[1]);
+      expect(props.filter((p) => p !== 'opacity' && p !== 'transform'), name).toEqual([]);
+    }
+    const opening = [...plain.matchAll(/\[data-intro="opening"\][^{}]*\{\s*animation:([^;]+);/g)].map((m) => m[1]!);
+    expect(opening.length).toBeGreaterThanOrEqual(25);
+    for (const a of opening) {
+      expect(a, a).not.toMatch(/infinite/);
+      expect(a.trim(), a).toMatch(/ both$/);
+    }
+  });
+
+  it('MO-41: the device rises and powers on before the decrypt (screen off, then the bloom); the device starts at opacity .01 (an LCP candidate from the first paint)', () => {
+    const plain = css.replace(/\/\*[\s\S]*?\*\//g, '');
+    expect(plain).toMatch(/\[data-intro="opening"\] \.file--game \.dev \{ animation: op-rise var\(--dur-op-device\) var\(--ease-out\) both; \}/);
+    expect(plain).toMatch(/@keyframes op-rise \{ from \{ opacity: \.01; transform: translateY\(14px\) scale\(\.985\); \}/);
+    expect(plain).toMatch(/\.file--game \.dev__off \{ animation: op-out var\(--dur-op-off\) linear var\(--at-op-off\) both; \}/);
+    expect(plain).toMatch(/\.file--game \.dev__pwr \{ animation: op-pwr var\(--dur-op-power\) var\(--ease-out\) var\(--at-op-power\) both; \}/);
+    expect(plain).toMatch(/@keyframes op-pwr \{\s*0% \{ opacity: 0; transform: scale\(\.55, \.04\); \}\s*28% \{[^}]*\}\s*55% \{[^}]*\}\s*100% \{ opacity: 0; transform: scale\(1\.08, 1\.04\); \}/);
+  });
+
+  it('MO-41: both reduce paths, forced colours and print hide every opening layer and stop the desk\'s opening animations', () => {
+    const plain = css.replace(/\/\*[\s\S]*?\*\//g, '');
+    const media = /@media \(prefers-reduced-motion: reduce\), \(forced-colors: active\), print \{([\s\S]*?\})\s*\}/.exec(plain)?.[1] ?? '';
+    expect(media).toMatch(/:root\[data-intro\] \.desk :is\(\.ov, \.dev__off, \.dev__pwr\) \{ display: none; \}/);
+    expect(media).toMatch(/:root\[data-intro\] \.desk :is\(\*, \*::before, \*::after\) \{ animation: none !important; \}/);
+    expect(plain).toMatch(/:root\[data-motion="reduce"\]\[data-intro\] \.desk :is\(\.ov, \.dev__off, \.dev__pwr\) \{ display: none; \}/);
+    expect(plain).toMatch(/:root\[data-motion="reduce"\]\[data-intro\] \.desk :is\(\*, \*::before, \*::after\) \{ animation: none !important; \}/);
+    // the reduce rules come after every opening rule
+    expect(plain.lastIndexOf('[data-intro="opening"] .file--data .rstamp__ink')).toBeLessThan(plain.indexOf('@media (prefers-reduced-motion: reduce), (forced-colors: active), print'));
   });
 });

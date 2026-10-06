@@ -45,7 +45,7 @@ describe('GP-10: the icon in the game palette', () => {
   it('public/favicon.svg is yellow --gp-y on the page black --gp-k0', async () => {
     const { readFileSync } = await import('node:fs');
     const svg = readFileSync(new URL('../../public/favicon.svg', import.meta.url), 'utf8');
-    const tokens = readFileSync(new URL('../../src/styles/tokens.css', import.meta.url), 'utf8');
+    const tokens = readFileSync(new URL('../../src/styles/game-tokens.css', import.meta.url), 'utf8');
     const token = (name: string) => new RegExp(`${name}:\\s*(#[0-9A-F]{6})`).exec(tokens)?.[1];
     expect(new Set(svg.match(/#[0-9A-F]{6}/gi))).toEqual(new Set([token('--gp-k0'), token('--gp-y')]));
   });

@@ -1,0 +1,202 @@
+/* src/styles/chooser-exit.css — the chooser's exits (MO-38 / MO-39; chooser v6.10–v6.11): the looks and keyframes of
+   the exit layers. chooser.ts attaches this sheet after the page has loaded (exits only follow a click); chooser.css
+   keeps the layers out of the layout at rest and the desk's pointer lock. Every layer is decoration (aria-hidden, no
+   pointer), every moment is a --x-* token or a calc() of them, and only transform and opacity move. */
+
+:root {
+  /* the chooser's exits (MO-38/MO-39; chooser v6.10): when each phase starts (--x-*-at, from the click) and how long
+     it runs. The game exit (the waveform) ends with its line at --x-game = EXIT_MS.game; --x-fade is the reduced form
+     of both exits (EXIT_MS.reduce waits for it). */
+  --x-game: .88s;
+  --x-scrim-at: .12s;    /* the screen dims */
+  --x-scrim: .26s;
+  --x-grat-at: .14s;     /* the oscilloscope graticule */
+  --x-grat: .24s;
+  --x-trace-at: .15s;    /* the trace sweeps across the screen */
+  --x-trace: .38s;
+  --x-grow: .43s;        /* … its amplitude builds */
+  --x-square-at: .28s;   /* the sine turns square */
+  --x-square: .26s;
+  --x-echo-lag: .06s;    /* the cyan echo runs this far behind */
+  --x-collapse-at: .54s; /* CRT collapse into one line */
+  --x-collapse: .17s;
+  --x-line-at: .69s;     /* the line leaves the tablet across the page, the page goes dark */
+  --x-line: .19s;
+  --x-fade: .14s;
+  --x-data: .8s;         /* the page turn: the next page loads (EXIT_MS.data) */
+  --x-fold: .72s;        /* the fold crosses the sheet */
+  --x-pull-at: .4s;      /* the flap is pulled away from about here (a stop of the eased fold) */
+  --x-flap-fade-at: .576s; /* … and fades from 80% of the fold */
+}
+
+/* ── game: the signal (880 ms). The stamp strikes (0–320); the screen dims under a cyan graticule (120–380); a yellow
+   trace sweeps across it (150–530), its amplitude building as a sine turns square, travelling, a cyan echo a step
+   behind; CRT collapse (540–710): the cover squashes into the line, the screen around it goes black, the trace flattens
+   to one bright line; the line leaves the tablet across the page while the page goes to the game black (690–880). The
+   traces are build-time SVG paths (src/lib/waveform.ts); the reveal is a clip window and its counter-moved content. ── */
+.desk[data-exit="game"] .file--game .xg, .desk[data-exit="game"] .file--game .xg__off { display: block; }
+.file--game .xg__off { position: absolute; inset: 0; z-index: 0; border-radius: inherit; background: var(--scr-off); opacity: 0; pointer-events: none; }
+.file--game .xg { position: absolute; inset: 0; z-index: 2; overflow: hidden; border-radius: inherit; pointer-events: none; }
+.file--game .xg > * { position: absolute; }
+.file--game .xg__scrim { inset: 0; background: var(--scr-off); opacity: 0; }
+.file--game .xg__grat {
+  inset: 0;
+  opacity: 0;
+  background:
+    linear-gradient(90deg, var(--cover-cy, var(--hud-muted)) 1px, transparent 1px) 0 calc(50% - 3px) / 2% 7px repeat-x,
+    linear-gradient(var(--cover-cy, var(--hud-muted)) 1px, transparent 1px) calc(50% - 3px) 0 / 7px 2.5% repeat-y,
+    linear-gradient(90deg, color-mix(in srgb, var(--cover-cy, var(--hud-muted)) 40%, transparent) 1px, transparent 1px) 0 0 / 10% 100%,
+    linear-gradient(color-mix(in srgb, var(--cover-cy, var(--hud-muted)) 40%, transparent) 1px, transparent 1px) 0 0 / 100% 12.5%;
+}
+.file--game .xg__band { inset: 0; background: var(--accent); opacity: 0; }
+.file--game .xg__trace { left: 0; right: 0; top: 28%; height: 44%; }
+.file--game .xg__win { position: absolute; inset: 0; overflow: hidden; transform: translateX(-100%); }
+.file--game .xg__in, .file--game .xg__amp, .file--game .xg__flat { position: absolute; inset: 0; }
+.file--game .xg__in { transform: translateX(100%); }
+.file--game .xg__amp { transform: scaleY(.1); }
+.file--game .xg__head { position: absolute; right: -22px; top: calc(50% - 22px); width: 44px; height: 44px; border-radius: 50%; background: radial-gradient(circle, var(--hud-strong) 0, color-mix(in srgb, var(--accent) 80%, transparent) 18%, transparent 70%); }
+/* the traces as mask images (generated from src/lib/waveform.ts waveMasks(); tests/unit/waveform.test.ts pins them) */
+.file--game .xg {
+  --xg-s12: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='-456 0 1456 100' preserveAspectRatio='none'%3E%3Cpath d='M-456 50.8 -444 44.2 -432 37.7 -420 31.6 -408 26 -396 21 -384 16.9 -372 13.6 -360 11.4 -348 10.2 -336 10.1 -324 11.1 -312 13.2 -300 16.2 -288 20.2 -276 25 -264 30.6 -252 36.6 -240 43 -228 49.6 -216 56.2 -204 62.6 -192 68.7 -180 74.3 -168 79.2 -156 83.3 -144 86.5 -132 88.7 -120 89.8 -108 89.9 -96 88.8 -84 86.7 -72 83.6 -60 79.5 -48 74.6 -36 69.1 -24 63 -12 56.6 0 50 12 43.4 24 37 36 30.9 48 25.4 60 20.5 72 16.4 84 13.3 96 11.2 108 10.1 120 10.2 132 11.3 144 13.5 156 16.7 168 20.8 180 25.7 192 31.3 204 37.4 216 43.8 228 50.4 240 57 252 63.4 264 69.4 276 75 288 79.8 300 83.8 312 86.8 324 88.9 336 89.9 348 89.8 360 88.6 372 86.4 384 83.1 396 79 408 74 420 68.4 432 62.3 444 55.8 456 49.2 468 42.6 480 36.2 492 30.2 504 24.7 516 20 528 16 540 13 552 11 564 10.1 576 10.2 588 11.5 600 13.8 612 17.1 624 21.3 636 26.3 648 32 660 38.1 672 44.6 684 51.2 696 57.8 708 64.2 720 70.1 732 75.6 744 80.3 756 84.2 768 87.2 780 89.1 792 90 804 89.7 816 88.4 828 86 840 82.7 852 78.4 864 73.3 876 67.7 888 61.5 900 55 912 48.4 924 41.8 936 35.5 948 29.5 960 24.1 972 19.4 984 15.6 996 12.7 1008 10.8' fill='none' stroke='black' stroke-width='12' stroke-linejoin='round' vector-effect='non-scaling-stroke'/%3E%3C/svg%3E");
+  --xg-s5: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='-456 0 1456 100' preserveAspectRatio='none'%3E%3Cpath d='M-456 50.8 -444 44.2 -432 37.7 -420 31.6 -408 26 -396 21 -384 16.9 -372 13.6 -360 11.4 -348 10.2 -336 10.1 -324 11.1 -312 13.2 -300 16.2 -288 20.2 -276 25 -264 30.6 -252 36.6 -240 43 -228 49.6 -216 56.2 -204 62.6 -192 68.7 -180 74.3 -168 79.2 -156 83.3 -144 86.5 -132 88.7 -120 89.8 -108 89.9 -96 88.8 -84 86.7 -72 83.6 -60 79.5 -48 74.6 -36 69.1 -24 63 -12 56.6 0 50 12 43.4 24 37 36 30.9 48 25.4 60 20.5 72 16.4 84 13.3 96 11.2 108 10.1 120 10.2 132 11.3 144 13.5 156 16.7 168 20.8 180 25.7 192 31.3 204 37.4 216 43.8 228 50.4 240 57 252 63.4 264 69.4 276 75 288 79.8 300 83.8 312 86.8 324 88.9 336 89.9 348 89.8 360 88.6 372 86.4 384 83.1 396 79 408 74 420 68.4 432 62.3 444 55.8 456 49.2 468 42.6 480 36.2 492 30.2 504 24.7 516 20 528 16 540 13 552 11 564 10.1 576 10.2 588 11.5 600 13.8 612 17.1 624 21.3 636 26.3 648 32 660 38.1 672 44.6 684 51.2 696 57.8 708 64.2 720 70.1 732 75.6 744 80.3 756 84.2 768 87.2 780 89.1 792 90 804 89.7 816 88.4 828 86 840 82.7 852 78.4 864 73.3 876 67.7 888 61.5 900 55 912 48.4 924 41.8 936 35.5 948 29.5 960 24.1 972 19.4 984 15.6 996 12.7 1008 10.8' fill='none' stroke='black' stroke-width='5' stroke-linejoin='round' vector-effect='non-scaling-stroke'/%3E%3C/svg%3E");
+  --xg-s2: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='-456 0 1456 100' preserveAspectRatio='none'%3E%3Cpath d='M-456 50.8 -444 44.2 -432 37.7 -420 31.6 -408 26 -396 21 -384 16.9 -372 13.6 -360 11.4 -348 10.2 -336 10.1 -324 11.1 -312 13.2 -300 16.2 -288 20.2 -276 25 -264 30.6 -252 36.6 -240 43 -228 49.6 -216 56.2 -204 62.6 -192 68.7 -180 74.3 -168 79.2 -156 83.3 -144 86.5 -132 88.7 -120 89.8 -108 89.9 -96 88.8 -84 86.7 -72 83.6 -60 79.5 -48 74.6 -36 69.1 -24 63 -12 56.6 0 50 12 43.4 24 37 36 30.9 48 25.4 60 20.5 72 16.4 84 13.3 96 11.2 108 10.1 120 10.2 132 11.3 144 13.5 156 16.7 168 20.8 180 25.7 192 31.3 204 37.4 216 43.8 228 50.4 240 57 252 63.4 264 69.4 276 75 288 79.8 300 83.8 312 86.8 324 88.9 336 89.9 348 89.8 360 88.6 372 86.4 384 83.1 396 79 408 74 420 68.4 432 62.3 444 55.8 456 49.2 468 42.6 480 36.2 492 30.2 504 24.7 516 20 528 16 540 13 552 11 564 10.1 576 10.2 588 11.5 600 13.8 612 17.1 624 21.3 636 26.3 648 32 660 38.1 672 44.6 684 51.2 696 57.8 708 64.2 720 70.1 732 75.6 744 80.3 756 84.2 768 87.2 780 89.1 792 90 804 89.7 816 88.4 828 86 840 82.7 852 78.4 864 73.3 876 67.7 888 61.5 900 55 912 48.4 924 41.8 936 35.5 948 29.5 960 24.1 972 19.4 984 15.6 996 12.7 1008 10.8' fill='none' stroke='black' stroke-width='2' stroke-linejoin='round' vector-effect='non-scaling-stroke'/%3E%3C/svg%3E");
+  --xg-s1: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='-456 0 1456 100' preserveAspectRatio='none'%3E%3Cpath d='M-456 50.8 -444 44.2 -432 37.7 -420 31.6 -408 26 -396 21 -384 16.9 -372 13.6 -360 11.4 -348 10.2 -336 10.1 -324 11.1 -312 13.2 -300 16.2 -288 20.2 -276 25 -264 30.6 -252 36.6 -240 43 -228 49.6 -216 56.2 -204 62.6 -192 68.7 -180 74.3 -168 79.2 -156 83.3 -144 86.5 -132 88.7 -120 89.8 -108 89.9 -96 88.8 -84 86.7 -72 83.6 -60 79.5 -48 74.6 -36 69.1 -24 63 -12 56.6 0 50 12 43.4 24 37 36 30.9 48 25.4 60 20.5 72 16.4 84 13.3 96 11.2 108 10.1 120 10.2 132 11.3 144 13.5 156 16.7 168 20.8 180 25.7 192 31.3 204 37.4 216 43.8 228 50.4 240 57 252 63.4 264 69.4 276 75 288 79.8 300 83.8 312 86.8 324 88.9 336 89.9 348 89.8 360 88.6 372 86.4 384 83.1 396 79 408 74 420 68.4 432 62.3 444 55.8 456 49.2 468 42.6 480 36.2 492 30.2 504 24.7 516 20 528 16 540 13 552 11 564 10.1 576 10.2 588 11.5 600 13.8 612 17.1 624 21.3 636 26.3 648 32 660 38.1 672 44.6 684 51.2 696 57.8 708 64.2 720 70.1 732 75.6 744 80.3 756 84.2 768 87.2 780 89.1 792 90 804 89.7 816 88.4 828 86 840 82.7 852 78.4 864 73.3 876 67.7 888 61.5 900 55 912 48.4 924 41.8 936 35.5 948 29.5 960 24.1 972 19.4 984 15.6 996 12.7 1008 10.8' fill='none' stroke='black' stroke-width='1' stroke-linejoin='round' vector-effect='non-scaling-stroke'/%3E%3C/svg%3E");
+  --xg-q12: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='-216 0 1216 100' preserveAspectRatio='none'%3E%3Cpath d='M-216 77.8 -208 48.5 -200 21 -192 18.2 -184 18.4 -176 18.2 -168 18.2 -160 18.2 -152 18.2 -144 18.2 -136 18.2 -128 18.4 -120 18.1 -112 21.9 -104 50.8 -96 78.7 -88 81.9 -80 81.6 -72 81.8 -64 81.8 -56 81.8 -48 81.8 -40 81.8 -32 81.8 -24 81.6 -16 81.9 -8 78.4 0 50 8 21.6 16 18.1 24 18.4 32 18.2 40 18.2 48 18.2 56 18.2 64 18.2 72 18.2 80 18.4 88 18.1 96 21.3 104 49.2 112 78.1 120 81.9 128 81.6 136 81.8 144 81.8 152 81.8 160 81.8 168 81.8 176 81.8 184 81.6 192 81.8 200 79 208 51.5 216 22.2 224 18 232 18.5 240 18.2 248 18.3 256 18.2 264 18.2 272 18.2 280 18.3 288 18.4 296 18.2 304 20.7 312 47.7 320 77.5 328 82 336 81.5 344 81.8 352 81.7 360 81.8 368 81.8 376 81.8 384 81.7 392 81.7 400 81.8 408 79.5 416 53.1 424 22.9 432 17.9 440 18.5 448 18.2 456 18.3 464 18.2 472 18.2 480 18.2 488 18.3 496 18.3 504 18.3 512 20.2 520 46.2 528 76.8 536 82.1 544 81.5 552 81.8 560 81.7 568 81.8 576 81.8 584 81.8 592 81.7 600 81.7 608 81.7 616 80 624 54.6 632 23.6 640 17.9 648 18.5 656 18.2 664 18.3 672 18.1 680 18.2 688 18.2 696 18.3 704 18.3 712 18.3 720 19.8 728 44.6 736 76 744 82.2 752 81.4 760 81.8 768 81.7 776 81.9 784 81.7 792 81.8 800 81.7 808 81.7 816 81.6 824 80.4 832 56.1 840 24.4 848 17.8 856 18.6 864 18.1 872 18.3 880 18.1 888 18.3 896 18.2 904 18.3 912 18.3 920 18.4 928 19.4 936 43.1 944 75.2 952 82.2 960 81.4 968 81.9 976 81.7 984 81.9 992 81.7 1000 81.9' fill='none' stroke='black' stroke-width='12' stroke-linejoin='round' vector-effect='non-scaling-stroke'/%3E%3C/svg%3E");
+  --xg-q5: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='-216 0 1216 100' preserveAspectRatio='none'%3E%3Cpath d='M-216 77.8 -208 48.5 -200 21 -192 18.2 -184 18.4 -176 18.2 -168 18.2 -160 18.2 -152 18.2 -144 18.2 -136 18.2 -128 18.4 -120 18.1 -112 21.9 -104 50.8 -96 78.7 -88 81.9 -80 81.6 -72 81.8 -64 81.8 -56 81.8 -48 81.8 -40 81.8 -32 81.8 -24 81.6 -16 81.9 -8 78.4 0 50 8 21.6 16 18.1 24 18.4 32 18.2 40 18.2 48 18.2 56 18.2 64 18.2 72 18.2 80 18.4 88 18.1 96 21.3 104 49.2 112 78.1 120 81.9 128 81.6 136 81.8 144 81.8 152 81.8 160 81.8 168 81.8 176 81.8 184 81.6 192 81.8 200 79 208 51.5 216 22.2 224 18 232 18.5 240 18.2 248 18.3 256 18.2 264 18.2 272 18.2 280 18.3 288 18.4 296 18.2 304 20.7 312 47.7 320 77.5 328 82 336 81.5 344 81.8 352 81.7 360 81.8 368 81.8 376 81.8 384 81.7 392 81.7 400 81.8 408 79.5 416 53.1 424 22.9 432 17.9 440 18.5 448 18.2 456 18.3 464 18.2 472 18.2 480 18.2 488 18.3 496 18.3 504 18.3 512 20.2 520 46.2 528 76.8 536 82.1 544 81.5 552 81.8 560 81.7 568 81.8 576 81.8 584 81.8 592 81.7 600 81.7 608 81.7 616 80 624 54.6 632 23.6 640 17.9 648 18.5 656 18.2 664 18.3 672 18.1 680 18.2 688 18.2 696 18.3 704 18.3 712 18.3 720 19.8 728 44.6 736 76 744 82.2 752 81.4 760 81.8 768 81.7 776 81.9 784 81.7 792 81.8 800 81.7 808 81.7 816 81.6 824 80.4 832 56.1 840 24.4 848 17.8 856 18.6 864 18.1 872 18.3 880 18.1 888 18.3 896 18.2 904 18.3 912 18.3 920 18.4 928 19.4 936 43.1 944 75.2 952 82.2 960 81.4 968 81.9 976 81.7 984 81.9 992 81.7 1000 81.9' fill='none' stroke='black' stroke-width='5' stroke-linejoin='round' vector-effect='non-scaling-stroke'/%3E%3C/svg%3E");
+  --xg-q2: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='-216 0 1216 100' preserveAspectRatio='none'%3E%3Cpath d='M-216 77.8 -208 48.5 -200 21 -192 18.2 -184 18.4 -176 18.2 -168 18.2 -160 18.2 -152 18.2 -144 18.2 -136 18.2 -128 18.4 -120 18.1 -112 21.9 -104 50.8 -96 78.7 -88 81.9 -80 81.6 -72 81.8 -64 81.8 -56 81.8 -48 81.8 -40 81.8 -32 81.8 -24 81.6 -16 81.9 -8 78.4 0 50 8 21.6 16 18.1 24 18.4 32 18.2 40 18.2 48 18.2 56 18.2 64 18.2 72 18.2 80 18.4 88 18.1 96 21.3 104 49.2 112 78.1 120 81.9 128 81.6 136 81.8 144 81.8 152 81.8 160 81.8 168 81.8 176 81.8 184 81.6 192 81.8 200 79 208 51.5 216 22.2 224 18 232 18.5 240 18.2 248 18.3 256 18.2 264 18.2 272 18.2 280 18.3 288 18.4 296 18.2 304 20.7 312 47.7 320 77.5 328 82 336 81.5 344 81.8 352 81.7 360 81.8 368 81.8 376 81.8 384 81.7 392 81.7 400 81.8 408 79.5 416 53.1 424 22.9 432 17.9 440 18.5 448 18.2 456 18.3 464 18.2 472 18.2 480 18.2 488 18.3 496 18.3 504 18.3 512 20.2 520 46.2 528 76.8 536 82.1 544 81.5 552 81.8 560 81.7 568 81.8 576 81.8 584 81.8 592 81.7 600 81.7 608 81.7 616 80 624 54.6 632 23.6 640 17.9 648 18.5 656 18.2 664 18.3 672 18.1 680 18.2 688 18.2 696 18.3 704 18.3 712 18.3 720 19.8 728 44.6 736 76 744 82.2 752 81.4 760 81.8 768 81.7 776 81.9 784 81.7 792 81.8 800 81.7 808 81.7 816 81.6 824 80.4 832 56.1 840 24.4 848 17.8 856 18.6 864 18.1 872 18.3 880 18.1 888 18.3 896 18.2 904 18.3 912 18.3 920 18.4 928 19.4 936 43.1 944 75.2 952 82.2 960 81.4 968 81.9 976 81.7 984 81.9 992 81.7 1000 81.9' fill='none' stroke='black' stroke-width='2' stroke-linejoin='round' vector-effect='non-scaling-stroke'/%3E%3C/svg%3E");
+  --xg-q1: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='-216 0 1216 100' preserveAspectRatio='none'%3E%3Cpath d='M-216 77.8 -208 48.5 -200 21 -192 18.2 -184 18.4 -176 18.2 -168 18.2 -160 18.2 -152 18.2 -144 18.2 -136 18.2 -128 18.4 -120 18.1 -112 21.9 -104 50.8 -96 78.7 -88 81.9 -80 81.6 -72 81.8 -64 81.8 -56 81.8 -48 81.8 -40 81.8 -32 81.8 -24 81.6 -16 81.9 -8 78.4 0 50 8 21.6 16 18.1 24 18.4 32 18.2 40 18.2 48 18.2 56 18.2 64 18.2 72 18.2 80 18.4 88 18.1 96 21.3 104 49.2 112 78.1 120 81.9 128 81.6 136 81.8 144 81.8 152 81.8 160 81.8 168 81.8 176 81.8 184 81.6 192 81.8 200 79 208 51.5 216 22.2 224 18 232 18.5 240 18.2 248 18.3 256 18.2 264 18.2 272 18.2 280 18.3 288 18.4 296 18.2 304 20.7 312 47.7 320 77.5 328 82 336 81.5 344 81.8 352 81.7 360 81.8 368 81.8 376 81.8 384 81.7 392 81.7 400 81.8 408 79.5 416 53.1 424 22.9 432 17.9 440 18.5 448 18.2 456 18.3 464 18.2 472 18.2 480 18.2 488 18.3 496 18.3 504 18.3 512 20.2 520 46.2 528 76.8 536 82.1 544 81.5 552 81.8 560 81.7 568 81.8 576 81.8 584 81.8 592 81.7 600 81.7 608 81.7 616 80 624 54.6 632 23.6 640 17.9 648 18.5 656 18.2 664 18.3 672 18.1 680 18.2 688 18.2 696 18.3 704 18.3 712 18.3 720 19.8 728 44.6 736 76 744 82.2 752 81.4 760 81.8 768 81.7 776 81.9 784 81.7 792 81.8 800 81.7 808 81.7 816 81.6 824 80.4 832 56.1 840 24.4 848 17.8 856 18.6 864 18.1 872 18.3 880 18.1 888 18.3 896 18.2 904 18.3 912 18.3 920 18.4 928 19.4 936 43.1 944 75.2 952 82.2 960 81.4 968 81.9 976 81.7 984 81.9 992 81.7 1000 81.9' fill='none' stroke='black' stroke-width='1' stroke-linejoin='round' vector-effect='non-scaling-stroke'/%3E%3C/svg%3E");
+}
+.file--game .xg__s { left: -45.6000%; width: 145.6000%; --travel: 31.2188%; }
+.file--game .xg__q { left: -21.6000%; width: 121.6000%; --travel: 17.1327%; }
+.file--game .xg__flat {
+  -webkit-mask-image: linear-gradient(90deg, transparent, var(--cover-shadow) 14% 86%, transparent);
+  mask-image: linear-gradient(90deg, transparent, var(--cover-shadow) 14% 86%, transparent);
+}
+/* each trace is a group (its run-in to the left, travelling one period); each layer a band the colour of its stroke,
+   cut by the trace's mask at its width */
+.file--game .xg__g { position: absolute; top: 0; bottom: 0; }
+.file--game .xg__l { position: absolute; inset: 0; background: var(--accent); -webkit-mask: var(--m) 0 0 / 100% 100% no-repeat; mask: var(--m) 0 0 / 100% 100% no-repeat; }
+.file--game .xg__s > .xg__w1 { --m: var(--xg-s12); opacity: .1; }
+.file--game .xg__s > .xg__w2 { --m: var(--xg-s5); opacity: .3; }
+.file--game .xg__s > .xg__w3 { --m: var(--xg-s2); }
+.file--game .xg__q > .xg__w1 { --m: var(--xg-q12); opacity: .1; }
+.file--game .xg__q > .xg__w2 { --m: var(--xg-q5); opacity: .3; }
+.file--game .xg__q > .xg__w3 { --m: var(--xg-q2); }
+.file--game .xg__q > .xg__w4 { --m: var(--xg-q1); background: var(--hud-strong); opacity: .85; }
+/* the cyan echo: the same signal a step behind, a little lower and smaller, thin and dim */
+.file--game .xg__echo { position: absolute; inset: 0; transform: translateY(7px) scaleY(.82); opacity: .58; }
+.file--game .xg__s > .xg__e { --m: var(--xg-s1); background: var(--cover-cy, var(--hud-muted)); }
+.file--game .xg__q > .xg__e { --m: var(--xg-q1); background: var(--cover-cy, var(--hud-muted)); }
+.file--game .xg .xg__q { opacity: 0; } /* the square fades in over the sine */
+
+.desk[data-exit="game"] .file--game .xg__scrim { animation: x-dim var(--x-scrim) var(--ease-wipe) var(--x-scrim-at) both, x-out calc(var(--x-collapse) / 2) var(--ease-in) calc(var(--x-collapse-at) + var(--x-collapse) / 2) forwards; }
+.desk[data-exit="game"] .file--game .xg__grat { animation: x-grat var(--x-grat) var(--ease-out) var(--x-grat-at) both, x-out calc(var(--x-collapse) / 2) var(--ease-in) var(--x-collapse-at) forwards; }
+.desk[data-exit="game"] .file--game .xg__win { animation: x-reveal var(--x-trace) var(--ease-out) var(--x-trace-at) both; }
+.desk[data-exit="game"] .file--game .xg__in { animation: x-reveal var(--x-trace) var(--ease-out) var(--x-trace-at) both; }
+.desk[data-exit="game"] .file--game .xg__amp { animation: x-grow var(--x-grow) var(--ease-wipe) var(--x-trace-at) both; }
+.desk[data-exit="game"] .file--game .xg__flat { animation: x-flatten var(--x-collapse) var(--ease-in) var(--x-collapse-at) forwards; }
+.desk[data-exit="game"] .file--game .xg__head { animation: x-out calc(var(--x-collapse) / 3) var(--ease-in) var(--x-collapse-at) forwards; }
+.desk[data-exit="game"] .file--game .xg .xg__s { animation: x-travel calc(var(--x-collapse-at) - var(--x-trace-at)) linear var(--x-trace-at) both, x-out var(--x-square) linear var(--x-square-at) forwards; }
+.desk[data-exit="game"] .file--game .xg .xg__q { animation: x-travel calc(var(--x-collapse-at) - var(--x-trace-at)) linear var(--x-trace-at) both, x-in var(--x-square) linear var(--x-square-at) both; }
+.desk[data-exit="game"] .file--game .xg__echo .xg__s { animation-delay: calc(var(--x-trace-at) + var(--x-echo-lag)), calc(var(--x-square-at) + var(--x-echo-lag)); }
+.desk[data-exit="game"] .file--game .xg__echo .xg__q { animation-delay: calc(var(--x-trace-at) + var(--x-echo-lag)), calc(var(--x-square-at) + var(--x-echo-lag)); }
+.desk[data-exit="game"] .file--game .xg__trace { animation: x-out calc(var(--x-line) / 2) var(--ease-in) calc(var(--x-line-at) + var(--x-line) / 2) forwards; }
+.desk[data-exit="game"] .file--game .xg__band { animation: x-band var(--x-collapse) var(--ease-in) var(--x-collapse-at) forwards, x-out var(--x-line) var(--ease-in) var(--x-line-at) forwards; }
+.desk[data-exit="game"] .file--game .xg__off { animation: x-in var(--x-collapse) var(--ease-in) var(--x-collapse-at) both; }
+.desk[data-exit="game"] .file--game .dev__screen > .face { animation: x-collapse var(--x-collapse) var(--ease-in) var(--x-collapse-at) forwards; }
+@keyframes x-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes x-out { to { opacity: 0; } }
+@keyframes x-dim { from { opacity: 0; } to { opacity: .72; } }
+@keyframes x-grat { from { opacity: 0; } to { opacity: .2; } }
+@keyframes x-reveal { to { transform: none; } }
+@keyframes x-grow { from { transform: scaleY(.1); } to { transform: none; } }
+@keyframes x-flatten { to { transform: scaleY(.01); } }
+@keyframes x-travel { from { transform: none; } to { transform: translateX(var(--travel)); } }
+@keyframes x-band { from { opacity: .08; transform: none; } to { opacity: .38; transform: scaleY(.004); } }
+@keyframes x-collapse { to { transform: scale(1.03, .004); } }
+
+/* the page layer: the line leaving the tablet (its start and stretch written by chooser.ts at the click) and the
+   ground the page goes to (the game black; the paper for the general file) */
+.xnav { position: fixed; inset: 0; z-index: 35; overflow: hidden; pointer-events: none; }
+.desk[data-exit] ~ .xnav { display: block; }
+.xnav__bg { position: absolute; inset: 0; opacity: 0; background: var(--hud-bg); }
+.desk[data-exit-to="data"] ~ .xnav .xnav__bg { background: var(--pr-paper); }
+.xnav__ln {
+  position: absolute;
+  left: var(--xl-x, 0);
+  top: var(--xl-y, 50%);
+  width: var(--xl-w, 0);
+  height: 2px;
+  opacity: 0;
+  background: var(--hud-strong);
+  box-shadow: 0 0 2px 1px var(--accent), 0 0 12px 2px var(--accent), 0 0 34px 6px color-mix(in srgb, var(--cover-cy, var(--accent)) 40%, transparent);
+}
+.desk[data-exit="game"] ~ .xnav .xnav__ln { animation: x-line var(--x-line) var(--ease-out) var(--x-line-at) forwards; }
+.desk[data-exit="game"] ~ .xnav .xnav__bg { animation: x-in var(--x-line) var(--ease-wipe) var(--x-line-at) both; }
+.desk[data-exit="fade"] ~ .xnav .xnav__bg { animation: x-in var(--x-fade) linear both; }
+.desk[data-exit-done] ~ .xnav .xnav__bg { animation: none; opacity: 1; }
+@keyframes x-line { 0% { opacity: 1; transform: none; } 55% { opacity: 1; } 75% { transform: scaleX(var(--xl-k, 1)); } 100% { opacity: 0; transform: scaleX(var(--xl-k, 1)); } }
+
+/* ── data: the page turn (800 ms). A 45° fold line runs from the sheet's bottom-right corner past its top-left (0–720,
+   eased in and out); the page keeps its side of the fold; beyond it the flap (the paper's plain back) turns about the
+   fold in 3D (124° → 178°: it lifts toward the viewer and lays over to the top left), its shadow three flat copies;
+   from half way it is pulled off and from 72% it fades; under it the next sheet with a hint of the general home. The
+   clip, the flag and the folder stay on the stack. Built from transforms only: a frame turned 45° and slid along the
+   diagonal clips each side of the fold (overflow: clip), its content counter-moved so the paper stays still; the
+   shades are static gradients riding in the same frames. chooser.ts writes the sheet's size (--fw, --fh) at the
+   click; the eased stops are written out below (one per eighth of --x-fold). ── */
+.desk[data-exit="data"] .file--data { --fd0: calc((var(--fw) + var(--fh)) * .7071); --ly: -4px; }
+.desk[data-exit="data"] .file--data::before { opacity: 1; }
+.desk[data-exit="data"] .file--data .feed { flex: none; height: var(--fh); }
+.desk[data-exit="data"] .file--data :is(.under, .flap, .turn__shade) { display: block; }
+.file--data .under {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  background-color: var(--pr-paper);
+  background-image: var(--tooth), var(--formation);
+  background-size: 180px 180px, 420px 420px;
+  -webkit-mask-box-image: var(--deckle);
+}
+.file--data .under__in { display: grid; align-content: start; gap: calc(var(--row-gap) * 1.4); padding: var(--pr-pad-t) calc(var(--strip) + var(--pr-pad-x)); }
+.file--data .under__rule { display: block; height: 0; margin-top: 10px; border-top: 1px solid var(--pr-ink-2); }
+.file--data .under__hero { justify-self: start; margin: calc(var(--row-gap) * 1.5) 0 0 calc(4px - var(--pr-pad-x)); padding: .2em .34em .16em calc(var(--pr-pad-x) - 4px); font: 900 calc(var(--pdisp-fs) * .5)/.95 var(--pr-font-banner); font-stretch: 112%; color: var(--pr-on-color); text-transform: uppercase; white-space: nowrap; background: var(--tex-rh), var(--pr-red); -webkit-mask-box-image: var(--rag); }
+.file--data .under__ln { display: block; height: 7px; border-radius: 1px; background: color-mix(in srgb, var(--pr-ink) 13%, transparent); }
+.file--data .under__ln:nth-of-type(2) { width: 62%; margin-top: 6px; height: 11px; background: color-mix(in srgb, var(--pr-ink) 22%, transparent); }
+.file--data .under__ln:nth-of-type(3) { width: 88%; }
+.file--data .under__ln:nth-of-type(4) { width: 80%; }
+.file--data .under__ln:nth-of-type(5) { width: 46%; }
+/* the shades, each a strip in a fold frame: on the next sheet beyond the fold, on the page before it, on the flap */
+.file--data .under__shade, .file--data .turn__shade, .file--data .flap__g { position: absolute; left: 0; top: 0; height: 3000px; transform-origin: 0 0; pointer-events: none; }
+.file--data .under__shade { --off: 0px; width: 50px; background: linear-gradient(90deg, color-mix(in srgb, var(--cover-shadow) 32%, transparent), color-mix(in srgb, var(--cover-shadow) 8%, transparent) 18px, transparent 50px); }
+.file--data .turn__shade { --off: -64px; z-index: 2; width: 64px; background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--cover-shadow) 8%, transparent) 50px, color-mix(in srgb, var(--cover-shadow) 20%, transparent) 63.5px, transparent 64px); }
+.file--data .flap__g { --off: 0px; width: 140px; background: linear-gradient(90deg, color-mix(in srgb, var(--cover-shadow) 20%, transparent), color-mix(in srgb, var(--cover-shadow) 5%, transparent) 4px, color-mix(in srgb, var(--pr-on-color) 75%, transparent) 13px, transparent 46px, transparent 90px, color-mix(in srgb, var(--cover-shadow) 4%, transparent) 140px); }
+.desk[data-exit="data"] .file--data :is(.under__shade, .turn__shade) { animation: x-fold var(--x-fold) linear both, x-in calc(var(--x-fold) * .12) linear both; }
+.desk[data-exit="data"] .file--data .flap__g { animation: x-fold var(--x-fold) linear both; }
+/* the page: its side of the fold */
+.desk[data-exit="data"] .file--data .turn { position: absolute; left: 0; top: 0; width: 3000px; height: 3000px; overflow: clip; transform-origin: 0 0; --off: -3000px; animation: x-fold var(--x-fold) linear both; }
+.desk[data-exit="data"] .file--data .turn__in { position: absolute; left: 0; top: 0; flex: none; width: var(--fw); height: var(--fh); transform-origin: 0 0; animation: x-unfold var(--x-fold) linear both; }
+/* the flap: the other side, turned about the fold; its shadows the same outline projected flat, pushed down-right */
+.file--data .flap { position: absolute; inset: 0; z-index: 5; pointer-events: none; }
+.file--data .flap__f { position: absolute; left: 0; top: 0; width: 3000px; height: 3000px; transform-origin: 0 0; }
+.file--data .flap__c { position: absolute; inset: 0; overflow: clip; }
+.file--data .flap__p { position: absolute; left: 0; top: 0; width: var(--fw); height: var(--fh); overflow: hidden; transform-origin: 0 0; --off: 0px; background: var(--pr-paper); }
+.file--data .flap__f--s .flap__p { background: color-mix(in srgb, var(--cover-shadow) 5.5%, transparent); }
+.desk[data-exit="data"] .file--data .flap { animation: x-flap-fade var(--x-fold) linear both; }
+.desk[data-exit="data"] .file--data .flap__f { animation: x-flap var(--x-fold) linear both; }
+.desk[data-exit="data"] .file--data .flap__f--s { animation-name: x-flap-shadow; }
+.desk[data-exit="data"] .file--data .flap__p { animation: x-unfold var(--x-fold) linear both; }
+@keyframes x-fold { 0% { transform: rotate(45deg) translate(calc(calc(var(--fd0) * 1.0000 - 0.00px) + var(--off, 0px)), -1500px); } 12.5% { transform: rotate(45deg) translate(calc(calc(var(--fd0) * 0.9446 - 1.11px) + var(--off, 0px)), -1500px); } 25% { transform: rotate(45deg) translate(calc(calc(var(--fd0) * 0.8328 - 3.34px) + var(--off, 0px)), -1500px); } 37.5% { transform: rotate(45deg) translate(calc(calc(var(--fd0) * 0.6781 - 6.44px) + var(--off, 0px)), -1500px); } 50% { transform: rotate(45deg) translate(calc(calc(var(--fd0) * 0.5000 - 10.00px) + var(--off, 0px)), -1500px); } 55.56% { transform: rotate(45deg) translate(calc(calc(var(--fd0) * 0.4194 - 11.61px) + var(--off, 0px)), -1500px); } 62.5% { transform: rotate(45deg) translate(calc(calc(var(--fd0) * 0.3219 - 13.56px) + var(--off, 0px)), -1500px); } 75% { transform: rotate(45deg) translate(calc(calc(var(--fd0) * 0.1672 - 16.66px) + var(--off, 0px)), -1500px); } 87.5% { transform: rotate(45deg) translate(calc(calc(var(--fd0) * 0.0554 - 18.89px) + var(--off, 0px)), -1500px); } 100% { transform: rotate(45deg) translate(calc(calc(var(--fd0) * 0.0000 - 20.00px) + var(--off, 0px)), -1500px); } }
+@keyframes x-unfold { 0% { transform: translate(calc(-1 * calc(var(--fd0) * 1.0000 - 0.00px) - var(--off, 0px)), 1500px) rotate(-45deg); } 12.5% { transform: translate(calc(-1 * calc(var(--fd0) * 0.9446 - 1.11px) - var(--off, 0px)), 1500px) rotate(-45deg); } 25% { transform: translate(calc(-1 * calc(var(--fd0) * 0.8328 - 3.34px) - var(--off, 0px)), 1500px) rotate(-45deg); } 37.5% { transform: translate(calc(-1 * calc(var(--fd0) * 0.6781 - 6.44px) - var(--off, 0px)), 1500px) rotate(-45deg); } 50% { transform: translate(calc(-1 * calc(var(--fd0) * 0.5000 - 10.00px) - var(--off, 0px)), 1500px) rotate(-45deg); } 55.56% { transform: translate(calc(-1 * calc(var(--fd0) * 0.4194 - 11.61px) - var(--off, 0px)), 1500px) rotate(-45deg); } 62.5% { transform: translate(calc(-1 * calc(var(--fd0) * 0.3219 - 13.56px) - var(--off, 0px)), 1500px) rotate(-45deg); } 75% { transform: translate(calc(-1 * calc(var(--fd0) * 0.1672 - 16.66px) - var(--off, 0px)), 1500px) rotate(-45deg); } 87.5% { transform: translate(calc(-1 * calc(var(--fd0) * 0.0554 - 18.89px) - var(--off, 0px)), 1500px) rotate(-45deg); } 100% { transform: translate(calc(-1 * calc(var(--fd0) * 0.0000 - 20.00px) - var(--off, 0px)), 1500px) rotate(-45deg); } }
+@keyframes x-flap { 0% { transform: translate(0.0px, 0.0px) rotate(45deg) translate(calc(var(--fd0) * 1.0000 - 0.00px), -1500px) perspective(1700px) rotateY(124.00deg); } 12.5% { transform: translate(0.0px, 0.0px) rotate(45deg) translate(calc(var(--fd0) * 0.9446 - 1.11px), -1500px) perspective(1700px) rotateY(126.99deg); } 25% { transform: translate(0.0px, 0.0px) rotate(45deg) translate(calc(var(--fd0) * 0.8328 - 3.34px), -1500px) perspective(1700px) rotateY(133.03deg); } 37.5% { transform: translate(0.0px, 0.0px) rotate(45deg) translate(calc(var(--fd0) * 0.6781 - 6.44px), -1500px) perspective(1700px) rotateY(141.38deg); } 50% { transform: translate(0.0px, 0.0px) rotate(45deg) translate(calc(var(--fd0) * 0.5000 - 10.00px), -1500px) perspective(1700px) rotateY(151.00deg); } 55.56% { transform: translate(0.0px, 0.0px) rotate(45deg) translate(calc(var(--fd0) * 0.4194 - 11.61px), -1500px) perspective(1700px) rotateY(155.35deg); } 62.5% { transform: translate(-0.5px, -0.5px) rotate(45deg) translate(calc(var(--fd0) * 0.3219 - 13.56px), -1500px) perspective(1700px) rotateY(160.62deg); } 75% { transform: translate(-11.7px, -11.7px) rotate(45deg) translate(calc(var(--fd0) * 0.1672 - 16.66px), -1500px) perspective(1700px) rotateY(168.97deg); } 87.5% { transform: translate(-52.0px, -52.0px) rotate(45deg) translate(calc(var(--fd0) * 0.0554 - 18.89px), -1500px) perspective(1700px) rotateY(175.01deg); } 100% { transform: translate(-140.0px, -140.0px) rotate(45deg) translate(calc(var(--fd0) * 0.0000 - 20.00px), -1500px) perspective(1700px) rotateY(178.00deg); } }
+@keyframes x-flap-shadow { 0% { transform: translate(calc(var(--i) * 3.84px - 0.0px), calc(var(--i) * 6.97px - 0.0px)) rotate(45deg) translate(calc(var(--fd0) * 1.0000 - 0.00px), -1500px) rotateY(124.00deg); } 12.5% { transform: translate(calc(var(--i) * 3.74px - 0.0px), calc(var(--i) * 6.79px - 0.0px)) rotate(45deg) translate(calc(var(--fd0) * 0.9446 - 1.11px), -1500px) rotateY(126.99deg); } 25% { transform: translate(calc(var(--i) * 3.51px - 0.0px), calc(var(--i) * 6.39px - 0.0px)) rotate(45deg) translate(calc(var(--fd0) * 0.8328 - 3.34px), -1500px) rotateY(133.03deg); } 37.5% { transform: translate(calc(var(--i) * 3.16px - 0.0px), calc(var(--i) * 5.74px - 0.0px)) rotate(45deg) translate(calc(var(--fd0) * 0.6781 - 6.44px), -1500px) rotateY(141.38deg); } 50% { transform: translate(calc(var(--i) * 2.70px - 0.0px), calc(var(--i) * 4.91px - 0.0px)) rotate(45deg) translate(calc(var(--fd0) * 0.5000 - 10.00px), -1500px) rotateY(151.00deg); } 55.56% { transform: translate(calc(var(--i) * 2.48px - 0.0px), calc(var(--i) * 4.50px - 0.0px)) rotate(45deg) translate(calc(var(--fd0) * 0.4194 - 11.61px), -1500px) rotateY(155.35deg); } 62.5% { transform: translate(calc(var(--i) * 2.20px - 0.5px), calc(var(--i) * 3.99px - 0.5px)) rotate(45deg) translate(calc(var(--fd0) * 0.3219 - 13.56px), -1500px) rotateY(160.62deg); } 75% { transform: translate(calc(var(--i) * 1.73px - 11.7px), calc(var(--i) * 3.15px - 11.7px)) rotate(45deg) translate(calc(var(--fd0) * 0.1672 - 16.66px), -1500px) rotateY(168.97deg); } 87.5% { transform: translate(calc(var(--i) * 1.39px - 52.0px), calc(var(--i) * 2.52px - 52.0px)) rotate(45deg) translate(calc(var(--fd0) * 0.0554 - 18.89px), -1500px) rotateY(175.01deg); } 100% { transform: translate(calc(var(--i) * 1.22px - 140.0px), calc(var(--i) * 2.21px - 140.0px)) rotate(45deg) translate(calc(var(--fd0) * 0.0000 - 20.00px), -1500px) rotateY(178.00deg); } }
+@keyframes x-flap-fade { 0% { opacity: 1.000; } 80% { opacity: 1.000; } 85% { opacity: 0.844; } 90% { opacity: 0.500; } 95% { opacity: 0.156; } 100% { opacity: 0.000; } }
+
+
+/* reduced motion (either path; chooser.ts already takes the fade there): no game exit motion */
+@media (prefers-reduced-motion: reduce) {
+  .desk[data-exit="game"] .file--game :is(.xg, .xg *, .xg__off, .dev__screen > .face), .desk[data-exit="game"] ~ .xnav *, .desk[data-exit="data"] .file--data :is(.turn, .turn *, .under *, .flap, .flap *) { animation: none; }
+}
+:root[data-motion="reduce"] .desk[data-exit="game"] .file--game :is(.xg, .xg *, .xg__off, .dev__screen > .face), :root[data-motion="reduce"] .desk[data-exit="game"] ~ .xnav *, :root[data-motion="reduce"] .desk[data-exit="data"] .file--data :is(.turn, .turn *, .under *, .flap, .flap *) { animation: none; }
+@media (forced-colors: active) { .file--game .xg, .file--game .xg__off { display: none !important; } }

@@ -7,10 +7,13 @@ import { contrast, parseRules } from '../helpers/css';
 
 const read = (rel: string) => readFileSync(new URL(`../../${rel}`, import.meta.url), 'utf8').replace(/\r\n/g, '\n');
 const squash = (v: string | undefined) => (v ?? '').replace(/\s+/g, '');
-const tokens = () => read('src/styles/tokens.css');
+// tokens.css (inlined into every page) keeps the role-token defaults; game-tokens.css (game pages only, imported by
+// game.css) holds the raw --gp-* values, the game block and its print twin
+const tokens = () => read('src/styles/game-tokens.css');
 const rules = () => parseRules(tokens());
+const sharedRules = () => parseRules(read('src/styles/tokens.css'));
 const GAME = ':root[data-variant="game"]';
-const rootDecls = () => new Map(rules().filter((r) => r.selector === ':root' && r.media === null).flatMap((r) => [...r.decls]));
+const rootDecls = () => new Map([...sharedRules(), ...rules()].filter((r) => r.selector === ':root' && r.media === null).flatMap((r) => [...r.decls]));
 const gameRules = () => rules().filter((r) => r.selector === GAME);
 const gameBlock = () => gameRules().find((r) => r.media === null)!.decls;
 const gamePrint = () => gameRules().find((r) => r.media === '@media print')!.decls;
@@ -83,7 +86,10 @@ describe('game palette tokens (GP-1)', () => {
     expect(declared.sort()).toEqual([...Object.keys(RAW), '--gp-bars-c', '--gp-bars-g'].sort());
   });
 
-  it('GP-1: the game block re-points exactly the listed names and nothing else; it is the only :root[data-variant="game"] rule in tokens.css and precedes @media print', () => {
+  it('GP-1: the game block re-points exactly the listed names and nothing else; it is the only :root[data-variant="game"] rule in game-tokens.css and precedes @media print; tokens.css has none and no --gp-* value', () => {
+    expect(sharedRules().filter((r) => r.selector === GAME)).toEqual([]);
+    expect(read('src/styles/tokens.css').replace(/\/\*[\s\S]*?\*\//g, '')).not.toMatch(/--gp-[\w-]+\s*:/);
+    expect(read('src/styles/game.css')).toMatch(/^@import '\.\/game-tokens\.css';/m);
     const top = gameRules().filter((r) => r.media === null);
     expect(top).toHaveLength(1);
     expect(gameRules().map((r) => r.media)).toEqual([null, '@media print']);
@@ -106,7 +112,7 @@ describe('game palette tokens (GP-1)', () => {
     expect(d.get('--hl2-light')).toBe('var(--accent-light)');
     expect(d.get('--ach-rim')).toBe('var(--gold-deep)');
     // no other selector re-points the role tokens
-    for (const r of rules()) {
+    for (const r of [...sharedRules(), ...rules()]) {
       if (r.selector === ':root' || r.selector === GAME) continue;
       for (const name of ['--hl2', '--hl2-deep', '--hl2-light', '--ach-rim']) expect(r.decls.has(name), `${r.selector} ${name}`).toBe(false);
     }
@@ -193,9 +199,8 @@ describe('game palette tokens (GP-1)', () => {
     }
     for (const name of ['--hud-bg', '--hud-panel', '--read-bg', '--read-card']) expect(p.get(name), name).toBe('#FFFFFF');
     expect(p.get('--gold-ink')).toBe('#000000');
-    // the print twin comes after the game block and after the shared game-version print rule, so it wins
+    // the print twin comes after the game block (same specificity), so it wins
     const css = tokens().replace(/\/\*[\s\S]*?\*\//g, '');
-    const printAt = css.indexOf('@media print');
-    expect(css.indexOf(`${GAME} {`, printAt)).toBeGreaterThan(css.indexOf(':root:not([data-variant="data"])', printAt));
+    expect(css.indexOf(`${GAME} {`, css.indexOf('@media print'))).toBeGreaterThan(css.indexOf(`${GAME} {`));
   });
 });

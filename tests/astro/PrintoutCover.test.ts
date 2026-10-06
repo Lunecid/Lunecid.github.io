@@ -72,7 +72,9 @@ describe('PrintoutCover.astro (MO-23)', () => {
     expect(css).toMatch(/\.paper::after\s*\{[^}]*background-image:\s*var\(--tooth\),\s*var\(--formation\)/);
     expect(css).toMatch(/\.paper\s*\{[^}]*-webkit-mask-box-image:\s*var\(--deckle\)/);
     expect(css).toMatch(/\.paper::before\s*\{[^}]*inset 1px 1px 0 var\(--pr-plate\)/);
-    expect(css).not.toMatch(/--hole|--rim|--vperf|--pr-band|--pr-perf|sprocket|radial-gradient/);
+    expect(css).not.toMatch(/--hole|--rim\b|--vperf|--pr-band|--pr-perf|sprocket/);
+    // MO-34 (named): the tablet's screen and camera use radial gradients; the printout's rules still use none
+    expect(css.split('\n').filter((l) => /\.file--data/.test(l) && /radial-gradient/.test(l))).toEqual([]);
     const html = await render('ko');
     expect(html).not.toMatch(/data-paper|class="(hole|perf|band)/);
   });
@@ -87,5 +89,38 @@ describe('PrintoutCover.astro (MO-23)', () => {
     // reduced motion: no sweep (both paths)
     expect(css).toMatch(/@media \(prefers-reduced-motion: reduce\)\s*\{[^@]*\.cta--pr \.cta__hov\s*\{\s*transition:\s*none/);
     expect(css).toMatch(/:root\[data-motion="reduce"\] (\.file--data )?\.cta--pr \.cta__hov\s*\{\s*transition:\s*none/);
+  });
+
+  it('MO-37: folder, clip and flag inside the face, aria-hidden; the flag reads coverCopy.data.num; one link', async () => {
+    const html = await render('ko');
+    const face = /<div class="face"[^>]*>([\s\S]*)<\/div>\s*<\/article>/.exec(html)?.[1] ?? '';
+    expect(face).toMatch(/<i class="folder" aria-hidden="true"[^>]*><\/i>/);
+    const clip = /<svg class="clip"[\s\S]*?<\/svg>/.exec(face)?.[0] ?? '';
+    expect(clip).toMatch(/aria-hidden="true"/);
+    expect(clip).toMatch(/focusable="false"/);
+    expect(clip).not.toMatch(/#[0-9a-f]{3,6}\b|rgba?\(|<text|href=/i);
+    expect(face).toMatch(/<span class="tab" aria-hidden="true"[^>]*><span class="tab__t" lang="en"[^>]*>NO\. 02<\/span><\/span>/);
+    expect(html.match(/<a\b/g)).toHaveLength(1);
+    // the folder lies under the sheet (inside the face, before the paper); the clip and the flag ride on the sheet
+    expect(face.indexOf('class="folder"')).toBeLessThan(face.indexOf('class="feed"'));
+    expect(face.indexOf('class="clip"')).toBeGreaterThan(face.indexOf('class="pr"'));
+    expect(await render('en')).toMatch(/<span class="tab__t" lang="en"[^>]*>NO\. 02<\/span>/);
+  });
+
+  it('MO-41: the toss: the printout with its folder, clip and flag (one element) flies in from below the viewport at opacity 1, its lift shadow falls away; the game file slides from the desk centre; then the rubber stamp', async () => {
+    const html = await render('ko');
+    const article = /<article class="file file--data"[\s\S]*<\/article>/.exec(html)?.[0] ?? '';
+    for (const part of ['class="folder"', 'class="clip"', 'class="tab"', 'class="rstamp"']) expect(article, part).toContain(part);
+    expect(css).toMatch(/:root\[data-intro="opening"\] \.desk > \.file--data \{ animation: op-toss var\(--dur-enter\) var\(--ease-out\) var\(--at-op-toss\) both; \}/);
+    const toss = /@keyframes op-toss \{ from \{([^}]*)\} to \{ transform: none; \} \}/.exec(css)?.[1] ?? '';
+    expect(toss).not.toMatch(/opacity/); // painted from the first frame at opacity 1: never a late LCP candidate
+    expect(toss).toMatch(/transform: translate\(clamp\(80px, 30vw, 360px\), calc\(100svh \+ 40px\)\) rotate\(16deg\) scale\(1\.06\);/);
+    expect(css).toMatch(/:root\[data-intro="opening"\] \.desk > \.file--data::before \{ animation: op-out var\(--dur-enter\) var\(--ease-in\) var\(--at-op-toss\) both; \}/);
+    expect(css).toMatch(/:root\[data-intro="opening"\] \.desk > \.file--game \{ animation: op-cx var\(--dur-enter\) var\(--ease-wipe\) var\(--at-op-toss\) both; \}/);
+    expect(css).toMatch(/@keyframes op-cx \{ from \{ transform: translateX\(var\(--cx\)\); \} to \{ transform: none; \} \}/);
+    // --cx: 0 on a phone (stacked), half the pair's overhang from 734px (chooser.ts measures the same in px)
+    expect(css).toMatch(/\.desk \{[^}]*--cx: 0px;/);
+    expect(css).toMatch(/@media \(min-width: 734px\) \{\s*\.desk \{[^}]*--cx: calc\(\(var\(--dx\) \+ var\(--dw\) - var\(--gw\)\) \/ 2\);/);
+    expect(css).toMatch(/\.file--data \.rstamp__ink \{ animation: op-stamp var\(--dur-op-rstamp\) var\(--ease-out\) var\(--at-op-rstamp\) both; \}/);
   });
 });

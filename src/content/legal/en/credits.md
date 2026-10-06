@@ -69,7 +69,7 @@ CC0 works do not require attribution, but the creators are credited here.
 | [Noto Serif KR](https://github.com/notofonts/noto-cjk) | Adobe, Google | SIL Open Font License 1.1 |
 | [Archivo](https://github.com/Omnibus-Type/Archivo) | The Archivo Project Authors (Omnibus-Type) | SIL Open Font License 1.1 |
 
-The body font, “SB Sans”, is a subset of Pretendard (SIL Open Font License 1.1) made for this site: it keeps only the characters the site uses. “Pretendard” is a Reserved Font Name, so the subset carries a different name; the original copyright and license notices stay inside the font file. Noto Serif KR, used for the Korean text of the paper page and the Korean titles of the page where you choose a portfolio, is subset the same way to the characters they need. “SB Display”, the face of the general version's large English titles and numbers, is a subset of Archivo (SIL Open Font License 1.1) made for this site with Latin letters and numbers only; the original copyright and license records stay inside the font file.
+The body font, “SB Sans”, is a subset of Pretendard (SIL Open Font License 1.1) made for this site: it keeps only the characters the site uses. “Pretendard” is a Reserved Font Name, so the subset carries a different name; the original copyright and license notices stay inside the font file. Noto Serif KR, used for the Korean text of the paper page, is subset the same way to the characters they need. “SB Display”, the face of the general version's large English titles and numbers, is a subset of Archivo (SIL Open Font License 1.1) made for this site with Latin letters and numbers only; the original copyright and license records stay inside the font file.
 
 ## Photos, figures, and certificates
 

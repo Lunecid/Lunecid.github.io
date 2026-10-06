@@ -83,6 +83,20 @@ describe('sound', () => {
     window.removeEventListener(SOUND_EVENT, listener);
   });
 
+  it('soundMuted: true only for "off"; false when unset, "on", or storage throws', async () => {
+    const { soundMuted } = await loadSound();
+    localStorage.removeItem('sb:sound');
+    expect(soundMuted()).toBe(false);
+    localStorage.setItem('sb:sound', 'on');
+    expect(soundMuted()).toBe(false);
+    localStorage.setItem('sb:sound', 'off');
+    expect(soundMuted()).toBe(true);
+    const spy = vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => { throw new Error('blocked'); });
+    expect(soundMuted()).toBe(false);
+    spy.mockRestore();
+    localStorage.removeItem('sb:sound');
+  });
+
   it('setSoundOn stores and dispatches sb:sound-change', async () => {
     const { setSoundOn, soundOn, sfxUrl, SOUND_EVENT } = await loadSound();
     expect(SOUND_EVENT).toBe('sb:sound-change');

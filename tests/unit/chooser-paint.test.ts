@@ -17,8 +17,12 @@ const PAINT: Record<string, string> = {
   '--tex-yh': '8a7bed1b69dbb72c4b61374505124280abfa9c086ee0f8c035d73158b07578c0',
   '--tex-yv': '66182985d713bc012e9ba8e0831d7ed9e30dd9567678878f628fea445c938068',
   '--tex-bv': '0180f85e00af00636b664e3c82890e01899e0a4f4cbbedddadf562b2bcf3cac0',
-  '--ragbox': '80878d2599fcff12a824cb681e2f138db8a040b186a40ea8338a32dd1e208861',
 };
+/** Named change (MO-41, chooser.css budget): the frayed outline's path is re-encoded without trailing zeros and with
+ *  implicit linetos ("M2.4 2.4 6 2.5 …"), the same geometry: pinned by the hash of its number sequence (the generator's
+ *  bytes hashed to 80878d25…). */
+const RAGBOX_GEOMETRY = '64b2f7f25fefb6731ed70f664060814a48abd3e3e0960c38ffd25ffdde950eab';
+const geometry = (value: string): string => value.replace(/d='[^']*'/, (d) => `d='${(d.match(/\d+(?:\.\d+)?/g) ?? []).map((n) => String(Number(n)).includes('.') ? String(Number(n)) : `${Number(n)}.0`).join(',')}'`);
 /** The art paper's tooth and formation and the rubber stamp's ink (the prototype's own). */
 const PAPER: Record<string, string> = {
   '--tooth': 'ec91e6165d9d8b8e987aca0225669f0c9430d4f83382191b09720673dd93080b',
@@ -34,6 +38,10 @@ describe('chooser printout textures (MO-23, v6.4)', () => {
       expect(value, `${name} in ${FILE}`).toBeDefined();
       expect(sha(value!), name).toBe(hash);
     }
+    const rag = valueOf('--ragbox');
+    expect(rag).toBeDefined();
+    expect(rag).toMatch(/d='M[\d. ]+Z'/);
+    expect(sha(geometry(rag!)), '--ragbox geometry').toBe(RAGBOX_GEOMETRY);
     expect(source).toContain('synced from ds paint.mjs output; dedupe at merge (MO-29)');
   });
 

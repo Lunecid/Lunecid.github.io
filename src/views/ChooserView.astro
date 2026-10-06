@@ -9,6 +9,7 @@ import NeutralLayout from '../layouts/NeutralLayout.astro';
 // The page, desk and cover styles ship as ONE external, content-hashed stylesheet that only the chooser links (the
 // HTML stays within the first flight; the textures are cached): src/styles/chooser.css.
 import chooserCss from '../styles/chooser.css?url';
+import DeskProps from '../components/neutral/DeskProps.astro';
 import GameCover from '../components/neutral/GameCover.astro';
 import PrintoutCover from '../components/neutral/PrintoutCover.astro';
 import { coverCopy } from '../data/copy/chooser-covers';
@@ -32,6 +33,7 @@ const meta = pageMetaFor('chooser', lang, null, facts);
 const today = todayIso(new Date());
 const mast = coverCopy[lang].mast;
 const touch = coverCopy[lang].touch; // the touch hint (chooser.ts fills it on touch screens only)
+const sound = coverCopy[lang].sound; // the mute button for the page-turn sound (chooser.ts shows it)
 const files = mast.files.replace('{n}', String(VARIANT_IDS.length).padStart(2, '0'));
 const covers = COVER_ORDER.map((id) => buildCover(id, lang, today));
 ---
@@ -47,15 +49,17 @@ const covers = COVER_ORDER.map((id) => buildCover(id, lang, today));
 >
   <Fragment slot="head">
     <link rel="stylesheet" href={chooserCss} />
-    <style is:inline set:html={fontFaceCss(['coverMono', 'coverDisplay'])}></style>
+    <style is:inline set:html={fontFaceCss(['coverMono', 'coverDisplay', 'coverBanner'])}></style>
   </Fragment>
   <section class="chooser" aria-labelledby="chooser-name">
     <div class="chooser__stage">
       <div class="chooser__mast">
         <p class="chooser__cap" lang="en"><span class="chooser__mark" aria-hidden="true">[<i class="chooser__sq"></i>]</span><span>{mast.label}</span><span>{files}</span></p>
         <h1 id="chooser-name" class="sr-only">{person.name[lang]}</h1>
+        <button type="button" class="chooser__sound" data-sound-toggle aria-pressed="true" data-on={sound.on} data-off={sound.off} hidden><span class="chooser__sound-l">{sound.label}</span> <span class="chooser__sound-s">{sound.on}</span></button>
       </div>
       <div class="desk" data-chooser data-desk>
+        <div class="props" aria-hidden="true"><i class="mat"></i><DeskProps /></div>
         {covers.map((cover) => (cover.id === 'data' ? <PrintoutCover cover={cover} /> : <GameCover cover={cover} />))}
       </div>
       <p class="desk__hint" aria-live="polite" data-rest={touch.rest} data-aside={touch.aside}></p>
