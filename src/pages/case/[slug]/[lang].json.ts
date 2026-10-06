@@ -3,16 +3,15 @@
 // by the overlay on intent (connect-src 'self'), never linked from a page.
 import type { APIRoute, GetStaticPaths } from 'astro';
 import { getImage } from 'astro:assets';
-import { getCollection } from 'astro:content';
 import fig1 from '../../../assets/research/cog-2026/label-horizon.webp';
 import kde from '../../../assets/research/cog-2026/kill-gap-kde.webp';
 import { CASE_IDS } from '../../../lib/publications';
 import { caseSheetData, type CaseImage } from '../../../lib/case/sheet';
-import { getFactSource } from '../../../lib/portfolio';
+import { getFactSource, getPublications } from '../../../lib/portfolio';
 import { languages, type Lang } from '../../../i18n/ui';
 
 export const getStaticPaths = (async () => {
-  const entries = (await getCollection('publications')).filter((e) => (CASE_IDS as readonly string[]).includes(e.id));
+  const entries = (await getPublications()).filter((e) => (CASE_IDS as readonly string[]).includes(e.id));
   return entries.flatMap((entry) => (Object.keys(languages) as Lang[]).map((lang) => ({ params: { slug: entry.id, lang }, props: { entry, lang } })));
 }) satisfies GetStaticPaths;
 
