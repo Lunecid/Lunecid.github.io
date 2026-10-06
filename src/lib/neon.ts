@@ -8,6 +8,10 @@
 /** Glyph timing (ms). --dur-type-step and --dur-flicker (chooser.css) equal staggerMs and flickerMs. */
 export const NEON = { staggerMs: 18, staggerMinMs: 10, staggerMaxMs: 30, flickerMs: 150, maxCycles: 3 } as const;
 
+/** How long before its first glyph a line is split (ms): each line costs one short task of its own while the opening
+ *  plays, instead of one long task for every line when the script starts (Total Blocking Time). */
+export const NEON_LEAD_MS = 120;
+
 /** When each window closes (ms from the opening's first frame, the chooser.css timeline): the console fades from
  *  boot + 63 steps, the status badge is gone at the toss (lock + 32 steps), and the opening ends at 2.398 s. */
 export const NEON_WINDOWS = { console: 955.2, status: 1548, labels: 2398 } as const;

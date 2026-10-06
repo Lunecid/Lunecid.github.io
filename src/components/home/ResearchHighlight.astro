@@ -11,6 +11,7 @@
 import SectionHead from '../hud/SectionHead.astro';
 import AucOverallChart from '../research/AucOverallChart.astro';
 import PaperLinks from '../research/PaperLinks.astro';
+import CaseTrigger from '../research/CaseTrigger.astro';
 import StatTiles from '../data/StatTiles.astro';
 import type { StatDef } from '../../data/copy/data/home';
 import { figureCopy, overallAuc } from '../../data/research/cog-2026';
@@ -50,7 +51,7 @@ const [figTag, ...figRest] = figureLabel.split(' · ');
           {paper.oral && <span class="paper__oral" lang="en">{t(lang, 'research.oral')}</span>}
         </p>
         <h3 class="paper__title" lang="en">
-          {paper.href ? <a href={paper.href}>{paper.title}</a> : paper.title}
+          {paper.href ? <a href={paper.href} data-case={paper.caseId ?? undefined}>{paper.title}</a> : paper.title}
         </h3>
         {
           paper.titleGloss && (
@@ -90,7 +91,7 @@ const [figTag, ...figRest] = figureLabel.split(' · ');
     <div class="ed-rh__grid">
       <article class="ed-paper">
         <p class="ed-paper__venue"><span class="ed-label"><span lang="en">{paper.venue}</span></span>{paper.oral && <span class="ed-stamp"><span class="ed-stamp__ink" data-paint-text>{t(lang, 'research.oralPresentation')}</span></span>}</p>
-        <h3 class="ed-paper__title" lang="en">{paper.href ? <a class="ed-paper__link" href={paper.href}>{paper.title}</a> : paper.title}</h3>
+        <h3 class="ed-paper__title" lang="en">{paper.href ? <a class="ed-paper__link" href={paper.href} data-case={paper.caseId ?? undefined}>{paper.title}</a> : paper.title}</h3>
         {paper.titleGloss && <p class="ed-meta">{paper.titleGloss} ({t(lang, 'research.gloss')})</p>}
         <p class="ed-meta ed-paper__authors" lang="en">
           {paper.authors.map((author, i) => (
@@ -106,6 +107,8 @@ const [figTag, ...figRest] = figureLabel.split(' · ');
   </div>
 </section>
 )}
+
+{paper.caseId && paper.href && <CaseTrigger />}
 
 <style>
   /* minmax(0, 1fr) + .paper__body { min-width: 0 }: an opened BibTeX box wraps inside the panel instead of widening the page (Review Focus 1) */

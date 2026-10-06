@@ -107,3 +107,23 @@ test('site is usable without JavaScript at 375px', async ({ page, request }) => 
     await expect(list.getByRole('heading', { name: '숨은 업적, 달성하면 제목이 공개됩니다', exact: true })).toHaveCount(1);
   });
 });
+
+test('the case-study triggers are plain links to the paper page without JavaScript; the paper page hides its button', async ({ page, request }) => {
+  for (const route of ['/game/', '/en/data/', '/game/research/', '/data/projects/']) {
+    await page.goto(route);
+    const triggers = page.locator('a[data-case]');
+    expect(await triggers.count(), route).toBeGreaterThan(0);
+    for (const href of await triggers.evaluateAll((as) => as.map((a) => a.getAttribute('href')!))) {
+      expect(href, route).toMatch(/\/research\/cog-2026-engagement\/$/);
+      expect((await request.get(href)).status(), href).toBe(200);
+    }
+  }
+  await page.goto('/game/research/');
+  await page.locator('a[data-case]').first().click();
+  await expect(page).toHaveURL(/\/game\/research\/cog-2026-engagement\/$/);
+  await expect(page.locator('button[data-case]')).toBeHidden();
+  await page.goto('/en/data/research/cog-2026-engagement/#case');
+  await expect(page.locator('button[data-case]')).toBeHidden();
+  await expect(page.locator('dialog')).toHaveCount(0);
+  await expect(page.locator('h1')).toBeVisible();
+});

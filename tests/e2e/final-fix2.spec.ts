@@ -564,6 +564,34 @@ test.describe('item 1, straight-cut guard: art is faded at the visible right bou
     return max;
   }
 
+  /**
+   * The showcase at rest before its pixels are compared, waited for as states, never as a fixed time (a loaded runner
+   * can still be mid-switch after any fixed delay, and a strip measured on a moving scene is outside the viewport or
+   * differs between its two screenshots): one scene, showing a new game's art when `previousSrc` is given (a tab
+   * change's exit is over, AnimatePresence mode="wait"), the image decoded, the scene and the art faded fully in, and
+   * the art centred in the viewport with its measured strips inside it. Returns the art's source.
+   */
+  async function showcaseAtRest(page: Page, previousSrc?: string): Promise<string> {
+    const src = () => page.locator('.fg__chr img').evaluate((img: HTMLImageElement) => img.currentSrc || img.src);
+    await expect(page.locator('.fg__scene')).toHaveCount(1, { timeout: 15_000 });
+    if (previousSrc) await expect.poll(src, { timeout: 15_000, message: 'the next game’s art' }).not.toBe(previousSrc);
+    await page.locator('.fg__chr img').evaluate((img: HTMLImageElement) => img.decode().catch(() => undefined));
+    await expect
+      .poll(() => page.locator('.fg__chr').evaluate((el) => `${getComputedStyle(el.closest('.fg__scene')!).opacity},${getComputedStyle(el).opacity}`), { timeout: 15_000, message: 'scene and art faded in' })
+      .toBe('1,1');
+    await page.locator('.fg__chr').evaluate((el) => {
+      const r = el.getBoundingClientRect();
+      window.scrollTo({ top: window.scrollY + r.top + r.height / 2 - window.innerHeight / 2, left: 0, behavior: 'instant' as ScrollBehavior });
+    });
+    await expect
+      .poll(() => page.locator('.fg__chr-clip').evaluate((el) => {
+        const r = el.getBoundingClientRect();
+        return r.top + 70 < window.innerHeight && r.bottom > 0 && Math.max(0, r.top) < window.innerHeight;
+      }), { message: 'the measured strips lie in the viewport' })
+      .toBe(true);
+    return src();
+  }
+
   for (const dpr of [1, 1.5] as const) {
     for (const [width, height] of [[1280, 720], [1440, 900], [1920, 1080], [2560, 1440]] as const) {
       test.describe(`${width}x${height} @ DPR ${dpr}`, () => {
@@ -606,7 +634,7 @@ test.describe('item 1, straight-cut guard: art is faded at the visible right bou
           await open(page, '/game/player-log/', width, height);
           await page.locator('section.fg').scrollIntoViewIfNeeded();
           await expect(page.locator('.fg__chr img')).toBeVisible({ timeout: 15_000 });
-          await page.waitForTimeout(400);
+          const tab0Src = await showcaseAtRest(page);
           for (const edge of ['left', 'right', 'top'] as const) {
             expect(
               await edgeStripArtDelta(page, '.fg__chr-clip', '.fg__chr img', edge),
@@ -615,7 +643,7 @@ test.describe('item 1, straight-cut guard: art is faded at the visible right bou
           }
           await page.locator('.fg__tab').nth(1).click();
           await expect(page.locator('.fg__chr img')).toBeVisible({ timeout: 15_000 });
-          await page.waitForTimeout(400);
+          await showcaseAtRest(page, tab0Src);
           for (const edge of ['left', 'right', 'top'] as const) {
             expect(
               await edgeStripArtDelta(page, '.fg__chr-clip', '.fg__chr img', edge),
@@ -635,14 +663,12 @@ test.describe('item 1, straight-cut guard: art is faded at the visible right bou
         test.setTimeout(90_000);
         test.skip(!HERO_ART, 'needs both hero characters');
         await open(page, '/game/player-log/', 667, 375);
+        let tab0Src: string | undefined;
         for (const tab of [0, 1] as const) {
           if (tab === 1) await page.locator('.fg__tab').nth(1).click();
-          await page.locator('.fg__chr').evaluate((el) => {
-            const r = el.getBoundingClientRect();
-            window.scrollTo({ top: window.scrollY + r.top + r.height / 2 - window.innerHeight / 2, left: 0, behavior: 'instant' as ScrollBehavior });
-          });
           await expect(page.locator('.fg__chr img')).toBeVisible({ timeout: 15_000 });
-          await page.waitForTimeout(600);
+          const src = await showcaseAtRest(page, tab0Src);
+          tab0Src ??= src;
           for (const edge of ['left', 'right', 'top'] as const) {
             expect(await edgeStripArtDelta(page, '.fg__chr-clip', '.fg__chr img', edge), `showcase tab${tab} ${edge}`).toBeLessThanOrEqual(14);
           }

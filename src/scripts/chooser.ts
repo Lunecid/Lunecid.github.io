@@ -7,7 +7,7 @@
 // file inks and strikes its "기밀 해제" stamp (MO-25), then plays its exit, the waveform (MO-38); entering the general
 // file turns its page (MO-39); then the link is followed.
 import exitSheet from '../styles/chooser-exit.css?url';
-import { NEON_TARGETS, NEON_WINDOWS, glyphVariant, lineStagger, splitGlyphs } from '../lib/neon';
+import { NEON_LEAD_MS, NEON_TARGETS, NEON_WINDOWS, glyphVariant, lineStagger, splitGlyphs } from '../lib/neon';
 import { noiseBuffer, paperSound } from '../lib/paper-sound';
 import { SOUND_EVENT, audioContext, setSoundOn, soundMuted } from '../lib/sound';
 import { rememberVariant } from '../lib/variant-pref';
@@ -343,19 +343,23 @@ export function attachExitSheet(doc: Document = document, desk: HTMLElement | nu
 /**
  * Neon typing (MO-27): while the opening plays, its overlay lines and the game cover's small labels type in glyph by
  * glyph. Each target becomes an aria-hidden run of glyph spans (.ng, seeded variant, its start in --d on the opening's
- * clock, read from the device's rise so a late script still lands on time: past glyphs are simply lit) plus, outside
- * an aria-hidden subtree, an sr-only copy of the text; the element's own plain fade is switched off. At sb:intro-done
- * (end or skip) the plain text and the element's style are put back, so the page holds no glyph spans at rest.
+ * clock, read from the device's rise so a late script or timer still lands on time: past glyphs are simply lit) plus,
+ * outside an aria-hidden subtree, an sr-only copy of the text; the element's own plain fade (which keeps it hidden until
+ * then) is switched off. Each line is split NEON_LEAD_MS before its first glyph, in a task of its own. At
+ * sb:intro-done (end or skip) lines not split yet never are, and the plain text and the element's style are put back,
+ * so the page holds no glyph spans at rest.
  */
 export function typeNeon(doc: Document = document): void {
   if (doc.documentElement.dataset.intro !== 'opening') return;
   const desk = doc.querySelector<HTMLElement>('[data-chooser][data-desk]');
   if (!desk) return;
   const rise = desk.querySelector<HTMLElement>('.file--game .dev')?.getAnimations?.().find((a) => (a as CSSAnimation).animationName === 'op-rise');
-  const now = Number(doc.timeline?.currentTime ?? 0);
-  const elapsed = typeof rise?.startTime === 'number' ? now - rise.startTime : 0;
+  const clock = () => Number(doc.timeline?.currentTime ?? performance.now());
+  const start = typeof rise?.startTime === 'number' ? rise.startTime : clock();
   const undo: (() => void)[] = [];
-  for (const t of NEON_TARGETS) {
+  const timers: number[] = [];
+  const split = (t: (typeof NEON_TARGETS)[number]) => {
+    const elapsed = clock() - start;
     for (const el of desk.querySelectorAll<HTMLElement>(t.sel)) {
       const text = el.textContent ?? '';
       const glyphs = splitGlyphs(text);
@@ -385,8 +389,17 @@ export function typeNeon(doc: Document = document): void {
         else el.setAttribute('style', style);
       });
     }
+  };
+  const elapsed = clock() - start;
+  for (const t of NEON_TARGETS) {
+    const wait = t.atMs - NEON_LEAD_MS - elapsed;
+    if (wait > 0) timers.push(window.setTimeout(() => split(t), wait));
+    else split(t);
   }
-  window.addEventListener('sb:intro-done', () => { for (const fn of undo.splice(0)) fn(); }, { once: true });
+  window.addEventListener('sb:intro-done', () => {
+    for (const id of timers) window.clearTimeout(id);
+    for (const fn of undo.splice(0)) fn();
+  }, { once: true });
 }
 
 export function initChooser(root: ParentNode = document, opts: { navigate?: (href: string) => void } = {}): void {

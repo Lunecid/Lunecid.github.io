@@ -74,12 +74,14 @@ function splitTop(value: string, sep: ',' | ' '): string[] {
 }
 
 let tokenCache: Map<string, string[]> | null = null;
-/** Every custom property defined in tokens.css (all breakpoints) → its values. */
+/** Token sheets: the site's (inlined everywhere) and the case overlay's scoped scale (lazy, src/lib/case/overlay.css). */
+const TOKEN_SHEETS = ['src/styles/tokens.css', 'src/styles/case-tokens.css'];
+/** Every custom property defined in the token sheets (all breakpoints) → its values. */
 function tokens(): Map<string, string[]> {
   if (tokenCache) return tokenCache;
   const map = new Map<string, string[]>();
-  if (existsSync(join(ROOT, 'src/styles/tokens.css'))) {
-    for (const d of declarations(stripComments(read('src/styles/tokens.css')))) {
+  for (const sheet of TOKEN_SHEETS.filter((f) => existsSync(join(ROOT, f)))) {
+    for (const d of declarations(stripComments(read(sheet)))) {
       if (d.prop.startsWith('--')) map.set(d.prop, [...(map.get(d.prop) ?? []), d.value]);
     }
   }
@@ -145,7 +147,7 @@ function shorthandSize(value: string): string | null {
   const toks = splitTop(value, ' ');
   const withSlash = toks.find((t) => topSlash(t) >= 0);
   if (withSlash) return withSlash.slice(0, topSlash(withSlash));
-  return toks.find((t) => /^(-?[\d.]+(px|rem|em|pt|%)|(clamp|min|max|calc)\(.+\)|var\(--fs[\w-]*\))$/.test(t)) ?? null;
+  return toks.find((t) => /^(-?[\d.]+(px|rem|em|pt|%)|(clamp|min|max|calc)\(.+\)|var\(--(?:cs-)?fs[\w-]*\))$/.test(t)) ?? null;
 }
 
 function shorthandWeight(value: string): number | null {
@@ -395,6 +397,15 @@ describe('style rules over src/**', () => {
     expect(violationsOf('transition-property')).toEqual([]);
   });
 
+  it('the chooser sheets name will-change only on its two file layers (a scoped exception: the opening re-rasters the printout otherwise)', () => {
+    const found = ['src/styles/chooser.css', 'src/styles/chooser-exit.css'].flatMap((file) =>
+      nestedRules(stripComments(read(file)))
+        .filter((r) => /(^|[;\s])will-change\s*:/.test(r.body))
+        .map((r) => `${file} | ${[...r.at, r.selector].join(' ')} | ${/will-change\s*:\s*([^;]+)/.exec(r.body)![1]!.trim()}`),
+    );
+    expect(found).toEqual(['src/styles/chooser.css | .file--game | transform', 'src/styles/chooser.css | .file--data | transform']);
+  });
+
   it('keyframes use only transform and opacity', () => {
     expect(violationsOf('keyframes')).toEqual([]);
   });
@@ -581,6 +592,12 @@ describe('style scanner fixtures', () => {
     expect(literalDurations('fixture.css', '@keyframes k { from { opacity: 0; } to { opacity: 1; } } .a{animation-delay:.3s}')).toEqual([]);
     // a calc() of --dur-* tokens is a token duration (the arrival cue's draw + hold + fade)
     expect(literalDurations('fixture.css', '.a::before{animation:cue-rule calc(var(--dur-panel-in) + var(--dur-streak)) var(--ease-out)}')).toEqual([]);
+  });
+
+  it('the case scale resolves: a --cs-fs-* size is checked against the 12px floor', () => {
+    expect(minPx('var(--cs-fs-12)')).toBe(12);
+    expect(scanSource('fixture.css', '.a { font: var(--cs-fs-13) var(--cs-ui); }')).toEqual([]);
+    expect(scanSource('fixture.css', '.a { font: 600 calc(var(--cs-fs-12) - 1px)/1 var(--cs-ui); }').map((x) => x.rule)).toEqual(['font-size']);
   });
 
   it('10.5pt passes, 8pt fails', () => {

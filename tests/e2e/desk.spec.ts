@@ -407,6 +407,15 @@ test.describe('MO-25: the declassify stamp', () => {
     await page.evaluate(() => {
       const el = document.querySelector('.file--game .stamp')!;
       document.addEventListener('click', () => setTimeout(() => sessionStorage.setItem('mo25:stamp', JSON.stringify([el.className, getComputedStyle(el).animationName, getComputedStyle(el, '::after').animationName]))), { capture: true });
+      // which timer starts the navigation: its requested delay, read while its callback runs (a loaded runner fires a
+      // timer late, so the wall-clock time to leave only has a lower bound)
+      const w = window as Window & { __timer?: number };
+      const set = window.setTimeout.bind(window);
+      window.setTimeout = ((fn: () => void, ms?: number) => set(() => {
+        w.__timer = ms;
+        try { fn(); } finally { w.__timer = undefined; }
+      }, ms)) as typeof window.setTimeout;
+      window.addEventListener('beforeunload', () => sessionStorage.setItem('mo25:timer', String(w.__timer)));
     });
     const leaving = page.waitForURL(/\/game\/$/);
     await page.keyboard.press('Enter');
@@ -416,7 +425,8 @@ test.describe('MO-25: the declassify stamp', () => {
     expect([strike, ring]).toEqual(['none', 'none']);
     const dt = Number(await page.evaluate(() => sessionStorage.getItem('mo25:dt')));
     expect(dt).toBeGreaterThanOrEqual(140);
-    expect(dt).toBeLessThanOrEqual(400); // 150 ms timer; the bound leaves room for a loaded runner's event loop
+    // the page leaves from the reduced exit's 150 ms timer (EXIT_MS.reduce), not the 880/800 ms of the full exits
+    expect(await page.evaluate(() => sessionStorage.getItem('mo25:timer'))).toBe('150');
   });
 
   test('ctrl+click opens no stamp and does not block', async ({ page, context }) => {

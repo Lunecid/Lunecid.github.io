@@ -285,7 +285,7 @@
 /* the file: a size container sharing the desk's one grid cell; the desk (ChooserView) sets --gw (width) and --mx (the
    pair's centring margin). Only the device's body takes the pointer (the rounded shell's corners click through) */
 .file--game { position: relative; display: flex; min-width: 0; container-type: inline-size; pointer-events: none; }
-.file--game { grid-area: 1 / 1; align-self: start; z-index: 1; width: var(--gw); margin-left: var(--mx); }
+.file--game { grid-area: 1 / 1; align-self: start; z-index: 1; width: var(--gw); margin-left: var(--mx); will-change: transform; } /* the scoped exception: see .file--data */
 /* the cover window on the screen */
 .file--game .face {
   position: relative;
@@ -677,6 +677,11 @@
   /* only the turned face takes the pointer (the untransformed box would steal the game cover's corners) */
   pointer-events: none;
   transition: transform var(--dur-aside) var(--ease-out), opacity var(--dur-fade) linear;
+  /* A scoped exception to "no will-change" (controller ruling 2026-10-06; tests/unit/style-rules.test.ts pins it to
+     this rule and .file--game): both files keep a layer of their own, so when the opening's toss and slide end (or
+     the aside slide), nothing is repainted into the desk and the sheet's turbulence textures and the tablet are
+     rastered once, not while the main thread waits on the frame (Lighthouse mobile / TBT ~450 ms -> ~0). */
+  will-change: transform;
 }
 @media (min-width: 1068px) { .file--data { aspect-ratio: 1; } }
 .file--data .face {

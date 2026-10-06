@@ -119,3 +119,14 @@ describe('ProjectCartridge.astro', () => {
     expect(wide).toMatch(/<img[^>]*fetchpriority="high"/);
   });
 });
+
+describe('ProjectCartridge: the case-study trigger (D1)', () => {
+  it('a linked card with a caseId puts data-case on its link and renders the trigger script; others have neither', async () => {
+    const html = await renderAstro(ProjectCartridge, { props: { ...base, href: '/game/research/cog-2026-engagement/', caseId: 'cog-2026-engagement' } });
+    expect(html).toMatch(/<a class="cart__link"[^>]*data-case="cog-2026-engagement"/);
+    expect(html).toMatch(/<script\b/);
+    const plain = await renderAstro(ProjectCartridge, { props: { ...base, href: '/game/projects/x/' } });
+    expect(plain).not.toContain('data-case');
+    expect(plain).not.toMatch(/<script\b/);
+  });
+});

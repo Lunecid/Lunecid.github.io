@@ -15,7 +15,7 @@ const ongoing = resolveLocalizedDeep(researchPage.ongoing, loadFactSource());
 
 const HUD = /(?<![\w-])(read-sec|read|lh-rows|lh-row|lh-idx|lh-chips|lh-chip|lh-tag|lh-frame|bracket|btn|cut|badge|hud-label)(?![\w-])/;
 const paper: PaperCardData = {
-  id: 'cog-2026-engagement', href: '/data/research/cog-2026-engagement/', title: 'Kill-Conditioned Engagement Outcome Prediction',
+  id: 'cog-2026-engagement', href: '/data/research/cog-2026-engagement/', caseId: 'cog-2026-engagement', title: 'Kill-Conditioned Engagement Outcome Prediction',
   titleGloss: '교전 결과 예측', authors: [{ name: 'Seongeun Baek', me: true }, { name: 'Joonho Kwon', me: false }],
   venue: 'IEEE Conference on Games (CoG 2026)', venueShort: 'IEEE CoG 2026', year: 2026, oral: true, tldr: '한 줄 요약입니다.',
   abstract: '초록입니다.', abstractLang: 'ko', bibtex: '@inproceedings{a,\n  year = {2026}\n}', pdf: null, doi: null,

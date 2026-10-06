@@ -19,10 +19,13 @@ import { createRequire } from 'node:module';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import subsetFont from 'subset-font';
-import { FONT_URL, HANGUL_UNICODE_RANGE, SANS_FAMILY, fontFaceRule } from '../../src/lib/fonts.ts';
+import { CASE_DISPLAY_FAMILY, CASE_SERIF_FAMILY, FONT_URL, HANGUL_UNICODE_RANGE, SANS_FAMILY, fontFaceRule } from '../../src/lib/fonts.ts';
 import {
+  ALWAYS_SYMBOLS,
   PRINTABLE_ASCII,
+  caseSheets,
   charSet,
+  clientStyles,
   clientScripts,
   htmlText,
   isHangul,
@@ -47,6 +50,10 @@ export const SOURCES = {
   serifKoDir: dirname(require.resolve('@fontsource-variable/noto-serif-kr/files/noto-serif-kr-0-wght-normal.woff2')),
   display: require.resolve('@fontsource-variable/archivo/files/archivo-latin-wdth-normal.woff2'),
   coverDisplay: require.resolve('@fontsource/anton/files/anton-latin-400-normal.woff2'),
+  caseSerif: require.resolve('@fontsource-variable/lora/files/lora-latin-wght-normal.woff2'),
+  caseSerifItalic: require.resolve('@fontsource-variable/lora/files/lora-latin-wght-italic.woff2'),
+  caseDisplay: require.resolve('@fontsource-variable/playfair-display/files/playfair-display-latin-wght-normal.woff2'),
+  caseUi: require.resolve('@fontsource-variable/open-sans/files/open-sans-latin-wght-normal.woff2'),
 };
 
 /**
@@ -177,11 +184,12 @@ const SERIF_DROP = ['GSUB', 'GPOS', 'GDEF', 'BASE', 'HVAR', 'VVAR', 'MVAR', 'vhe
  * in `missing` instead of failing the build. `data` is null when none of the characters exists in the font.
  * - default: variable WOFF2 over the Hangul of `text` (the paper page's "SB Serif KR", unchanged since batch 2);
  * - wght: the weight axis pinned to that value in every slice (a static instance, no fvar/gvar): 700 for the general
- *   version's heading face (P2-3) and the OG title instance (P2-12);
+ *   version's heading face (P2-3) and the OG title instance (P2-12); or cut to a { min, max } range (the case overlay's
+ *   Korean serif, 400–700);
  * - format 'sfnt': a TrueType file (satori reads TTF/OTF/WOFF, not WOFF2);
  * - latin: every printable character of `text`, not only Hangul (the OG title instance).
  * @param {string} text
- * @param {{ format?: 'woff2' | 'sfnt'; wght?: number; latin?: boolean }} [options]
+ * @param {{ format?: 'woff2' | 'sfnt'; wght?: number | { min: number; max: number }; latin?: boolean }} [options]
  * @returns {Promise<{ data: Buffer | null; missing: string[] }>}
  */
 export async function subsetSerifKo(text, { format = 'woff2', wght, latin = false } = {}) {
@@ -235,6 +243,58 @@ export function sourceCodePoints(file) {
   const cmap = fontTables(readFileSync(file)).get('cmap');
   if (!cmap) throw new Error(`${file} has no cmap table`);
   return cmapCodePoints(cmap);
+}
+
+// ── the case-study overlay's faces (CS-8) ──
+
+/** OpenType features the case sheets can trigger (lining and tabular figures, kerning, ligatures, marks). */
+const CASE_FEATURES = ['kern', 'liga', 'calt', 'ccmp', 'locl', 'mark', 'mkmk', 'lnum', 'tnum', 'case'];
+const CASE_NAME_IDS = [0, 1, 2, 3, 4, 5, 6, 13, 14, 16, 17, 25];
+
+/**
+ * A name-record rewrite for a subset of a font whose name is reserved (OFL 1.1 Reserved Font Name: Lora, Playfair
+ * Display): family/full/unique/PostScript names, the variations prefix and the instance PostScript names take the
+ * renamed family; the copyright (0), licence (13) and licence URL (14) records stay.
+ * @param {string} family @param {RegExp} reserved
+ * @returns {(r: import('./sfnt.mjs').NameRecord) => string}
+ */
+export function renameReserved(family, reserved) {
+  const ps = family.replace(/\s+/g, '');
+  return (r) => {
+    switch (r.nameID) {
+      case 1:
+      case 16:
+        return family;
+      case 4:
+        return /italic/i.test(r.value) ? `${family} Italic` : family;
+      case 3:
+        return `${r.value.split(';')[0]};${ps};lunecid.github.io`;
+      case 6:
+        return /italic/i.test(r.value) ? `${ps}-Italic` : `${ps}-Regular`;
+      case 25:
+        return ps;
+      default:
+        return r.nameID >= 256 || r.nameID === 17 ? r.value.replace(reserved, ps) : r.value;
+    }
+  };
+}
+
+/**
+ * One Latin case face over `text`: Lora (upright 400–700, italic 400) and Playfair Display (600) renamed, Open Sans
+ * (400–700) as is.
+ * @param {'caseSerif' | 'caseSerifItalic' | 'caseDisplay' | 'caseUi'} face @param {string} text
+ */
+export async function subsetCaseLatin(face, text) {
+  const axes = { caseSerif: { wght: { min: 400, max: 700 } }, caseSerifItalic: { wght: 400 }, caseDisplay: { wght: 600 }, caseUi: { wght: { min: 400, max: 700 } } }[face];
+  const sfnt = await subsetFont(readFileSync(SOURCES[face]), text, { targetFormat: 'sfnt', variationAxes: axes, keepFeatures: CASE_FEATURES, preserveNameIds: CASE_NAME_IDS });
+  const rename = face === 'caseDisplay' ? renameReserved(CASE_DISPLAY_FAMILY, /Playfair ?Display|Playfair/g) : face === 'caseUi' ? null : renameReserved(CASE_SERIF_FAMILY, /Lora/g);
+  const renamed = rename ? renameSfnt(sfnt, rename) : sfnt;
+  return subsetFont(renamed, null, { keepAllGlyphs: true, targetFormat: 'woff2', preserveNameIds: CASE_NAME_IDS });
+}
+
+/** The Latin (non-Hangul) characters the case faces must draw: printable ASCII, the symbol list and every sheet. @param {string[]} texts */
+export function caseLatinCharacters(texts) {
+  return setText(new Set([...charSet([PRINTABLE_ASCII, ALWAYS_SYMBOLS, ...texts])].filter((ch) => !isHangul(/** @type {number} */ (ch.codePointAt(0))))));
 }
 
 /** @param {string} ch */
@@ -383,6 +443,34 @@ export async function buildFonts(distDir, { warn = (message) => console.warn(mes
     replace.set(FONT_URL.display, write('display', 'sb-display', display, DISPLAY_CHARACTERS.length));
   }
 
+  // ── the case-study overlay's faces (CS-8): declared only in the lazy overlay stylesheet (dist/_astro/overlay.*.css),
+  //    subset to the overlay's sheets (dist/case/**); the stylesheets that declare them are rewritten here. ──
+  const caseCss = await step('finding the case overlay stylesheet', () => clientStyles(distDir).filter((f) => readFileSync(f, 'utf8').includes(FONT_URL.caseSerif)));
+  if (caseCss.length > 0) {
+    const sheets = await step('reading the case sheets', () => caseSheets(distDir));
+    if (sheets.length === 0) throw new Error('font-subsets: the case overlay stylesheet declares its faces but dist/case/ has no sheet');
+    const latin = caseLatinCharacters(sheets.map((x) => x.text));
+    /** @type {Map<string, string>} */
+    const caseUrls = new Map();
+    for (const face of /** @type {const} */ (['caseSerif', 'caseSerifItalic', 'caseDisplay', 'caseUi'])) {
+      const data = await step(`subsetting the case face ${face}`, () => subsetCaseLatin(face, latin));
+      caseUrls.set(FONT_URL[face], write(face, `sb-case-${face.replace(/^case/, '').replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`).replace(/^-/, '')}`, data, [...latin].length));
+    }
+    const hangul = setText(new Set([...sheets.filter((x) => x.lang === 'ko').map((x) => x.text).join('')].filter((ch) => isHangul(/** @type {number} */ (ch.codePointAt(0))))));
+    const { data, missing } = await step(`building the case Korean serif (${hangul.length} characters)`, () => subsetSerifKo(hangul, { wght: { min: 400, max: 700 } }));
+    if (missing.length > 0) warn(`font-subsets: the case sheets: Noto Serif KR has no glyph for ${describeChars(missing)}; a system font draws it`);
+    if (!data) throw new Error('font-subsets: the case Korean serif has no glyph to subset');
+    caseUrls.set(FONT_URL.caseSerifKo, write('caseSerifKo', 'sb-case-serif-kr', data, hangul.length - missing.length));
+    for (const file of caseCss) {
+      await step(`rewriting ${file}`, () => {
+        let css = readFileSync(file, 'utf8');
+        for (const [from, to] of caseUrls) css = css.split(from).join(to);
+        if (css.includes('/_fonts/')) throw new Error(`${file} still references a /_fonts/ placeholder after the rewrite`);
+        writeFileSync(file, css);
+      });
+    }
+  }
+
   // ── pages ──
   for (const page of pages) {
     await step(`rewriting ${page.route}`, () => {
@@ -429,6 +517,8 @@ export async function devFont(url) {
   if (url === FONT_URL.serifKo) return (devSerif ??= subsetSerifKo(sourceHangul()).then((r) => r.data));
   if (url === FONT_URL.display) return subsetDisplay();
   if (url === FONT_URL.coverBanner) return subsetCoverBanner();
+  for (const face of /** @type {const} */ (['caseSerif', 'caseSerifItalic', 'caseDisplay', 'caseUi'])) if (url === FONT_URL[face]) return readFileSync(SOURCES[face]);
+  if (url === FONT_URL.caseSerifKo) return (devSerif ??= subsetSerifKo(sourceHangul()).then((r) => r.data));
   return null;
 }
 
