@@ -15,6 +15,9 @@ export const PERFECT_AUC = 1;
 /** The case ids that have an overlay (src/lib/publications.ts CASE_IDS reads the publication id). */
 export const CASE_ID = 'cog-2026-engagement';
 
+/** The five baselines Table II's neural range summarizes (its note: Layered is not among them). */
+export const NEURAL_STRATA_MODELS = ['Bi-GRU', 'Transformer', 'Cross-Attn', 'ST-GNN', 'GraphSAGE'] as const;
+
 export interface StratumRow {
   key: 'early' | 'mid' | 'late' | 'close' | 'moderate' | 'oneSided';
   lgbm: number;
@@ -157,14 +160,21 @@ export function caseTokens(): Record<string, Localized> {
   const loc = (ko: string, en: string): Localized => ({ ko, en });
   const f = CASE_FACTS;
   const gap = gapSteps();
+  const minutes = f.snapshotSec / 60;
   const pairs = pairCounts();
   const strata = Object.fromEntries(strataRows().flatMap((r) => {
     const key = r.key === 'oneSided' ? 'one-sided' : r.key;
     return [[key, same(fmtAuc(r.lgbm))], [`${key}-nn`, same(range(r.neural))]];
   }));
   return {
+    zero: n(0),
+    'unit-sec': n(1),
     snapshot: n(f.snapshotSec),
-    'snapshot-min': n(f.snapshotSec / 60),
+    span: n(2 * f.snapshotSec),
+    // the snapshot interval in minutes, as Korean and English phrase it (1분마다 / once a minute, 1분 / minute)
+    'snapshot-every': loc(`${formatNumber(minutes, 'ko')}분마다`, minutes === 1 ? 'once a minute' : `every ${formatNumber(minutes, 'en')} minutes`),
+    'snapshot-adj': loc(`${formatNumber(minutes, 'ko')}분`, minutes === 1 ? 'minute' : `${formatNumber(minutes, 'en')}-minute`),
+    'sub-snapshot': loc(`${formatNumber(minutes, 'ko')}분 미만의`, minutes === 1 ? 'sub-minute' : `sub-${formatNumber(minutes, 'en')}-minute`),
     window: n(f.windowSec),
     bins: n(f.bins),
     bin: n(f.binSec),
@@ -172,8 +182,6 @@ export function caseTokens(): Record<string, Localized> {
     onset: n(f.onsetLeadSec),
     'label-min': n(f.labelMinSec),
     'label-max': n(f.labelMaxSec),
-    collected: n(f.collectedMatches),
-    matches: n(f.matches),
     engagements: n(f.engagements),
     'per-match': n(perMatch()),
     'cluster-gap': n(f.clusterGapSec),
@@ -187,7 +195,6 @@ export function caseTokens(): Record<string, Localized> {
     features: n(f.features),
     epochs: n(f.epochs),
     seeds: n(f.seeds),
-    patches: n(Object.keys(f.patches).length),
     train: same(f.patches.train),
     val: same(f.patches.val),
     test: same(f.patches.test),
@@ -201,6 +208,9 @@ export function caseTokens(): Record<string, Localized> {
     'gain-learner': same(fmtAuc(gap.learner)),
     'gain-total': same(fmtAuc(gap.total)),
     share: n(round(aboveChanceShare() * 100, 1)),
+    'share-frac': same(String(aboveChanceShare())),
+    'nn-count': n(overallAuc.filter((r) => r.group === 'neural').length),
+    'nn-strata-count': n(NEURAL_STRATA_MODELS.length),
     pairs: n(pairs.pairs),
     'pairs-right': n(pairs.right),
     'pairs-chance': n(pairs.chance),
@@ -214,6 +224,7 @@ export function caseTokens(): Record<string, Localized> {
     'kg-band': same(`${killGap.ariBand[0]}–${killGap.ariBand[1]}`),
     ari: same(String(killGap.ariMin)),
     nyquist: n(nyquistMinutes()),
+    'half-period': same('T/2'),
     'sign-pos': same('+1'),
     'sign-neg': same('−1'),
     'y-pos': same('y = 1'),

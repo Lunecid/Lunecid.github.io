@@ -55,7 +55,7 @@ describe('publication', () => {
   });
 
   it('claims no leakage audit (the CoG page shows the abstract only, D-15)', () => {
-    for (const path of [PUB, 'src/data/research/cog-2026.ts']) {
+    for (const path of [PUB, 'src/data/research/cog-2026.ts', 'src/data/research/cog-2026-case.ts', 'src/data/copy/case/cog-2026.ts']) {
       const text = fullText(path);
       for (const phrase of ['누수 감사', '누수 점검']) expect(text.includes(phrase), `${path} ${phrase}`).toBe(false);
       expect(/leakage audit/i.test(text), path).toBe(false);
