@@ -528,8 +528,14 @@
 
 /* the display words: Anton caps are .87em tall; each line box is the cap height plus .1em above and below, so the
    reversed block hugs its word evenly; the lines overlap by .08em */
-.file--game .disp { grid-area: disp; font: 400 var(--disp-fs)/.87 var(--font-cover); color: var(--hud-text); letter-spacing: .005em; }
-.file--game .disp__row { display: flex; align-items: flex-start; gap: .25em; }
+.file--game .disp { grid-area: disp; container-type: inline-size; font: 400 var(--disp-fs)/.87 var(--font-cover); color: var(--hud-text); letter-spacing: .005em; }
+/* the words also fit the plate (its own column, .disp as the container): ANALYST (≈ 3.2em) ends left of the plate's
+   step (58 % of its width, less the step) with about .2em to spare, GAME DATA (≈ 4.5em) inside its right edge. Where
+   the size above already fits (from about 600px of file width) nothing changes; on narrow and tall screens the words
+   shrink with the column, never by the viewport height alone; a wider face (a fallback) is condensed to fit by
+   --fit (chooser.ts fitCoverWords measures it), a transform, so the display face's arrival shifts no layout
+   (tests/e2e/cover-title-fit.spec.ts) */
+.file--game .disp__row { display: flex; align-items: flex-start; gap: .25em; font-size: min(1em, 16.8cqi - .1875rem); transform: scaleX(var(--fit, 1)); transform-origin: 0 0; }
 .file--game .disp__row + .disp__row { margin-top: -.08em; }
 /* clipped to its box: Anton's ink sits inside it, and a late display face (or a fallback with other metrics) then
    never moves anything outside the box */

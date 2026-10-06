@@ -227,7 +227,9 @@ const gameCtaHit = (page: Page) =>
   page.evaluate(() => {
     const face = document.querySelector('.file--game .cta__face')!.getBoundingClientRect();
     const vw = document.documentElement.clientWidth;
-    const inside = face.left >= 0 && face.right <= vw && face.top >= 0 && face.bottom <= window.innerHeight;
+    // half a pixel of sub-pixel layout: scrolling into view rounds the scroll offset to whole pixels
+    const e = 0.5;
+    const inside = face.left >= -e && face.right <= vw + e && face.top >= -e && face.bottom <= window.innerHeight + e;
     const el = document.elementFromPoint(face.left + face.width / 2, face.top + face.height / 2);
     return { inside, hit: !!el?.closest('a[data-choose-variant="game"]') };
   });

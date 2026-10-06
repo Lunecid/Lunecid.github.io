@@ -3,7 +3,7 @@
 // first-tap reveal, tap-outside and Escape, and the touch hint.
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { readFileSync } from 'node:fs';
-import { EXIT_MS, asideGeometry, attachExitSheet, buildExitLayers, initChooser, initDesk } from '../../src/scripts/chooser';
+import { EXIT_MS, asideGeometry, attachExitSheet, buildExitLayers, fitCoverWords, initChooser, initDesk } from '../../src/scripts/chooser';
 
 let navigations: string[] = [];
 // jsdom would try to navigate: count the default actions instead (bubble phase on the document: after every listener
@@ -658,6 +658,31 @@ describe('the exit sheet (MO-38)', () => {
     } finally {
       state.mockRestore();
     }
+  });
+});
+
+describe('the cover words fit the plate in any face', () => {
+  const mount = (rows: [number, number]) => {
+    document.body.innerHTML = '<div class="desk"><article class="file file--game"><div class="cv"><p class="disp"><span class="disp__row"><span class="disp__blk">GAME</span><span class="disp__w">DATA</span></span><span class="disp__row"><span class="disp__w">ANALYST</span></span></p></div></article></div>';
+    const disp = document.querySelector<HTMLElement>('.disp')!;
+    Object.defineProperty(disp, 'clientWidth', { value: 300 });
+    disp.getBoundingClientRect = () => ({ left: 0 }) as DOMRect;
+    document.querySelectorAll<HTMLElement>('.disp__row').forEach((row, i) => {
+      (row.lastElementChild as HTMLElement).getBoundingClientRect = () => ({ right: rows[i] }) as DOMRect;
+    });
+    return disp;
+  };
+
+  it('a row that would cross the plate (a wider fallback face) scales both rows down by --fit; rows that fit set nothing', () => {
+    // a 300 px column, no plate margins or step here (jsdom): room 300 for GAME DATA, 174 (58 %) for ANALYST, less .2em
+    const wide = mount([280, 240]);
+    fitCoverWords(document.querySelector<HTMLElement>('.desk')!);
+    const k = Number(wide.style.getPropertyValue('--fit'));
+    expect(k).toBeGreaterThan(0.5);
+    expect(k).toBeLessThan(174 / 240 + 0.001);
+    const narrow = mount([250, 150]);
+    fitCoverWords(document.querySelector<HTMLElement>('.desk')!);
+    expect(narrow.style.getPropertyValue('--fit')).toBe('');
   });
 });
 
