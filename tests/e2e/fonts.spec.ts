@@ -159,3 +159,20 @@ for (const route of builtRoutes({ variant: 'data' })) {
     expect(missing).toEqual([]);
   });
 }
+
+test('case overlay (CS-8): the case faces load only with the open sheet, from the site itself', async ({ page }) => {
+  const fontRequests: string[] = [];
+  page.on('request', (r) => { if (r.resourceType() === 'font') fontRequests.push(r.url()); });
+  await page.goto('/game/research/cog-2026-engagement/', { waitUntil: 'networkidle' });
+  expect(fontRequests.filter((u) => u.includes('sb-case-')), 'no case face before the sheet opens').toEqual([]);
+  await page.locator('button[data-case]').click();
+  await expect(page.locator('dialog.cs.is-open')).toBeVisible();
+  await page.evaluate(() => document.fonts.ready.then(() => true));
+  await page.locator('dialog.cs details').first().evaluate((d) => { (d as HTMLDetailsElement).open = true; });
+  await page.evaluate(() => document.fonts.ready.then(() => true));
+  const loaded = await page.evaluate(() => [...new Set([...document.fonts].filter((f) => f.family.replace(/"/g, '').startsWith('SB Case') && f.status === 'loaded').map((f) => f.family.replace(/"/g, '')))].sort());
+  expect(loaded).toEqual(['SB Case Display', 'SB Case Serif', 'SB Case Serif KR', 'SB Case UI']);
+  const origin = new URL(page.url()).origin;
+  expect(fontRequests.filter((u) => !u.startsWith(origin)), 'no font from another origin (never Google Fonts)').toEqual([]);
+  expect(fontRequests.filter((u) => u.includes('sb-case-')).length).toBeGreaterThanOrEqual(4);
+});

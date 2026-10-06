@@ -172,14 +172,40 @@ export function charSet(texts) {
 }
 
 /**
+ * The case-study overlay's sheets (dist/case/<id>/<lang>.json, src/pages/case/[slug]/[lang].json.ts): JSON, so neither a
+ * page nor a client bundle, yet their text is drawn with the page's SB Sans (Hangul UI text) and the case faces.
+ * @param {string} distDir
+ * @returns {{ file: string; lang: string; text: string }[]}
+ */
+export function caseSheets(distDir) {
+  const dir = join(distDir, 'case');
+  let files = [];
+  try {
+    files = walk(dir).filter((f) => f.endsWith('.json'));
+  } catch {
+    return [];
+  }
+  return files.map((file) => ({ file, lang: file.replace(/^.*[\\/]/, '').replace(/\.json$/, ''), text: caseSheetText(readFileSync(file, 'utf8')) }));
+}
+
+/** Every string a case sheet can show: its markup's text and attributes, the chart words, the runtime strings. @param {string} json */
+export function caseSheetText(json) {
+  /** @param {unknown} v @returns {string[]} */
+  const strings = (v) => (typeof v === 'string' ? [v] : Array.isArray(v) ? v.flatMap(strings) : v && typeof v === 'object' ? Object.values(v).flatMap(strings) : []);
+  return strings(JSON.parse(json)).map((s) => htmlText(s)).join('\n');
+}
+
+/**
  * The characters the sans face must cover: printable ASCII, the fixed symbol list, every site page, every
- * client bundle and the strings of every linked stylesheet.
+ * client bundle, the strings of every linked stylesheet and the Hangul of the case overlay's sheets.
  * @param {string} distDir
  */
 export function sansCharacters(distDir) {
   return charSet([
     PRINTABLE_ASCII,
     ALWAYS_SYMBOLS,
+    // the sheets' Hangul only: their Latin text has its own faces (SB Case *); SB Sans draws the Hangul of the UI text
+    ...caseSheets(distDir).map((s) => [...s.text].filter((ch) => isHangul(/** @type {number} */ (ch.codePointAt(0)))).join('')),
     ...sitePages(distDir).map((p) => htmlText(readFileSync(p.file, 'utf8'))),
     ...clientScripts(distDir).map((f) => scriptText(readFileSync(f, 'utf8'))),
     ...clientStyles(distDir).map((f) => cssStringText(readFileSync(f, 'utf8'))),

@@ -1,0 +1,88 @@
+/* src/styles/case-tokens.css — the case-study overlay's report palette, type scale and durations (owner ruling 2026-10-05:
+   the sheet keeps the report palette on both versions; v4 approved). Colour literals live only in tokens.css,
+   game-tokens.css and here. Scoped to the overlay (.cs) and loaded only with the lazy overlay sheet (overlay.css imports
+   it): tokens.css is inlined into every page, so nothing of the overlay may grow it.
+   Pairs (WCAG, on --cs-paper / --cs-leaf): t0 15.06 / 16.56, t1 11.23 / 12.35, t2 5.61 / 6.17, cy 6.12 / 6.73, y-text
+   5.78 / 6.36; on-fill on cy 6.73, on y 5.33, on y-text 6.36 (the filled hover) (tests/unit/case-css.test.ts). */
+.cs {
+  --cs-paper: #F6F4EE;          /* the sheet's ground */
+  --cs-leaf: #FFFFFF;           /* figure leaves, sample-dot rings */
+  --cs-paper-alt: #EFECE4;      /* the BibTeX box */
+  --cs-k2: #E7E3DA;             /* empty cells (waffle, gauge track, test patch) */
+  --cs-t0: #1B1F24;             /* titles, numbers */
+  --cs-t1: #30353C;             /* text */
+  --cs-t2: #5B626B;             /* secondary text */
+  --cs-ln: #B5B0A6;             /* rules */
+  --cs-ln-strong: #8A857B;
+  --cs-ln-soft: #E1DDD3;
+  --cs-ln-dash: #CCC7BC;
+  --cs-cy: #1B5E9B;             /* the one data hue (steel blue) */
+  --cs-cy-deep: #123F69;
+  --cs-cy-dim: rgba(27, 94, 155, .45);
+  --cs-cy-6: rgba(27, 94, 155, .06);
+  --cs-cy-10: rgba(27, 94, 155, .10);
+  --cs-cy-14: rgba(27, 94, 155, .14);
+  --cs-cy-16: rgba(27, 94, 155, .16);
+  --cs-cy-18: rgba(27, 94, 155, .18);
+  --cs-cy-38: rgba(27, 94, 155, .38);
+  --cs-cy-50: rgba(27, 94, 155, .5);
+  --cs-neutral-mark: #9AA0A7;   /* context marks (neural range) */
+  --cs-neutral-wash: rgba(110, 116, 124, .10);
+  --cs-ink-wash: rgba(27, 31, 36, .04);
+  --cs-y: #94600F;              /* ochre: clickable things, the chapter rule */
+  --cs-y-text: #85550B;         /* ochre as text, and the filled hover */
+  --cs-on-fill: #FFFFFF;        /* text on a filled blue or ochre plate */
+  --cs-blue: #2F6DB5;           /* team marks */
+  --cs-red: #C0443B;
+  --cs-scrim: rgba(0, 0, 0, .55);
+  --cs-shadow: rgba(0, 0, 0, .55);
+  --cs-shadow-up: rgba(0, 0, 0, .8);
+  --cs-tip-shadow: rgba(0, 0, 0, .25);
+
+  /* type: the approved academic faces (self-hosted, renamed subsets; src/lib/fonts.ts) */
+  --cs-serif: "SB Case Serif", "SB Case Serif KR", Georgia, serif;
+  --cs-display: "SB Case Display", "SB Case Serif KR", Georgia, serif;
+  --cs-ui: "SB Case UI", "SB Sans", system-ui, sans-serif;
+  --cs-code: var(--font-mono, ui-monospace, monospace);
+  /* the prototype's px sizes as rem (16 px root); nothing below 12 px */
+  --cs-fs-12: .75rem;
+  --cs-fs-12h: .78125rem;
+  --cs-fs-13: .8125rem;
+  --cs-fs-13h: .84375rem;
+  --cs-fs-14: .875rem;
+  --cs-fs-14h: .90625rem;
+  --cs-fs-15: .9375rem;
+  --cs-fs-15h: .96875rem;
+  --cs-fs-16: 1rem;
+  --cs-fs-16h: 1.03125rem;
+  --cs-fs-17: 1.0625rem;
+  --cs-fs-18: 1.125rem;
+  --cs-fs-19: 1.1875rem;
+  --cs-fs-20: 1.25rem;
+  --cs-fs-21: 1.3125rem;
+  --cs-fs-22: 1.375rem;
+  --cs-fs-24: 1.5rem;
+  --cs-fs-26: 1.625rem;
+  --cs-fs-30: 1.875rem;
+  --cs-fs-34: 2.125rem;
+  --cs-fs-60: 3.75rem;
+  --cs-fs-72: 4.5rem;
+
+  /* motion (transform and opacity only; colour hovers use --dur-hover) */
+  --dur-cs-sheet: .38s;
+  --dur-cs-scrim: .26s;
+  --dur-cs-rise: .7s;
+  --dur-cs-fade: .5s;
+  --dur-cs-draw: .9s;
+  --dur-cs-draw-long: 1.5s;
+  --dur-cs-chip: .4s;
+  --dur-cs-stage: .42s;
+  --dur-cs-tip: .12s;
+  --cs-stagger: 90ms;           /* delay step (choreography, not a duration) */
+
+  /* page grid: a narrow rail + a wide column */
+  --cs-rail: 208px;
+  --cs-cgap: 40px;
+  --cs-pad-l: 40px;
+  --cs-pad-r: 40px;
+}

@@ -12,6 +12,7 @@
 // Also owns the global .cart-grid layout used on the home page and on /projects/.
 import { Picture } from 'astro:assets';
 import AucLabel from '../research/AucLabel.astro';
+import CaseTrigger from '../research/CaseTrigger.astro';
 import { CARD_FORMATS, CARD_WIDTHS, CARTRIDGE_SIZES, fitWidths, sourceSize } from '../../lib/images';
 import type { CartridgeProps } from '../../lib/projects';
 
@@ -27,7 +28,7 @@ type Props = CartridgeProps & {
   eager?: boolean;
 };
 
-const { href, title, meta, summary, tagKeys, tags, cover, coverPosition = '50% 50%', coverFit = 'cover', plate, chart, sticker, wide = false, headingLevel = 3, priority = false, eager = false } = Astro.props;
+const { href, title, meta, summary, tagKeys, tags, cover, coverPosition = '50% 50%', coverFit = 'cover', plate, chart, sticker, wide = false, headingLevel = 3, priority = false, eager = false, caseId } = Astro.props;
 const Heading = headingLevel === 2 ? 'h2' : 'h3';
 const shownTags = tags.slice(0, 4);
 // AVIF + WebP on the ladder shared with the research highlight (same image → same URL → one fetch); WebP is
@@ -79,7 +80,7 @@ const sizes = wide ? CARTRIDGE_SIZES.wide : CARTRIDGE_SIZES.normal;
           </div>
         )
       }
-      <Heading class="cart__title">{href ? <a class="cart__link" href={href}>{title}</a> : title}</Heading>
+      <Heading class="cart__title">{href ? <a class="cart__link" href={href} data-case={caseId}>{title}</a> : title}</Heading>
       <p class="cart__meta">{meta}</p>
       {/* Final fix 2 round 2 item 2: the summary and tags share the label's fourth row (see .cart-grid below). */}
       <div class="cart__foot">
@@ -108,6 +109,7 @@ const sizes = wide ? CARTRIDGE_SIZES.wide : CARTRIDGE_SIZES.normal;
       )
     }
   </div>
+  {caseId && href && <CaseTrigger />}
 </article>
 
 <style>

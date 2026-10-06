@@ -7,9 +7,10 @@
 import type { CollectionEntry } from 'astro:content';
 import type { PageLayout } from '../layouts/page-layout';
 import PaperSheet from '../components/research/PaperSheet.astro';
+import CaseTrigger from '../components/research/CaseTrigger.astro';
 import { FONT_URL, fontFaceCss } from '../lib/fonts';
 import { pageHref } from '../lib/links';
-import { toPaperPage } from '../lib/publications';
+import { CASE_IDS, toPaperPage } from '../lib/publications';
 import { RIOT_NOTICE_ON_PAGES } from '../config';
 import type { Lang } from '../i18n/ui';
 import { t } from '../i18n/utils';
@@ -45,6 +46,9 @@ const koreanSerif = paper.titleKo !== null || paper.abstractKo !== null ? fontFa
 const person = await getPerson();
 const backHref = pageHref(BASE_PATH.research, { lang, variant });
 const backNum = String(v.nav.findIndex((item) => item.key === 'research') + 1).padStart(2, '0');
+// D1 (case overlay): a paper with a case study gets a button that opens it over this page. A button does nothing
+// without JS, so it shows only under html.js (no-JS readers have the paper itself).
+const caseId = (CASE_IDS as readonly string[]).includes(entry.id) ? entry.id : null;
 ---
 <Layout
   lang={lang}
@@ -57,16 +61,17 @@ const backNum = String(v.nav.findIndex((item) => item.key === 'research') + 1).p
   notices={PAPER_NOTICES}
 >
   {koreanSerif && <Fragment slot="head"><style is:inline set:html={koreanSerif}></style>{editorial && <link rel="preload" href={FONT_URL.serifKo} as="font" type="font/woff2" crossorigin />}</Fragment>}
+  {caseId && <CaseTrigger />}
   {editorial ? (
     <div class="paper-view paper-view--ed">
-      <p class="paper-view__back"><a class="ed-link" href={backHref}><span aria-hidden="true">←</span> {t(lang, 'nav.research')}</a></p>
+      <p class="paper-view__back"><a class="ed-link" href={backHref}><span aria-hidden="true">←</span> {t(lang, 'nav.research')}</a>{caseId && <button type="button" class="ed-btn paper-view__case" data-case={caseId}>{t(lang, 'action.caseStudy')} <span aria-hidden="true">→</span></button>}</p>
       <div class="paper-view__sheet paper-view__sheet--ed">
         <PaperSheet lang={lang} paper={paper} requestEmail={person.email} />
       </div>
     </div>
   ) : (
     <div class="paper-view hud-grid">
-      <p class="paper-view__back"><a class="paper-view__back-link" href={backHref}><span aria-hidden="true">←</span> <span class="paper-view__back-num" aria-hidden="true">{backNum}</span> {t(lang, 'nav.research').toUpperCase()}</a></p>
+      <p class="paper-view__back"><a class="paper-view__back-link" href={backHref}><span aria-hidden="true">←</span> <span class="paper-view__back-num" aria-hidden="true">{backNum}</span> {t(lang, 'nav.research').toUpperCase()}</a>{caseId && <button type="button" class="btn btn--line cut cut--line paper-view__case" data-case={caseId}>{t(lang, 'action.caseStudy')} <span aria-hidden="true">→</span></button>}</p>
       <div class="paper-view__frame bracket">
         <div class="paper-view__sheet">
           <PaperSheet lang={lang} paper={paper} requestEmail={person.email} />
@@ -85,7 +90,11 @@ const backNum = String(v.nav.findIndex((item) => item.key === 'research') + 1).p
   .paper-view__sheet { background: var(--paper-bg); }
   /* P-07 F-005: the way back to the research page, above the sheet and on its left edge. The game link is drawn like the
      HUD nav's links (muted, the number in tabular figures; 44px target); the general one is an .ed-link. */
-  .paper-view__back { max-width: calc(46 * 17px + 24px); margin-inline: auto; padding: 4px var(--gutter); }
+  .paper-view__back { max-width: calc(46 * 17px + 24px); margin-inline: auto; padding: 4px var(--gutter); display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; }
+  /* D1: the case-study button; inert without JS, so shown only once html.js confirms the script can run */
+  .paper-view__case { appearance: none; border: 0; font-family: inherit; }
+  .paper-view--ed .paper-view__case { border: var(--ed-rule-w) solid var(--ed-ink); }
+  :global(html:not(.js)) .paper-view__case { display: none; }
   .paper-view__back-link { display: inline-flex; align-items: center; gap: 6px; min-height: var(--tap); font-size: var(--fs-label); color: var(--hud-muted); text-decoration: none; transition: color var(--dur-hover) linear; }
   .paper-view__back-num { font-variant-numeric: tabular-nums; }
   @media (hover: hover) {
@@ -115,6 +124,7 @@ const backNum = String(v.nav.findIndex((item) => item.key === 'research') + 1).p
     :global(html[data-page="research-story"] body) { background: var(--paper-bg); color-scheme: light; }
     .paper-view { padding: 0; background: none; }
     .paper-view__back { display: none; }
+    .paper-view__case { display: none; }
     .paper-view__frame { max-width: none; padding: 0; border: 0; }
     .paper-view__frame::before, .paper-view__frame::after { display: none; }
     .paper-view__sheet { box-shadow: none; }

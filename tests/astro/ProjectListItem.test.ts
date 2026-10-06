@@ -66,3 +66,14 @@ describe('ProjectListItem.astro (P2-6)', () => {
     expect(row).toMatch(/^<li class="pli ed-item"/);
   });
 });
+
+describe('ProjectListItem: the case-study trigger (D1)', () => {
+  it('row and card variants put data-case on the link when the item has a caseId', async () => {
+    for (const variant of ['row', 'card'] as const) {
+      const html = await renderAstro(ProjectListItem, { props: { ...base, variant, href: '/data/research/cog-2026-engagement/', caseId: 'cog-2026-engagement' } });
+      expect(html, variant).toMatch(/<a class="[^"]*hit"[^>]*data-case="cog-2026-engagement"/);
+      const plain = await renderAstro(ProjectListItem, { props: { ...base, variant, href: '/data/projects/x/' } });
+      expect(plain, variant).not.toContain('data-case');
+    }
+  });
+});

@@ -22,6 +22,10 @@ export const overallAuc: ReadonlyArray<{
   { id: 'graphsage',   model: 'GraphSAGE',   view: { ko: '선수 그래프',    en: 'player graph' },          auc: 0.569, group: 'neural' },
 ];
 
+// kill-gap-kde.webp (follow-up work, not in the CoG paper): the values printed on the figure (modes, valley G, the shaded
+// ARI ≥ 0.9 band, n). figureCopy.killGap spells them out; the case-study overlay draws them (cog-2026-case.ts).
+export const killGap = { n: 10_417_458, modes: [5.72, 62.73], valley: 13.72, ariBand: [10, 18], ariMin: 0.9 } as const;
+
 // Captions and alt texts kept for charts still in use (from the removed case-study Markdown, D-15).
 // The AUC alt texts spell out every number of overallAuc (tests/content/research.test.ts).
 export const figureCopy: Readonly<Record<'aucOverall' | 'killGap' | 'labelHorizon', { caption: L; alt: L }>> = {

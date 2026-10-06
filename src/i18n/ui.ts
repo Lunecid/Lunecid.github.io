@@ -75,6 +75,7 @@ export const ui = {
     'action.fullSize': '크게 보기',
     'action.viewAsTable': '표로 보기',
     'action.paperPage': '논문 페이지',
+    'action.caseStudy': '분석 케이스 보기',
 
     // 섹션 머리(D-8): 'section.<x>'는 두 언어 모두 영문 HUD 캡션('[ ■ ]' 뒤의 작은 줄),
     // 'section.<x>.title'은 그 아래 섹션 제목(페이지 언어). 번호([ NN ])는 내비에만 쓴다.
@@ -449,6 +450,7 @@ export const ui = {
     'action.fullSize': 'View full size',
     'action.viewAsTable': 'View as table',
     'action.paperPage': 'Paper page',
+    'action.caseStudy': 'Open the case study',
 
     // Section heads (D-8): 'section.<x>' is the English HUD caption after '[ ■ ]' (same in both languages),
     // 'section.<x>.title' the section title under it. [ NN ] numbers belong to the nav only.
