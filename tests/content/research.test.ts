@@ -7,7 +7,7 @@ import { parseYamlDocument } from '../../src/content/yaml-loader';
 import { homeCopy } from '../../src/data/copy/home';
 import { CHANCE_AUC, figureCopy, overallAuc } from '../../src/data/research/cog-2026';
 import { GITHUB_EXCLUDED } from '../../src/data/github-repos';
-import { RESEARCH_STATUS, researchPage } from '../../src/data/research-page';
+import { RESEARCH_STATUS, WORKING_TITLE, researchPage } from '../../src/data/research-page';
 import { load } from 'js-yaml';
 import { buildGrowth } from '../../src/lib/growth';
 import { loadGrowthInputs } from '../helpers/growth-inputs';
@@ -242,6 +242,52 @@ describe('ongoing research statuses: one source (owner ruling 2026-10-06)', () =
     }
     for (const file of ['src/data/resume.yaml', 'src/data/research-page.ts', 'src/data/copy/home.ts', 'src/data/jobfit.game.yaml']) {
       expect(readFileSync(file, 'utf8').replace(/#.*$/gm, ''), file).not.toMatch(/준비 중|[Ii]n preparation/);
+    }
+  });
+});
+
+// Owner facts 2026-10-06: the M.S. thesis title and the PUBG study's working title live once, on the ongoing items.
+describe('ongoing work titles: one source (owner, 2026-10-06)', () => {
+  const langs = ['ko', 'en'] as const;
+  type L = { ko: string; en: string };
+  type Ongoing = (typeof researchPage.ongoing)[number] & { label?: L; workTitle?: { text: L; tentative: boolean } };
+  const item = (id: string) => researchPage.ongoing.find((o) => o.id === id) as Ongoing;
+  const THESIS_KO = '리그오브레전드에서 승리 확률 변화에 기반한 교전 가치 정의 및 예측에 관한 연구';
+  const PUBG = 'Surviving a Shrinking Habitat: Phase-Conditioned Elimination Hazards from Large-Scale Battle Royale Telemetry';
+
+  it('research-page.ts holds the thesis title (ko exact, en draft) and the PUBG working title, marked tentative', () => {
+    const thesis = item('ms-thesis');
+    expect(thesis.workTitle?.text.ko).toBe(THESIS_KO);
+    expect(thesis.workTitle?.text.en).toBe('A Study on Defining and Predicting Engagement Value Based on Win-Probability Change in League of Legends');
+    expect(thesis.workTitle?.tentative).toBe(false);
+    for (const lang of langs) expect(thesis.title[lang]).toBe(`${thesis.label?.[lang]}: ${thesis.workTitle?.text[lang]}`);
+    expect(thesis.label).toEqual({ ko: '석사 학위논문', en: 'M.S. thesis' });
+    const pubg = item('pubg-survival');
+    expect(pubg.workTitle).toEqual({ text: { ko: PUBG, en: PUBG }, tentative: true });
+    expect(WORKING_TITLE).toEqual({ ko: '가제', en: 'Working title' });
+    expect(pubg.state).toBe('planned');
+  });
+
+  it('resume.yaml (records, the PDFs) carries the same titles', () => {
+    const resume = resumeSchema.parse(parseYamlDocument(readFileSync('src/data/resume.yaml', 'utf8'), 'resume'));
+    const thesis = resume.education.find((e) => e.id === 'ms-pnu')?.thesis;
+    const pubg = resume.researchInProgress.find((r) => r.id === 'pubg-spatiotemporal')?.text;
+    for (const lang of langs) {
+      expect(thesis?.[lang].endsWith(` — ${item('ms-thesis').workTitle!.text[lang]}`), lang).toBe(true);
+      expect(pubg?.[lang].endsWith(` — ${lang === 'ko' ? WORKING_TITLE.ko : WORKING_TITLE.en.toLowerCase()}: ${PUBG}`), lang).toBe(true);
+    }
+  });
+
+  it('the growth slots keep the short labels and show the titles under them', () => {
+    for (const lang of langs) {
+      const future = buildGrowth(loadGrowthInputs(lang), lang).future;
+      const thesis = future.find((f) => f.id === 'ms-thesis');
+      expect(thesis?.title).toBe(item('ms-thesis').label?.[lang]);
+      expect(thesis?.sub).toBe(item('ms-thesis').workTitle?.text[lang]);
+      const pubg = future.find((f) => f.id === 'pubg');
+      expect(pubg?.title).toBe(lang === 'ko' ? '배틀그라운드 연구' : 'PUBG study');
+      expect(pubg?.sub).toBe(`${WORKING_TITLE[lang]}: ${PUBG}`);
+      expect(future.find((f) => f.id === 'cog-journal')?.sub).toBeNull();
     }
   });
 });

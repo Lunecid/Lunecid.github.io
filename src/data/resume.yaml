@@ -68,8 +68,9 @@ education:
       en: Data Science Lab (DataLab) · Advisor Prof. Joonho Kwon
       href: https://datalab.pusan.ac.kr/datalab/index.do
     thesis:
-      ko: 석사 학위논문(진행 중) — 리그 오브 레전드 교전의 전략적 가치
-      en: M.S. thesis (in progress) — the strategic value of League of Legends engagements
+      # 제목: research-page.ts ongoing[ms-thesis].workTitle과 같다(owner, 2026-10-06; 영문은 번역 초안)
+      ko: 석사 학위논문(진행 중) — 리그오브레전드에서 승리 확률 변화에 기반한 교전 가치 정의 및 예측에 관한 연구
+      en: M.S. thesis (in progress) — A Study on Defining and Predicting Engagement Value Based on Win-Probability Change in League of Legends
       pdf: { ko: false, en: false, academic: true }
     pdf: { ko: true, en: true, academic: true }
   - id: bs-pnu
@@ -99,8 +100,9 @@ researchInProgress:
     pdf: { ko: false, en: false, academic: true }
   - id: pubg-spatiotemporal
     text:
-      ko: PUBG 시공간 그래프 기반 생존 분석(예정)
-      en: Spatiotemporal graph survival modeling in PUBG (planned)
+      # 가제: research-page.ts ongoing[pubg-survival].workTitle과 같다(owner, 2026-10-06)
+      ko: 'PUBG 시공간 그래프 기반 생존 분석(예정) — 가제: Surviving a Shrinking Habitat: Phase-Conditioned Elimination Hazards from Large-Scale Battle Royale Telemetry'
+      en: 'Spatiotemporal graph survival modeling in PUBG (planned) — working title: Surviving a Shrinking Habitat: Phase-Conditioned Elimination Hazards from Large-Scale Battle Royale Telemetry'
     pdf: { ko: false, en: false, academic: true }
 
 # 이력서 PDF의 첫 프로젝트: CoG 논문(P1-20). projects 컬렉션이 아니라 publications를 가리키므로 별도 필드로 둔다

@@ -1,7 +1,8 @@
 // Copy for /research/ and /en/research/. Korean first, English second.
 // The three interest titles are also the Academic CV research interests (resume.yaml profile.researchInterests,
 // P1-19; tests/content/records.test.ts keeps the two lists equal).
-// `ongoing` lists work that is still in progress only.
+// `ongoing` lists work that is still in progress only. `workTitle` (owner, 2026-10-06) is a paper's title; tentative
+// ones show behind WORKING_TITLE.
 // Ongoing statuses: one source for the whole site (owner ruling 2026-10-06) — `state` picks the label from
 // RESEARCH_STATUS; the growth infographic, the home NOW PLAYING line, resume.yaml and the job-fit note follow it
 // (tests/content/research.test.ts).
@@ -13,6 +14,19 @@ export const RESEARCH_STATUS = {
   planned: { ko: '예정', en: 'Planned' },
 } as const;
 const S = RESEARCH_STATUS;
+
+/** The label in front of a tentative title (owner, 2026-10-06: the PUBG study's title is a working one). */
+export const WORKING_TITLE = { ko: '가제', en: 'Working title' } as const;
+// owner, 2026-10-06: the M.S. thesis title (Korean exact; the English is a draft translation for the owner's review)
+const THESIS = {
+  label: { ko: '석사 학위논문', en: 'M.S. thesis' },
+  title: {
+    ko: '리그오브레전드에서 승리 확률 변화에 기반한 교전 가치 정의 및 예측에 관한 연구',
+    en: 'A Study on Defining and Predicting Engagement Value Based on Win-Probability Change in League of Legends',
+  },
+} as const;
+// owner, 2026-10-06: the PUBG study's working title ("이런 느낌": tentative), the same in both languages
+const PUBG_WORKING_TITLE = 'Surviving a Shrinking Habitat: Phase-Conditioned Elimination Hazards from Large-Scale Battle Royale Telemetry';
 
 export const researchPage = {
   intro: {
@@ -67,7 +81,10 @@ export const researchPage = {
       id: 'ms-thesis',
       state: 'inProgress',
       status: { ko: `${S.inProgress.ko} · {person.graduation} 졸업 예정`, en: `${S.inProgress.en} · expected {person.graduationShort}` },
-      title: { ko: '석사 학위논문: 리그 오브 레전드 교전의 전략적 가치', en: 'M.S. thesis: the strategic value of League of Legends engagements' },
+      // `label` is the short form where space is tight (the home line, the growth slot); `title` = label + work title
+      label: THESIS.label,
+      workTitle: { text: THESIS.title, tentative: false },
+      title: { ko: `${THESIS.label.ko}: ${THESIS.title.ko}`, en: `${THESIS.label.en}: ${THESIS.title.en}` },
       body: {
         ko: '공개 경기 기록(Riot API)으로 교전을 구성하고, 교전 전후 추정 승리 확률의 변화로 교전의 가치를 정의한 뒤, 교전 전 정보로 그 변화를 예측합니다.',
         en: 'Builds engagements from public match records (Riot API), defines an engagement’s value as the change in estimated win probability across it, and predicts that change from pre-engagement information.',
@@ -79,6 +96,7 @@ export const researchPage = {
       state: 'planned',
       status: S.planned,
       title: { ko: 'PUBG 시공간 그래프 생존 모델', en: 'PUBG spatiotemporal graph survival model' },
+      workTitle: { text: { ko: PUBG_WORKING_TITLE, en: PUBG_WORKING_TITLE }, tentative: true },
       body: {
         ko: '배틀그라운드 경기를 시간 단계별 그래프(플레이어, 팀, 자기장)로 만들고, 플레이어가 언제 탈락할지 위험도를 예측하는 생존 모델을 만들고 있습니다.',
         en: 'Represents each PUBG match as a sequence of graphs (players, teams, the play zone) and builds a survival model that predicts each player’s elimination risk over time.',

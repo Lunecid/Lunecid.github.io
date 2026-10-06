@@ -35,4 +35,15 @@ describe('InProgressList.astro', () => {
     const statuses = [...en.matchAll(/<p(?=[^>]*class="progress-list__status lh-tag")[^>]*>([^<]*)<\/p>/g)].map((m) => m[1]);
     expect(statuses).toEqual(ongoing.map((i) => i.status.en));
   });
+
+  it('owner 2026-10-06: the thesis row carries its title; the PUBG row shows its working title, labelled', async () => {
+    for (const variant of ['game', 'data'] as const) {
+      const ko = await renderAstro(InProgressList, { props: { lang: 'ko', variant, items: ongoing } });
+      const en = await renderAstro(InProgressList, { props: { lang: 'en', variant, items: ongoing } });
+      expect(ko).toContain('석사 학위논문: 리그오브레전드에서 승리 확률 변화에 기반한 교전 가치 정의 및 예측에 관한 연구');
+      expect(en).toContain('M.S. thesis: A Study on Defining and Predicting Engagement Value Based on Win-Probability Change in League of Legends');
+      expect(ko).toMatch(/class="[^"]*progress-list__work[^"]*"[^>]*>가제: Surviving a Shrinking Habitat: Phase-Conditioned Elimination Hazards from Large-Scale Battle Royale Telemetry</);
+      expect(en).toMatch(/class="[^"]*progress-list__work[^"]*"[^>]*>Working title: Surviving a Shrinking Habitat/);
+    }
+  });
 });

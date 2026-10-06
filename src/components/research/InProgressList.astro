@@ -4,7 +4,7 @@
 // owner marks the repository ready). DS-8: the general version draws each item as the home page's 진행 중 band — the
 // status on a yellow painted cell (text on paint: ink, data-paint-text), title and line in the neutral cell beside it.
 import SectionHead from '../hud/SectionHead.astro';
-import type { researchPage } from '../../data/research-page';
+import { WORKING_TITLE, type researchPage } from '../../data/research-page';
 import type { Lang } from '../../i18n/ui';
 import { t } from '../../i18n/utils';
 import { pageHref } from '../../lib/links';
@@ -24,6 +24,8 @@ const rows = items.map((item) => ({
   title: item.title[lang],
   body: item.body[lang],
   href: item.href === null ? null : pageHref(item.href, { lang, variant }),
+  // a tentative title shows under the item's name, labelled (owner, 2026-10-06); a settled one is part of the name
+  work: 'workTitle' in item && item.workTitle.tentative ? `${WORKING_TITLE[lang]}: ${item.workTitle.text[lang]}` : null,
 }));
 ---
 <section id="in-progress" class:list={['progress-list', variant === 'data' ? 'ed-sec' : ['read', 'read-sec']]} aria-labelledby="in-progress-title">
@@ -34,7 +36,7 @@ const rows = items.map((item) => ({
         {rows.map((row) => (
           <li class="ed-now ed-now--row" data-item={row.id}>
             <p class="ed-now__label" data-paint-text>{row.status}</p>
-            <div class="ed-now__text"><h3 class="ed-item__title">{row.href ? <a class="hit" href={row.href}>{row.title}</a> : row.title}</h3><p class="ed-body">{row.body}</p></div>
+            <div class="ed-now__text"><h3 class="ed-item__title">{row.href ? <a class="hit" href={row.href}>{row.title}</a> : row.title}</h3>{row.work && <p class="ed-body progress-list__work">{row.work}</p>}<p class="ed-body">{row.body}</p></div>
           </li>
         ))}
       </ol>
@@ -46,6 +48,7 @@ const rows = items.map((item) => ({
           <div class="progress-list__text">
             <p class="progress-list__status lh-tag">{row.status}</p>
             <h3 class="progress-list__name">{row.href ? <a class="hit" href={row.href}>{row.title}</a> : row.title}</h3>
+            {row.work && <p class="progress-list__work">{row.work}</p>}
             <p class="progress-list__body">{row.body}</p>
           </div>
         </li>
@@ -61,6 +64,7 @@ const rows = items.map((item) => ({
   .progress-list__status { white-space: normal; } /* "In preparation · expected Feb 2027" wraps on a 320px phone */
   .progress-list__name { margin-top: 8px; font-size: var(--fs-sub); font-weight: 700; line-height: 1.4; color: var(--read-text); }
   .progress-list__name a { text-underline-offset: 3px; }
+  .progress-list__work { margin-top: 4px; font-size: var(--fs-meta); line-height: 1.5; color: var(--read-muted); overflow-wrap: anywhere; }
   .progress-list__body { margin-top: 6px; font-size: 16px; line-height: 1.7; max-width: var(--measure); }
   .progress-list__body:lang(en) { line-height: 1.5; }
 </style>
