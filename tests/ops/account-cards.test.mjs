@@ -51,7 +51,14 @@ function containsTrademark(text, terms) {
  * never in src/**\/*.{ts,tsx,astro}, astro.config.mjs or dist/** (dist is checked when a build is present).
  */
 function assertConfined(needles, links = []) {
-  const ALLOWED = ['scripts/download-external-assets.mjs', 'scripts/assets/account-cards.mjs', 'src/assets/account-cards/sources.json'];
+  // src/assets/characters/sources.json is the provenance manifest of the Player Log showcase art (owner ruling
+  // 2026-10-06): like the account-card manifest it records where a committed file came from; nothing fetches it.
+  const ALLOWED = [
+    'scripts/download-external-assets.mjs',
+    'scripts/assets/account-cards.mjs',
+    'src/assets/account-cards/sources.json',
+    'src/assets/characters/sources.json',
+  ];
   const hit = (file) => {
     // an outbound link the credits cite is text, not a fetch: it is taken out before the needles are looked for
     const text = links.reduce((t, url) => t.split(url).join(''), readFileSync(join(ROOT, file), 'latin1'));
