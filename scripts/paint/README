@@ -9,3 +9,9 @@ a pigment (its base must match --ed-red, --ed-blue or --ed-yellow in tokens.css)
 `--check` to compare the committed CSS and tiles with a fresh render, `--lab <file>` for a swatch sheet. Rendering
 needs Chromium (Playwright's, or CHROME_PATH / PW_CHANNEL). tests/unit/paint.test.ts checks the file, the pigments,
 the tiles and the contrast of text on the paint, from the formula and from the tiles' pixels.
+
+scripts/paint/paper.mjs does the same for the chooser printout's art paper: its formation (the prototype's SVG noise,
+over the paper colour) is rendered once into src/styles/paint/paper-formation.webp (1x, opaque); its tooth stays the
+prototype's SVG, as a mask. `--write`, `--check`, and `--fidelity` (the shipped paper against the live SVG paper,
+mean channel difference at device scale 1 and 2). tests/unit/chooser-paper.test.ts checks the sources, the tile and
+the ink's contrast on its darkest pixel.
