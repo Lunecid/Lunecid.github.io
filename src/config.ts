@@ -47,7 +47,7 @@ export const ACCOUNT_ADMIN = {
   workflow: 'deploy.yml',
   ref: 'main',
   relay: null as string | null,
-  etaMinutes: 15,
+  etaMinutes: 20, // release-gate CI projection 17–23 min (build once, 3 e2e shards + Lighthouse in parallel, deploy)
   idleWarnMinutes: 2,
   capWarnMinutes: 5,
 } as const;
