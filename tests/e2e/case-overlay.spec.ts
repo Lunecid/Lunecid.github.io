@@ -92,9 +92,9 @@ test.describe('case overlay runtime', () => {
     await expect(steps.nth(3)).toHaveAttribute('aria-current', 'step');
   });
 
-  for (const width of [375, 1280]) {
-    test(`${width}: every figure ends in its final state after scrolling; labels inside the plot and never overlapping`, async ({ page }) => {
-      await openSheet(page, GAME, width, 812);
+  for (const [width, route] of [[375, GAME], [375, DATA_EN], [1280, GAME], [1280, DATA_EN]] as const) {
+    test(`${width} ${route}: every figure ends in its final state after scrolling; labels inside the plot and never overlapping`, async ({ page }) => {
+      await openSheet(page, route, width, 812);
       await page.evaluate(() => { for (const d of document.querySelectorAll('dialog.cs details')) (d as HTMLDetailsElement).open = true; });
       const body = page.locator('.cs__body');
       const height = await body.evaluate((b) => b.scrollHeight);
@@ -110,7 +110,9 @@ test.describe('case overlay runtime', () => {
         for (const svg of document.querySelectorAll('dialog.cs [data-plot] svg')) {
           const viz = svg.closest('.cs-viz')!.getAttribute('data-viz');
           const frame = svg.getBoundingClientRect();
-          const boxes = [...svg.querySelectorAll('text')].filter((t) => getComputedStyle(t).opacity !== '0' && !t.closest('[data-s]:not([data-s="5"])')).map((t) => ({ t: t.textContent, r: t.getBoundingClientRect() }));
+          // ink boxes: the text box without the font's line-gap padding above the cap height and below the descenders
+          const ink = (r: DOMRect) => ({ left: r.left, right: r.right, top: r.top + r.height * 0.18, bottom: r.bottom - r.height * 0.12 });
+          const boxes = [...svg.querySelectorAll('text')].filter((t) => getComputedStyle(t).opacity !== '0' && !t.closest('[data-s]:not([data-s="5"])')).map((t) => ({ t: t.textContent, r: ink(t.getBoundingClientRect()) }));
           for (const b of boxes) if (b.r.left < frame.left - 1 || b.r.right > frame.right + 1) out.push(`${viz}: "${b.t}" clipped (${Math.round(b.r.left - frame.left)}…${Math.round(b.r.right - frame.left)} of ${Math.round(frame.width)})`);
           for (let i = 0; i < boxes.length; i++) for (let j = i + 1; j < boxes.length; j++) {
             const a = boxes[i]!.r, c = boxes[j]!.r;
@@ -123,8 +125,8 @@ test.describe('case overlay runtime', () => {
       expect(await textBelow12px(page)).toEqual([]);
     });
 
-    test(`${width}: no horizontal overflow in the sheet or the page`, async ({ page }) => {
-      await openSheet(page, GAME, width, 812);
+    test(`${width} ${route}: no horizontal overflow in the sheet or the page`, async ({ page }) => {
+      await openSheet(page, route, width, 812);
       await page.evaluate(() => { for (const d of document.querySelectorAll('dialog.cs details')) (d as HTMLDetailsElement).open = true; });
       const over = await page.evaluate(() => {
         const body = document.querySelector('.cs__body')!;

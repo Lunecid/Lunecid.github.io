@@ -3,6 +3,7 @@
    a side sheet from 734 px, a bottom sheet below. Every class is cs-prefixed (the sheet sits in a page with its own
    .badge, .btn, .hit …). Colours only from case-tokens.css; motion is transform/opacity; hover inside (hover: hover). */
 @import '../../styles/case-tokens.css';
+@import './case-fonts.css';
 
 /* ── The dialog: transparent, full viewport; the scrim and the sheet are its children ── */
 .cs { position: fixed; inset: 0; width: 100%; height: 100%; max-width: none; max-height: none; margin: 0; padding: 0; border: 0; background: transparent; overflow: hidden; color: var(--cs-t1); }

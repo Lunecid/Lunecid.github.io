@@ -422,7 +422,7 @@ const gapRuler: Renderer = (w, L) => {
   const rule = CASE_FACTS.clusterGapSec;
   s += `<g class="${anim('fade', 5)}"><line x1="${r1(X(rule))}" x2="${r1(X(rule))}" y1="${top - 4}" y2="${ay}" stroke="var(--cs-y)" stroke-width="2"/>`;
   s += narrow
-    ? `<rect x="${r1(X(rule) - 8)}" y="${top + 62}" width="16" height="16" fill="var(--cs-y)"/>${text(X(rule), top + 74, String(P.length + 1), 'cs-on cs-num cs-b7', 'middle')}</g>`
+    ? `<rect x="${r1(X(rule) - 8)}" y="${top + 54}" width="16" height="16" fill="var(--cs-y)"/>${text(X(rule), top + 66, String(P.length + 1), 'cs-on cs-num cs-b7', 'middle')}</g>`
     : `${text(X(rule) + 6, ay - 8, L.paperRule, 'cs-yt cs-num')}</g>`;
   let h = ay + 40;
   if (narrow) {

@@ -26,7 +26,19 @@ export const COVER_DISPLAY_FAMILY = 'SB Cover Display';
  * display face at a quarter of its size on the chooser's first load. */
 export const COVER_BANNER_FAMILY = 'SB Cover Banner';
 
-export type FontFace = 'sans' | 'mono' | 'serifKo' | 'display' | 'coverMono' | 'coverDisplay' | 'coverBanner';
+/** The case-study overlay's academic faces (owner-approved v4, CS-8), declared only in its lazy stylesheet
+ * (src/lib/case/overlay.css) and subset to the characters of the overlay's sheets (dist/case/**). Lora and Playfair
+ * Display carry Reserved Font Names (OFL 1.1), so their subsets are renamed; Open Sans and Noto Serif KR have none. */
+export const CASE_SERIF_FAMILY = 'SB Case Serif'; // Lora, wght 400–700 upright + 400 italic
+export const CASE_DISPLAY_FAMILY = 'SB Case Display'; // Playfair Display, wght 600
+export const CASE_UI_FAMILY = 'SB Case UI'; // Open Sans, wght 400–700
+export const CASE_SERIF_KO_FAMILY = 'SB Case Serif KR'; // Noto Serif KR, wght 400–700, the Hangul of the Korean sheet
+
+export type FontFace = 'sans' | 'mono' | 'serifKo' | 'display' | 'coverMono' | 'coverDisplay' | 'coverBanner'
+  | 'caseSerif' | 'caseSerifItalic' | 'caseDisplay' | 'caseUi' | 'caseSerifKo';
+
+/** The overlay's faces, in the order overlay.css declares them. */
+export const CASE_FACES = ['caseSerif', 'caseSerifItalic', 'caseDisplay', 'caseUi', 'caseSerifKo'] as const satisfies readonly FontFace[];
 
 /** Placeholder URL per face (replaced by the hashed file in dist). */
 export const FONT_URL: Record<FontFace, string> = {
@@ -37,6 +49,11 @@ export const FONT_URL: Record<FontFace, string> = {
   coverMono: '/_fonts/sb-cover-mono.woff2',
   coverDisplay: '/_fonts/sb-cover-display.woff2',
   coverBanner: '/_fonts/sb-cover-banner.woff2',
+  caseSerif: '/_fonts/sb-case-serif.woff2',
+  caseSerifItalic: '/_fonts/sb-case-serif-italic.woff2',
+  caseDisplay: '/_fonts/sb-case-display.woff2',
+  caseUi: '/_fonts/sb-case-ui.woff2',
+  caseSerifKo: '/_fonts/sb-case-serif-kr.woff2',
 };
 
 /** The Hangul blocks (Jamo, Compatibility Jamo, Jamo Extended-A, Syllables, Jamo Extended-B). */
@@ -50,10 +67,15 @@ const DESCRIPTORS: Record<FontFace, string> = {
   coverMono: `font-family:"${COVER_MONO_FAMILY}";font-style:normal;font-weight:600;font-display:swap`,
   coverDisplay: `font-family:"${COVER_DISPLAY_FAMILY}";font-style:normal;font-weight:400;font-display:swap`,
   coverBanner: `font-family:"${COVER_BANNER_FAMILY}";font-style:normal;font-weight:800 900;font-stretch:112%;font-display:swap`,
+  caseSerif: `font-family:"${CASE_SERIF_FAMILY}";font-style:normal;font-weight:400 700;font-display:swap`,
+  caseSerifItalic: `font-family:"${CASE_SERIF_FAMILY}";font-style:italic;font-weight:400;font-display:swap`,
+  caseDisplay: `font-family:"${CASE_DISPLAY_FAMILY}";font-style:normal;font-weight:600;font-display:swap`,
+  caseUi: `font-family:"${CASE_UI_FAMILY}";font-style:normal;font-weight:400 700;font-display:swap`,
+  caseSerifKo: `font-family:"${CASE_SERIF_KO_FAMILY}";font-style:normal;font-weight:400 700;font-display:swap`,
 };
 
 /** The Korean serif draws Hangul only, so Latin text keeps its Times face. */
-const DEFAULT_RANGE: Partial<Record<FontFace, string>> = { serifKo: HANGUL_UNICODE_RANGE };
+const DEFAULT_RANGE: Partial<Record<FontFace, string>> = { serifKo: HANGUL_UNICODE_RANGE, caseSerifKo: HANGUL_UNICODE_RANGE };
 
 /** One @font-face rule; by default for the face's placeholder URL. */
 export function fontFaceRule(face: FontFace, url: string = FONT_URL[face], unicodeRange: string | undefined = DEFAULT_RANGE[face]): string {

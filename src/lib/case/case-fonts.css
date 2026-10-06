@@ -1,0 +1,9 @@
+/* src/lib/case/case-fonts.css — the case overlay's faces (src/lib/fonts.ts CASE_FACES, fontFaceRule verbatim; a unit test
+   keeps the two equal). Placeholder URLs: the build writes renamed subsets to dist/_astro and rewrites them here
+   (scripts/fonts/build.mjs); `astro dev` serves the source files. Declared only in the lazy overlay stylesheet, so a
+   page loads these fonts only once the sheet is open and shows text in them. */
+@font-face{font-family:"SB Case Serif";font-style:normal;font-weight:400 700;font-display:swap;src:url(/_fonts/sb-case-serif.woff2) format("woff2")}
+@font-face{font-family:"SB Case Serif";font-style:italic;font-weight:400;font-display:swap;src:url(/_fonts/sb-case-serif-italic.woff2) format("woff2")}
+@font-face{font-family:"SB Case Display";font-style:normal;font-weight:600;font-display:swap;src:url(/_fonts/sb-case-display.woff2) format("woff2")}
+@font-face{font-family:"SB Case UI";font-style:normal;font-weight:400 700;font-display:swap;src:url(/_fonts/sb-case-ui.woff2) format("woff2")}
+@font-face{font-family:"SB Case Serif KR";font-style:normal;font-weight:400 700;font-display:swap;src:url(/_fonts/sb-case-serif-kr.woff2) format("woff2");unicode-range:U+1100-11FF,U+3130-318F,U+A960-A97F,U+AC00-D7FF}
