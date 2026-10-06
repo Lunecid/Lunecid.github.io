@@ -104,7 +104,7 @@ test.describe('growth infographic (GR)', () => {
       await expect(marks.first()).toBeFocused();
       const tip = marks.first().locator(isGame(route) ? '.gq-tip' : '.gd-tip');
       await expect(tip).toBeVisible();
-      expect(Number(await tip.evaluate((el) => getComputedStyle(el).opacity))).toBeGreaterThan(0.5);
+      await expect.poll(() => tip.evaluate((el) => Number(getComputedStyle(el).opacity))).toBeGreaterThan(0.5);
       const outline = await marks.first().evaluate((el) => getComputedStyle(el).outlineStyle);
       expect(outline).not.toBe('none');
       // the mark links to its card / column
