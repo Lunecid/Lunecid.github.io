@@ -159,12 +159,13 @@ export const growthCopy = {
   captionGame: { ko: 'QUEST LOG', en: 'QUEST LOG' },
   captionData: { ko: '성장 기록', en: 'Growth' },
   lede: {
-    ko: `첫 팀 프로젝트에서는 파이프라인의 한 부분을 맡았습니다. 공모전에서는 팀의 문제 정의와 분석 방향을 이끌었고, 지금은 지도교수와 함께 쓴 {pub.${COG}.venueShort} 논문의 제1저자입니다.`,
-    en: `In my first team project I took one part of the pipeline. In a competition I led the team’s problem framing and analysis direction, and now I am the first author of a {pub.${COG}.venueShort} paper written with my advisor.`,
+    // owner ruling 2026-10-06: the first role is the chart's level 2 ("모델링을 제외한 전 과정"), never "one part"
+    ko: `처음에는 팀 파이프라인에서 모델링을 뺀 단계들을 맡았고, 공모전에서는 팀의 문제 정의와 분석 방향을 이끌었으며, 지금은 지도교수와 함께 쓴 {pub.${COG}.venueShort} 논문의 제1저자입니다.`,
+    en: `At first I took every stage of a team pipeline except the modeling; in a competition I led the team’s problem framing and analysis direction; and now I am the first author of a {pub.${COG}.venueShort} paper written with my advisor.`,
   },
   ledeData: {
-    ko: '프로젝트와 연구를 역할·방법·데이터·협업 네 갈래로 나란히 놓았습니다. 역할은 팀 파이프라인의 한 단계에서 팀의 문제 정의 주도로, 다시 지도교수와의 공동 연구 제1저자로 옮겨 갔습니다.',
-    en: 'Projects and research side by side in four lanes: role, method, data and collaboration. The role moved from one stage of a team pipeline to leading a team’s problem framing, and then to first author of joint research with my advisor.',
+    ko: '프로젝트와 연구를 역할·방법·데이터·협업 네 갈래로 나란히 놓았습니다. 역할은 팀 파이프라인의 여러 단계를 맡는 데서 팀의 문제 정의 주도로, 다시 지도교수와의 공동 연구 제1저자로 옮겨 갔습니다.',
+    en: 'Projects and research side by side in four lanes: role, method, data and collaboration. The role moved from several stages of a team pipeline to leading a team’s problem framing, and then to first author of joint research with my advisor.',
   },
   role: {
     1: { ko: '한 단계 담당', en: 'One stage' },

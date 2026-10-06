@@ -177,6 +177,19 @@ describe('growth infographic data (GR-1)', () => {
     }
   });
 
+  it('the intro\'s first-role wording matches the first step\'s role level (owner ruling 2026-10-06)', () => {
+    for (const lang of LANGS) {
+      const first = model[lang].steps[0]!;
+      expect(first.role.level).toBe(2);
+      for (const text of [model[lang].copy.lede, model[lang].copy.ledeData]) {
+        if (first.role.level >= 2) expect(text, `${lang}: ${text}`).not.toMatch(lang === 'ko' ? /한 부분|한 단계/ : /one part|one stage/i);
+      }
+    }
+    expect(model.ko.copy.lede).toContain('모델링을 뺀 단계들');
+    expect(model.ko.copy.ledeData).toContain('팀 파이프라인의 여러 단계를 맡는 데서');
+    expect(model.en.copy.ledeData).toContain('several stages of a team pipeline');
+  });
+
   it('copy: every entry has ko and en, none empty; the model resolves every token', () => {
     const walk = (v: unknown, where: string): void => {
       if (v && typeof v === 'object' && 'ko' in v && 'en' in v) {

@@ -240,7 +240,7 @@
   "tests/unit/ghost-art-gating.test.ts": 9,
   "tests/unit/github.test.ts": 20,
   "tests/unit/growth-css.test.ts": 11,
-  "tests/unit/growth.test.ts": 61,
+  "tests/unit/growth.test.ts": 66,
   "tests/unit/i18n.test.ts": 89,
   "tests/unit/images.test.ts": 23,
   "tests/unit/konami.test.ts": 9,
