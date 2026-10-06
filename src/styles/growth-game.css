@@ -99,6 +99,7 @@
 :root[data-variant="game"] .gq-ach--rank::before { background: var(--hl2); }
 :root[data-variant="game"] .gq-q--lock { padding: 10px 12px; background: transparent; border: 1.5px dashed var(--hud-line); }
 :root[data-variant="game"] .gq-q--lock .gq-q__t { margin-top: 4px; font-size: var(--fs-small); color: var(--read-text); }
+:root[data-variant="game"] .gq-q--lock .gq-q__sub { color: var(--read-muted); font-weight: 500; font-size: var(--fs-min); overflow-wrap: anywhere; }
 :root[data-variant="game"] .gq-lockchip { display: inline-flex; align-items: center; gap: 6px; font-size: var(--fs-min); font-weight: 700; line-height: 1; color: var(--read-muted); }
 :root[data-variant="game"] .gq-lockchip svg { width: 11px; height: 13px; }
 

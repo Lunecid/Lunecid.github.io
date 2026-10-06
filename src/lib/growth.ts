@@ -3,7 +3,7 @@
 import type { AwardData, ProjectFrontmatter, PublicationFrontmatter, ResumeData } from '../content/schemas';
 import { growthCopy, growthFuture, growthPairings, growthSteps, type GrowthLevel, type GrowthStepDef } from '../data/growth';
 import { overallAuc } from '../data/research/cog-2026';
-import { RESEARCH_STATUS, researchPage } from '../data/research-page';
+import { RESEARCH_STATUS, WORKING_TITLE, researchPage } from '../data/research-page';
 import type { Lang } from '../i18n/ui';
 import { formatDate, formatYm, type Localized } from '../i18n/utils';
 import { FORMAT_PHRASE, resolveFacts, type FactSource } from './facts';
@@ -44,7 +44,8 @@ export interface GrowthStep {
 }
 
 export interface GrowthStage { n: 1 | 2 | 3; years: string; head: string; items: GrowthStep[] }
-export interface GrowthFuture { id: string; title: string; status: string; kind: 'inProgress' | 'planned' }
+/** An open slot: a short title, the work's own title under it (tentative ones behind "가제"), the status. */
+export interface GrowthFuture { id: string; title: string; sub: string | null; status: string; kind: 'inProgress' | 'planned' }
 
 type Pick1<T> = T extends Localized<infer U> ? U : T extends object ? { [K in keyof T]: Pick1<T[K]> } : T;
 export type GrowthCopy = Pick1<typeof growthCopy>;
@@ -205,10 +206,11 @@ export function buildGrowth(input: GrowthInputs, lang: Lang): GrowthModel {
   const future = growthFuture.map((f): GrowthFuture => {
     const ongoing = researchPage.ongoing.find((o) => o.id === f.ongoing);
     if (!ongoing) throw new Error(`growth: no research-page ongoing item ${f.ongoing}`);
-    const full = f.label?.[lang] ?? resolveFacts(ongoing.title[lang], lang, input.facts);
-    // the thesis title "석사 학위논문: …" → the slot names the kind of work only
-    const title = f.id === 'ms-thesis' ? (full.split(':')[0] ?? full) : full;
-    return { id: f.id, title, status: RESEARCH_STATUS[ongoing.state][lang], kind: ongoing.state };
+    const short = 'label' in ongoing ? ongoing.label[lang] : null;
+    const title = f.label?.[lang] ?? short ?? resolveFacts(ongoing.title[lang], lang, input.facts);
+    const work = 'workTitle' in ongoing ? ongoing.workTitle : null;
+    const sub = work ? (work.tentative ? `${WORKING_TITLE[lang]}: ${work.text[lang]}` : work.text[lang]) : null;
+    return { id: f.id, title, sub, status: RESEARCH_STATUS[ongoing.state][lang], kind: ongoing.state };
   });
 
   const stageOf = (lv: GrowthLevel): 1 | 2 | 3 => (lv <= 2 ? 1 : lv === 3 ? 2 : 3);

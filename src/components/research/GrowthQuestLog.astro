@@ -120,6 +120,7 @@ const methodFoot = GROWTH_LEVELS.map((lv) => `${lv} ${copy.method[lv]}`).join(' 
             <article class="gq-q gq-q--lock" id={`gr-q-${f.id}`} data-gr-i={i} style={`--r: ${j + 3}`} aria-labelledby={`gr-qt-${f.id}`}>
               <p class="gq-lockchip"><svg aria-hidden="true" focusable="false"><use href="#gq-lock" /></svg>{f.status}</p>
               <h3 class="gq-q__t" id={`gr-qt-${f.id}`}>{f.title}</h3>
+              {f.sub && <p class="gq-q__sub">{f.sub}</p>}
             </article>
           </Fragment>
         );
@@ -175,7 +176,7 @@ const methodFoot = GROWTH_LEVELS.map((lv) => `${lv} ${copy.method[lv]}`).join(' 
               );
             })}
             {future.map((f) => (
-              <tr><td>{f.status}</td><th scope="row">{f.title}</th><td colspan="8">—</td></tr>
+              <tr><td>{f.status}</td><th scope="row">{f.title}{f.sub && <Fragment><br />{f.sub}</Fragment>}</th><td colspan="8">—</td></tr>
             ))}
           </tbody>
         </table>

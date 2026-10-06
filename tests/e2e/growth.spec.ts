@@ -153,6 +153,41 @@ test.describe('growth infographic (GR)', () => {
     }
   }
 
+  // owner 2026-10-06: the thesis title and the PUBG working title (one source: research-page.ts ongoing)
+  const THESIS = { ko: '리그오브레전드에서 승리 확률 변화에 기반한 교전 가치 정의 및 예측에 관한 연구', en: 'A Study on Defining and Predicting Engagement Value Based on Win-Probability Change in League of Legends' };
+  const PUBG = 'Surviving a Shrinking Habitat';
+  for (const route of PAGES) {
+    test(`GR titles ${route} @375: the thesis title and the PUBG working title show in the growth slots and the in-progress list without overflow`, async ({ page }) => {
+      const lang = route.startsWith('/en/') ? 'en' : 'ko';
+      await openAt(page, route, 375);
+      await scrollThrough(page);
+      for (const scope of ['#growth', '#in-progress']) {
+        const text = await page.locator(scope).innerText();
+        expect(text, scope).toContain(THESIS[lang]);
+        expect(text, scope).toContain(`${lang === 'ko' ? '가제' : 'Working title'}: ${PUBG}`);
+      }
+      const sticking = await page.evaluate(() => {
+        const out: string[] = [];
+        for (const el of Array.from(document.querySelectorAll<HTMLElement>('#growth .gq-q--lock, #growth .gd-smc--fut, #growth .gd-fut, #in-progress li'))) {
+          if (el.getClientRects().length === 0) continue;
+          const box = el.getBoundingClientRect();
+          if (box.right > document.documentElement.clientWidth + 1 || el.scrollWidth > el.clientWidth + 1) out.push(`${el.className} ${Math.round(box.right)} ${el.scrollWidth}/${el.clientWidth}`);
+        }
+        return out;
+      });
+      expect(sticking).toEqual([]);
+      const o = await horizontalOverflow(page);
+      expect(o.scrollWidth, o.offenders.join(', ')).toBeLessThanOrEqual(o.width);
+    });
+  }
+
+  test('GR titles: /records/ (both versions, both languages) shows the thesis title', async ({ page }) => {
+    for (const route of [gamePath('/records/'), gamePath('/records/', 'en'), dataPath('/records/'), dataPath('/records/', 'en')]) {
+      await page.goto(route, { waitUntil: 'load' });
+      expect(await page.locator('main').innerText(), route).toContain(THESIS[route.startsWith('/en/') ? 'en' : 'ko']);
+    }
+  });
+
   test('GR-4: print shows the final state and hides the closed table', async ({ page }) => {
     await openAt(page, gamePath('/research/'), 1280, 800);
     await page.emulateMedia({ media: 'print' });

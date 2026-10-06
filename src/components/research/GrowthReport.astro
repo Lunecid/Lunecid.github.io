@@ -143,7 +143,7 @@ const roleFoot = GROWTH_LEVELS.map((lv) => `${lv} ${copy.role[lv]}`).join(' · '
       <div class="gd-fut">
         <p class="gd-fut__h">{copy.next}</p>
         <ol role="list">
-          {future.map((f) => <li><span class="gd-paint gd-paint--y gd-paint--s" data-paint-text>{f.status}</span>{f.title}</li>)}
+          {future.map((f) => <li><span class="gd-paint gd-paint--y gd-paint--s" data-paint-text>{f.status}</span><span>{f.title}{f.sub && <span class="gd-fut__sub">{f.sub}</span>}</span></li>)}
         </ol>
       </div>
     </div>
@@ -193,7 +193,7 @@ const roleFoot = GROWTH_LEVELS.map((lv) => `${lv} ${copy.role[lv]}`).join(' · '
       })}
       <article class="gd-smc gd-smc--fut" aria-labelledby="gr-sm-next">
         <h3 class="gd-hd__t" id="gr-sm-next">{copy.next}</h3>
-        <ol role="list">{future.map((f) => <li><span class="gd-paint gd-paint--y gd-paint--s" data-paint-text>{f.status}</span>{f.title}</li>)}</ol>
+        <ol role="list">{future.map((f) => <li><span class="gd-paint gd-paint--y gd-paint--s" data-paint-text>{f.status}</span><span>{f.title}{f.sub && <span class="gd-fut__sub">{f.sub}</span>}</span></li>)}</ol>
       </article>
     </div>
     <p class="gd-note">{copy.foot.role}: {roleFoot}. {copy.foot.scale} {copy.foot.blank}</p>
@@ -246,7 +246,7 @@ const roleFoot = GROWTH_LEVELS.map((lv) => `${lv} ${copy.role[lv]}`).join(' · '
                 </tr>
               );
             })}
-            {future.map((f) => <tr><td>{f.status}</td><th scope="row">{f.title}</th><td colspan="8">—</td></tr>)}
+            {future.map((f) => <tr><td>{f.status}</td><th scope="row">{f.title}{f.sub && <Fragment><br />{f.sub}</Fragment>}</th><td colspan="8">—</td></tr>)}
           </tbody>
         </table>
       </div>

@@ -67,6 +67,14 @@ describe('GrowthQuestLog.astro (game version)', () => {
     expect(html).toMatch(/class="gq-tv__scroll"[^>]*tabindex="0"[^>]*role="region"/);
   });
 
+  it('the open slots show the thesis title and the PUBG working title under their short labels', async () => {
+    const html = await render('ko');
+    expect(html).toMatch(/class="gq-q__sub"[^>]*>리그오브레전드에서 승리 확률 변화에 기반한 교전 가치 정의 및 예측에 관한 연구</);
+    expect(html).toMatch(/class="gq-q__sub"[^>]*>가제: Surviving a Shrinking Habitat/);
+    const table = /<table[\s\S]*<\/table>/.exec(html)?.[0] ?? '';
+    expect(table).toContain('석사 학위논문<br>리그오브레전드에서');
+  });
+
   it('English: the same structure in English strings', async () => {
     const html = await render('en');
     expect(html).toMatch(/<h2[^>]*>Growing as a data analyst<\/h2>/);

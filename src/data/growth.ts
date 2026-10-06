@@ -149,9 +149,9 @@ export const growthSteps: readonly GrowthStepDef[] = [
  *  ruling 2026-10-06). The PUBG slot keeps the owner's short label instead of the study's working title. */
 export const growthFuture: readonly { id: string; ongoing: string; label?: Localized }[] = [
   { id: 'cog-journal', ongoing: 'cog-journal' },
-  // the part of the thesis title before the colon
+  // the short label (석사 학위논문 / M.S. thesis), its title under it
   { id: 'ms-thesis', ongoing: 'ms-thesis' },
-  // owner, 2026-10-06: no title and no claims yet, only the label
+  // owner, 2026-10-06: a short label; the working title shows under it
   { id: 'pubg', ongoing: 'pubg-survival', label: { ko: '배틀그라운드 연구', en: 'PUBG study' } },
 ];
 

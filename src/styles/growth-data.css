@@ -31,6 +31,8 @@
 :root[data-variant="data"] .gd-paint--r { color: var(--ed-on-color); background: var(--ed-paint-rh); }
 :root[data-variant="data"] .gd-paint--b { color: var(--ed-on-color); background: var(--ed-paint-bh); }
 :root[data-variant="data"] .gd-paint--y { color: var(--ed-ink); background: var(--ed-paint-yh); }
+/* the narrow lane cells: a slimmer side padding so a long word ("presentation") is not split */
+:root[data-variant="data"] .gd-c > .gd-paint { padding-inline: 8px; }
 :root[data-variant="data"] .gd-paint--s { padding: 6px 10px 7px; font-size: var(--fs-min); }
 
 /* level pips and team squares */
@@ -69,6 +71,7 @@
 :root[data-variant="data"] .gd-hd__o { margin-top: 4px; font-size: var(--fs-min); line-height: 1.45; color: var(--ed-ink-2); }
 :root[data-variant="data"] .gd-fut__h { font-family: var(--font-ed-display); font-size: var(--fs-min); font-weight: 800; letter-spacing: .1em; }
 :root[data-variant="data"] .gd-fut ol { margin-top: 12px; display: grid; gap: 14px; }
+:root[data-variant="data"] .gd-fut__sub { display: block; margin-top: 4px; font-size: var(--fs-min); font-weight: 600; line-height: 1.45; color: var(--ed-ink-2); overflow-wrap: anywhere; }
 :root[data-variant="data"] .gd-fut li { display: grid; justify-items: start; gap: 6px; font-size: var(--fs-caption); font-weight: 700; line-height: 1.4; }
 
 /* role marks: links to their project's column, a tooltip on hover and on keyboard focus */
@@ -130,7 +133,8 @@
 :root[data-variant="data"] .gd-smc dd { min-width: 0; padding: 7px 0; border-top: 1px solid var(--ed-line); }
 :root[data-variant="data"] .gd-smc--fut { border-top-style: dashed; }
 :root[data-variant="data"] .gd-smc--fut ol { margin-top: 8px; display: grid; gap: 8px; }
-:root[data-variant="data"] .gd-smc--fut li { display: flex; align-items: center; gap: 10px; font-size: var(--fs-small); font-weight: 700; }
+:root[data-variant="data"] .gd-smc--fut li { display: flex; align-items: flex-start; gap: 10px; font-size: var(--fs-small); font-weight: 700; }
+:root[data-variant="data"] .gd-smc--fut li > span:last-child { min-width: 0; }
 @media (min-width: 734px) {
   :root[data-variant="data"] .gd-sm { grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 24px; }
 }
