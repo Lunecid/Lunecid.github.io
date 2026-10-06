@@ -8,6 +8,7 @@ import kde from '../../../assets/research/cog-2026/kill-gap-kde.webp';
 import { CASE_IDS } from '../../../lib/publications';
 import { caseSheetData, type CaseImage } from '../../../lib/case/sheet';
 import { getFactSource, getPublications } from '../../../lib/portfolio';
+import { sourceSize } from '../../../lib/images';
 import { languages, type Lang } from '../../../i18n/ui';
 
 export const getStaticPaths = (async () => {
@@ -17,9 +18,11 @@ export const getStaticPaths = (async () => {
 
 /** A WebP ladder of a figure (the sheet column is at most 560 px wide; 2× for dense screens). */
 async function image(src: ImageMetadata): Promise<CaseImage> {
-  const widths = [480, 800, 1120].filter((w) => w <= src.width);
-  const built = await getImage({ src, widths, format: 'webp' });
-  return { src: built.src, srcset: built.srcSet.attribute, width: src.width, height: src.height };
+  // sourceSize: reading .width on the import's proxy would publish the full-size original that nothing references
+  const { width, height } = sourceSize(src);
+  const widths = [480, 800, 1120].filter((w) => w <= width);
+  const built = await getImage({ src, widths, width: widths.at(-1) ?? width, format: 'webp' });
+  return { src: built.src, srcset: built.srcSet.attribute, width, height };
 }
 
 export const GET: APIRoute = async ({ props }) => {
