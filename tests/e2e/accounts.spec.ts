@@ -453,9 +453,21 @@ test.describe('account card — fixture build (AL-12)', () => {
 
   test('full motion: the ghost frame flies in and is gone once the panel shows; the first open counts up, a switch shows final values', async ({ page }) => {
     await ready(page, 1280, 800);
+    // the ghost lives 380 ms by design: it is recorded in the page as the DOM changes (a MutationObserver set before the
+    // click), never sampled by polling, which a loaded runner can start after the ghost is already gone
+    await page.evaluate(() => {
+      const w = window as Window & { __ghost?: { frames: number; corners: number } };
+      const seen = (w.__ghost = { frames: 0, corners: 0 });
+      new MutationObserver(() => {
+        const frames = document.querySelectorAll('dialog#acct-dlg .acct-dlg__ghost');
+        seen.frames = Math.max(seen.frames, frames.length);
+        if (frames.length) seen.corners = Math.max(seen.corners, frames[0]!.querySelectorAll('.acct-dlg__ghost-corner').length);
+      }).observe(document.body, { childList: true, subtree: true });
+    });
     await tiles(page).nth(1).click();
-    await expect(dialog(page).locator('.acct-dlg__ghost')).toHaveCount(1);
-    await expect(dialog(page).locator('.acct-dlg__ghost-corner')).toHaveCount(4);
+    const ghost = () => page.evaluate(() => (window as Window & { __ghost?: { frames: number; corners: number } }).__ghost!);
+    await expect.poll(async () => (await ghost()).frames).toBe(1);
+    expect((await ghost()).corners).toBe(4);
     const first = dialog(page).locator('.acct-dlg__card:not(.acct-dlg__card--out) dl dd').first();
     await expect(first.locator('[aria-hidden="true"]')).toHaveCount(1); // counting
     await expect(first.locator('.sr-only')).toHaveText('57');
