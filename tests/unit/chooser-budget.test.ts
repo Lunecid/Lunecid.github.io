@@ -33,6 +33,15 @@ describe.skipIf(!existsSync(join(DIST, 'index.html')))('chooser first-load budge
     });
   }
 
+  it('the printout’s paint tiles are hashed files the sheet names (shared with the general version’s), never inlined', () => {
+    const html = readFileSync(join(DIST, 'index.html'), 'utf8');
+    const sheet = file(/<link rel="stylesheet" href="(\/_astro\/chooser\.[\w-]+\.css)"/.exec(html)![1]!).toString();
+    expect(sheet).not.toMatch(/data:image\/webp/);
+    const tiles = [...sheet.matchAll(/\/_astro\/((?:paint-(?:rh|yh|yv|bv)(?:-2x)?|paper-formation)\.[\w-]+\.webp)/g)].map((m) => m[1]!);
+    expect(new Set(tiles.map((t) => t.split('.')[0])).size).toBe(9);
+    for (const t of tiles) expect(existsSync(join(DIST, '_astro', t)), t).toBe(true);
+  });
+
   it('MO-36: the props are six <use> frames of one cached sprite (≤ 4,600 B gz); no props drawing inline', () => {
     const html = readFileSync(join(DIST, 'index.html'), 'utf8');
     const uses = [...html.matchAll(/<use data-href="(\/_astro\/props\.[\w-]+\.svg)#prop-\w+"/g)].map((m) => m[1]);

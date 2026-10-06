@@ -100,11 +100,12 @@ test.describe('chooser (P2-10 intents on the MO-23 desk, Review Focus 4)', () =>
     await context.close();
   });
 
-  test('no image request, only sans preloads, and the header shows the language switch only', async ({ page }) => {
+  test('only the paint tiles as images, only sans preloads, and the header shows the language switch only', async ({ page }) => {
     const images: string[] = [];
     page.on('request', (r) => { if (r.resourceType() === 'image' && !/favicon|apple-touch-icon/.test(r.url())) images.push(r.url()); });
     await page.goto('/?choose', { waitUntil: 'networkidle' });
-    expect(images).toEqual([]);
+    // named change (late-LCP fix): the only images are the printout's pre-rendered paint tiles, at this screen's scale
+    expect(images.map((u) => /\/_astro\/([a-z-]+?)(-2x)?\.[\w-]+\.webp$/.exec(u)?.[1] ?? u).sort()).toEqual(['paint-bv', 'paint-rh', 'paint-yh', 'paint-yv', 'paper-formation']);
     const preloads = await page.locator('link[rel="preload"]').evaluateAll((els) => els.map((el) => el.getAttribute('href') ?? ''));
     expect(preloads.every((href) => /sb-sans/.test(href))).toBe(true);
     expect(preloads.some((href) => /jetbrains|anton|cover|serif/i.test(href)), 'MO-23: mono and Anton are not preloaded').toBe(false);

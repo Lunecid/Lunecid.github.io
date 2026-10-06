@@ -183,11 +183,12 @@ test.describe('MO-23: the static desk', () => {
     }
   });
 
-  test('no image request; only the sans core is preloaded; the chooser sheet is one external stylesheet', async ({ page }) => {
+  test('only the paint tiles as images; only the sans core is preloaded; the chooser sheet is one external stylesheet', async ({ page }) => {
     const images: string[] = [];
     page.on('request', (r) => { if (r.resourceType() === 'image' && !/favicon|apple-touch-icon/.test(r.url())) images.push(r.url()); });
     await openAt(page, '/?choose', 1280, 800);
-    expect(images).toEqual([]);
+    // named change (late-LCP fix): the only images are the printout's pre-rendered paint tiles, at this screen's scale
+    expect(images.map((u) => /\/_astro\/([a-z-]+?)(-2x)?\.[\w-]+\.webp$/.exec(u)?.[1] ?? u).sort()).toEqual(['paint-bv', 'paint-rh', 'paint-yh', 'paint-yv', 'paper-formation']);
     const preloads = await page.locator('link[rel="preload"]').evaluateAll((els) => els.map((el) => el.getAttribute('href') ?? ''));
     expect(preloads.length).toBeGreaterThan(0);
     for (const href of preloads) expect(href).toMatch(/sb-sans/);
