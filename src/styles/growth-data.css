@@ -188,12 +188,12 @@
 :root[data-variant="data"][data-motion="reduce"] .gd-line.gr-wait,
 :root[data-variant="data"][data-motion="reduce"] .gd-mk.gr-wait,
 :root[data-variant="data"][data-motion="reduce"] .gd-dot.gr-wait,
-:root[data-variant="data"][data-motion="reduce"] .gd-smc.gr-wait { opacity: 1; transform: none; }
+:root[data-variant="data"][data-motion="reduce"] .gd-smc.gr-wait { opacity: 1; transform: none; transition: none; }
 @media (prefers-reduced-motion: reduce) {
   :root[data-variant="data"] .gd-line.gr-wait,
   :root[data-variant="data"] .gd-mk.gr-wait,
   :root[data-variant="data"] .gd-dot.gr-wait,
-  :root[data-variant="data"] .gd-smc.gr-wait { opacity: 1; transform: none; }
+  :root[data-variant="data"] .gd-smc.gr-wait { opacity: 1; transform: none; transition: none; }
 }
 
 /* ── forced colours and print ── */
@@ -204,7 +204,7 @@
   :root[data-variant="data"] .gd-line.gr-wait,
   :root[data-variant="data"] .gd-mk.gr-wait,
   :root[data-variant="data"] .gd-dot.gr-wait,
-  :root[data-variant="data"] .gd-smc.gr-wait { opacity: 1; transform: none; }
+  :root[data-variant="data"] .gd-smc.gr-wait { opacity: 1; transform: none; transition: none; }
   :root[data-variant="data"] :is(.gd-smc, .gd-cs, .gd-cs li) { break-inside: avoid; }
   :root[data-variant="data"] .gd-tv:not([open]) { display: none; }
 }

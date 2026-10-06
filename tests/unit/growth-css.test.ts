@@ -54,18 +54,18 @@ describe('growth infographic sheets (GR-2, GR-3)', () => {
     });
 
     it(`${sheet.file}: the hidden draw-on state is undone under data-motion="reduce", prefers-reduced-motion and print`, () => {
-      const reduceAttr = /\[data-motion="reduce"\][^{]*\{[^}]*opacity: 1; transform: none;/;
+      const reduceAttr = /\[data-motion="reduce"\][^{]*\{[^}]*opacity: 1; transform: none; transition: none;/;
       expect(body).toMatch(reduceAttr);
       for (const media of ['@media (prefers-reduced-motion: reduce)', '@media print']) {
         const at = body.indexOf(media);
         expect(at, media).toBeGreaterThan(-1);
         const block = body.slice(at, body.indexOf('}\n}', at) + 3);
         for (const w of sheet.wait) expect(block, `${media} ${w}`).toMatch(w);
-        expect(block).toMatch(/opacity: 1; transform: none;/);
+        expect(block).toMatch(/opacity: 1; transform: none; transition: none;/);
       }
       // the hidden state animates transform and opacity only, with --dur-* tokens
       for (const m of body.matchAll(/transition: ([^;]+);/g)) {
-        for (const part of (m[1] ?? '').split(',')) expect(part.trim(), part).toMatch(/^(opacity|transform|background-color) var\(--dur-[a-z-]+\)/);
+        for (const part of (m[1] ?? '').split(',')) expect(part.trim(), part).toMatch(/^none$|^(opacity|transform|background-color) var\(--dur-[a-z-]+\)/);
       }
     });
   }

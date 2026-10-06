@@ -196,11 +196,11 @@
 :root[data-variant="game"] .gq-map .gq-path line.gr-wait { transform: scale(0); }
 :root[data-variant="game"][data-motion="reduce"] .gq-map .gq-q.gr-wait,
 :root[data-variant="game"][data-motion="reduce"] .gq-map .gq-node.gr-wait .gq-node__pop,
-:root[data-variant="game"][data-motion="reduce"] .gq-map .gq-path line.gr-wait { opacity: 1; transform: none; }
+:root[data-variant="game"][data-motion="reduce"] .gq-map .gq-path line.gr-wait { opacity: 1; transform: none; transition: none; }
 @media (prefers-reduced-motion: reduce) {
   :root[data-variant="game"] .gq-map .gq-q.gr-wait,
   :root[data-variant="game"] .gq-map .gq-node.gr-wait .gq-node__pop,
-  :root[data-variant="game"] .gq-map .gq-path line.gr-wait { opacity: 1; transform: none; }
+  :root[data-variant="game"] .gq-map .gq-path line.gr-wait { opacity: 1; transform: none; transition: none; }
 }
 
 /* ── forced colours and print ── */
@@ -211,7 +211,7 @@
 @media print {
   :root[data-variant="game"] .gq-map .gq-q.gr-wait,
   :root[data-variant="game"] .gq-map .gq-node.gr-wait .gq-node__pop,
-  :root[data-variant="game"] .gq-map .gq-path line.gr-wait { opacity: 1; transform: none; }
+  :root[data-variant="game"] .gq-map .gq-path line.gr-wait { opacity: 1; transform: none; transition: none; }
   :root[data-variant="game"] .gq-q, :root[data-variant="game"] .gq-stage, :root[data-variant="game"] .gq-hand > li { break-inside: avoid; }
   :root[data-variant="game"] .gq-plog, :root[data-variant="game"] .gq-tv__scroll, :root[data-variant="game"] .gq-stage { color: var(--gp-print-ink); background: var(--gp-print-paper); box-shadow: none; }
   :root[data-variant="game"] .gq-plog__lede, :root[data-variant="game"] .gq-kick, :root[data-variant="game"] .gq-stage__yr, :root[data-variant="game"] .gq-hand__flow dt, :root[data-variant="game"] .gq-hand__flow dd.tm { color: var(--gp-print-muted); }
