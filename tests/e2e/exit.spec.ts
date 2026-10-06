@@ -81,7 +81,9 @@ test.describe('MO-38: the game exit (the waveform)', () => {
     });
     expect(props.length).toBeGreaterThan(0);
     expect(props.every((p) => p === 'transform' || p === 'opacity'), props.join(',')).toBe(true);
-    expect(await page.locator('.desk *').evaluateAll((els) => els.filter((el) => getComputedStyle(el).willChange !== 'auto').length)).toBe(0);
+    // no will-change but the scoped exception: the two file layers keep theirs (transform) at rest and while leaving
+    expect(await page.locator('.desk *').evaluateAll((els) => els.filter((el) => getComputedStyle(el).willChange !== 'auto' && !el.matches('.desk > .file')).length)).toBe(0);
+    expect(await page.locator('.desk > .file').evaluateAll((els) => els.map((el) => getComputedStyle(el).willChange))).toEqual(['transform', 'transform']);
   });
 
   test('game exit: /game/ is requested at 880 ± 60 ms; nothing is requested before', async ({ page }) => {

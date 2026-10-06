@@ -397,6 +397,15 @@ describe('style rules over src/**', () => {
     expect(violationsOf('transition-property')).toEqual([]);
   });
 
+  it('the chooser sheets name will-change only on its two file layers (a scoped exception: the opening re-rasters the printout otherwise)', () => {
+    const found = ['src/styles/chooser.css', 'src/styles/chooser-exit.css'].flatMap((file) =>
+      nestedRules(stripComments(read(file)))
+        .filter((r) => /(^|[;\s])will-change\s*:/.test(r.body))
+        .map((r) => `${file} | ${[...r.at, r.selector].join(' ')} | ${/will-change\s*:\s*([^;]+)/.exec(r.body)![1]!.trim()}`),
+    );
+    expect(found).toEqual(['src/styles/chooser.css | .file--game | transform', 'src/styles/chooser.css | .file--data | transform']);
+  });
+
   it('keyframes use only transform and opacity', () => {
     expect(violationsOf('keyframes')).toEqual([]);
   });
