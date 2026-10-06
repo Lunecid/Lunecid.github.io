@@ -59,6 +59,14 @@ describe('GrowthReport.astro (general version)', () => {
     expect(html).toMatch(/<details class="gd-tv">\s*<summary>표로 보기<\/summary>/);
   });
 
+  it('the role tooltip and the cards name a level once (no "제1저자 — 제1저자.")', async () => {
+    for (const lang of ['ko', 'en'] as const) {
+      const html = await render(lang);
+      expect(html).not.toMatch(/제1저자 — 제1저자|First author — First author/);
+      expect(html).not.toMatch(/제1저자<span class="gd-tm gd-tm--block">제1저자|First author<span class="gd-tm gd-tm--block">First author/);
+    }
+  });
+
   it('English strings', async () => {
     const html = await render('en');
     expect(html).toContain('Growing as a data analyst');

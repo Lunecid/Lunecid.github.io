@@ -129,8 +129,9 @@ export const growthSteps: readonly GrowthStepDef[] = [
     source: { kind: 'paper', id: COG },
     role: 4,
     roleText: {
-      ko: `제1저자. 공개 경기 기록(Riot API) {pub.${COG}.fact.matches}경기에서 {pub.${COG}.fact.engagements} 개 교전을 구성하고, 패치 단위 시간순 홀드아웃으로 평가했습니다.`,
-      en: `First author. Built {pub.${COG}.fact.engagements} engagements from {pub.${COG}.fact.matches} public matches (Riot API) and evaluated them with a chronological patch holdout.`,
+      // the level name (제1저자 / First author) is shown beside this sentence everywhere, so it does not open it
+      ko: `공개 경기 기록(Riot API) {pub.${COG}.fact.matches}경기에서 {pub.${COG}.fact.engagements} 개 교전을 구성하고, 패치 단위 시간순 홀드아웃으로 평가했습니다.`,
+      en: `Built {pub.${COG}.fact.engagements} engagements from {pub.${COG}.fact.matches} public matches (Riot API) and evaluated them with a chronological patch holdout.`,
     },
     method: 4,
     // the builder puts the pairing count (research/cog-2026.ts overallAuc) and the best model in front of / after this

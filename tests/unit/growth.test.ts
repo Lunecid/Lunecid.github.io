@@ -177,6 +177,12 @@ describe('growth infographic data (GR-1)', () => {
     }
   });
 
+  it('a role sentence never repeats its level name (no "제1저자 — 제1저자.")', () => {
+    for (const lang of LANGS) {
+      for (const s of model[lang].steps) expect(s.role.text.toLowerCase().startsWith(s.role.name.toLowerCase()), `${lang} ${s.id}: ${s.role.text}`).toBe(false);
+    }
+  });
+
   it('the intro\'s first-role wording matches the first step\'s role level (owner ruling 2026-10-06)', () => {
     for (const lang of LANGS) {
       const first = model[lang].steps[0]!;
