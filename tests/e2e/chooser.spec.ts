@@ -5,6 +5,9 @@ test.describe('chooser memory (§5.5, success criterion 2)', () => {
     await page.goto('/');
     await expect(page.locator('h1')).toHaveText('백성은');
     await expect(page).toHaveURL(/\/$/);
+    // the first visit plays the opening, and a press during it only ends it (MO-41, opening.spec.ts): the choice is
+    // made once it is over, never at whatever moment the runner's speed lands the click
+    await expect(page.locator('html')).not.toHaveAttribute('data-intro');
     await page.locator('a[data-choose-variant="data"]').click();
     await expect(page).toHaveURL(/\/data\/$/);
     expect(await page.evaluate(() => localStorage.getItem('sb:variant'))).toBe('data');
