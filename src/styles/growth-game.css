@@ -1,6 +1,6 @@
 /* src/styles/growth-game.css — the growth infographic, game version (GrowthQuestLog.astro; owner-approved prototype
-   2026-10-06). Imported by game.css, so only game pages load it. Every selector starts with :root[data-variant="game"];
-   colours are role tokens (they re-point on game pages and in print) and the --gp-* white-panel values; no literal.
+   2026-10-06). Linked by GrowthQuestLog.astro (?url), so only the game research pages load it. Every selector starts
+   with :root[data-variant="game"]; colours are role tokens (they re-point on game pages and in print) and the --gp-* white-panel values; no literal.
    Phones and tablets: a vertical rail, node beside card. From 1000 px: an 8-column grid, cards in two rows around a
    168 px band where the path (SVG, preserveAspectRatio none, non-scaling strokes) and the absolutely placed nodes
    share percentage x positions (--x) and px y positions (--y) set by the component.

@@ -29,7 +29,7 @@ function selectors(css: string): string[] {
 }
 
 const SHEETS = [
-  { file: 'src/styles/growth-game.css', scope: ':root[data-variant="game"]', host: 'src/styles/game.css', wait: [/\.gq-q\.gr-wait/, /\.gq-node\.gr-wait \.gq-node__pop/, /line\.gr-wait/] },
+  { file: 'src/styles/growth-game.css', scope: ':root[data-variant="game"]', host: 'src/components/research/GrowthQuestLog.astro', wait: [/\.gq-q\.gr-wait/, /\.gq-node\.gr-wait \.gq-node__pop/, /line\.gr-wait/] },
   { file: 'src/styles/growth-data.css', scope: ':root[data-variant="data"]', host: 'src/styles/data-site.css', wait: [/\.gd-line\.gr-wait/, /\.gd-mk\.gr-wait/, /\.gd-dot\.gr-wait/, /\.gd-smc\.gr-wait/] },
 ] as const;
 
@@ -43,8 +43,8 @@ describe('growth infographic sheets (GR-2, GR-3)', () => {
       expect(bad).toEqual([]);
       expect(body.match(/#[0-9a-fA-F]{3,8}\b|\brgba?\(|\bhsla?\(/g) ?? []).toEqual([]);
       const name = sheet.file.split('/').pop()!;
-      expect(read(sheet.host)).toContain(`@import './${name}';`);
-      for (const other of ['src/styles/tokens.css', 'src/styles/base.css', 'src/styles/hud.css', 'src/styles/read.css']) expect(read(other)).not.toContain(name);
+      expect(read(sheet.host)).toMatch(sheet.host.endsWith('.css') ? `@import './${name}';` : `/styles/${name}?url'`);
+      for (const other of ['src/styles/tokens.css', 'src/styles/base.css', 'src/styles/hud.css', 'src/styles/read.css', 'src/styles/game.css']) expect(read(other)).not.toContain(name);
     });
 
     it(`${sheet.file}: :hover only inside @media (hover: hover), each with an :active twin`, () => {

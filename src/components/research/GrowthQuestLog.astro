@@ -4,11 +4,14 @@
  * vertical rail (node beside card); from 1000 px the cards sit in two rows around a path that climbs left to right, the
  * locked slots stacked at its end. Nodes are in-page links to their card (keyboard reachable, with a tooltip on hover
  * and focus). The party log (collaboration) is a white reading panel; the table view repeats every fact.
- * Rules: src/styles/growth-game.css (imported by game.css, game pages only); motion: src/scripts/growth-reveal.ts.
+ * Rules: src/styles/growth-game.css, one hashed external sheet linked here, so only the game research pages load it
+ * (an in-body stylesheet holds back only what follows it: the page head above paints first); motion:
+ * src/scripts/growth-reveal.ts.
  */
 import SectionHead from '../hud/SectionHead.astro';
 import type { GrowthModel, GrowthStep } from '../../lib/growth';
 import { GROWTH_LEVELS } from '../../data/growth';
+import growthGameCss from '../../styles/growth-game.css?url';
 
 interface Props {
   model: GrowthModel;
@@ -35,6 +38,7 @@ const them = (s: GrowthStep) => s.teamNote ? { label: s.teamNote.label, text: s.
 const roleFoot = GROWTH_LEVELS.map((lv) => `${lv} ${copy.role[lv]}`).join(' · ');
 const methodFoot = GROWTH_LEVELS.map((lv) => `${lv} ${copy.method[lv]}`).join(' · ');
 ---
+<link rel="stylesheet" href={growthGameCss} />
 <section id="growth" class="gq read read-sec" aria-labelledby="growth-title" data-growth>
   <svg class="gq-defs" width="0" height="0" aria-hidden="true" focusable="false">
     <symbol id="gq-pp" viewBox="0 0 15 17"><circle cx="7.5" cy="4.2" r="3.4" fill="currentColor"/><path d="M1 16.5c0-4 2.9-6.6 6.5-6.6S14 12.5 14 16.5z" fill="currentColor"/></symbol>
