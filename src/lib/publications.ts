@@ -7,6 +7,10 @@ import type { Lang } from '../i18n/ui';
 import { FORMAT_PHRASE } from './facts';
 import { pageHref, type HrefContext } from './links';
 import type { CartridgeProps } from './projects';
+import { CASE_ID } from '../data/research/cog-2026-case';
+
+/** Publications with a case-study overlay (src/lib/case/*): their cards and lists open it; /case/<id>/<lang>.json. */
+export const CASE_IDS = [CASE_ID] as const;
 
 export interface PaperCardData {
   id: string;

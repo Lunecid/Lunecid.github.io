@@ -143,11 +143,11 @@ export const strataRows = (): readonly StratumRow[] => [...CASE_FACTS.strata.pha
 export const fmtAuc = (v: number): string => v.toFixed(3);
 const range = ([lo, hi]: readonly [number, number]): string => `${fmtAuc(lo)}–${fmtAuc(hi)}`;
 
-/** Literature the sheet cites in its "details" (bibliographic data, shown in the references list). */
+/** Literature the sheet cites in its "details" (bibliographic data for the references list; *…* marks italics). */
 export const CASE_LITERATURE = {
-  shannon: { cite: 'Shannon, 1949', ref: 'C. E. Shannon, “Communication in the presence of noise,” <i>Proc. IRE</i>, vol. 37, no. 1, pp. 10–21, 1949.' },
-  cover: { cite: 'Cover & Thomas, 2006', ref: 'T. M. Cover and J. A. Thomas, <i>Elements of Information Theory</i>, 2nd ed. Hoboken, NJ, USA: Wiley, 2006.' },
-  grinsztajn: { cite: 'NeurIPS 2022', ref: 'L. Grinsztajn, E. Oyallon, and G. Varoquaux, “Why do tree-based models still outperform deep learning on typical tabular data?” in <i>Advances in Neural Information Processing Systems (NeurIPS)</i>, vol. 35, 2022, pp. 507–520.' },
+  shannon: { cite: 'Shannon, 1949', ref: 'C. E. Shannon, “Communication in the presence of noise,” *Proc. IRE*, vol. 37, no. 1, pp. 10–21, 1949.' },
+  cover: { cite: 'Cover & Thomas, 2006', ref: 'T. M. Cover and J. A. Thomas, *Elements of Information Theory*, 2nd ed. Hoboken, NJ, USA: Wiley, 2006.' },
+  grinsztajn: { cite: 'NeurIPS 2022', ref: 'L. Grinsztajn, E. Oyallon, and G. Varoquaux, “Why do tree-based models still outperform deep learning on typical tabular data?” in *Advances in Neural Information Processing Systems (NeurIPS)*, vol. 35, 2022, pp. 507–520.' },
 } as const;
 
 /**
