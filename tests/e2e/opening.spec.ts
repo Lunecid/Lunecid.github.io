@@ -8,9 +8,10 @@ import { test, expect } from './helpers';
 const GAME = 'a[data-choose-variant="game"]';
 
 /** A fresh context (a new session: the opening plays) with the page loaded, its animation clock read at the first frame. */
-async function fresh(browser: Browser, width: number, height: number, opts: BrowserContextOptions = {}, route = '/'): Promise<{ page: Page; close: () => Promise<void> }> {
+async function fresh(browser: Browser, width: number, height: number, opts: BrowserContextOptions = {}, route = '/', before?: (page: Page) => Promise<unknown>): Promise<{ page: Page; close: () => Promise<void> }> {
   const context = await browser.newContext({ viewport: { width, height }, ...opts });
   const page = await context.newPage();
+  if (before) await before(page);
   await page.addInitScript(() => {
     const w = window as Window & { __lcp?: { t: number; inDesk: boolean; inData: boolean; prop: boolean; size: number }[]; __cls?: number };
     w.__lcp = [];
@@ -40,9 +41,43 @@ const timing = (page: Page, sel: string, name: string) =>
     return { delay: Number(t.delay), duration: Number(t.duration), end: Number(t.endTime) };
   }, name);
 
+/**
+ * Holds the opening's end until __releaseOpening(): its done and safety timers (2400 and 3400 ms, OPENING_TIMING in
+ * src/lib/head-init.ts) are kept from firing, so a check reads the opening while it plays however slow the runner is
+ * (a loaded runner can reach a check after a timer-bound end). Records the requested delay of the timer that ended it
+ * (doneMs) and when that timer was armed (armedAt). A key press still ends the opening at once (skip calls done()).
+ */
+const holdOpeningEnd = (p: Page) =>
+  p.addInitScript((held: number[]) => {
+    type Rec = { doneMs: number | null; armedAt: number | null };
+    const w = window as Window & { __opening?: Rec; __releaseOpening?: () => void };
+    const rec: Rec = (w.__opening = { doneMs: null, armedAt: null });
+    const set = window.setTimeout.bind(window);
+    const toHold = new Set(held);
+    const waiting: { fn: () => void; ms: number }[] = [];
+    window.setTimeout = ((fn: () => void, ms?: number) => {
+      if (toHold.delete(Number(ms))) {
+        if (Number(ms) === held[0]) rec.armedAt = performance.now();
+        waiting.push({ fn, ms: Number(ms) });
+        return -waiting.length; // never fires by itself; clearTimeout of it is harmless
+      }
+      return set(fn, ms);
+    }) as typeof window.setTimeout;
+    w.__releaseOpening = () => {
+      const d = document.documentElement;
+      for (const { fn, ms } of waiting.filter((x) => x.ms === held[0])) {
+        const before = d.hasAttribute('data-intro');
+        fn();
+        if (before && !d.hasAttribute('data-intro')) rec.doneMs = ms;
+      }
+    };
+  }, [2400, 3400]);
+
 test.describe('MO-41: the opening', () => {
   test('MO-41: first visit — device at 280 ms, toss lands at ~2.15 s, rubber stamp by 2.40 s, data-intro gone by 2.6 s; sb:intro = 1', async ({ browser }) => {
-    const { page, close } = await fresh(browser, 1280, 800);
+    // the end is held (holdOpeningEnd) so every check reads the opening while it plays; "done at 2.40 s after the first
+    // paint" is the requested delay of the timer that ends it, armed at the first paint
+    const { page, close } = await fresh(browser, 1280, 800, {}, '/', holdOpeningEnd);
     await expect(page.locator('html')).toHaveAttribute('data-intro', 'opening');
     expect(await page.evaluate(() => sessionStorage.getItem('sb:intro'))).toBe('1');
     const rise = await timing(page, '.file--game .dev', 'op-rise');
@@ -55,11 +90,12 @@ test.describe('MO-41: the opening', () => {
     // the overlay plays on the lit screen and is gone before the toss
     expect((await timing(page, '.ov__st', 'op-status'))!.end).toBeLessThanOrEqual(toss!.delay + 1);
     await expect(page.locator('.ov')).toBeVisible();
-    await page.waitForFunction(() => !document.documentElement.hasAttribute('data-intro'), null, { timeout: 2600 + 1000 });
-    // done (data-intro removed, sb:intro-done) 2.40 s after the first paint: within 2.6 s of it
-    const { doneAt, fcp } = await page.evaluate(() => ({ doneAt: (window as Window & { __doneAt?: number }).__doneAt ?? -1, fcp: performance.getEntriesByName('first-contentful-paint')[0]?.startTime ?? -1 }));
-    expect(doneAt - fcp).toBeGreaterThanOrEqual(2400 - 20);
-    expect(doneAt - fcp).toBeLessThan(2600);
+    await page.evaluate(() => (window as Window & { __releaseOpening?: () => void }).__releaseOpening!());
+    await page.waitForFunction(() => !document.documentElement.hasAttribute('data-intro'));
+    // done (data-intro removed, sb:intro-done) by the 2400 ms timer armed at the first paint
+    const { rec, fcp } = await page.evaluate(() => ({ rec: (window as Window & { __opening?: { doneMs: number | null; armedAt: number | null } }).__opening!, fcp: performance.getEntriesByName('first-contentful-paint')[0]?.startTime ?? -1 }));
+    expect(rec.doneMs, JSON.stringify(rec)).toBe(2400);
+    expect(rec.armedAt!, JSON.stringify({ rec, fcp })).toBeGreaterThanOrEqual(fcp);
     await expect(page.locator('.ov')).toBeHidden();
     await close();
   });
@@ -101,12 +137,13 @@ test.describe('MO-41: the opening', () => {
       ['touchstart', (page) => page.touchscreen.tap(8, 400), { hasTouch: true, isMobile: true }],
     ];
     for (const [name, input, opts] of inputs) {
-      const { page, close } = await fresh(browser, name === 'touchstart' ? 390 : 1280, 800, opts);
+      // the opening's own end is held (holdOpeningEnd): only the input can end it, however slow the runner
+      const { page, close } = await fresh(browser, name === 'touchstart' ? 390 : 1280, 800, opts, '/', holdOpeningEnd);
       await page.waitForTimeout(500);
       await expect(page.locator('html'), name).toHaveAttribute('data-intro', 'opening');
       await input(page);
-      // ended by the input itself (synchronously, in its listener): well before the opening would end
-      await expect.poll(() => page.evaluate(() => document.documentElement.hasAttribute('data-intro')), { message: `${name}: ended`, timeout: 300 }).toBe(false);
+      // ended by the input itself (synchronously, in its listener): the opening's own end is held
+      await expect.poll(() => page.evaluate(() => document.documentElement.hasAttribute('data-intro')), { message: `${name}: ended` }).toBe(false);
       // at rest at once: no animation left on the toss, the overlay gone
       expect(await page.locator('.desk > .file--data').evaluate((el) => el.getAnimations().length), name).toBe(0);
       await expect(page.locator('.ov'), name).toBeHidden();
@@ -115,7 +152,8 @@ test.describe('MO-41: the opening', () => {
   });
 
   test('MO-41: a press during the opening ends it without navigating or striking', async ({ browser }) => {
-    const { page, close } = await fresh(browser, 1280, 800);
+    // the opening's own end is held (holdOpeningEnd), so the press always comes while it plays
+    const { page, close } = await fresh(browser, 1280, 800, {}, '/', holdOpeningEnd);
     await page.waitForTimeout(600);
     const r = await page.locator('.file--game .dev__body').boundingBox();
     await page.mouse.click(r!.x + 40, r!.y + 40);
@@ -167,8 +205,9 @@ test.describe('MO-41: the opening', () => {
   });
 
   test('MO-27: neon glyphs animate opacity only, at most three cycles, staggered 10–30 ms; none animates after the opening or after a key press', async ({ browser }) => {
-    const { page, close } = await fresh(browser, 1280, 800);
-    await page.waitForSelector('.ng');
+    // each line is split just before it types: read them once the last one is (the opening held until then)
+    const { page, close } = await fresh(browser, 1280, 800, {}, '/', holdOpeningEnd);
+    await page.waitForSelector('.cv__sn .ng', { state: 'attached' });
     const info = await page.evaluate(() => {
       const lines = [...document.querySelectorAll('.ng')].map((g) => g.parentElement!.parentElement!);
       const uniq = [...new Set(lines)];
@@ -190,11 +229,12 @@ test.describe('MO-41: the opening', () => {
   });
 
   test('MO-27: neon never touches the h1, the h2s, display words, taglines, contents or CTAs; after the opening the labels are plain text and the DOM stays ≤ 800 nodes (375)', async ({ browser }) => {
-    const { page, close } = await fresh(browser, 375, 812);
-    await page.waitForSelector('.ng');
+    const { page, close } = await fresh(browser, 375, 812, {}, '/', holdOpeningEnd);
+    await page.waitForSelector('.cv__sn .ng', { state: 'attached' }); // every line split: the DOM's peak (.cv__sn may be hidden at 375)
     expect(await page.locator('h1 .ng, h2 .ng, .disp .ng, .intro .ng, .pr__intro .ng, .toc .ng, .cta .ng, .file--data .ng').count()).toBe(0);
     const peak = await page.evaluate(() => document.getElementsByTagName('*').length);
     expect(peak).toBeLessThanOrEqual(800);
+    await page.evaluate(() => (window as Window & { __releaseOpening?: () => void }).__releaseOpening!());
     await page.waitForFunction(() => !document.documentElement.hasAttribute('data-intro'));
     expect(await page.locator('.ng, .file--game .sr-only').count()).toBe(0);
     expect(await page.evaluate(() => document.getElementsByTagName('*').length)).toBeLessThanOrEqual(800);
