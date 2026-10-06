@@ -643,13 +643,14 @@
 
 /* ═══ the printout (PrintoutCover) ═══ */
 .file--data {
-  /* brush tiles per pigment and direction: the general version’s pre-rendered tiles (scripts/paint/paint.mjs), the same
-     files and declarations as paint.css, only the four the printout paints with; then the frayed outline (an SVG mask).
-     tests/unit/chooser-paint.test.ts pins them. */
-  --tex-rh: image-set(url("./paint/paint-rh.webp") 1x, url("./paint/paint-rh-2x.webp") 2x);
-  --tex-yh: image-set(url("./paint/paint-yh.webp") 1x, url("./paint/paint-yh-2x.webp") 2x);
-  --tex-yv: image-set(url("./paint/paint-yv.webp") 1x, url("./paint/paint-yv-2x.webp") 2x);
-  --tex-bv: image-set(url("./paint/paint-bv.webp") 1x, url("./paint/paint-bv-2x.webp") 2x);
+  /* the paint tiles (border-image fills, below): none until the page has loaded (.desk[data-paint], set by chooser.ts),
+     so the fields show their flat paint (the tiles' mean colour) and the tiles stay off the first load's critical path
+     (they would share it with the fonts the LCP text waits for); then the frayed outline (an SVG mask) */
+  --tex-rh: none;
+  --tex-yh: none;
+  --tex-yv: none;
+  --tex-bv: none;
+  --paper-tex: none;
   --ragbox: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='132' height='132'%3E%3Cpath d='M2.4 2.4 6 2.5 8 2.46 10 2.39 12 2.58 14 2.72 16 2.65 18 2.97 20 3.5 22 3.5 24 3.41 26 3.41 28 3.28 30 2.73 32 2.34 34 2.29 36 2.24 38 2.13 40 2.23 42 2.34 44 2.17 46 2.08 48 2.32 50 2.5 52 2.47 54 2.5 56 2.46 58 2.14 60 1.9 62 2.06 64 2.26 66 2.29 68 2.42 70 2.55 72 2.41 74 2.28 76 2.45 78 2.52 80 2.27 82 2.05 84 1.91 86 1.6 88 1.43 90 1.66 92 1.89 94 1.82 96 1.77 98 1.8 100 1.63 102 1.48 104 1.63 106 1.73 108 1.52 110 1.4 112 1.52 114 1.59 116 1.74 118 2.19 120 2.55 122 2.51 124 2.43 126 2.5 129.6 2.4 129.2 6 129.18 8 129.03 10 129.11 12 129.48 14 129.65 16 129.54 18 129.5 20 129.43 22 129.18 24 129.15 26 129.44 28 129.6 30 129.54 32 129.64 34 129.79 36 129.77 38 129.87 40 130.15 42 130.16 44 129.84 46 129.63 48 129.55 50 129.39 52 129.41 54 129.72 56 129.86 58 129.71 60 129.71 62 129.84 64 129.82 66 129.82 68 129.98 70 129.94 72 129.63 74 129.54 76 129.75 78 129.9 80 130.1 82 130.47 84 130.63 86 130.45 88 130.23 90 130.05 92 130.2 94 130.4 96 130.43 98 130.32 100 129.94 102 129.59 104 129.56 106 129.62 108 129.86 110 130.17 112 130.13 114 129.7 116 129.45 118 129.5 120 129.42 122 129.22 124 129.2 126 129.6 129.6 126 130.33 124 130.14 122 130.16 120 130.21 118 129.8 116 129.27 114 128.99 112 128.88 110 128.86 108 129.13 106 129.51 104 129.5 102 129.29 100 129.3 98 129.33 96 129.22 94 129.26 92 129.4 90 129.22 88 128.81 86 128.76 84 128.9 82 129.24 80 129.67 78 130.13 76 130.04 74 129.77 72 129.76 70 129.85 68 129.75 66 129.72 64 129.8 62 129.68 60 129.49 58 129.67 56 129.97 54 130.03 52 130.02 50 130.04 48 129.81 46 129.48 44 129.5 42 129.71 40 129.73 38 129.75 36 129.93 34 129.99 32 129.96 30 130.24 28 130.59 26 130.58 24 130.42 22 130.37 20 130.21 18 130 16 130.13 14 130.43 12 130.43 10 130.32 8 130.37 6 130.33 2.4 129.6 1.63 126 1.64 124 1.98 122 2.23 120 2.41 118 2.72 116 2.84 114 2.69 112 2.7 110 2.93 108 2.94 106 2.78 104 2.74 102 2.64 100 2.4 98 2.43 96 2.76 94 2.9 92 2.8 90 2.77 88 2.64 86 2.29 84 2.15 82 2.27 80 2.21 78 1.97 76 1.92 74 1.97 72 1.92 70 2.08 68 2.46 66 2.56 64 2.35 62 2.23 60 2.17 58 2.07 56 2.18 54 2.56 52 2.74 50 2.45 48 2.36 46 2.7 44 2.65 42 2.36 40 2.41 38 2.28 36 1.83 34 1.58 32 1.55 30 1.46 28 1.47 26 1.71 24 1.77 22 1.59 20 1.61 18 1.83 16 1.89 14 1.88 12 1.99 10 1.92 8 1.63 6Z'/%3E%3C/svg%3E");
   /* the art paper's cotton tooth (a fine neutral speckle, ink at up to about 2.5%; a mask over its ink, .paper::after;
      the formation, the pulp's soft cloudiness, is a pre-rendered tile on .paper: scripts/paint/paper.mjs); the rubber
@@ -878,6 +879,16 @@
     inset -9px 0 12px -9px color-mix(in srgb, var(--pr-ink) 14%, transparent),
     inset 0 0 0 200px color-mix(in srgb, var(--hud-strong) 30%, transparent);
 }
+/* brush tiles per pigment and direction: the general version’s pre-rendered tiles (scripts/paint/paint.mjs), the same
+   files and declarations as paint.css, only the four the printout paints with; the paper's formation tile
+   (scripts/paint/paper.mjs). tests/unit/chooser-paint.test.ts and chooser-paper.test.ts pin them. */
+.desk[data-paint] > .file--data {
+  --tex-rh: image-set(url("./paint/paint-rh.webp") 1x, url("./paint/paint-rh-2x.webp") 2x);
+  --tex-yh: image-set(url("./paint/paint-yh.webp") 1x, url("./paint/paint-yh-2x.webp") 2x);
+  --tex-yv: image-set(url("./paint/paint-yv.webp") 1x, url("./paint/paint-yv-2x.webp") 2x);
+  --tex-bv: image-set(url("./paint/paint-bv.webp") 1x, url("./paint/paint-bv-2x.webp") 2x);
+  --paper-tex: url("./paint/paper-formation.webp");
+}
 /* the paper: white cotton-rag art paper with a soft deckle edge (Chrome / Safari; elsewhere a straight edge). Layers,
    bottom to top: the paper colour with its formation (a pre-rendered tile, scripts/paint/paper.mjs, painted as the
    border-image fill), the tooth (::after: the prototype's SVG as a mask over its ink), the plate mark (::before), the
@@ -890,7 +901,7 @@
   overflow: hidden;
   isolation: isolate;
   background-color: var(--pr-paper);
-  border-image: url("./paint/paper-formation.webp") 0 fill / 0 / 0 repeat;
+  border-image: var(--paper-tex) 0 fill / 0 / 0 repeat;
   -webkit-mask-box-image: var(--deckle);
 }
 .file--data .paper::after {
@@ -952,8 +963,8 @@
 .file--data .pr__disp > .pr__row1 { display: flex; }
 /* the red field runs out into the left margin (the blue does the same on the right): fields that touch the edge of
    the print, as Mondrian's touch the edge of the canvas */
-.file--data .pr__red { display: block; margin-left: calc(4px - var(--pr-pad-x)); padding: .16em .24em .14em calc(var(--pr-pad-x) - 4px); color: var(--pr-on-color); background: var(--pr-red); border-image: var(--tex-rh) 0 fill / 0 / 0 repeat; -webkit-mask-box-image: var(--rag); }
-.file--data .pr__dab { display: block; flex: none; width: max(14px, .3em); height: .52em; margin-bottom: .06em; background: var(--pr-yellow); border-image: var(--tex-yv) 0 fill / 0 / 0 repeat; -webkit-mask-box-image: var(--rag-s); }
+.file--data .pr__red { display: block; margin-left: calc(4px - var(--pr-pad-x)); padding: .16em .24em .14em calc(var(--pr-pad-x) - 4px); color: var(--pr-on-color); background: var(--ed-red-paint); border-image: var(--tex-rh) 0 fill / 0 / 0 repeat; -webkit-mask-box-image: var(--rag); }
+.file--data .pr__dab { display: block; flex: none; width: max(14px, .3em); height: .52em; margin-bottom: .06em; background: var(--ed-yellow-paint); border-image: var(--tex-yv) 0 fill / 0 / 0 repeat; -webkit-mask-box-image: var(--rag-s); }
 
 /* the rubber stamp, applied by hand after printing: beside the banner's short first line, turned a little; on a narrow
    sheet beside the Korean title, so it never lands on the paint */
@@ -998,7 +1009,7 @@
 /* the foot line, and the blue field (vertical strokes) painted at its right, down to the foot margin */
 .file--data .pr__foot { grid-area: foot; display: flex; align-items: stretch; gap: 12px; min-width: 0; font: 600 var(--fs-label)/1.4 var(--pr-font-text); letter-spacing: .04em; color: var(--pr-ink-2); text-transform: uppercase; }
 .file--data .pr__foot-t { flex: none; align-self: center; white-space: nowrap; }
-.file--data .pr__blue { display: block; flex: 0 1 clamp(30px, 22%, 140px); min-width: 0; min-height: 30px; margin: -8px calc(4px - var(--pr-pad-x)) -4px auto; background: var(--pr-blue); border-image: var(--tex-bv) 0 fill / 0 / 0 repeat; -webkit-mask-box-image: var(--rag); }
+.file--data .pr__blue { display: block; flex: 0 1 clamp(30px, 22%, 140px); min-width: 0; min-height: 30px; margin: -8px calc(4px - var(--pr-pad-x)) -4px auto; background: var(--ed-blue-paint); border-image: var(--tex-bv) 0 fill / 0 / 0 repeat; -webkit-mask-box-image: var(--rag); }
 @container (min-width: 440px) { .file--data .pr__blue { min-height: 40px; margin-top: -14px; } }
 /* a narrow file sets the job header and the foot line a size down and untracked, so each stays one printed line */
 @container (max-width: 439px) { .file--data .pr__hdr, .file--data .pr__foot { font-size: var(--fs-min); letter-spacing: 0; } .file--data .pr__foot { gap: 6px; } }
@@ -1016,7 +1027,7 @@
   right: -2px;
   top: calc(50% + .1em);
   height: max(.44em, 6px);
-  background: var(--pr-link-stroke);
+  background: var(--ed-yellow-paint);
   border-image: var(--tex-yh) 0 fill / 0 / 0 repeat;
   -webkit-mask-box-image: var(--rag-s);
   transform: scaleX(0);

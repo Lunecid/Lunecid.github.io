@@ -70,7 +70,7 @@ describe('PrintoutCover.astro (MO-23)', () => {
     // slow device paints it after the toss: the formation is a pre-rendered tile (scripts/paint/paper.mjs) painted as
     // the paper's border-image fill (a border image is never an LCP candidate; a background image is, also on a
     // pseudo-element), the tooth is the prototype's SVG as a mask over its flat colour (nor is a mask)
-    expect(css).toMatch(/\.paper\s*\{[^}]*background-color:\s*var\(--pr-paper\);[^}]*border-image:\s*url\("\.\/paint\/paper-formation\.webp"\) 0 fill \/ 0 \/ 0 repeat;/);
+    expect(css).toMatch(/\.paper\s*\{[^}]*background-color:\s*var\(--pr-paper\);[^}]*border-image:\s*var\(--paper-tex\) 0 fill \/ 0 \/ 0 repeat;/);
     expect(css).not.toMatch(/\.paper\s*\{[^}]*background-image/);
     expect(css).toMatch(/\.paper::after\s*\{[^}]*background-color:\s*#1F1F1F;[^}]*-webkit-mask:\s*var\(--tooth\) 0 0 \/ 180px 180px;\s*mask:\s*var\(--tooth\) 0 0 \/ 180px 180px;/);
     expect(css).toMatch(/\.paper\s*\{[^}]*-webkit-mask-box-image:\s*var\(--deckle\)/);
@@ -85,7 +85,12 @@ describe('PrintoutCover.astro (MO-23)', () => {
   it('paint: red field behind DATA (white type), yellow dab, blue foot field, frayed edges; the link is ink with a yellow stroke that sweeps by transform', () => {
     // named change (late-LCP fix): each field's brush tile is its border-image fill over the flat pigment (never an LCP
     // candidate, however late the tile arrives)
-    const brush = (tex: string) => `background:\\s*var\\(--pr-[a-z-]+\\);[^}]*border-image:\\s*var\\(--tex-${tex}\\) 0 fill \\/ 0 \\/ 0 repeat;`;
+    // until the page has loaded (chooser.ts sets .desk[data-paint]) the tiles are none and the fields show their flat
+    // paint, the tiles' mean colour (--ed-*-paint, as on the general version), so the tiles never compete with the fonts
+    const brush = (tex: string) => `background:\\s*var\\(--ed-[a-z]+-paint\\);[^}]*border-image:\\s*var\\(--tex-${tex}\\) 0 fill \\/ 0 \\/ 0 repeat;`;
+    expect(css).toMatch(/\.file--data\s*\{[^}]*--tex-rh: none;\s*--tex-yh: none;\s*--tex-yv: none;\s*--tex-bv: none;\s*--paper-tex: none;/);
+    expect(css).toMatch(/\.desk\[data-paint\] > \.file--data\s*\{\s*--tex-rh: image-set\(/);
+    expect(css).toMatch(/\.desk\[data-paint\] > \.file--data\s*\{[^}]*--paper-tex: url\("\.\/paint\/paper-formation\.webp"\);/);
     expect(css).toMatch(new RegExp(`\\.pr__red\\s*\\{[^}]*color:\\s*var\\(--pr-on-color\\);[^}]*${brush('rh')}`));
     expect(css).toMatch(new RegExp(`\\.pr__dab\\s*\\{[^}]*${brush('yv')}`));
     expect(css).toMatch(new RegExp(`\\.pr__blue\\s*\\{[^}]*${brush('bv')}`));

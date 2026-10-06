@@ -643,10 +643,14 @@ describe('the exit sheet (MO-38)', () => {
     try {
       attachExitSheet();
       expect(document.querySelector('use')!.hasAttribute('href')).toBe(false); // MO-36: the props' sprite waits for load too
+      // the printout's paint tiles too: until data-paint the fields show their flat paint (the tiles stay off the
+      // first load's critical path, next to the fonts the LCP text waits for)
+      expect(document.querySelector('.desk')!.hasAttribute('data-paint')).toBe(false);
       expect(document.head.querySelectorAll('link[data-chooser-exit]')).toHaveLength(0);
       window.dispatchEvent(new Event('load'));
       expect(document.head.querySelectorAll('link[data-chooser-exit]')).toHaveLength(1);
       expect(document.querySelector('use')!.getAttribute('href')).toBe('/s.svg#prop-kb');
+      expect(document.querySelector('.desk')!.hasAttribute('data-paint')).toBe(true);
       attachExitSheet();
       window.dispatchEvent(new Event('load'));
       expect(document.head.querySelectorAll('link[data-chooser-exit]')).toHaveLength(1);

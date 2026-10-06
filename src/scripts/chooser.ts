@@ -328,8 +328,10 @@ export function attachExitSheet(doc: Document = document, desk: HTMLElement | nu
   const add = () => {
     if (doc.querySelector('link[data-chooser-exit]')) return;
     if (desk) buildExitLayers(desk);
-    // the desk's props: their sprite is fetched only now (DeskProps.astro)
+    // the desk's props: their sprite is fetched only now (DeskProps.astro); so are the printout's paint tiles
+    // (chooser.css .desk[data-paint]: until then its fields show their flat paint)
     desk?.querySelectorAll<SVGUseElement>('.props use[data-href]').forEach((use) => use.setAttribute('href', use.dataset.href ?? ''));
+    desk?.setAttribute('data-paint', '');
     const link = doc.createElement('link');
     link.rel = 'stylesheet';
     link.href = exitSheet;

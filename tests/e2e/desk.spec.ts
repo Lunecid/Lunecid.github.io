@@ -189,6 +189,11 @@ test.describe('MO-23: the static desk', () => {
     await openAt(page, '/?choose', 1280, 800);
     // named change (late-LCP fix): the only images are the printout's pre-rendered paint tiles, at this screen's scale
     expect(images.map((u) => /\/_astro\/([a-z-]+?)(-2x)?\.[\w-]+\.webp$/.exec(u)?.[1] ?? u).sort()).toEqual(['paint-bv', 'paint-rh', 'paint-yh', 'paint-yv', 'paper-formation']);
+    // … and only after the load event (the fields show their flat paint until then; the fonts come first)
+    expect(await page.evaluate(() => {
+      const load = (performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming).loadEventStart;
+      return performance.getEntriesByType('resource').filter((e) => /\.webp$/.test(e.name) && e.startTime < load).map((e) => e.name);
+    })).toEqual([]);
     const preloads = await page.locator('link[rel="preload"]').evaluateAll((els) => els.map((el) => el.getAttribute('href') ?? ''));
     expect(preloads.length).toBeGreaterThan(0);
     for (const href of preloads) expect(href).toMatch(/sb-sans/);
