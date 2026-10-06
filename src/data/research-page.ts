@@ -98,8 +98,8 @@ export const researchPage = {
       title: { ko: 'PUBG 시공간 그래프 생존 모델', en: 'PUBG spatiotemporal graph survival model' },
       workTitle: { text: { ko: PUBG_WORKING_TITLE, en: PUBG_WORKING_TITLE }, tentative: true },
       body: {
-        ko: '배틀그라운드 경기를 시간 단계별 그래프(플레이어, 팀, 자기장)로 만들고, 플레이어가 언제 탈락할지 위험도를 예측하는 생존 모델을 만들고 있습니다.',
-        en: 'Represents each PUBG match as a sequence of graphs (players, teams, the play zone) and builds a survival model that predicts each player’s elimination risk over time.',
+        ko: '배틀그라운드 경기를 시간 단계별 그래프(플레이어, 팀, 자기장)로 만들고, 플레이어가 언제 탈락할지 위험도를 예측하는 생존 모델을 만들 계획입니다.',
+        en: 'Represents each PUBG match as a sequence of graphs (players, teams, the play zone) and plans to build a survival model that predicts each player’s elimination risk over time.',
       },
       // Not linked yet: PUBG_Lab stays unlinked until the owner marks the repository ready.
       href: null,

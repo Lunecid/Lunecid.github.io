@@ -291,3 +291,16 @@ describe('ongoing work titles: one source (owner, 2026-10-06)', () => {
     }
   });
 });
+
+describe('a planned item reads as planned (owner ruling 2026-10-06)', () => {
+  it('no 예정 / Planned item describes work in progress', () => {
+    const planned = researchPage.ongoing.filter((o) => o.state === 'planned');
+    expect(planned.map((o) => o.id)).toEqual(['pubg-survival']);
+    for (const o of planned) {
+      expect(o.body.ko, o.id).not.toMatch(/고 있습니다/);
+      expect(o.body.en, o.id).not.toMatch(/\bis building\b|\bbuilds\b/);
+    }
+    expect(planned[0]?.body.ko).toContain('생존 모델을 만들 계획입니다');
+    expect(planned[0]?.body.en).toContain('plans to build a survival model');
+  });
+});
