@@ -35,6 +35,17 @@ const yOf = (i: number): number => Y_BOT - (i * (Y_BOT - Y_TOP)) / (total - 1);
 const pts = Array.from({ length: total }, (_, i) => ({ x: xOf(i), y: yOf(i) }));
 const r1 = (n: number) => Math.round(n * 10) / 10;
 const them = (s: GrowthStep) => s.teamNote ? { label: s.teamNote.label, text: s.teamPart ? `${s.teamNote.text} (${s.teamPart.text})` : s.teamNote.text } : s.teamPart;
+// Constellation look (owner request 2026-10-07): a faint star field behind the path (desktop band), a glow on every lit
+// node that flares when the line reaches it and then twinkles. Positions and twinkle offsets are fixed per index (no
+// randomness, so builds stay identical); the glow and the sky are decoration only (aria-hidden).
+const SKY = Array.from({ length: 34 }, (_, k) => ({
+  x: r1((k * 61.8 + 7) % 100),
+  y: r1(8 + ((k * 37 + 11) % 152)),
+  s: 1 + (k % 3) * 0.6,
+  tw: k % 4 === 0,
+  d: r1(((k * 13) % 29) / 10),
+}));
+const twinkle = (i: number) => r1(((i * 7) % 11) / 5);
 const roleFoot = GROWTH_LEVELS.map((lv) => `${lv} ${copy.role[lv]}`).join(' · ');
 const methodFoot = GROWTH_LEVELS.map((lv) => `${lv} ${copy.method[lv]}`).join(' · ');
 ---
@@ -56,7 +67,10 @@ const methodFoot = GROWTH_LEVELS.map((lv) => `${lv} ${copy.method[lv]}`).join(' 
       <li><span class="gq-pips" aria-hidden="true"><i class="on"></i><i class="on"></i><i></i><i></i></span>{copy.legend.levels}</li>
     </ul>
 
-    <div class="gq-map" data-gr-fig style={`--gq-band: ${BAND}px`}>
+    <div class="gq-map" data-gr-fig data-gr-live style={`--gq-band: ${BAND}px`}>
+      <div class="gq-sky" aria-hidden="true">
+        {SKY.map((st) => <i class:list={[{ tw: st.tw }]} style={`--x: ${st.x}; --y: ${st.y}; --s: ${st.s}px; --d: ${st.d}s`}></i>)}
+      </div>
       <svg class="gq-path" viewBox={`0 0 1000 ${BAND}`} preserveAspectRatio="none" aria-hidden="true" focusable="false">
         {steps.map((_, i) => {
           const p = pts[i]!;
@@ -73,9 +87,9 @@ const methodFoot = GROWTH_LEVELS.map((lv) => `${lv} ${copy.method[lv]}`).join(' 
 
       {steps.map((s, i) => (
         <Fragment>
-          <a class:list={['gq-node', { 'gq-node--ach': s.award !== null }]} href={`#gr-q-${s.id}`} data-gr-i={i} style={`--x: ${r1(pts[i]!.x)}; --y: ${r1(pts[i]!.y)}`}
+          <a class:list={['gq-node', { 'gq-node--ach': s.award !== null }]} href={`#gr-q-${s.id}`} data-gr-i={i} style={`--x: ${r1(pts[i]!.x)}; --y: ${r1(pts[i]!.y)}; --tw: ${twinkle(i)}s`}
             aria-label={`${no(i)} ${s.title}, ${s.period}${s.award ? `, ${s.award.name}` : ''}`}>
-            <span class="gq-node__pop" aria-hidden="true"><i></i></span>
+            <span class="gq-node__pop" aria-hidden="true"><b class="gq-glow"></b>{s.award && <b class="gq-glint"></b>}<i></i></span>
             <span class="gq-tip" aria-hidden="true"><b>{no(i)} · {s.title}</b>{s.period} · Lv.{s.role.level} {s.role.name}</span>
           </a>
           <article class:list={['gq-q', i % 2 === 0 ? 'gq-q--top' : 'gq-q--bot', { 'gq-q--pre': i === steps.length - 1 }]} id={`gr-q-${s.id}`} data-gr-i={i} style={`--c: ${i + 1}`} aria-labelledby={`gr-qt-${s.id}`}>

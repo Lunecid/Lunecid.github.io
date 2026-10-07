@@ -19,6 +19,13 @@ const reducedNow = (): boolean =>
 export function initGrowthReveal(root: ParentNode = document, opts: RevealOptions = {}): void {
   const IO = opts.io ?? (typeof IntersectionObserver === 'function' ? IntersectionObserver : undefined);
   if (!IO || (opts.reduced ?? reducedNow)()) return;
+  // [data-gr-live] figures (the game version's constellation): data-gr-in while any of it is on screen, so its
+  // endless twinkle (CSS) runs only then; under reduced motion and without IntersectionObserver CSS shows it still.
+  for (const fig of root.querySelectorAll<HTMLElement>('[data-gr-live]')) {
+    new IO((entries) => {
+      for (const entry of entries) fig.toggleAttribute('data-gr-in', entry.isIntersecting);
+    }).observe(fig);
+  }
   for (const fig of root.querySelectorAll<HTMLElement>('[data-gr-fig]')) {
     const parts = Array.from(fig.querySelectorAll<HTMLElement>('[data-gr-i]'));
     if (parts.length === 0) continue;

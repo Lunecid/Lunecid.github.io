@@ -25,7 +25,7 @@
 
 /* ── the map: phone and tablet rail ── */
 :root[data-variant="game"] .gq-map { position: relative; margin-top: 32px; display: grid; grid-template-columns: 44px minmax(0, 1fr); column-gap: 8px; row-gap: 18px; }
-:root[data-variant="game"] .gq-path, :root[data-variant="game"] .gq-mark { display: none; }
+:root[data-variant="game"] .gq-path, :root[data-variant="game"] .gq-mark, :root[data-variant="game"] .gq-sky { display: none; }
 :root[data-variant="game"] .gq-node {
   position: relative; z-index: 2; grid-column: 1; align-self: start; display: grid; place-items: center;
   width: 44px; height: 44px; color: inherit; text-decoration: none;
@@ -44,6 +44,23 @@
   :root[data-variant="game"] .gq-node:hover i { background: var(--accent); }
   :root[data-variant="game"] .gq-node--ach:hover i, :root[data-variant="game"] .gq-node--lock:hover i { background: var(--hud-bg); box-shadow: 0 0 0 2.5px var(--accent); }
 }
+/* constellation (owner request 2026-10-07): each lit node is a star — a soft cyan glow behind the diamond (and a
+   four-point glint on achievement nodes) that flares when the path reaches it, then twinkles while the map is on
+   screen (data-gr-in from growth-reveal.ts). Locked slots stay unlit. Opacity and transform only; still under reduce. */
+:root[data-variant="game"] .gq-node__pop { position: relative; }
+:root[data-variant="game"] .gq-node__pop > i { position: relative; z-index: 1; }
+:root[data-variant="game"] .gq-glow {
+  position: absolute; left: 50%; top: 50%; width: 46px; height: 46px; margin: -23px 0 0 -23px; border-radius: 50%; pointer-events: none;
+  background: radial-gradient(circle, color-mix(in srgb, var(--hl2) 75%, transparent) 0, color-mix(in srgb, var(--hl2) 28%, transparent) 40%, transparent 70%);
+  opacity: .85;
+}
+:root[data-variant="game"] .gq-glint { position: absolute; left: 50%; top: 50%; width: 30px; height: 30px; margin: -15px 0 0 -15px; pointer-events: none; opacity: .75; }
+:root[data-variant="game"] .gq-glint::before, :root[data-variant="game"] .gq-glint::after {
+  content: ""; position: absolute; left: 50%; top: 0; width: 1.5px; height: 100%; margin-left: -.75px;
+  background: linear-gradient(to bottom, transparent, var(--hl2) 50%, transparent);
+}
+:root[data-variant="game"] .gq-glint::after { transform: rotate(90deg); }
+
 /* the tooltip (desktop): the step's number, title, period and role, on hover and on keyboard focus */
 :root[data-variant="game"] .gq-tip { display: none; }
 
@@ -116,6 +133,13 @@
   :root[data-variant="game"] .gq-q--lock { grid-row: var(--r); grid-column: 8; align-self: start; margin: 0 0 10px; }
   :root[data-variant="game"] .gq-path { display: block; grid-row: 2; grid-column: 1 / -1; width: 100%; height: var(--gq-band); overflow: visible; }
   :root[data-variant="game"] .gq-path line { vector-effect: non-scaling-stroke; }
+  /* the star field behind the path: tiny fixed dots (--x %, --y px), a few of them twinkling */
+  :root[data-variant="game"] .gq-sky { display: block; position: relative; grid-row: 2; grid-column: 1 / -1; height: var(--gq-band); pointer-events: none; }
+  :root[data-variant="game"] .gq-sky i {
+    position: absolute; left: calc(var(--x) * 1%); top: calc(var(--y) * 1px); width: var(--s); height: var(--s); border-radius: 50%;
+    background: var(--read-text); opacity: .4;
+  }
+  :root[data-variant="game"] .gq-sky i.tw { background: var(--hl2); opacity: .7; }
   :root[data-variant="game"] .gq-seg { stroke: var(--hl2); stroke-width: 2.5; stroke-linecap: square; }
   :root[data-variant="game"] .gq-seg--lock { stroke: var(--hud-line); stroke-width: 2; stroke-dasharray: 6 5; }
   :root[data-variant="game"] .gq-stem { stroke: var(--hud-line); stroke-width: 1; }
@@ -188,31 +212,56 @@
 :root[data-variant="game"] .gq-tv td:first-child { white-space: nowrap; }
 :root[data-variant="game"] .gq-foot { margin-top: 18px; max-width: var(--measure); font-size: var(--fs-min); line-height: 1.6; color: var(--read-muted); }
 
-/* ── motion: the draw-on (classes from growth-reveal.ts; transform and opacity only) ── */
-:root[data-variant="game"] .gq-map[data-gr-anim] .gq-q { transition: opacity var(--dur-enter) var(--ease-out), transform var(--dur-enter) var(--ease-out); transition-delay: calc(var(--gr-k, 0) * 90ms); }
-:root[data-variant="game"] .gq-map[data-gr-anim] .gq-node__pop { transition: opacity var(--dur-fade) linear, transform var(--dur-rise) var(--ease-out); transition-delay: calc(var(--gr-k, 0) * 90ms); }
-:root[data-variant="game"] .gq-map[data-gr-anim] .gq-path line { transition: transform var(--dur-rise) var(--ease-out); transition-delay: calc(var(--gr-k, 0) * 90ms); }
+/* ── motion: the draw-on (classes from growth-reveal.ts; transform and opacity only) ──
+   Constellation timing: parts sharing a reveal index k draw one step (--dur-gq-step) after the previous index, so the
+   path grows segment by segment and each star lights (pop + flare) as its segment arrives; then it twinkles. */
+:root[data-variant="game"] .gq-map { --dur-gq-step: 300ms; --dur-gq-seg: 280ms; --dur-gq-rail: 420ms; }
+:root[data-variant="game"] .gq-map[data-gr-anim] .gq-q { transition: opacity var(--dur-enter) var(--ease-out), transform var(--dur-enter) var(--ease-out); transition-delay: calc(var(--gr-k, 0) * var(--dur-gq-step)); }
+:root[data-variant="game"] .gq-map[data-gr-anim] .gq-node__pop { transition: opacity var(--dur-fade) linear, transform var(--dur-rise) var(--ease-out); transition-delay: calc(var(--gr-k, 0) * var(--dur-gq-step) + var(--dur-gq-seg)); }
+:root[data-variant="game"] .gq-map[data-gr-anim] .gq-path line { transition: transform var(--dur-gq-seg) linear; transition-delay: calc(var(--gr-k, 0) * var(--dur-gq-step)); }
 :root[data-variant="game"] .gq-map .gq-q.gr-wait { opacity: 0; transform: translateY(14px); }
 :root[data-variant="game"] .gq-map .gq-node.gr-wait .gq-node__pop { opacity: 0; transform: scale(.2); }
 :root[data-variant="game"] .gq-map .gq-path line.gr-wait { transform: scale(0); }
+/* phones and tablets: the rail below a card grows down to the next star once the card is in */
+:root[data-variant="game"] .gq-map[data-gr-anim] .gq-q::before { transform-origin: 50% 0; transition: transform var(--dur-gq-rail) linear; transition-delay: calc(var(--gr-k, 0) * var(--dur-gq-step) + 200ms); }
+:root[data-variant="game"] .gq-map .gq-q.gr-wait::before { transform: scaleY(0); }
+/* the star lights: a flare as the path arrives, then a slow twinkle (offset per node) while the map is on screen */
+@keyframes gq-flare { 0% { opacity: 0; transform: scale(.3); } 45% { opacity: 1; transform: scale(1.7); } 100% { opacity: .85; transform: scale(1); } }
+@keyframes gq-twinkle { 0%, 100% { opacity: .85; transform: scale(1); } 50% { opacity: .45; transform: scale(.82); } }
+@keyframes gq-glint { 0%, 70%, 100% { opacity: 0; transform: scale(.4) rotate(0deg); } 82% { opacity: .9; transform: scale(1) rotate(45deg); } }
+@keyframes gq-sky { 0%, 100% { opacity: .75; } 50% { opacity: .15; } }
+:root[data-variant="game"] .gq-map[data-gr-anim] .gq-node:not(.gr-wait) .gq-glow {
+  animation: gq-flare 900ms var(--ease-out) calc(var(--gr-k, 0) * var(--dur-gq-step) + var(--dur-gq-seg)) both,
+    gq-twinkle 3.6s ease-in-out calc(var(--gr-k, 0) * var(--dur-gq-step) + var(--dur-gq-seg) + 900ms + var(--tw, 0s)) infinite;
+}
+:root[data-variant="game"] .gq-map[data-gr-anim] .gq-node:not(.gr-wait) .gq-glint { animation: gq-glint 4.8s ease-in-out calc(var(--gr-k, 0) * var(--dur-gq-step) + var(--dur-gq-seg) + var(--tw, 0s)) infinite both; }
+:root[data-variant="game"] .gq-map[data-gr-anim] .gq-sky i.tw { animation: gq-sky 4.2s ease-in-out var(--d, 0s) infinite; }
+:root[data-variant="game"] .gq-map:not([data-gr-in]) :is(.gq-glow, .gq-glint, .gq-sky i) { animation-play-state: paused; }
 :root[data-variant="game"][data-motion="reduce"] .gq-map .gq-q.gr-wait,
 :root[data-variant="game"][data-motion="reduce"] .gq-map .gq-node.gr-wait .gq-node__pop,
-:root[data-variant="game"][data-motion="reduce"] .gq-map .gq-path line.gr-wait { opacity: 1; transform: none; transition: none; }
+:root[data-variant="game"][data-motion="reduce"] .gq-map .gq-path line.gr-wait,
+:root[data-variant="game"][data-motion="reduce"] .gq-map .gq-q.gr-wait::before { opacity: 1; transform: none; transition: none; }
+:root[data-variant="game"][data-motion="reduce"] .gq-map :is(.gq-glow, .gq-glint, .gq-sky i) { animation: none; }
 @media (prefers-reduced-motion: reduce) {
   :root[data-variant="game"] .gq-map .gq-q.gr-wait,
   :root[data-variant="game"] .gq-map .gq-node.gr-wait .gq-node__pop,
-  :root[data-variant="game"] .gq-map .gq-path line.gr-wait { opacity: 1; transform: none; transition: none; }
+  :root[data-variant="game"] .gq-map .gq-path line.gr-wait,
+  :root[data-variant="game"] .gq-map .gq-q.gr-wait::before { opacity: 1; transform: none; transition: none; }
+  :root[data-variant="game"] .gq-map :is(.gq-glow, .gq-glint, .gq-sky i) { animation: none; }
 }
 
 /* ── forced colours and print ── */
 @media (forced-colors: active) {
   :root[data-variant="game"] .gq-node i, :root[data-variant="game"] .gq-pips i.on, :root[data-variant="game"] .gq-lg { forced-color-adjust: none; background: CanvasText; }
   :root[data-variant="game"] .gq-ach { border: 1px solid CanvasText; }
+  :root[data-variant="game"] .gq-glow, :root[data-variant="game"] .gq-glint, :root[data-variant="game"] .gq-sky { display: none; }
 }
 @media print {
   :root[data-variant="game"] .gq-map .gq-q.gr-wait,
   :root[data-variant="game"] .gq-map .gq-node.gr-wait .gq-node__pop,
-  :root[data-variant="game"] .gq-map .gq-path line.gr-wait { opacity: 1; transform: none; transition: none; }
+  :root[data-variant="game"] .gq-map .gq-path line.gr-wait,
+  :root[data-variant="game"] .gq-map .gq-q.gr-wait::before { opacity: 1; transform: none; transition: none; }
+  :root[data-variant="game"] .gq-glow, :root[data-variant="game"] .gq-glint, :root[data-variant="game"] .gq-sky { display: none; }
   :root[data-variant="game"] .gq-q, :root[data-variant="game"] .gq-stage, :root[data-variant="game"] .gq-hand > li { break-inside: avoid; }
   :root[data-variant="game"] .gq-plog, :root[data-variant="game"] .gq-tv__scroll, :root[data-variant="game"] .gq-stage { color: var(--gp-print-ink); background: var(--gp-print-paper); box-shadow: none; }
   :root[data-variant="game"] .gq-plog__lede, :root[data-variant="game"] .gq-kick, :root[data-variant="game"] .gq-stage__yr, :root[data-variant="game"] .gq-hand__flow dt, :root[data-variant="game"] .gq-hand__flow dd.tm { color: var(--gp-print-muted); }
