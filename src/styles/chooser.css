@@ -7,13 +7,10 @@
 /* ═══ the opening's motion tokens (durations; tokens.css holds the chooser's colours; the exits' --x-* tokens are in
    chooser-exit.css with the exits) ═══ */
 :root {
-  /* the chooser's opening (MO-41; v6.12): phase starts (--at-op-*, from the first frame) and lengths. The tablet rises
-     and powers on, the props settle, the cyber part plays at K .52 from .3s (--dur-op-step = 20 ms of its timeline),
-     the printout is tossed for --dur-enter, the rubber stamp lands; last end 2.398s (OPENING_TIMING.doneMs) */
-  --dur-op-device: .28s;
-  --at-op-props: .08s;
-  --dur-op-props: .36s;
-  --op-props-step: .06s;
+  /* the chooser's opening (MO-41; v6.12, owner 2026-10-07): phase starts (--at-op-*, from the first frame) and lengths.
+     The tablet and the props are on the desk from the first frame; the tablet's screen powers on, the cyber part plays
+     at K .52 from .3s (--dur-op-step = 20 ms of its timeline), the printout drops onto the desk for --dur-enter, the
+     rubber stamp lands; last end 2.398s (OPENING_TIMING.doneMs) */
   --at-op-power: .17s;
   --dur-op-power: .34s;
   --at-op-off: .25s;
@@ -28,7 +25,7 @@
   --dur-op-shutter: .1248s;
   --at-op-lock: 1.2152s;
   --dur-op-lock: .1352s;
-  --at-op-toss: 1.548s;
+  --at-op-drop: 1.548s;
   --at-op-rstamp: 2.178s;
   --dur-op-rstamp: .22s;
   /* neon typing (MO-27): one glyph per step, each flickers for --dur-flicker (src/lib/neon.ts NEON) */
@@ -115,7 +112,6 @@
   --arot: 4deg;            /* the extra turn when the sheet slides aside */
   --ax: 12px;              /* the slide-aside offset without the script (chooser.ts measures the real one) */
   --ay: 90%;
-  --cx: 0px;               /* the game file's offset to the desk centre while it plays alone (the opening, MO-41) */
   --aside-t: translate(var(--ax), var(--ay)) rotate(var(--arot));
   --aside-o: 1;
   --cm: calc(100cqi / 21);  /* one real centimetre: the portrait slate is 21 cm wide (see .props) */
@@ -143,7 +139,6 @@
     --arot: 6deg;
     --ax: 360px;
     --ay: 18px;
-    --cx: calc((var(--dx) + var(--dw) - var(--gw)) / 2);
   }
 }
 /* desktop: --u is the v6.4 file size; a landscape 4:3 tablet a little wider than it, the sheet over its right half */
@@ -189,29 +184,29 @@
 .desk .prop--cup { --w: 12; --h: 12; --r: 0deg; }            /* 8.4 cm cup on an 11 cm coaster */
 .desk .prop--plant { --w: 10; --h: 10; --r: 0deg; }          /* succulent, 9.2 cm concrete pot */
 /* phone: the files fill the width; the keyboard and the stylus at the foot, cropped by the page's sides and bottom */
-.desk .prop--kb { --x: 11; --y: 6.3; --ty: 1; --pi: 0; }
-.desk .prop--pen { --x: 15.5; --y: 2.4; --ty: 1; --pi: 1; }
+.desk .prop--kb { --x: 11; --y: 6.3; --ty: 1; }
+.desk .prop--pen { --x: 15.5; --y: 2.4; --ty: 1; }
 .desk .prop--phone, .desk .prop--clip, .desk .prop--cup, .desk .prop--plant { display: none; }
 /* tablet (portrait slate, 21 cm): the keyboard and stylus below the files, the phone and the clip at the slate's left,
    the cup above the sheet (clear of the caption and of the slid-aside sheet, which goes right) */
 @media (min-width: 734px) {
-  .desk .prop--kb { --x: 11; --y: 7.4; --pi: 3; }
-  .desk .prop--pen { --x: 21; --y: 3.2; --pi: 4; }
-  .desk .prop--phone { display: block; --x: -4.6; --y: 9; --pi: 1; }
-  .desk .prop--clip { display: block; --x: -2.8; --y: 20; --pi: 2; }
-  .desk .prop--cup { display: block; --x: 23.5; --y: -6.4; --pi: 0; }
+  .desk .prop--kb { --x: 11; --y: 7.4; }
+  .desk .prop--pen { --x: 21; --y: 3.2; }
+  .desk .prop--phone { display: block; --x: -4.6; --y: 9; }
+  .desk .prop--clip { display: block; --x: -2.8; --y: 20; }
+  .desk .prop--cup { display: block; --x: 23.5; --y: -6.4; }
 }
 /* desktop (landscape slate, 28 cm; the sheet reaches 33.8 cm): as ref-desk-16 / -17, the objects close round the
    documents: the phone at the slate's left, the clip below it, the keyboard just in front of the files with the stylus
    across it, the plant and the cup behind them. The right side (x 29-52 cm, y 0-23.5 cm) stays clear: it is the path of
    the slid-aside sheet. */
 @media (min-width: 1068px) {
-  .desk .prop--kb { --x: 11.5; --y: 6.4; --pi: 4; }
-  .desk .prop--pen { --x: 21.6; --y: 2.6; --pi: 5; }
-  .desk .prop--phone { --x: -5; --y: 8.8; --pi: 2; }
-  .desk .prop--clip { --x: -3.2; --y: 19.2; --pi: 3; }
-  .desk .prop--cup { --x: 35.5; --y: -6.2; --pi: 1; }
-  .desk .prop--plant { display: block; --x: 16.5; --y: -6.6; --pi: 0; }
+  .desk .prop--kb { --x: 11.5; --y: 6.4; }
+  .desk .prop--pen { --x: 21.6; --y: 2.6; }
+  .desk .prop--phone { --x: -5; --y: 8.8; }
+  .desk .prop--clip { --x: -3.2; --y: 19.2; }
+  .desk .prop--cup { --x: 35.5; --y: -6.2; }
+  .desk .prop--plant { display: block; --x: 16.5; --y: -6.6; }
 }
 /* the felt desk mat (desktop): 72 × 47.5 cm centred under the scene, on a darker desk; its edges only come into a very
    large crop (2560px wide): a bound edge with a stitch line, a thin contact shadow, the desk beyond it darker (one
@@ -1080,14 +1075,15 @@
 .file--game .xg, .file--game .xg__off, .xnav { display: none; }
 @media print { .file--game .xg, .file--game .xg__off, .xnav { display: none !important; } }
 
-/* ═══ the opening (MO-41, chooser v6.12): once per session, head-init sets :root[data-intro="opening"] (never under
-   reduced motion) and removes it at the end or on any input. The tablet rises, its screen is off, then a power-on bloom;
-   the props settle (opacity); on the lit screen the HUD frame boots, the console types the access request and decrypts,
-   the shutters open over the cover, the cover locks on; then the printout (its folder, clip and flag with it: one
-   element) is tossed onto the desk from below the viewport, painted from the first frame at opacity 1 (never a late LCP
-   candidate), while the game file slides from the desk centre (--cx) to rest; the rubber stamp lands. Every timing is a
-   --dur-op-* / --at-op-* token or a calc() of them (tokens.css), every animation fills both ways and ends in the rest
-   state, so removing data-intro (end or skip) changes nothing on screen. Transform and opacity only. ═══ */
+/* ═══ the opening (MO-41, chooser v6.12; owner 2026-10-07): once per session, head-init sets :root[data-intro="opening"]
+   (never under reduced motion) and removes it at the end or on any input. The tablet and the props stand on the desk
+   from the first frame and never move; the tablet's screen is off, then a power-on bloom; on the lit screen the HUD
+   frame boots, the console types the access request and decrypts, the shutters open over the cover, the cover locks
+   on; then the printout (its folder, clip and flag with it: one element) drops onto the desk from above the viewport,
+   swaying, and settles, painted from the first frame at opacity 1 (never a late LCP candidate); the rubber stamp
+   lands. Every timing is a --dur-op-* / --at-op-* token or a calc() of them (tokens.css), every animation fills both
+   ways and ends in the rest state, so removing data-intro (end or skip) changes nothing on screen. Transform and
+   opacity only. ═══ */
 .file--game .dev__off { background: var(--scr-off); }
 .file--game .dev__pwr { opacity: 0; background: radial-gradient(60% 55%, color-mix(in srgb, var(--hud-strong) 34%, var(--scr-lit)), color-mix(in srgb, var(--scr-lit) 60%, transparent) 45%, transparent 78%); }
 /* the overlay: over the cover window and its frame, aria-hidden, never takes the pointer */
@@ -1127,8 +1123,6 @@
 .ov__st { position: absolute; top: calc(var(--frame) + var(--bar-h) + var(--haz-in) + var(--haz-h) + 14px); right: 18px; margin: 0; padding: 7px 12px; background: var(--hud-panel-92); border: 1px solid var(--hud-text); font: 700 var(--fs-min)/1.3 var(--font-mono-cover); letter-spacing: .18em; color: var(--hud-strong); }
 
 /* the timeline (the cyber part's steps: --dur-op-step each, from --at-op-boot) */
-:root[data-intro="opening"] .file--game .dev { animation: op-rise var(--dur-op-device) var(--ease-out) both; }
-:root[data-intro="opening"] .desk .prop { animation: op-in var(--dur-op-props) var(--ease-out) calc(var(--at-op-props) + var(--pi, 0) * var(--op-props-step)) both; }
 :root[data-intro="opening"] .file--game .dev__off { animation: op-out var(--dur-op-off) linear var(--at-op-off) both; }
 :root[data-intro="opening"] .file--game .dev__pwr { animation: op-pwr var(--dur-op-power) var(--ease-out) var(--at-op-power) both; }
 :root[data-intro="opening"] :is(.ov__fr, .ov__cn) { animation: op-out calc(14 * var(--dur-op-step)) var(--ease-in) calc(var(--at-op-boot) + 70 * var(--dur-op-step)) both; }
@@ -1161,10 +1155,9 @@
 :root[data-intro="opening"] .file--game .haz { animation: op-gx var(--dur-op-lock) steps(13, end) calc(var(--at-op-lock) + var(--dur-op-step)) both; }
 :root[data-intro="opening"] .file--game .haz--b { animation-delay: calc(var(--at-op-lock) + 5 * var(--dur-op-step)); }
 :root[data-intro="opening"] .file--game .cv__code { animation: op-gy calc(11 * var(--dur-op-step)) steps(10, end) calc(var(--at-op-lock) + 10 * var(--dur-op-step)) both; }
-/* the toss: the printout and its lift shadow; the game file slides over from the desk centre; the rubber stamp */
-:root[data-intro="opening"] .desk > .file--data { animation: op-toss var(--dur-enter) var(--ease-out) var(--at-op-toss) both; }
-:root[data-intro="opening"] .desk > .file--data::before { animation: op-out var(--dur-enter) var(--ease-in) var(--at-op-toss) both; }
-:root[data-intro="opening"] .desk > .file--game { animation: op-cx var(--dur-enter) var(--ease-wipe) var(--at-op-toss) both; }
+/* the drop: the printout and its lift shadow (the tablet stays put); the rubber stamp */
+:root[data-intro="opening"] .desk > .file--data { animation: op-drop var(--dur-enter) linear var(--at-op-drop) both; }
+:root[data-intro="opening"] .desk > .file--data::before { animation: op-out var(--dur-enter) var(--ease-in) var(--at-op-drop) both; }
 :root[data-intro="opening"] .file--data .rstamp__ink { animation: op-stamp var(--dur-op-rstamp) var(--ease-out) var(--at-op-rstamp) both; }
 /* neon typing (MO-27): chooser.ts splits the typed lines into glyph spans (.ng, a quarter of them .ng--a: lit once;
    the rest dip and recover) with their start in --d, and puts the plain text back when the opening ends */
@@ -1174,9 +1167,6 @@
 
 @keyframes ng-a { 0% { opacity: 0; } 30% { opacity: 1; } 100% { opacity: 1; } }
 @keyframes ng-b { 0% { opacity: 0; } 20% { opacity: 1; } 45% { opacity: .3; } 65% { opacity: 1; } 100% { opacity: 1; } }
-/* the device fades from .01, not 0: text under an opacity-0 ancestor is not an LCP candidate when it is first painted, so
-   the cover's text would only count when it is next repainted, after the opening (probe, MO-41 Step 2) */
-@keyframes op-rise { from { opacity: .01; transform: translateY(14px) scale(.985); } to { opacity: 1; transform: none; } }
 @keyframes op-in { from { opacity: 0; } to { opacity: 1; } }
 @keyframes op-out { from { opacity: 1; } to { opacity: 0; } }
 @keyframes op-pwr {
@@ -1215,9 +1205,16 @@
   70% { opacity: 1; transform: translate(calc(var(--bx) / -14), calc(var(--bx) / -14)); }
   100% { opacity: 1; transform: none; }
 }
-/* from below the viewport (relative to the rest box), turned and a little large, at opacity 1 */
-@keyframes op-toss { from { transform: translate(clamp(80px, 30vw, 360px), calc(100svh + 40px)) rotate(16deg) scale(1.06); } to { transform: none; } }
-@keyframes op-cx { from { transform: translateX(var(--cx)); } to { transform: none; } }
+/* from above the viewport (relative to the rest box), at opacity 1: it falls (the stops trace y ∝ t², so the linear
+   timing reads as gravity), swaying a little larger than at rest, lands just past rest, then settles */
+@keyframes op-drop {
+  0% { transform: translate(-24px, calc(-100svh - 60px)) rotate(-9deg) scale(1.05); }
+  26% { transform: translate(-16px, calc((-100svh - 60px) * .889)) rotate(-3deg) scale(1.04); }
+  52% { transform: translate(-6px, calc((-100svh - 60px) * .556)) rotate(4deg) scale(1.025); }
+  78% { transform: translate(0, 5px) rotate(1.2deg) scale(1); }
+  90% { transform: translate(0, -2px) rotate(-.4deg); }
+  100% { transform: none; }
+}
 @keyframes op-stamp {
   0% { opacity: 0; transform: scale(1.7); }
   70% { opacity: 1; transform: scale(.96); }

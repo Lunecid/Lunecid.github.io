@@ -72,14 +72,12 @@ describe('chooser desk (MO-24)', () => {
     const spill = (600 / 2) * Math.sin(th) - (600 / 2) * (1 - Math.cos(th));
     expect(side.ax).toBe(Math.round(618 + 24 + spill - 240));
     expect(side.ay).toBe(18);
-    expect(side.cx).toBe(Math.round((240 + 600 - 618) / 2));
     // the turned sheet's left edge clears the game cover's right edge
     expect(sheet.x + side.ax - spill).toBeGreaterThanOrEqual(game.x + game.w + 24 - 1);
     const stacked = asideGeometry({ x: 0, y: 0, w: 343, h: 520 }, { x: 10, y: 96, w: 323, h: 460 }, 1.5, 4, 24);
     expect(stacked.side).toBe(false);
     expect(stacked.ax).toBe(12);
     expect(stacked.ay).toBeGreaterThan(520 + 24 - 96);
-    expect(stacked.cx).toBe(0);
   });
 
   it('arrows move between the two links on both axes (data → game forward, game → data back)', () => {
@@ -207,7 +205,7 @@ describe('chooser desk (MO-24)', () => {
     const want = asideGeometry({ x: 0, y: 0, w: 618, h: 593 }, { x: 240, y: 28, w: 600, h: 600 }, 3, 6);
     expect(m.desk.style.getPropertyValue('--ax')).toBe(`${want.ax}px`);
     expect(m.desk.style.getPropertyValue('--ay')).toBe(`${want.ay}px`);
-    expect(m.desk.style.getPropertyValue('--cx')).toBe(`${want.cx}px`);
+    expect(m.desk.style.getPropertyValue('--cx')).toBe(''); // the opening no longer slides the tablet (owner 2026-10-07)
   });
 });
 

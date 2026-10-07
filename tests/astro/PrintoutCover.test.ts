@@ -122,20 +122,18 @@ describe('PrintoutCover.astro (MO-23)', () => {
     expect(await render('en')).toMatch(/<span class="tab__t" lang="en"[^>]*>NO\. 02<\/span>/);
   });
 
-  it('MO-41: the toss: the printout with its folder, clip and flag (one element) flies in from below the viewport at opacity 1, its lift shadow falls away; the game file slides from the desk centre; then the rubber stamp', async () => {
+  it('MO-41: the drop (owner 2026-10-07): the printout with its folder, clip and flag (one element) falls onto the desk from above the viewport at opacity 1, its lift shadow falls away; the tablet stays put; then the rubber stamp', async () => {
     const html = await render('ko');
     const article = /<article class="file file--data"[\s\S]*<\/article>/.exec(html)?.[0] ?? '';
     for (const part of ['class="folder"', 'class="clip"', 'class="tab"', 'class="rstamp"']) expect(article, part).toContain(part);
-    expect(css).toMatch(/:root\[data-intro="opening"\] \.desk > \.file--data \{ animation: op-toss var\(--dur-enter\) var\(--ease-out\) var\(--at-op-toss\) both; \}/);
-    const toss = /@keyframes op-toss \{ from \{([^}]*)\} to \{ transform: none; \} \}/.exec(css)?.[1] ?? '';
-    expect(toss).not.toMatch(/opacity/); // painted from the first frame at opacity 1: never a late LCP candidate
-    expect(toss).toMatch(/transform: translate\(clamp\(80px, 30vw, 360px\), calc\(100svh \+ 40px\)\) rotate\(16deg\) scale\(1\.06\);/);
-    expect(css).toMatch(/:root\[data-intro="opening"\] \.desk > \.file--data::before \{ animation: op-out var\(--dur-enter\) var\(--ease-in\) var\(--at-op-toss\) both; \}/);
-    expect(css).toMatch(/:root\[data-intro="opening"\] \.desk > \.file--game \{ animation: op-cx var\(--dur-enter\) var\(--ease-wipe\) var\(--at-op-toss\) both; \}/);
-    expect(css).toMatch(/@keyframes op-cx \{ from \{ transform: translateX\(var\(--cx\)\); \} to \{ transform: none; \} \}/);
-    // --cx: 0 on a phone (stacked), half the pair's overhang from 734px (chooser.ts measures the same in px)
-    expect(css).toMatch(/\.desk \{[^}]*--cx: 0px;/);
-    expect(css).toMatch(/@media \(min-width: 734px\) \{\s*\.desk \{[^}]*--cx: calc\(\(var\(--dx\) \+ var\(--dw\) - var\(--gw\)\) \/ 2\);/);
+    expect(css).toMatch(/:root\[data-intro="opening"\] \.desk > \.file--data \{ animation: op-drop var\(--dur-enter\) linear var\(--at-op-drop\) both; \}/);
+    const drop = /@keyframes op-drop \{([\s\S]*?)\n\}/.exec(css)?.[1] ?? '';
+    expect(drop).not.toMatch(/opacity/); // painted from the first frame at opacity 1: never a late LCP candidate
+    expect(drop).toMatch(/0% \{ transform: translate\(-24px, calc\(-100svh - 60px\)\)/); // starts above the viewport
+    expect(drop).toMatch(/100% \{ transform: none; \}/);
+    expect(css).toMatch(/:root\[data-intro="opening"\] \.desk > \.file--data::before \{ animation: op-out var\(--dur-enter\) var\(--ease-in\) var\(--at-op-drop\) both; \}/);
+    expect(css).not.toMatch(/\[data-intro="opening"\] \.desk > \.file--game \{[^}]*animation/);
+    expect(css).not.toMatch(/--cx/);
     expect(css).toMatch(/\.file--data \.rstamp__ink \{ animation: op-stamp var\(--dur-op-rstamp\) var\(--ease-out\) var\(--at-op-rstamp\) both; \}/);
   });
 });

@@ -18,20 +18,10 @@ describe('DeskProps.astro (MO-36)', () => {
     expect(html).not.toMatch(/<path|<rect|<circle|<symbol|<text|<image|<foreignObject|filter=|#[0-9a-f]{3,6}\b/i);
   });
 
-  it('MO-41: the props settle during the power-on: opacity only, 60 ms apart in the visible order of each breakpoint, all in by 740 ms; the mat is there from the start', () => {
+  it('MO-41 (owner 2026-10-07): the props and the mat stand on the desk from the first frame; no opening animation', () => {
     const css = readFileSync(new URL('../../src/styles/chooser.css', import.meta.url), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
-    expect(css).toMatch(/:root\[data-intro="opening"\] \.desk \.prop \{ animation: op-in var\(--dur-op-props\) var\(--ease-out\) calc\(var\(--at-op-props\) \+ var\(--pi, 0\) \* var\(--op-props-step\)\) both; \}/);
+    expect(css).not.toMatch(/\[data-intro="opening"\][^{]*\.prop\b/);
     expect(css).not.toMatch(/\[data-intro="opening"\][^{]*\.mat/);
-    // each breakpoint numbers its visible props 0…n-1 (phone 2, tablet 5, desktop 6)
-    const block = (media: string | null) => {
-      const scope = media ? [...css.matchAll(new RegExp(`@media \\(${media}\\) \\{([\\s\\S]*?)\\n\\}`, 'g'))].map((m) => m[1]).join('\n') : css;
-      const out: Record<string, number> = {};
-      for (const m of scope.matchAll(/\.desk \.prop--(\w+) \{[^}]*--pi: (\d)/g)) out[m[1]!] ??= Number(m[2]); // the first (base) rule
-      return out;
-    };
-    const phone = block(null);
-    expect({ kb: phone.kb, pen: phone.pen }).toEqual({ kb: 0, pen: 1 });
-    expect(block('min-width: 734px')).toEqual({ kb: 3, pen: 4, phone: 1, clip: 2, cup: 0 });
-    expect(block('min-width: 1068px')).toEqual({ kb: 4, pen: 5, phone: 2, clip: 3, cup: 1, plant: 0 });
+    expect(css).not.toMatch(/--pi:/);
   });
 });

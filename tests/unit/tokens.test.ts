@@ -660,24 +660,24 @@ describe('the chooser desk (MO-23, v6.4)', () => {
     expect(exit).toMatch(/55\.56% \{ transform: translate\(0\.0px, 0\.0px\)/); // the pull starts at --x-pull-at
   });
 
-  it('MO-41: opening tokens exact; every opening animation ends by 2.398 s ≤ OPENING_TIMING.doneMs; the toss starts after the decrypt and the status end', async () => {
+  it('MO-41: opening tokens exact; every opening animation ends by 2.398 s ≤ OPENING_TIMING.doneMs; the drop starts after the decrypt and the status end', async () => {
     const d = rootOf('src/styles/chooser.css');
     const OP: Record<string, string> = {
-      '--dur-op-device': '.28s', '--at-op-props': '.08s', '--dur-op-props': '.36s', '--op-props-step': '.06s', '--at-op-power': '.17s', '--dur-op-power': '.34s',
+      '--at-op-power': '.17s', '--dur-op-power': '.34s',
       '--at-op-off': '.25s', '--dur-op-off': '.14s', '--dur-op-step': '10.4ms', '--at-op-boot': '.3s', '--dur-op-boot': '.156s', '--at-op-type': '.404s',
       '--at-op-decrypt': '.716s', '--dur-op-decrypt': '.2288s', '--at-op-shutter': '1.0176s', '--dur-op-shutter': '.1248s', '--at-op-lock': '1.2152s',
-      '--dur-op-lock': '.1352s', '--at-op-toss': '1.548s', '--at-op-rstamp': '2.178s', '--dur-op-rstamp': '.22s',
+      '--dur-op-lock': '.1352s', '--at-op-drop': '1.548s', '--at-op-rstamp': '2.178s', '--dur-op-rstamp': '.22s',
     };
     for (const [name, value] of Object.entries(OP)) expect(d.get(name), name).toBe(value);
     // the cyber part plays at K .52 from the power-on (300 ms): each phase start is 300 + t × .52 of v6.2's 2.4 s scale
     const ms = (v: string) => (v.endsWith('ms') ? parseFloat(v) : parseFloat(v) * 1000);
-    for (const [name, t] of [['--at-op-type', 200], ['--at-op-decrypt', 800], ['--at-op-shutter', 1380], ['--at-op-lock', 1760], ['--at-op-toss', 2400]] as const) {
+    for (const [name, t] of [['--at-op-type', 200], ['--at-op-decrypt', 800], ['--at-op-shutter', 1380], ['--at-op-lock', 1760], ['--at-op-drop', 2400]] as const) {
       expect(ms(d.get(name)!), name).toBeCloseTo(300 + t * 0.52, 6);
     }
     const dur = new Map<string, number>([...d].filter(([k]) => /^--(at|dur)-op-|^--op-/.test(k)).map(([k, v]) => [k, ms(v)]));
     dur.set('--dur-enter', ms(declsOf(':root').get('--dur-enter')!));
-    // per-element indices at their largest: props (6), shutters (10), label offsets (12 steps)
-    const MAX: Record<string, number> = { '--pi': 5, '--i': 9, '--li': 12 };
+    // per-element indices at their largest: shutters (10), label offsets (12 steps)
+    const MAX: Record<string, number> = { '--i': 9, '--li': 12 };
     const evalTime = (expr: string): number => {
       const js = expr.replace(/var\((--[\w-]+)(?:,\s*[\d.]+)?\)/g, (_, name: string) => {
         const v = MAX[name] ?? dur.get(name);
@@ -702,14 +702,14 @@ describe('the chooser desk (MO-23, v6.4)', () => {
     const { OPENING_TIMING } = await import('../../src/lib/head-init');
     expect(end).toBeLessThanOrEqual(OPENING_TIMING.doneMs);
     const of = (name: string) => anims.filter((a) => a.name === name);
-    const toss = of('op-toss')[0]!;
+    const toss = of('op-drop')[0]!;
     expect(toss.at).toBeCloseTo(1548, 6);
     for (const a of anims.filter((x) => /\.ov/.test(x.sel))) expect(a.at + a.dur, a.sel).toBeLessThanOrEqual(toss.at + 1e-6);
     expect(Math.max(...of('op-status').map((a) => a.at + a.dur))).toBeCloseTo(toss.at, 6);
-    // the device rises and powers on before the decrypt; the props are all in by 740 ms
+    // the screen powers on before the decrypt; the tablet and the props never move (owner 2026-10-07)
     expect(Math.max(...of('op-pwr').map((a) => a.at + a.dur))).toBeLessThanOrEqual(ms(d.get('--at-op-decrypt')!));
-    expect(of('op-rise')[0]!.dur).toBe(280);
-    expect(anims.filter((a) => /\.prop/.test(a.sel)).map((a) => a.at + a.dur)).toEqual([740]);
+    expect(anims.filter((a) => /\.prop\b|\.dev \{|\.dev$|> \.file--game$/.test(a.sel))).toEqual([]);
+    expect([...d.keys()].filter((k) => /^--(dur-op-device|at-op-props|dur-op-props|op-props-step|at-op-toss)$/.test(k))).toEqual([]);
   });
 
   it('MO-23: the chooser page is dark (color-scheme dark in the chooser sheet), the other neutral pages stay light', () => {

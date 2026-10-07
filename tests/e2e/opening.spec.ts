@@ -1,6 +1,6 @@
-// The chooser's opening (MO-41, chooser v6.12): on the first chooser view of a session the tablet rises and powers on,
-// the props settle, the game file decrypts on its screen, then the printout (with its folder, clip and flag) is tossed
-// onto the desk and its rubber stamp lands; ~2.40 s, once per session (sb:intro), never with ?choose, after the
+// The chooser's opening (MO-41, chooser v6.12; owner 2026-10-07): on the first chooser view of a session the tablet and
+// the props stand still on the desk, the tablet's screen powers on and the game file decrypts on it, then the printout
+// (with its folder, clip and flag) drops onto the desk from above and its rubber stamp lands; ~2.40 s, once per session (sb:intro), never with ?choose, after the
 // pre-paint redirect, under reduced motion or without JS. Any input ends it at once; a press only ends it.
 import type { Browser, BrowserContextOptions, Page } from '@playwright/test';
 import { test, expect } from './helpers';
@@ -74,20 +74,22 @@ const holdOpeningEnd = (p: Page) =>
   }, [2400, 3400]);
 
 test.describe('MO-41: the opening', () => {
-  test('MO-41: first visit — device at 280 ms, toss lands at ~2.15 s, rubber stamp by 2.40 s, data-intro gone by 2.6 s; sb:intro = 1', async ({ browser }) => {
+  test('MO-41: first visit — tablet and props still, screen on at 170 ms, the printout drops and lands at ~2.15 s, rubber stamp by 2.40 s, data-intro gone by 2.6 s; sb:intro = 1', async ({ browser }) => {
     // the end is held (holdOpeningEnd) so every check reads the opening while it plays; "done at 2.40 s after the first
     // paint" is the requested delay of the timer that ends it, armed at the first paint
     const { page, close } = await fresh(browser, 1280, 800, {}, '/', holdOpeningEnd);
     await expect(page.locator('html')).toHaveAttribute('data-intro', 'opening');
     expect(await page.evaluate(() => sessionStorage.getItem('sb:intro'))).toBe('1');
-    const rise = await timing(page, '.file--game .dev', 'op-rise');
-    expect(rise!.delay).toBe(0);
-    expect(rise!.end).toBeCloseTo(280, 0);
-    const toss = await timing(page, '.desk > .file--data', 'op-toss');
+    // the tablet, its file and the props never move (owner 2026-10-07); only the screen powers on
+    for (const sel of ['.desk > .file--game', '.file--game .dev', '.desk .prop']) {
+      expect(await page.locator(sel).evaluateAll((els) => els.flatMap((el) => el.getAnimations().map((a) => (a as CSSAnimation).animationName))), sel).toEqual([]);
+    }
+    expect((await timing(page, '.file--game .dev__pwr', 'op-pwr'))!.delay).toBeCloseTo(170, 0);
+    const toss = await timing(page, '.desk > .file--data', 'op-drop');
     expect(toss!.delay).toBeCloseTo(1548, 0);
     expect(toss!.end).toBeCloseTo(2148, 0);
     expect((await timing(page, '.file--data .rstamp__ink', 'op-stamp'))!.end).toBeCloseTo(2398, 0);
-    // the overlay plays on the lit screen and is gone before the toss
+    // the overlay plays on the lit screen and is gone before the drop
     expect((await timing(page, '.ov__st', 'op-status'))!.end).toBeLessThanOrEqual(toss!.delay + 1);
     await expect(page.locator('.ov')).toBeVisible();
     await page.evaluate(() => (window as Window & { __releaseOpening?: () => void }).__releaseOpening!());
@@ -117,9 +119,9 @@ test.describe('MO-41: the opening', () => {
       await close();
     });
 
-    test(`MO-41: CLS ≤ 0.02 over the opening; no horizontal scroll mid-toss (${w}×${h})`, async ({ browser }) => {
+    test(`MO-41: CLS ≤ 0.02 over the opening; no horizontal scroll mid-drop (${w}×${h})`, async ({ browser }) => {
       const { page, close } = await fresh(browser, w, h);
-      await page.waitForTimeout(1800); // mid-toss
+      await page.waitForTimeout(1800); // mid-drop
       const scroll = await page.evaluate(() => [document.documentElement.scrollWidth, document.documentElement.clientWidth, window.scrollX]);
       expect(scroll[0]).toBeLessThanOrEqual(scroll[1]!);
       expect(scroll[2]).toBe(0);
@@ -144,7 +146,7 @@ test.describe('MO-41: the opening', () => {
       await input(page);
       // ended by the input itself (synchronously, in its listener): the opening's own end is held
       await expect.poll(() => page.evaluate(() => document.documentElement.hasAttribute('data-intro')), { message: `${name}: ended` }).toBe(false);
-      // at rest at once: no animation left on the toss, the overlay gone
+      // at rest at once: no animation left on the drop, the overlay gone
       expect(await page.locator('.desk > .file--data').evaluate((el) => el.getAnimations().length), name).toBe(0);
       await expect(page.locator('.ov'), name).toBeHidden();
       await close();

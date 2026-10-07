@@ -25,19 +25,18 @@ const FIRST_TAP_MS = 600;
  * Pure: where the sheet goes when it slides aside. Side by side (tablet and up) → to the right of the game cover, its
  * turned left edge clear of the cover by `gap`; stacked (phone) → below it, its highest turned corner clear by `gap`.
  * Boxes are untransformed offsets inside the desk: the tablet's body (bezel included) and the sheet.
- * `cx` centres the game cover on the desk while it plays alone (the opening, MO-26).
  */
-export function asideGeometry(game: Box, sheet: Box, tiltDeg: number, asideDeg: number, gap = 24): { side: boolean; ax: number; ay: number; cx: number } {
+export function asideGeometry(game: Box, sheet: Box, tiltDeg: number, asideDeg: number, gap = 24): { side: boolean; ax: number; ay: number } {
   const side = sheet.x - game.x > 40;
   const th = ((tiltDeg + asideDeg) * Math.PI) / 180;
   const sin = Math.abs(Math.sin(th));
   const cos = Math.cos(th);
   if (side) {
     const spill = (sheet.h / 2) * sin - (sheet.w / 2) * (1 - cos);
-    return { side, ax: Math.round(game.x + game.w + gap + spill - sheet.x), ay: 18, cx: Math.round((sheet.x + sheet.w - game.x - game.w) / 2) };
+    return { side, ax: Math.round(game.x + game.w + gap + spill - sheet.x), ay: 18 };
   }
   const spill = (sheet.w / 2) * sin - (sheet.h / 2) * (1 - cos);
-  return { side, ax: 12, ay: Math.round(game.y + game.h + gap + spill - sheet.y), cx: 0 };
+  return { side, ax: 12, ay: Math.round(game.y + game.h + gap + spill - sheet.y) };
 }
 
 /** An element's untransformed layout box inside `root` (offsets summed up the offsetParent chain). */
@@ -248,7 +247,6 @@ export function initDesk(desk: HTMLElement, hint: HTMLElement | null): () => voi
     const g = asideGeometry(boxIn(gameBody, desk), boxIn(dataFile, desk), degrees(st.getPropertyValue('--tilt')), degrees(st.getPropertyValue('--arot')));
     desk.style.setProperty('--ax', `${g.ax}px`);
     desk.style.setProperty('--ay', `${g.ay}px`);
-    desk.style.setProperty('--cx', `${g.cx}px`);
     fitCoverWords(desk);
   };
   measure();
@@ -369,7 +367,8 @@ export function attachExitSheet(doc: Document = document, desk: HTMLElement | nu
 /**
  * Neon typing (MO-27): while the opening plays, its overlay lines and the game cover's small labels type in glyph by
  * glyph. Each target becomes an aria-hidden run of glyph spans (.ng, seeded variant, its start in --d on the opening's
- * clock, read from the device's rise so a late script or timer still lands on time: past glyphs are simply lit) plus,
+ * clock, read from the screen's power-on animation (its start time is the opening's frame 0; its delay is inside the
+ * animation) so a late script or timer still lands on time: past glyphs are simply lit) plus,
  * outside an aria-hidden subtree, an sr-only copy of the text; the element's own plain fade (which keeps it hidden until
  * then) is switched off. Each line is split NEON_LEAD_MS before its first glyph, in a task of its own. At
  * sb:intro-done (end or skip) lines not split yet never are, and the plain text and the element's style are put back,
@@ -379,7 +378,7 @@ export function typeNeon(doc: Document = document): void {
   if (doc.documentElement.dataset.intro !== 'opening') return;
   const desk = doc.querySelector<HTMLElement>('[data-chooser][data-desk]');
   if (!desk) return;
-  const rise = desk.querySelector<HTMLElement>('.file--game .dev')?.getAnimations?.().find((a) => (a as CSSAnimation).animationName === 'op-rise');
+  const rise = desk.querySelector<HTMLElement>('.file--game .dev__pwr')?.getAnimations?.().find((a) => (a as CSSAnimation).animationName === 'op-pwr');
   const clock = () => Number(doc.timeline?.currentTime ?? performance.now());
   const start = typeof rise?.startTime === 'number' ? rise.startTime : clock();
   const undo: (() => void)[] = [];

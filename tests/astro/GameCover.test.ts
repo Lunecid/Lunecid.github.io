@@ -141,7 +141,7 @@ describe('GameCover.astro (MO-23)', () => {
   it('MO-41: opening keyframes animate transform and opacity only, never infinitely; each opening animation fills both ways', () => {
     const plain = css.replace(/\/\*[\s\S]*?\*\//g, '');
     const frames = [...plain.matchAll(/@keyframes (op-[\w-]+) \{([\s\S]*?\})\s*\}/g)];
-    expect(frames.length).toBeGreaterThanOrEqual(14);
+    expect(frames.length).toBeGreaterThanOrEqual(13); // owner 2026-10-07: op-rise and op-cx gone, op-toss now op-drop
     for (const [, name, body] of frames) {
       const props = [...body!.matchAll(/([\w-]+):/g)].map((m) => m[1]);
       expect(props.filter((p) => p !== 'opacity' && p !== 'transform'), name).toEqual([]);
@@ -156,8 +156,9 @@ describe('GameCover.astro (MO-23)', () => {
 
   it('MO-41: the device rises and powers on before the decrypt (screen off, then the bloom); the device starts at opacity .01 (an LCP candidate from the first paint)', () => {
     const plain = css.replace(/\/\*[\s\S]*?\*\//g, '');
-    expect(plain).toMatch(/\[data-intro="opening"\] \.file--game \.dev \{ animation: op-rise var\(--dur-op-device\) var\(--ease-out\) both; \}/);
-    expect(plain).toMatch(/@keyframes op-rise \{ from \{ opacity: \.01; transform: translateY\(14px\) scale\(\.985\); \}/);
+    // owner 2026-10-07: the tablet stands still from the first frame; only its screen powers on
+    expect(plain).not.toMatch(/\[data-intro="opening"\] \.file--game \.dev \{[^}]*animation/);
+    expect(plain).not.toMatch(/@keyframes op-rise/);
     expect(plain).toMatch(/\.file--game \.dev__off \{ animation: op-out var\(--dur-op-off\) linear var\(--at-op-off\) both; \}/);
     expect(plain).toMatch(/\.file--game \.dev__pwr \{ animation: op-pwr var\(--dur-op-power\) var\(--ease-out\) var\(--at-op-power\) both; \}/);
     expect(plain).toMatch(/@keyframes op-pwr \{\s*0% \{ opacity: 0; transform: scale\(\.55, \.04\); \}\s*28% \{[^}]*\}\s*55% \{[^}]*\}\s*100% \{ opacity: 0; transform: scale\(1\.08, 1\.04\); \}/);
