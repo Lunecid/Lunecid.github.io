@@ -123,6 +123,17 @@ export function formatNumber(n: number, lang: Lang): string {
 }
 
 /**
+ * formatNumber for a non-negative whole number without Intl, for scripts in the page: ko-KR and en-US both group
+ * digits in threes with ',' (tests/unit/i18n-utils pins the equality). The first Intl.NumberFormat in a page loads
+ * the locale data, a 70–140 ms task at Lighthouse's 4× CPU slowdown that read as 510 ms of blocking time on /stats/
+ * (CI runs 37555471595, 37571202930). Other numbers fall back to formatNumber.
+ */
+export function formatCount(n: number, lang: Lang): string {
+  if (!Number.isSafeInteger(n) || n < 0) return formatNumber(n, lang);
+  return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+}
+
+/**
  * Final review fix 1 item 20 (WCAG 3.1.2): text split into runs so that, on an English page, each run of Hangul
  * (e.g. the Korean menu label "한국어" in an English hint) can be marked lang="ko". Korean pages get one run.
  */

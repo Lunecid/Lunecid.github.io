@@ -4,7 +4,7 @@
 // 0 → "starting"; a count → the live total; no count and no build total after the fetch settled → "unavailable";
 // a failed fetch keeps the build total the server rendered.
 import type { Lang } from '../i18n/ui';
-import { formatNumber } from '../i18n/utils';
+import { formatCount } from '../i18n/utils';
 import { goatcounterCounterUrl, parseCount } from '../lib/analytics';
 
 /** Binds one server-rendered `[data-stats-live-total]` slot. Returns a teardown (the dom tests use it). */
@@ -28,7 +28,7 @@ export function initStatsLiveTotal(slot: HTMLElement): () => void {
       labelEl.textContent = label;
       const num = document.createElement('strong');
       num.className = 'stats__live-num tnum';
-      num.textContent = formatNumber(total, lang);
+      num.textContent = formatCount(total, lang);
       p.append(labelEl, ' ', num);
     } else if (settled) {
       p.className = 'stats__note stats__live-note';

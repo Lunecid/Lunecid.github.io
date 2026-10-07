@@ -5,6 +5,7 @@ import {
   LOCALES,
   formatDate,
   formatDateSpan,
+  formatCount,
   formatNumber,
   formatPeriod,
   formatYm,
@@ -273,6 +274,15 @@ describe('formatters', () => {
     expect(formatDateSpan('2026-09-30', '2026-10-02', 'en')).toBe('Sep 30, 2026 – Oct 2, 2026');
     expect(formatDateSpan('2026-09-30', '2026-10-02', 'ko')).toBe('2026.09.30 – 2026.10.02');
     expect(() => formatDateSpan('2026-09-1', '2026-09-04', 'en')).toThrow(/YYYY-MM-DD/);
+  });
+
+  it('formatCount (no Intl, for page scripts) equals formatNumber for every whole count, and falls back otherwise', () => {
+    const samples = [0, 1, 9, 10, 99, 100, 999, 1000, 1001, 9999, 12345, 999999, 1000000, 1093409, 2147483647, Number.MAX_SAFE_INTEGER];
+    for (let n = 0; n < 5000; n += 7) samples.push(n);
+    for (const n of samples) {
+      for (const lang of ['ko', 'en'] as const) expect(formatCount(n, lang), `${lang} ${n}`).toBe(formatNumber(n, lang));
+    }
+    for (const n of [1.5, -3, Number.NaN]) expect(formatCount(n, 'en')).toBe(formatNumber(n, 'en'));
   });
 
   it('formatNumber groups digits per locale', () => {
