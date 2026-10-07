@@ -45,7 +45,7 @@
   :root[data-variant="game"] .gq-node--ach:hover i, :root[data-variant="game"] .gq-node--lock:hover i { background: var(--hud-bg); box-shadow: 0 0 0 2.5px var(--accent); }
 }
 /* constellation (owner request 2026-10-07): each lit node is a star — a soft cyan glow behind the diamond (and a
-   four-point glint on achievement nodes) that flares when the path reaches it, then twinkles while the map is on
+   four-point glint on achievement nodes) that flares when the path reaches it, then twinkles twice (no endless motion, AGENTS.md) while the map is on
    screen (data-gr-in from growth-reveal.ts). Locked slots stay unlit. Opacity and transform only; still under reduce. */
 :root[data-variant="game"] .gq-node__pop { position: relative; }
 :root[data-variant="game"] .gq-node__pop > i { position: relative; z-index: 1; }
@@ -215,7 +215,7 @@
 /* ── motion: the draw-on (classes from growth-reveal.ts; transform and opacity only) ──
    Constellation timing: parts sharing a reveal index k draw one step (--dur-gq-step) after the previous index, so the
    path grows segment by segment and each star lights (pop + flare) as its segment arrives; then it twinkles. */
-:root[data-variant="game"] .gq-map { --dur-gq-step: 300ms; --dur-gq-seg: 280ms; --dur-gq-rail: 420ms; }
+:root[data-variant="game"] .gq-map { --dur-gq-step: 300ms; --dur-gq-seg: 280ms; --dur-gq-rail: 420ms; --dur-gq-flare: 900ms; --dur-gq-twinkle: 3.6s; --dur-gq-glint: 4.8s; --dur-gq-sky: 4.2s; }
 :root[data-variant="game"] .gq-map[data-gr-anim] .gq-q { transition: opacity var(--dur-enter) var(--ease-out), transform var(--dur-enter) var(--ease-out); transition-delay: calc(var(--gr-k, 0) * var(--dur-gq-step)); }
 :root[data-variant="game"] .gq-map[data-gr-anim] .gq-node__pop { transition: opacity var(--dur-fade) linear, transform var(--dur-rise) var(--ease-out); transition-delay: calc(var(--gr-k, 0) * var(--dur-gq-step) + var(--dur-gq-seg)); }
 :root[data-variant="game"] .gq-map[data-gr-anim] .gq-path line { transition: transform var(--dur-gq-seg) linear; transition-delay: calc(var(--gr-k, 0) * var(--dur-gq-step)); }
@@ -231,11 +231,11 @@
 @keyframes gq-glint { 0%, 70%, 100% { opacity: 0; transform: scale(.4) rotate(0deg); } 82% { opacity: .9; transform: scale(1) rotate(45deg); } }
 @keyframes gq-sky { 0%, 100% { opacity: .75; } 50% { opacity: .15; } }
 :root[data-variant="game"] .gq-map[data-gr-anim] .gq-node:not(.gr-wait) .gq-glow {
-  animation: gq-flare 900ms var(--ease-out) calc(var(--gr-k, 0) * var(--dur-gq-step) + var(--dur-gq-seg)) both,
-    gq-twinkle 3.6s ease-in-out calc(var(--gr-k, 0) * var(--dur-gq-step) + var(--dur-gq-seg) + 900ms + var(--tw, 0s)) infinite;
+  animation: gq-flare var(--dur-gq-flare) var(--ease-out) calc(var(--gr-k, 0) * var(--dur-gq-step) + var(--dur-gq-seg)) both,
+    gq-twinkle var(--dur-gq-twinkle) ease-in-out calc(var(--gr-k, 0) * var(--dur-gq-step) + var(--dur-gq-seg) + var(--dur-gq-flare) + var(--tw, 0s)) 2 forwards;
 }
-:root[data-variant="game"] .gq-map[data-gr-anim] .gq-node:not(.gr-wait) .gq-glint { animation: gq-glint 4.8s ease-in-out calc(var(--gr-k, 0) * var(--dur-gq-step) + var(--dur-gq-seg) + var(--tw, 0s)) infinite both; }
-:root[data-variant="game"] .gq-map[data-gr-anim] .gq-sky i.tw { animation: gq-sky 4.2s ease-in-out var(--d, 0s) infinite; }
+:root[data-variant="game"] .gq-map[data-gr-anim] .gq-node:not(.gr-wait) .gq-glint { animation: gq-glint var(--dur-gq-glint) ease-in-out calc(var(--gr-k, 0) * var(--dur-gq-step) + var(--dur-gq-seg) + var(--tw, 0s)) 2 both; }
+:root[data-variant="game"] .gq-map[data-gr-anim] .gq-sky i.tw { animation: gq-sky var(--dur-gq-sky) ease-in-out var(--d, 0s) 2; }
 :root[data-variant="game"] .gq-map:not([data-gr-in]) :is(.gq-glow, .gq-glint, .gq-sky i) { animation-play-state: paused; }
 :root[data-variant="game"][data-motion="reduce"] .gq-map .gq-q.gr-wait,
 :root[data-variant="game"][data-motion="reduce"] .gq-map .gq-node.gr-wait .gq-node__pop,
