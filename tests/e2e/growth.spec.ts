@@ -56,7 +56,8 @@ test.describe('growth infographic (GR)', () => {
   test('GR-4: the draw-on — parts below the fold wait, then draw when scrolled to; never above the fold', async ({ page }) => {
     await openAt(page, gamePath('/research/'), 1280, 800);
     const state = await page.evaluate(() => {
-      const parts = Array.from(document.querySelectorAll<HTMLElement>('#growth .gq-map [data-gr-i]'));
+      // named change 2026-10-07: the desktop path ([data-gr-path]) is lit by its band, not by the per-part rule (test below)
+      const parts = Array.from(document.querySelectorAll<HTMLElement>('#growth .gq-map [data-gr-i]:not([data-gr-path])'));
       const below = parts.filter((el) => el.getBoundingClientRect().top >= innerHeight);
       return { anim: document.querySelector('#growth .gq-map')?.hasAttribute('data-gr-anim'), waiting: below.filter((el) => el.classList.contains('gr-wait')).length, below: below.length,
         aboveWaiting: parts.filter((el) => el.getBoundingClientRect().top < innerHeight && el.getClientRects().length && el.classList.contains('gr-wait')).length };
@@ -67,6 +68,43 @@ test.describe('growth infographic (GR)', () => {
     expect(state.aboveWaiting).toBe(0);
     await page.locator('#gr-q-cog-2026-engagement').scrollIntoViewIfNeeded();
     await expect.poll(() => page.locator('#growth .gq-map .gr-wait').count()).toBeLessThan(state.waiting);
+  });
+
+  test('GR-4 constellation: a path already on screen at load is not shown finished; it draws in order (owner report 2026-10-07)', async ({ page }) => {
+    // hold the reveal script for a second so the first paints can be read before it runs
+    let release!: () => void;
+    const held = new Promise<void>((r) => { release = r; });
+    await page.route(/\/_astro\/growth-reveal\.[\w-]+\.js$/, async (route) => { await held; await route.continue(); });
+    await page.setViewportSize({ width: 1280, height: 1500 });
+    // a module script delays DOMContentLoaded, so wait for the parsed path and two painted frames instead
+    await page.goto(gamePath('/research/'), { waitUntil: 'commit' });
+    await page.waitForSelector('#growth .gq-node:last-of-type', { state: 'attached' });
+    await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
+    const read = () => page.evaluate(() => {
+      const band = document.querySelector('#growth .gq-path')!.getBoundingClientRect();
+      const lines = Array.from(document.querySelectorAll<SVGLineElement>('#growth .gq-path line'));
+      const pops = Array.from(document.querySelectorAll<HTMLElement>('#growth .gq-node .gq-node__pop'));
+      return {
+        bandOnScreen: band.top < innerHeight * 0.85,
+        hidden: lines.filter((l) => /^matrix\(0, 0, 0, 0,/.test(getComputedStyle(l).transform)).length,
+        lines: lines.length,
+        popsHidden: pops.filter((p) => getComputedStyle(p).opacity === '0').length,
+        pops: pops.length,
+        lit: lines.filter((l) => l.classList.contains('gr-lit')).length,
+        k: Array.from(document.querySelectorAll<HTMLElement>('#growth .gq-seg')).map((l) => Number(l.style.getPropertyValue('--gr-k'))),
+      };
+    });
+    const before = await read();
+    expect(before.bandOnScreen).toBe(true);
+    expect(before.lit).toBe(0);
+    expect(before.hidden).toBe(before.lines); // no finished path before the draw
+    expect(before.popsHidden).toBe(before.pops);
+    release();
+    await expect.poll(async () => (await read()).lit, { timeout: 10_000 }).toBe(before.lines);
+    const after = await read();
+    expect(after.k).toEqual([...after.k].sort((a, b) => a - b)); // segments draw in path order
+    expect(new Set(after.k).size).toBe(after.k.length);
+    await expect.poll(async () => (await read()).hidden, { timeout: 10_000 }).toBe(0);
   });
 
   for (const route of [gamePath('/research/'), dataPath('/research/')]) {

@@ -56,22 +56,21 @@ describe('initGrowthReveal (src/scripts/growth-reveal.ts)', () => {
     FakeIO.all = [];
   });
 
-  it('a band holds its path parts until the band itself is on screen, then draws only them, in order (owner report 2026-10-07)', () => {
-    Object.defineProperty(window, 'innerHeight', { configurable: true, value: 800 });
+  /** A band figure: cards 0–3 (tops given), the band's path parts 1–3 (top given), card 4 under the band. */
+  function bandFigure(cardTops: number[], pathTop: number, bandBox: boolean) {
     document.body.innerHTML = '';
     const fig = document.createElement('div');
     fig.setAttribute('data-gr-fig', '');
-    // cards 0–3 above the band (they enter first), the band's lines and stars 1–3 below them, card 4 under the band
     const band = document.createElement('div');
     band.setAttribute('data-gr-band', '');
-    (band as unknown as { getClientRects: () => unknown[] }).getClientRects = () => [{}];
-    const cards = [1000, 1010, 1020, 1030, 1600].map((top, i) => {
+    (band as unknown as { getClientRects: () => unknown[] }).getClientRects = () => (bandBox ? [{}] : []);
+    const cards = cardTops.map((top, i) => {
       const el = at(document.createElement('div'), top, 30);
       el.setAttribute('data-gr-i', String(i));
       return el;
     });
     const path = [1, 2, 3].map((i) => {
-      const el = at(document.createElement('div'), 1300, 30);
+      const el = at(document.createElement('div'), pathTop, 30);
       el.setAttribute('data-gr-i', String(i));
       el.setAttribute('data-gr-path', '');
       band.append(el);
@@ -79,20 +78,62 @@ describe('initGrowthReveal (src/scripts/growth-reveal.ts)', () => {
     });
     fig.append(...cards.slice(0, 4), band, cards[4]!);
     document.body.append(fig);
+    return { band, cards, path };
+  }
+  const lit = (els: HTMLElement[]) => els.map((el) => el.classList.contains('gr-lit'));
+
+  it('desktop band: card reveals never light the path; the band on screen lights only it, in order (owner report 2026-10-07)', () => {
+    Object.defineProperty(window, 'innerHeight', { configurable: true, value: 800 });
+    const { band, cards, path } = bandFigure([1000, 1010, 1020, 1030, 1600], 1300, true);
     initGrowthReveal(document, { io, reduced: () => false });
     const [parts, bandIo] = FakeIO.all;
     parts!.initial();
-    expect([...cards, ...path].every((el) => el.classList.contains('gr-wait'))).toBe(true);
-    // the top cards scroll in: they draw, the path below them stays held
+    // path parts stay out of the per-part rule (CSS keeps them unlit); the cards below the fold wait
+    expect(path.some((el) => el.classList.contains('gr-wait'))).toBe(false);
+    expect(path.some((el) => parts!.observed.has(el))).toBe(false);
+    expect(cards.every((el) => el.classList.contains('gr-wait'))).toBe(true);
     parts!.fire(cards[3]!);
     expect(cards.map((el) => el.classList.contains('gr-wait'))).toEqual([false, false, false, false, true]);
-    expect(path.every((el) => el.classList.contains('gr-wait'))).toBe(true);
-    // the band scrolls in: its parts draw in order; the card under the band still waits for its own turn
+    expect(lit(path)).toEqual([false, false, false]);
     bandIo!.fire(band);
-    expect(path.map((el) => el.classList.contains('gr-wait'))).toEqual([false, false, false]);
+    expect(lit(path)).toEqual([true, true, true]);
     expect(path.map((el) => el.style.getPropertyValue('--gr-k'))).toEqual(['0', '1', '2']);
     expect(cards[4]!.classList.contains('gr-wait')).toBe(true);
     expect(bandIo!.observed.size).toBe(0);
+  });
+
+  it('desktop band already on screen at load: the path is not shown finished; it lights in order on the first report (owner report 2026-10-07)', () => {
+    Object.defineProperty(window, 'innerHeight', { configurable: true, value: 800 });
+    const { band, path } = bandFigure([100, 110, 120, 130, 700], 400, true);
+    initGrowthReveal(document, { io, reduced: () => false });
+    const [parts, bandIo] = FakeIO.all;
+    parts!.initial();
+    expect(lit(path)).toEqual([false, false, false]); // on screen, but not drawn yet
+    bandIo!.fire(band);
+    expect(lit(path)).toEqual([true, true, true]);
+    expect(path.map((el) => el.style.getPropertyValue('--gr-k'))).toEqual(['0', '1', '2']);
+  });
+
+  it('phones (the band has no box): path parts follow the per-part rule and are lit when shown', () => {
+    Object.defineProperty(window, 'innerHeight', { configurable: true, value: 800 });
+    const { band, path } = bandFigure([100, 110, 120, 130, 1600], 1300, false);
+    path[0] = at(path[0]!, 200);
+    initGrowthReveal(document, { io, reduced: () => false });
+    const [parts, bandIo] = FakeIO.all;
+    parts!.initial();
+    expect(lit(path)).toEqual([true, false, false]); // on the first screen: shown and lit at once
+    expect(path.map((el) => el.classList.contains('gr-wait'))).toEqual([false, true, true]);
+    bandIo!.fire(band); // a band without a box lights nothing
+    expect(lit(path)).toEqual([true, false, false]);
+    parts!.fire(path[2]!);
+    expect(lit(path)).toEqual([true, true, true]);
+  });
+
+  it('without IntersectionObserver the constellation path is lit at once', () => {
+    const { path } = bandFigure([100, 110, 120, 130, 700], 400, true);
+    document.querySelector('[data-gr-fig]')!.setAttribute('data-gr-live', '');
+    initGrowthReveal(document, { io: undefined as unknown as typeof IntersectionObserver, reduced: () => false });
+    expect(lit(path)).toEqual([true, true, true]);
   });
 
   it('the first report hides only parts below the first screen; one intersection draws every earlier part in order', () => {

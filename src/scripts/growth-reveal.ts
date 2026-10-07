@@ -18,7 +18,12 @@ const reducedNow = (): boolean =>
 
 export function initGrowthReveal(root: ParentNode = document, opts: RevealOptions = {}): void {
   const IO = opts.io ?? (typeof IntersectionObserver === 'function' ? IntersectionObserver : undefined);
-  if (!IO || (opts.reduced ?? reducedNow)()) return;
+  if (!IO) {
+    // nothing can tell when the band is on screen: light the path at once (CSS hides an unlit desktop path)
+    root.querySelectorAll<HTMLElement>('[data-gr-live] [data-gr-path]').forEach((el) => el.classList.add('gr-lit'));
+    return;
+  }
+  if ((opts.reduced ?? reducedNow)()) return;
   // [data-gr-live] figures (the game version's constellation): data-gr-in while any of it is on screen, so its
   // twinkle (CSS, two rounds) runs only then; under reduced motion and without IntersectionObserver CSS shows it still.
   for (const fig of root.querySelectorAll<HTMLElement>('[data-gr-live]')) {
@@ -33,18 +38,18 @@ export function initGrowthReveal(root: ParentNode = document, opts: RevealOption
     const seen = new WeakSet<Element>();
     const waiting: HTMLElement[] = [];
     let queued = false;
-    // A figure with a band ([data-gr-band], the game version's desktop path): its path parts ([data-gr-path]: lines and
-    // stars) draw only once the band itself is on screen, all in order, so the line is seen growing. Without this the
-    // cards above the band (they enter first) drew the path while it was still below the screen (owner report
-    // 2026-10-07). A band without a box (phones: the rail) leaves the parts to the per-part rule.
+    // The game version's desktop constellation: a band ([data-gr-band]) with a box. Its path parts ([data-gr-path]:
+    // lines and stars) are hidden from the first paint by CSS (growth-game.css: html.js, motion full, desktop, no
+    // .gr-lit) and stay out of the per-part rule; whenever the band comes on screen — already there at load, or by a
+    // scroll — they light in order (.gr-lit with --gr-k), so the line is always seen growing (owner reports
+    // 2026-10-07: it drew while below the screen, and stood finished when on screen at load). Phones (the band has no
+    // box) keep the per-part rule; a path part that rule shows is lit too, for its glow.
     const band = fig.querySelector<HTMLElement>('[data-gr-band]');
-    const bandHeld = (): boolean => band !== null && !bandIn && band.getClientRects().length > 0;
-    let bandIn = false;
+    const banded = (): boolean => band !== null && band.getClientRects().length > 0;
+    const isPath = (el: Element): boolean => el.hasAttribute('data-gr-path');
 
-    const reveal = (upTo: number, pathOnly = false): void => {
-      const due = waiting
-        .filter((el) => el.classList.contains('gr-wait') && order(el) <= upTo && (pathOnly ? el.hasAttribute('data-gr-path') : !(el.hasAttribute('data-gr-path') && bandHeld())))
-        .sort((a, b) => order(a) - order(b));
+    const reveal = (upTo: number): void => {
+      const due = waiting.filter((el) => el.classList.contains('gr-wait') && order(el) <= upTo).sort((a, b) => order(a) - order(b));
       let k = 0;
       let last = -1;
       for (const el of due) {
@@ -54,6 +59,7 @@ export function initGrowthReveal(root: ParentNode = document, opts: RevealOption
         }
         el.style.setProperty('--gr-k', String(k));
         el.classList.remove('gr-wait');
+        if (isPath(el)) el.classList.add('gr-lit');
         io.unobserve(el);
       }
     };
@@ -76,9 +82,14 @@ export function initGrowthReveal(root: ParentNode = document, opts: RevealOption
           if (!seen.has(el)) {
             // the first report: on (or above) the first screen, or without a box at this width → never waits
             seen.add(el);
+            if (isPath(el) && banded()) {
+              io.unobserve(el); // the band lights it
+              continue;
+            }
             const box = entry.boundingClientRect;
             if ((box.width === 0 && box.height === 0) || entry.isIntersecting || box.top < window.innerHeight) {
               io.unobserve(el);
+              if (isPath(el)) el.classList.add('gr-lit');
               continue;
             }
             el.classList.add('gr-wait');
@@ -96,10 +107,20 @@ export function initGrowthReveal(root: ParentNode = document, opts: RevealOption
     if (band) {
       const bio = new IO(
         (entries) => {
-          if (!entries.some((e) => e.isIntersecting)) return;
-          bandIn = true;
+          if (!entries.some((e) => e.isIntersecting) || !banded()) return;
           bio.disconnect();
-          reveal(Number.POSITIVE_INFINITY, true);
+          const path = parts.filter((el) => isPath(el) && !el.classList.contains('gr-lit')).sort((a, b) => order(a) - order(b));
+          let k = -1;
+          let last = -1;
+          for (const el of path) {
+            if (order(el) !== last) {
+              k++;
+              last = order(el);
+            }
+            el.style.setProperty('--gr-k', String(k));
+            el.classList.remove('gr-wait');
+            el.classList.add('gr-lit');
+          }
         },
         { rootMargin: '0px 0px -15% 0px' },
       );
