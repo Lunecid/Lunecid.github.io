@@ -6,7 +6,7 @@ import { join } from 'node:path';
 import { load } from 'js-yaml';
 import { availableAchievements, type AchievementDef } from '../../src/lib/achievements';
 import { soundAvailability } from '../../src/lib/public-assets';
-import { test, expect, basePathOf } from './helpers';
+import { test, expect, basePathOf, realAccountStatus } from './helpers';
 
 /** achievements.yaml minus bgm-on when the BGM file is absent: the same rule as the Player Log list (availableAchievements). */
 const ACHIEVEMENT_COUNT = availableAchievements(
@@ -81,8 +81,9 @@ test.describe('D-13: the Player Log shows only what exists', () => {
       await page.locator('#favorite-games').scrollIntoViewIfNeeded();
       await expect(page.locator('.fg__scene')).toHaveCount(1);
       await expect(page.locator('.fg-acct')).toHaveCount(0);
-      // AL-10: no account feed locally, so the LINKED ACCOUNTS row shows no tile
-      await expect(page.locator('#membership .acct-tile')).toHaveCount(0);
+      // AL-10: one LINKED ACCOUNTS tile per platform the build shows (none locally; on CI the owner's ACCOUNT_* variables)
+      const shown = realAccountStatus().platforms.filter((p) => p.state === 'shown').length;
+      await expect(page.locator('#membership .acct-tile')).toHaveCount(shown);
       await expect(page.locator('.page-head__intro')).not.toContainText(/파이프라인|pipeline/i);
       await expect(page.locator('#membership')).toBeVisible();
       await expect(page.locator('#site-achievements')).toBeVisible();

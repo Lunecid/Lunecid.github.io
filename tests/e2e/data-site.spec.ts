@@ -3,7 +3,7 @@
 // out of the accessibility tree, at most one filled button and one badge per view, rails visible (above the heading on
 // phones), no horizontal scroll, no console error. Then reduced motion on both paths (the OS and the page switch).
 import type { Page } from '@playwright/test';
-import { test, expect, dataPath, collectProblems, horizontalOverflow, settle } from './helpers';
+import { test, expect, builtHasId, dataPath, collectProblems, horizontalOverflow, settle } from './helpers';
 
 /** DS-0's section ids (c5d8d7f build): the redesign keeps every one. */
 const PAGES = [
@@ -57,7 +57,9 @@ for (const { base, ids, fill, badge } of PAGES) {
         expect(s.landmarks, `${at}: landmarks`).toEqual({ headerNav: 1, main: 1, footer: 1 });
         expect(s.h1, `${at}: one h1`).toBe(1);
         expect(s.skips, `${at}: heading levels never skip`).toEqual([]);
-        expect(s.ids, `${at}: the DS-0 section ids`).toEqual([...ids]);
+        // the GitHub section exists only when the build fetched GitHub data (CI with a token; GitHubSection.astro), last
+        const gh = builtHasId(route, 'github') ? ['github'] : [];
+        expect(s.ids, `${at}: the DS-0 section ids`).toEqual([...ids, ...gh]);
         expect(s.fieldsExposed, `${at}: colour fields aria-hidden`).toEqual([]);
         expect(s.fieldsWithText, `${at}: colour fields empty`).toEqual([]);
         expect(s.displayExposed, `${at}: display words aria-hidden`).toEqual([]);

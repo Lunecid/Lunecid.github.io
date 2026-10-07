@@ -53,6 +53,17 @@ export function builtHasId(route: string, id: string): boolean {
   const file = join(DIST, route, 'index.html');
   return existsSync(file) && new RegExp(`<[a-z][a-z0-9-]*\\b[^>]*\\bid="${id}"[^>]*>`).test(readFileSync(file, 'utf8'));
 }
+/**
+ * The real build's #acct-status (dist/game/player-log/): which account tiles it shows. Locally no ACCOUNT_* variable is set
+ * and every tile is absent; on CI the owner's repository variables (owner ruling 2026-10-07) make the fetched games
+ * shown. Specs about the real build assert whichever state the build has, read from the same JSON the page carries.
+ */
+export function realAccountStatus(): { runId: string | null; platforms: { slot: number; state: 'shown' | 'hidden' | 'absent' }[] } {
+  const html = readFileSync(join(DIST, 'game/player-log/index.html'), 'utf8');
+  const m = /<script[^>]*\bid="acct-status"[^>]*>([\s\S]*?)<\/script>/.exec(html);
+  if (!m) throw new Error('#acct-status not found in the built player log');
+  return JSON.parse(m[1]!);
+}
 /** The old game URLs that now serve redirect stubs (P1-13). */
 export function legacyPaths(): string[] {
   return legacyRedirects().map((r) => r.from);

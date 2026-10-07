@@ -1,6 +1,7 @@
 // LINKED ACCOUNTS row (account-link spec §3.1, §3.5, §11.1; plan AL-10 static part). Two builds:
-// - dist (the default server, no feeds — today's real build): the row is a zero-height empty frame, no tile, and
-//   #acct-status lists the five enabled tiles as absent;
+// - dist (the default server, the real build): locally no feeds — the row is a zero-height empty frame, no tile, and
+//   #acct-status lists the five enabled tiles as absent; on CI the owner's ACCOUNT_* variables make tiles, and the specs
+//   below read the build's own #acct-status (realAccountStatus) to know which;
 // - dist-e2e-accounts (SB_E2E_ACCOUNTS=1, the third web server, never deployed): the synthetic fixture feeds of
 //   tests/fixtures/generated. The expected tile set is computed here with the view model's pure part (the same
 //   accountStatus the page uses, spec §11.1 "same pure function"), with the feeds stamped fresh as that build does.
@@ -15,7 +16,7 @@ import { ui } from '../../src/i18n/ui';
 import { TILE_SLOTS, accountStatus, type AccountStatus } from '../../src/lib/account-state';
 import { containsTrademark } from '../../src/lib/seo';
 import type { AccountFeed, RiotLinks } from '../../src/lib/generated';
-import { FAKE_HANDLE, FAKE_STEAM, FAKE_TICKET, RELAY, collectViolations, expect, mockRelay, test, watchViolations } from './helpers';
+import { FAKE_HANDLE, FAKE_STEAM, FAKE_TICKET, RELAY, collectViolations, expect, mockRelay, realAccountStatus, test, watchViolations } from './helpers';
 import { ACCOUNTS_ORIGIN, ORIGIN } from './ports';
 
 const ROUTES = ['/game/player-log/', '/en/game/player-log/'];
@@ -37,10 +38,21 @@ async function statusOf(page: Page): Promise<AccountStatus> {
   return JSON.parse((await page.locator('script#acct-status').textContent()) ?? 'null') as AccountStatus;
 }
 
-test.describe('LINKED ACCOUNTS row — real build without feeds (dark)', () => {
+const REAL = realAccountStatus();
+const REAL_SHOWN = REAL.platforms.filter((p) => p.state === 'shown').length;
+
+test.describe('LINKED ACCOUNTS row — real build', () => {
   for (const route of ROUTES) {
-    test(`${route}: zero-height empty frame, no tile, no caption, the showcase unchanged, #acct-status all absent`, async ({ page }) => {
+    test(`${route}: as built — with feeds one tile per shown platform; without, a zero-height empty frame, no tile, no caption, the showcase unchanged, #acct-status all absent`, async ({ page }) => {
       await page.goto(route, { waitUntil: 'load' });
+      if (REAL_SHOWN > 0) {
+        // CI: the owner's ACCOUNT_* variables (owner ruling 2026-10-07)
+        await expect(page.locator('#membership .acct-row.acct-row--empty')).toHaveCount(0);
+        await expect(page.locator('#membership .acct-tile')).toHaveCount(REAL_SHOWN);
+        await expect(page.locator('#favorite-games [role="tab"]')).toHaveCount(6);
+        expect((await statusOf(page)).platforms).toEqual(REAL.platforms);
+        return;
+      }
       const empty = page.locator('#membership .container.container--hud > astro-island .acct-row.acct-row--empty');
       await expect(empty).toHaveCount(1);
       expect((await empty.boundingBox())?.height).toBe(0);
@@ -545,7 +557,9 @@ test.describe('owner mode — real build, relay not set (dark)', () => {
     await page.goto(`${ORIGIN}/game/player-log/?manage`, { waitUntil: 'load' });
     const tiles = page.locator('#membership ul.acct-row > li > button.acct-tile');
     await expect(tiles).toHaveCount(5);
-    await expect(tiles.locator('.acct-tile__state')).toHaveText(['미연동', '미연동', '미연동', '미연동', '미연동']);
+    // a shown tile carries its teaser, not a state word; an absent one says 미연동, a hidden one 오류 or 오래됨
+    const words = REAL.platforms.filter((p) => p.state !== 'shown').map((p) => (p.state === 'absent' ? '미연동' : /^(오류|오래됨)$/));
+    await expect(tiles.locator('.acct-tile__state')).toHaveText(words);
     const manage = page.locator('#membership ul.acct-row > li:last-child > button.acct-manage');
     await expect(manage).toHaveText('연동 관리');
     expect(await page.evaluate(() => location.href)).toBe(`${ORIGIN}/game/player-log/`);

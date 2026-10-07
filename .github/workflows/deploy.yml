@@ -227,7 +227,11 @@ jobs:
           name: site-builds
           path: .
 
-      - run: npm exec -- playwright install --with-deps chromium
+      # poppler: print.spec.ts reads the printed PDFs with pdfinfo/pdftotext, as the build job's PDF step does
+      - name: Install Playwright Chromium and poppler (pdftotext, pdfinfo)
+        run: |
+          npm exec -- playwright install --with-deps chromium
+          sudo apt-get install -y --no-install-recommends poppler-utils
 
       - run: npm run test:e2e -- --shard="$SHARD"
         env:
@@ -307,6 +311,17 @@ jobs:
           path: .
 
       - run: npm run test:lh
+
+      # On a failed assertion the reports show which audit moved (one day, like the other per-run artifacts).
+      - name: Upload Lighthouse reports
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: lighthouse-reports
+          path: .lighthouseci/
+          retention-days: 1
+          if-no-files-found: ignore
+          include-hidden-files: true
 
   deploy:
     needs: [build, secrets-scan, e2e, lighthouse]

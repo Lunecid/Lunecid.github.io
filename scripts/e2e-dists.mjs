@@ -20,7 +20,10 @@ export const E2E_DISTS = [
 /** Builds each site in turn with the same command the local web servers run; stops at the first failure. */
 function main() {
   for (const { outDir, env } of E2E_DISTS) {
-    const r = spawnSync('npm', ['run', 'build', '--', '--outDir', outDir], { stdio: 'inherit', shell: process.platform === 'win32', env: { ...process.env, ...env } });
+    // GITHUB_RUN_ID left out: on CI it would stamp the real run into #acct-status (src/lib/account-state.ts), and the
+    // mocked relay's run (tests/e2e/helpers.ts FAKE_RUN_ID) could never match it. These sites are never deployed.
+    const { GITHUB_RUN_ID: _run, ...base } = process.env;
+    const r = spawnSync('npm', ['run', 'build', '--', '--outDir', outDir], { stdio: 'inherit', shell: process.platform === 'win32', env: { ...base, ...env } });
     if (r.status !== 0) {
       console.error(`build of ${outDir} failed`);
       process.exit(r.status ?? 1);
