@@ -71,15 +71,15 @@ const methodFoot = GROWTH_LEVELS.map((lv) => `${lv} ${copy.method[lv]}`).join(' 
       <div class="gq-sky" aria-hidden="true">
         {SKY.map((st) => <i class:list={[{ tw: st.tw }]} style={`--x: ${st.x}; --y: ${st.y}; --s: ${st.s}px; --d: ${st.d}s`}></i>)}
       </div>
-      <svg class="gq-path" viewBox={`0 0 1000 ${BAND}`} preserveAspectRatio="none" aria-hidden="true" focusable="false">
+      <svg class="gq-path" data-gr-band viewBox={`0 0 1000 ${BAND}`} preserveAspectRatio="none" aria-hidden="true" focusable="false">
         {steps.map((_, i) => {
           const p = pts[i]!;
           const y2 = i % 2 === 0 ? 0 : BAND;
-          return <line class="gq-stem" data-gr-i={i} x1={r1(p.x * 10)} y1={r1(p.y)} x2={r1(p.x * 10)} y2={y2} style={`transform-origin: ${r1(p.x * 10)}px ${r1(p.y)}px`} />;
+          return <line class="gq-stem" data-gr-path data-gr-i={i} x1={r1(p.x * 10)} y1={r1(p.y)} x2={r1(p.x * 10)} y2={y2} style={`transform-origin: ${r1(p.x * 10)}px ${r1(p.y)}px`} />;
         })}
         {pts.slice(1).map((p, k) => {
           const a = pts[k]!;
-          return <line class:list={['gq-seg', { 'gq-seg--lock': k + 1 >= steps.length }]} data-gr-i={k + 1} x1={r1(a.x * 10)} y1={r1(a.y)} x2={r1(p.x * 10)} y2={r1(p.y)} style={`transform-origin: ${r1(a.x * 10)}px ${r1(a.y)}px`} />;
+          return <line class:list={['gq-seg', { 'gq-seg--lock': k + 1 >= steps.length }]} data-gr-path data-gr-i={k + 1} x1={r1(a.x * 10)} y1={r1(a.y)} x2={r1(p.x * 10)} y2={r1(p.y)} style={`transform-origin: ${r1(a.x * 10)}px ${r1(a.y)}px`} />;
         })}
       </svg>
       <span class="gq-mark gq-mark--start" aria-hidden="true" style={`--x: ${r1(pts[0]!.x)}; --y: ${r1(pts[0]!.y)}`}>{copy.start} {steps[0]?.period.split('–')[0]}</span>
@@ -87,7 +87,7 @@ const methodFoot = GROWTH_LEVELS.map((lv) => `${lv} ${copy.method[lv]}`).join(' 
 
       {steps.map((s, i) => (
         <Fragment>
-          <a class:list={['gq-node', { 'gq-node--ach': s.award !== null }]} href={`#gr-q-${s.id}`} data-gr-i={i} style={`--x: ${r1(pts[i]!.x)}; --y: ${r1(pts[i]!.y)}; --tw: ${twinkle(i)}s`}
+          <a class:list={['gq-node', { 'gq-node--ach': s.award !== null }]} href={`#gr-q-${s.id}`} data-gr-path data-gr-i={i} style={`--x: ${r1(pts[i]!.x)}; --y: ${r1(pts[i]!.y)}; --tw: ${twinkle(i)}s`}
             aria-label={`${no(i)} ${s.title}, ${s.period}${s.award ? `, ${s.award.name}` : ''}`}>
             <span class="gq-node__pop" aria-hidden="true"><b class="gq-glow"></b>{s.award && <b class="gq-glint"></b>}<i></i></span>
             <span class="gq-tip" aria-hidden="true"><b>{no(i)} · {s.title}</b>{s.period} · Lv.{s.role.level} {s.role.name}</span>
@@ -127,7 +127,7 @@ const methodFoot = GROWTH_LEVELS.map((lv) => `${lv} ${copy.method[lv]}`).join(' 
         const i = steps.length + j;
         return (
           <Fragment>
-            <a class="gq-node gq-node--lock" href={`#gr-q-${f.id}`} data-gr-i={i} style={`--x: ${r1(pts[i]!.x)}; --y: ${r1(pts[i]!.y)}`} aria-label={`${f.title}, ${f.status}`}>
+            <a class="gq-node gq-node--lock" href={`#gr-q-${f.id}`} data-gr-path data-gr-i={i} style={`--x: ${r1(pts[i]!.x)}; --y: ${r1(pts[i]!.y)}`} aria-label={`${f.title}, ${f.status}`}>
               <span class="gq-node__pop" aria-hidden="true"><i></i></span>
               <span class="gq-tip" aria-hidden="true"><b>{f.title}</b>{f.status}</span>
             </a>

@@ -33,9 +33,18 @@ export function initGrowthReveal(root: ParentNode = document, opts: RevealOption
     const seen = new WeakSet<Element>();
     const waiting: HTMLElement[] = [];
     let queued = false;
+    // A figure with a band ([data-gr-band], the game version's desktop path): its path parts ([data-gr-path]: lines and
+    // stars) draw only once the band itself is on screen, all in order, so the line is seen growing. Without this the
+    // cards above the band (they enter first) drew the path while it was still below the screen (owner report
+    // 2026-10-07). A band without a box (phones: the rail) leaves the parts to the per-part rule.
+    const band = fig.querySelector<HTMLElement>('[data-gr-band]');
+    const bandHeld = (): boolean => band !== null && !bandIn && band.getClientRects().length > 0;
+    let bandIn = false;
 
-    const reveal = (upTo: number): void => {
-      const due = waiting.filter((el) => el.classList.contains('gr-wait') && order(el) <= upTo).sort((a, b) => order(a) - order(b));
+    const reveal = (upTo: number, pathOnly = false): void => {
+      const due = waiting
+        .filter((el) => el.classList.contains('gr-wait') && order(el) <= upTo && (pathOnly ? el.hasAttribute('data-gr-path') : !(el.hasAttribute('data-gr-path') && bandHeld())))
+        .sort((a, b) => order(a) - order(b));
       let k = 0;
       let last = -1;
       for (const el of due) {
@@ -84,6 +93,18 @@ export function initGrowthReveal(root: ParentNode = document, opts: RevealOption
     );
     fig.setAttribute('data-gr-anim', '');
     for (const el of parts) io.observe(el);
+    if (band) {
+      const bio = new IO(
+        (entries) => {
+          if (!entries.some((e) => e.isIntersecting)) return;
+          bandIn = true;
+          bio.disconnect();
+          reveal(Number.POSITIVE_INFINITY, true);
+        },
+        { rootMargin: '0px 0px -15% 0px' },
+      );
+      bio.observe(band);
+    }
     addEventListener('scroll', onScroll, { passive: true });
   }
 }

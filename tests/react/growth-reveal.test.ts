@@ -7,9 +7,11 @@ type Entry = { target: Element; isIntersecting: boolean; boundingClientRect: DOM
 type Callback = (entries: Entry[]) => void;
 class FakeIO {
   static last: FakeIO | null = null;
+  static all: FakeIO[] = [];
   readonly observed = new Set<Element>();
   constructor(readonly callback: Callback, readonly options?: { rootMargin?: string }) {
     FakeIO.last = this;
+    FakeIO.all.push(this);
   }
   observe(el: Element): void { this.observed.add(el); }
   unobserve(el: Element): void { this.observed.delete(el); }
@@ -51,6 +53,46 @@ describe('initGrowthReveal (src/scripts/growth-reveal.ts)', () => {
   afterEach(() => {
     document.body.innerHTML = '';
     FakeIO.last = null;
+    FakeIO.all = [];
+  });
+
+  it('a band holds its path parts until the band itself is on screen, then draws only them, in order (owner report 2026-10-07)', () => {
+    Object.defineProperty(window, 'innerHeight', { configurable: true, value: 800 });
+    document.body.innerHTML = '';
+    const fig = document.createElement('div');
+    fig.setAttribute('data-gr-fig', '');
+    // cards 0–3 above the band (they enter first), the band's lines and stars 1–3 below them, card 4 under the band
+    const band = document.createElement('div');
+    band.setAttribute('data-gr-band', '');
+    (band as unknown as { getClientRects: () => unknown[] }).getClientRects = () => [{}];
+    const cards = [1000, 1010, 1020, 1030, 1600].map((top, i) => {
+      const el = at(document.createElement('div'), top, 30);
+      el.setAttribute('data-gr-i', String(i));
+      return el;
+    });
+    const path = [1, 2, 3].map((i) => {
+      const el = at(document.createElement('div'), 1300, 30);
+      el.setAttribute('data-gr-i', String(i));
+      el.setAttribute('data-gr-path', '');
+      band.append(el);
+      return el;
+    });
+    fig.append(...cards.slice(0, 4), band, cards[4]!);
+    document.body.append(fig);
+    initGrowthReveal(document, { io, reduced: () => false });
+    const [parts, bandIo] = FakeIO.all;
+    parts!.initial();
+    expect([...cards, ...path].every((el) => el.classList.contains('gr-wait'))).toBe(true);
+    // the top cards scroll in: they draw, the path below them stays held
+    parts!.fire(cards[3]!);
+    expect(cards.map((el) => el.classList.contains('gr-wait'))).toEqual([false, false, false, false, true]);
+    expect(path.every((el) => el.classList.contains('gr-wait'))).toBe(true);
+    // the band scrolls in: its parts draw in order; the card under the band still waits for its own turn
+    bandIo!.fire(band);
+    expect(path.map((el) => el.classList.contains('gr-wait'))).toEqual([false, false, false]);
+    expect(path.map((el) => el.style.getPropertyValue('--gr-k'))).toEqual(['0', '1', '2']);
+    expect(cards[4]!.classList.contains('gr-wait')).toBe(true);
+    expect(bandIo!.observed.size).toBe(0);
   });
 
   it('the first report hides only parts below the first screen; one intersection draws every earlier part in order', () => {
