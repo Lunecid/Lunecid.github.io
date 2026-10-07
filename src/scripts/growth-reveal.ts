@@ -20,7 +20,7 @@ export function initGrowthReveal(root: ParentNode = document, opts: RevealOption
   const IO = opts.io ?? (typeof IntersectionObserver === 'function' ? IntersectionObserver : undefined);
   if (!IO) {
     // nothing can tell when the band is on screen: light the path at once (CSS hides an unlit desktop path)
-    root.querySelectorAll<HTMLElement>('[data-gr-live] [data-gr-path]').forEach((el) => el.classList.add('gr-lit'));
+    root.querySelectorAll<HTMLElement>('[data-gr-fig] [data-gr-path]').forEach((el) => el.classList.add('gr-lit'));
     return;
   }
   if ((opts.reduced ?? reducedNow)()) return;
@@ -38,15 +38,18 @@ export function initGrowthReveal(root: ParentNode = document, opts: RevealOption
     const seen = new WeakSet<Element>();
     const waiting: HTMLElement[] = [];
     let queued = false;
-    // The game version's desktop constellation: a band ([data-gr-band]) with a box. Its path parts ([data-gr-path]:
-    // lines and stars) are hidden from the first paint by CSS (growth-game.css: html.js, motion full, desktop, no
-    // .gr-lit) and stay out of the per-part rule; whenever the band comes on screen — already there at load, or by a
-    // scroll — they light in order (.gr-lit with --gr-k), so the line is always seen growing (owner reports
-    // 2026-10-07: it drew while below the screen, and stood finished when on screen at load). Phones (the band has no
-    // box) keep the per-part rule; a path part that rule shows is lit too, for its glow.
-    const band = fig.querySelector<HTMLElement>('[data-gr-band]');
-    const banded = (): boolean => band !== null && band.getClientRects().length > 0;
+    // Banded paths: the game version's desktop constellation and the general version's lanes charts. A band
+    // ([data-gr-band="key"]) with a box holds the path parts that name it ([data-gr-path="key"]: lines, stars, marks,
+    // dots). CSS hides them from the first paint (html.js, motion full, no .gr-lit) and they stay out of the per-part
+    // rule; whenever their band comes on screen — already there at load, or by a scroll — they light in order (.gr-lit
+    // with --gr-k), so the line is always seen growing (owner reports 2026-10-07: it drew while below the screen, stood
+    // finished when on screen at load, and the general version's went by too fast). Phones (no band box) keep the
+    // per-part rule; a path part that rule shows is lit too.
+    const bands = new Map<string, HTMLElement>();
+    for (const b of fig.querySelectorAll<HTMLElement>('[data-gr-band]')) bands.set(b.getAttribute('data-gr-band') ?? '', b);
     const isPath = (el: Element): boolean => el.hasAttribute('data-gr-path');
+    const bandOf = (el: Element): HTMLElement | undefined => bands.get(el.getAttribute('data-gr-path') ?? '');
+    const banded = (el: Element): boolean => (bandOf(el)?.getClientRects().length ?? 0) > 0;
 
     const reveal = (upTo: number): void => {
       const due = waiting.filter((el) => el.classList.contains('gr-wait') && order(el) <= upTo).sort((a, b) => order(a) - order(b));
@@ -82,7 +85,7 @@ export function initGrowthReveal(root: ParentNode = document, opts: RevealOption
           if (!seen.has(el)) {
             // the first report: on (or above) the first screen, or without a box at this width → never waits
             seen.add(el);
-            if (isPath(el) && banded()) {
+            if (isPath(el) && banded(el)) {
               io.unobserve(el); // the band lights it
               continue;
             }
@@ -104,12 +107,14 @@ export function initGrowthReveal(root: ParentNode = document, opts: RevealOption
     );
     fig.setAttribute('data-gr-anim', '');
     for (const el of parts) io.observe(el);
-    if (band) {
+    for (const [key, band] of bands) {
       const bio = new IO(
         (entries) => {
-          if (!entries.some((e) => e.isIntersecting) || !banded()) return;
+          if (!entries.some((e) => e.isIntersecting) || band.getClientRects().length === 0) return;
           bio.disconnect();
-          const path = parts.filter((el) => isPath(el) && !el.classList.contains('gr-lit')).sort((a, b) => order(a) - order(b));
+          const path = parts
+            .filter((el) => isPath(el) && el.getAttribute('data-gr-path') === key && !el.classList.contains('gr-lit'))
+            .sort((a, b) => order(a) - order(b));
           let k = -1;
           let last = -1;
           for (const el of path) {

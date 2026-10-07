@@ -27,7 +27,13 @@ const PAINT = { award: 'r', talk: 'b', rank: 'y' } as const;
 const ROLE_H = 204;
 const yRole = (lv: GrowthLevel) => ROLE_H - 30 - (lv - 1) * 40;
 const xCol = (i: number) => ((i + 0.5) / n) * 100;
-const rolePath = steps.map((s, i) => (i === 0 ? `M${r1(xCol(i) * 10)} ${yRole(s.role.level)}` : `H${r1(xCol(i) * 10)} V${yRole(s.role.level)}`)).join(' ');
+// the role line as steps: into project i a level run from the previous project, then the rise at i; each piece grows
+// from its start point (growth-data.css: one --dur-gd-step per project, the mark pops when the line reaches it)
+const roleSegs = steps.slice(1).flatMap((s, k) => {
+  const i = k + 1;
+  const x0 = r1(xCol(i - 1) * 10), x1 = r1(xCol(i) * 10), y0 = yRole(steps[i - 1]!.role.level), y1 = yRole(s.role.level);
+  return [{ i, kind: 'h', x0, y0, x1, y1: y0 }, ...(y1 !== y0 ? [{ i, kind: 'v', x0: x1, y0, x1, y1 }] : [])];
+});
 
 // scale lane: log10 y in a 180 px lane
 const SCALE_H = 180;
@@ -79,20 +85,22 @@ const roleFoot = GROWTH_LEVELS.map((lv) => `${lv} ${copy.role[lv]}`).join(' · '
         <b>{copy.lanes.role}</b>
         {GROWTH_LEVELS.map((lv) => <span class="gd-axis" aria-hidden="true" style={`top: ${yRole(lv)}px`}>{copy.role[lv]}</span>)}
       </div>
-      <div class="gd-span" style={`grid-row: 3; height: ${ROLE_H}px`}>
+      <div class="gd-span" data-gr-band="role" style={`grid-row: 3; height: ${ROLE_H}px`}>
         <svg class="gd-chart" viewBox={`0 0 1000 ${ROLE_H}`} preserveAspectRatio="none" aria-hidden="true" focusable="false">
           {GROWTH_LEVELS.map((lv) => <line class="gd-grid" x1="0" x2="1000" y1={yRole(lv)} y2={yRole(lv)} />)}
-          <path class="gd-line" data-gr-i="0" d={rolePath} />
+          {roleSegs.map((g) => (
+            <line class={`gd-line gd-line--${g.kind}`} data-gr-path="role" data-gr-i={g.i} x1={g.x0} y1={g.y0} x2={g.x1} y2={g.y1} style={`--s: ${g.i}; transform-origin: ${g.x0}px ${g.y0}px`} />
+          ))}
         </svg>
         {steps.map((s, i) => (
-          <a class:list={['gd-mk', { 'gd-mk--key': s.role.level >= 3, 'gd-mk--end': i >= n - 2 }]} href={`#gr-c-${s.id}`} data-gr-i={i} style={`--x: ${r1(xCol(i))}; --y: ${yRole(s.role.level)}`}
+          <a class:list={['gd-mk', { 'gd-mk--key': s.role.level >= 3, 'gd-mk--end': i >= n - 2 }]} href={`#gr-c-${s.id}`} data-gr-path="role" data-gr-i={i} style={`--x: ${r1(xCol(i))}; --y: ${yRole(s.role.level)}; --s: ${i}`}
             aria-label={`${s.title}: ${copy.lanes.role} ${s.role.level}, ${s.role.name}`}>
             <i aria-hidden="true"></i>
             <span class="gd-tip" aria-hidden="true"><b>{s.title} · {s.period}</b>{s.role.name} — {s.role.text}</span>
           </a>
         ))}
         {steps.map((s, i) => s.role.level >= 3 && (
-          <span class="gd-keylbl" aria-hidden="true" style={`--x: ${r1(xCol(i))}; --y: ${yRole(s.role.level)}`}>{s.role.name}</span>
+          <span class="gd-keylbl" aria-hidden="true" data-gr-path="role" data-gr-i={i} style={`--x: ${r1(xCol(i))}; --y: ${yRole(s.role.level)}; --s: ${i}`}>{s.role.name}</span>
         ))}
       </div>
 
@@ -108,15 +116,15 @@ const roleFoot = GROWTH_LEVELS.map((lv) => `${lv} ${copy.role[lv]}`).join(' · '
         <b>{copy.lanes.scale}</b><span class="gd-l__sub">{copy.lanes.scaleSub}</span>
         {scaleTicks.map((t) => <span class="gd-axis" aria-hidden="true" style={`top: ${yScale(t.value)}px`}>{t.label}</span>)}
       </div>
-      <div class="gd-span" style={`grid-row: 5; height: ${SCALE_H}px`} role="img" aria-label={scaleAlt}>
+      <div class="gd-span" data-gr-band="scale" style={`grid-row: 5; height: ${SCALE_H}px`} role="img" aria-label={scaleAlt}>
         <svg class="gd-chart" viewBox={`0 0 1000 ${SCALE_H}`} preserveAspectRatio="none" aria-hidden="true" focusable="false">
           {scaleTicks.map((t) => <line class="gd-grid" x1="0" x2="1000" y1={yScale(t.value)} y2={yScale(t.value)} />)}
           {steps.map((s, i) => s.scale.length === 2 && (
-            <line class="gd-arrow" x1={r1(xCol(i) * 10)} x2={r1(xCol(i) * 10)} y1={yScale(s.scale[0]!.value) - 8} y2={yScale(s.scale[1]!.value) + 8} />
+            <line class="gd-arrow" data-gr-path="scale" data-gr-i={i} style={`--s: ${i}`} x1={r1(xCol(i) * 10)} x2={r1(xCol(i) * 10)} y1={yScale(s.scale[0]!.value) - 8} y2={yScale(s.scale[1]!.value) + 8} />
           ))}
         </svg>
         {steps.flatMap((s, i) => s.scale.map((p) => (
-          <span class:list={['gd-dot', { 'gd-dot--approx': p.approx }]} aria-hidden="true" data-gr-i={i} style={`--x: ${r1(xCol(i))}; --y: ${yScale(p.value)}`}>
+          <span class:list={['gd-dot', { 'gd-dot--approx': p.approx }]} aria-hidden="true" data-gr-path="scale" data-gr-i={i} style={`--x: ${r1(xCol(i))}; --y: ${yScale(p.value)}; --s: ${i}`}>
             <i></i><span><b>{p.label}</b> {p.unit}</span>
           </span>
         )))}

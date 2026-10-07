@@ -107,6 +107,49 @@ test.describe('growth infographic (GR)', () => {
     await expect.poll(async () => (await read()).hidden, { timeout: 10_000 }).toBe(0);
   });
 
+  test('GR-4 lanes (general version): a role chart on screen at load is not shown finished; it draws step by step, marks as the line reaches them (owner 2026-10-07)', async ({ page }) => {
+    let release!: () => void;
+    const held = new Promise<void>((r) => { release = r; });
+    await page.route(/\/_astro\/growth-reveal\.[\w-]+\.js$/, async (route) => { await held; await route.continue(); });
+    await page.setViewportSize({ width: 1280, height: 1500 });
+    await page.goto(dataPath('/research/'), { waitUntil: 'commit' });
+    await page.waitForSelector('#growth .gd-lanes .gd-keylbl:last-of-type', { state: 'attached' });
+    await page.evaluate(() => {
+      const band = document.querySelector('#growth [data-gr-band="role"]')!;
+      scrollTo({ top: scrollY + band.getBoundingClientRect().top - 300, behavior: 'instant' });
+      return new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+    });
+    const read = () => page.evaluate(() => {
+      const band = document.querySelector('#growth [data-gr-band="role"]')!.getBoundingClientRect();
+      const lines = Array.from(document.querySelectorAll<SVGLineElement>('#growth [data-gr-band="role"] .gd-line'));
+      const marks = Array.from(document.querySelectorAll<HTMLElement>('#growth .gd-mk i'));
+      const delay = (el: Element) => parseFloat(getComputedStyle(el).transitionDelay) * (getComputedStyle(el).transitionDelay.endsWith('ms') ? 1 : 1000);
+      return {
+        bandOnScreen: band.top >= 0 && band.top < innerHeight * 0.85,
+        hidden: lines.filter((l) => /^matrix\(0, 0, 0, 0,/.test(getComputedStyle(l).transform)).length,
+        lines: lines.length,
+        marksHidden: marks.filter((m) => getComputedStyle(m).opacity === '0').length,
+        marks: marks.length,
+        lit: lines.filter((l) => l.classList.contains('gr-lit')).length,
+        markDelays: marks.map(delay),
+      };
+    });
+    const before = await read();
+    expect(before.bandOnScreen).toBe(true);
+    expect(before.lines).toBeGreaterThanOrEqual(7);
+    expect(before.lit).toBe(0);
+    expect(before.hidden).toBe(before.lines);
+    expect(before.marksHidden).toBe(before.marks);
+    release();
+    await expect.poll(async () => (await read()).lit, { timeout: 10_000 }).toBe(before.lines);
+    const after = await read();
+    // one beat per project: the last mark pops seconds after the first, not in a blink
+    expect(after.markDelays).toEqual([...after.markDelays].sort((a, b) => a - b));
+    expect(after.markDelays.at(-1)! - after.markDelays[0]!).toBeGreaterThanOrEqual(3000);
+    await expect.poll(async () => (await read()).hidden, { timeout: 15_000 }).toBe(0);
+    await expect.poll(async () => (await read()).marksHidden, { timeout: 15_000 }).toBe(0);
+  });
+
   for (const route of [gamePath('/research/'), dataPath('/research/')]) {
     test(`GR-4 ${route}: reduced motion and no JS show the final state at once`, async ({ browser }) => {
       for (const opts of [{ reducedMotion: 'reduce' as const }, { javaScriptEnabled: false }]) {

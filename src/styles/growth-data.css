@@ -5,8 +5,9 @@
    From 1000 px: the lanes grid (label column, one column per project, the open slots last); below: the vertical role
    chart and one card per project. Chart lines are SVG (preserveAspectRatio none, non-scaling strokes); marks are HTML
    placed by --x (% of the plot) and --y (px).
-   Motion (src/scripts/growth-reveal.ts): .gr-wait is the hidden state below the first screen; removing it draws the part
-   with a transform/opacity transition; both reduce paths and print show the final state. */
+   Motion (src/scripts/growth-reveal.ts): the lanes charts are banded (see "Lanes timing" below); elsewhere .gr-wait is the
+   hidden state below the first screen; removing it draws the part with a transform/opacity transition; both reduce
+   paths and print show the final state. */
 
 :root[data-variant="data"] .gd-key { margin-top: 20px; display: flex; flex-wrap: wrap; gap: 8px 22px; font-size: var(--fs-caption); color: var(--ed-ink-2); }
 :root[data-variant="data"] .gd-key li { display: flex; align-items: center; gap: 8px; }
@@ -183,10 +184,22 @@
 :root[data-variant="data"] .gd-tv td:first-child { white-space: nowrap; }
 
 /* ── motion: the draw-on (classes from growth-reveal.ts; transform and opacity only) ── */
-:root[data-variant="data"] .gd-lanes[data-gr-anim] .gd-line { transform-origin: 0 0; transition: transform var(--dur-enter) var(--ease-out); }
-:root[data-variant="data"] .gd-lanes[data-gr-anim] :is(.gd-mk i, .gd-dot) { transition: opacity var(--dur-fade) linear, transform var(--dur-rise) var(--ease-out); transition-delay: calc(var(--gr-k, 0) * 90ms); }
+/* Lanes timing (owner 2026-10-07: "too fast", like the constellation): when a chart band is on screen the role line
+   grows piece by piece, one --dur-gd-step per project (the level run into project s, then its rise), and project s's
+   mark pops as the line reaches it (s steps in); the scale dots and arrows of project s pop at the same beat. Before the
+   band lights them (.gr-lit, growth-reveal.ts) CSS holds them from the first paint, so a chart already on screen at load
+   is still seen drawing. */
+:root[data-variant="data"] .gd-lanes { --dur-gd-run: 340ms; --dur-gd-rise: 200ms; --dur-gd-step: 540ms; }
+:root[data-variant="data"] .gd-lanes[data-gr-anim] .gd-line--h { transition: transform var(--dur-gd-run) linear; transition-delay: calc((var(--s, 1) - 1) * var(--dur-gd-step)); }
+:root[data-variant="data"] .gd-lanes[data-gr-anim] .gd-line--v { transition: transform var(--dur-gd-rise) linear; transition-delay: calc((var(--s, 1) - 1) * var(--dur-gd-step) + var(--dur-gd-run)); }
+:root[data-variant="data"] .gd-lanes[data-gr-anim] :is(.gd-mk i, .gd-dot) { transition: opacity var(--dur-fade) linear, transform var(--dur-rise) var(--ease-out); transition-delay: calc(var(--s, 0) * var(--dur-gd-step)); }
+:root[data-variant="data"] .gd-lanes[data-gr-anim] :is(.gd-arrow, .gd-keylbl) { transition: opacity var(--dur-rise) var(--ease-out); transition-delay: calc(var(--s, 0) * var(--dur-gd-step)); }
+:root[data-variant="data"].js[data-motion="full"] .gd-lanes .gd-line[data-gr-path]:not(.gr-lit) { transform: scale(0); }
+:root[data-variant="data"].js[data-motion="full"] .gd-lanes .gd-mk[data-gr-path]:not(.gr-lit) i,
+:root[data-variant="data"].js[data-motion="full"] .gd-lanes .gd-dot[data-gr-path]:not(.gr-lit) { opacity: 0; transform: scale(.4); }
+:root[data-variant="data"].js[data-motion="full"] .gd-lanes :is(.gd-arrow, .gd-keylbl)[data-gr-path]:not(.gr-lit) { opacity: 0; }
 :root[data-variant="data"] .gd-sm[data-gr-anim] .gd-smc { transition: opacity var(--dur-enter) var(--ease-out), transform var(--dur-enter) var(--ease-out); transition-delay: calc(var(--gr-k, 0) * 60ms); }
-:root[data-variant="data"] .gd-line.gr-wait { transform: scaleX(0); }
+:root[data-variant="data"] .gd-line.gr-wait { transform: scale(0); }
 /* a mark's box keeps its 44 px target while it waits: only the dot inside scales */
 :root[data-variant="data"] .gd-mk.gr-wait i, :root[data-variant="data"] .gd-dot.gr-wait { opacity: 0; transform: scale(.4); }
 :root[data-variant="data"] .gd-smc.gr-wait { opacity: 0; transform: translateY(12px); }
@@ -210,6 +223,8 @@
   :root[data-variant="data"] .gd-mk.gr-wait i,
   :root[data-variant="data"] .gd-dot.gr-wait,
   :root[data-variant="data"] .gd-smc.gr-wait { opacity: 1; transform: none; transition: none; }
+  :root[data-variant="data"] .gd-lanes :is(.gd-line, .gd-mk i, .gd-dot, .gd-arrow) { opacity: 1; transform: none; transition: none; }
+  :root[data-variant="data"] .gd-lanes .gd-keylbl { opacity: 1; transition: none; }
   :root[data-variant="data"] :is(.gd-smc, .gd-cs, .gd-cs li) { break-inside: avoid; }
   :root[data-variant="data"] .gd-tv:not([open]) { display: none; }
 }

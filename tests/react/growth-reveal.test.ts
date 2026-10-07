@@ -129,6 +129,40 @@ describe('initGrowthReveal (src/scripts/growth-reveal.ts)', () => {
     expect(lit(path)).toEqual([true, true, true]);
   });
 
+  it('keyed bands (the general version\'s role and scale charts): each band lights only the parts that name it (owner 2026-10-07)', () => {
+    Object.defineProperty(window, 'innerHeight', { configurable: true, value: 800 });
+    document.body.innerHTML = '';
+    const fig = document.createElement('div');
+    fig.setAttribute('data-gr-fig', '');
+    const mk = (key: string, top: number) => {
+      const band = document.createElement('div');
+      band.setAttribute('data-gr-band', key);
+      (band as unknown as { getClientRects: () => unknown[] }).getClientRects = () => [{}];
+      const parts = [0, 1, 1, 2].map((i) => {
+        const el = at(document.createElement('div'), top, 20);
+        el.setAttribute('data-gr-i', String(i));
+        el.setAttribute('data-gr-path', key);
+        band.append(el);
+        return el;
+      });
+      fig.append(band);
+      return { band, parts };
+    };
+    const role = mk('role', 300);
+    const scale = mk('scale', 1400);
+    document.body.append(fig);
+    initGrowthReveal(document, { io, reduced: () => false });
+    const [parts, roleIo, scaleIo] = FakeIO.all;
+    parts!.initial();
+    expect(lit([...role.parts, ...scale.parts]).some(Boolean)).toBe(false); // on screen or not, nothing shown finished
+    roleIo!.fire(role.band);
+    expect(lit(role.parts)).toEqual([true, true, true, true]);
+    expect(role.parts.map((el) => el.style.getPropertyValue('--gr-k'))).toEqual(['0', '1', '1', '2']);
+    expect(lit(scale.parts)).toEqual([false, false, false, false]);
+    scaleIo!.fire(scale.band);
+    expect(lit(scale.parts)).toEqual([true, true, true, true]);
+  });
+
   it('without IntersectionObserver the constellation path is lit at once', () => {
     const { path } = bandFigure([100, 110, 120, 130, 700], 400, true);
     document.querySelector('[data-gr-fig]')!.setAttribute('data-gr-live', '');
