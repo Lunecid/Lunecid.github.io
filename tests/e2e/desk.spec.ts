@@ -65,12 +65,12 @@ test.describe('MO-23: the static desk', () => {
     await expect(page.locator(GAME)).toBeFocused();
   });
 
-  test('a click anywhere on the printout follows its link at once; the choice is remembered', async ({ page }) => {
+  test('a click anywhere on the printout follows its link at once (not remembered since 2026-10-07)', async ({ page }) => {
     await openAt(page, '/?choose', 1280, 800);
     const banner = await rectOf(page, '.file--data .pr__disp');
     await page.mouse.click(banner.left + banner.width / 2, banner.top + banner.height / 2);
     await expect(page).toHaveURL(/\/data\/$/);
-    expect(await page.evaluate(() => localStorage.getItem('sb:variant'))).toBe('data');
+    expect(await page.evaluate(() => localStorage.getItem('sb:variant'))).toBeNull();
   });
 
   for (const width of [320, 375, 768, 1280, 1440]) {
@@ -402,7 +402,7 @@ test.describe('MO-25: the declassify stamp', () => {
     const dt = Number(await page.evaluate(() => sessionStorage.getItem('mo25:dt')));
     expect(dt).toBeGreaterThanOrEqual(860);
     expect(dt).toBeLessThan(1100);
-    expect(await page.evaluate(() => localStorage.getItem('sb:variant'))).toBe('game');
+    expect(await page.evaluate(() => localStorage.getItem('sb:variant'))).toBeNull();
   });
 
   test('reduced motion: no animation on the stamp; navigation within 300 ms', async ({ page }) => {

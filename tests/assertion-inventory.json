@@ -179,7 +179,7 @@
   "tests/react/StatsLiveTotal.test.tsx": 16,
   "tests/react/account-admin.test.ts": 314,
   "tests/react/achievements.test.ts": 56,
-  "tests/react/chooser-init.test.ts": 28,
+  "tests/react/chooser-init.test.ts": 22,
   "tests/react/chooser.test.ts": 194,
   "tests/react/data-paint.test.ts": 8,
   "tests/react/data-reveal.test.ts": 13,

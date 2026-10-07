@@ -1,6 +1,6 @@
 // The chooser desk (spec §6; motion plan amendment, MO-24). Two links, data (in front) then game: the arrows move
-// between them on both axes (the files overlap at every width), Enter follows the focused link (native), and a choice
-// is remembered (sb:variant, P1-14) before the navigation. Pointing at or focusing the game file slides the printout
+// between them on both axes (the files overlap at every width) and Enter follows the focused link (native); a choice is
+// not remembered ('/' always shows the chooser, owner ruling 2026-10-07). Pointing at or focusing the game file slides the printout
 // aside in CSS (:has, works without JS); this script measures where the sheet goes, and adds the touch rule: the first
 // tap on the game file only reveals it (.is-aside), the second follows its link, a tap anywhere else (the aside sheet
 // included) or Escape puts the sheet back. A hint (touch and JS only) says what the next tap does. Entering the game
@@ -10,8 +10,6 @@ import exitSheet from '../styles/chooser-exit.css?url';
 import { NEON_LEAD_MS, NEON_TARGETS, NEON_WINDOWS, glyphVariant, lineStagger, splitGlyphs } from '../lib/neon';
 import { noiseBuffer, paperSound } from '../lib/paper-sound';
 import { SOUND_EVENT, audioContext, setSoundOn, soundMuted } from '../lib/sound';
-import { rememberVariant } from '../lib/variant-pref';
-import { isVariantId } from '../variants/ids';
 
 export interface Box {
   x: number;
@@ -162,8 +160,6 @@ export function initExit(desk: HTMLElement, link: HTMLAnchorElement, kind: ExitK
     if (e.defaultPrevented) return; // the first tap only revealed the file, or the desk is already leaving
     if (!plain(e) || e.detail > 1) return;
     e.preventDefault();
-    const variant = link.dataset.chooseVariant;
-    if (isVariantId(variant)) rememberVariant(variant);
     // the exit is the version's entry: the game home plays no CRT intro after it (one intro per session, D-2)
     try {
       sessionStorage.setItem('sb:intro', '1');
@@ -464,13 +460,6 @@ export function initChooser(root: ParentNode = document, opts: { navigate?: (hre
     event.preventDefault();
     (forward ? second : first).focus();
   });
-  for (const link of links) {
-    link.addEventListener('click', (event) => {
-      if (event.defaultPrevented) return; // the first tap only reveals: not a choice
-      const variant = link.dataset.chooseVariant;
-      if (isVariantId(variant)) rememberVariant(variant);
-    });
-  }
   // while the desk is leaving, every other activation on it is ignored (capture: before the links' own listeners)
   container.addEventListener('click', (event) => {
     if (container.hasAttribute('data-exit') && event.target instanceof Element && event.target.closest('a')) event.preventDefault();

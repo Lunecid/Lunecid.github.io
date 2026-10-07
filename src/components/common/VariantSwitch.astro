@@ -1,7 +1,7 @@
 ---
 // The version switch (spec §5.5, contract §2.5): a static link built at build time (works without JS) to the same page
 // of the other version, or to that version's home when the page does not exist there (A-26). The script keeps the
-// #hash for a same-page switch and remembers the new version (sb:variant, A-7). Placement: the nav bar from 734px,
+// #hash for a same-page switch (the version is not remembered: '/' always shows the chooser, 2026-10-07). Placement: the nav bar from 734px,
 // the menu panel below (like the language switch). At 734–1067px the bar shows the short label (owner decision, P1-15);
 // the full label is always the accessible name and the tooltip (WCAG 2.5.3: the short label is part of it).
 import type { Lang } from '../../i18n/ui';
@@ -31,8 +31,6 @@ const short = t(lang, link.target === 'data' ? 'variant.switchToData.short' : 'v
 ><span class="variant-switch__short" aria-hidden="true">{short}</span><span class="variant-switch__full">{label}</span></a>
 
 <script>
-  import { rememberVariant } from '../../lib/variant-pref';
-  import { isVariantId } from '../../variants/ids';
 
   // An image-viewer hash (#view-<id>, written with pushState, no hashchange) is dropped: the switch never carries it.
   const pageHash = (): string => (location.hash.startsWith('#view-') ? '' : location.hash);
@@ -46,10 +44,8 @@ const short = t(lang, link.target === 'data' ? 'variant.switchToData.short' : 'v
   window.addEventListener('hashchange', syncHashes);
   document.addEventListener('click', (event) => {
     const link = event.target instanceof Element ? event.target.closest<HTMLAnchorElement>('a[data-switch-variant]') : null;
-    const target = link?.dataset.switchVariant;
     // The hash is computed at click time (pushState changes it without a hashchange event).
     if (link && link.dataset.samePage === 'true') link.href = (link.dataset.baseHref ?? '') + pageHash();
-    if (isVariantId(target)) rememberVariant(target);
   });
 </script>
 

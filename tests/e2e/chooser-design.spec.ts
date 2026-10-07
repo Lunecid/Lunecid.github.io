@@ -31,12 +31,12 @@ test.describe('chooser (P2-10 intents on the MO-23 desk, Review Focus 4)', () =>
     expect(d2.top).toBeLessThan(g2.bottom);
   });
 
-  test('Enter follows the focused side and remembers it', async ({ page }) => {
+  test('Enter follows the focused side (not remembered since 2026-10-07)', async ({ page }) => {
     await page.goto('/?choose', { waitUntil: 'networkidle' });
     await page.locator(DATA).focus();
     await page.keyboard.press('Enter');
     await expect(page).toHaveURL(/\/data\/$/);
-    expect(await page.evaluate(() => localStorage.getItem('sb:variant'))).toBe('data');
+    expect(await page.evaluate(() => localStorage.getItem('sb:variant'))).toBeNull();
   });
 
   test('with a stored choice, the language switch keeps ?choose and the other chooser stays (spec §5.5)', async ({ page }) => {

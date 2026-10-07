@@ -96,15 +96,16 @@ describe('chooser desk (MO-24)', () => {
   });
 
   // MO-39 (named change): the printout's link now plays its page turn before the navigation too
-  it('a choice is remembered before the navigation', () => {
+  // 2026-10-07 (owner ruling): '/' always shows the chooser, so a choice is not stored any more
+  it('a choice navigates without being remembered', () => {
     vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
     try {
       click(m.data);
-      expect(localStorage.getItem('sb:variant')).toBe('data');
+      expect(localStorage.getItem('sb:variant')).toBeNull();
       expect(navigations).toEqual([]); // the page turns first
       settle();
       click(m.game, 0);
-      expect(localStorage.getItem('sb:variant')).toBe('game'); // before the delayed navigation
+      expect(localStorage.getItem('sb:variant')).toBeNull();
       vi.advanceTimersByTime(EXIT_MS.game);
       expect(navigations).toEqual(['/data/', '/game/']);
     } finally {
@@ -268,7 +269,7 @@ describe('the stamp and the game exit (MO-25, MO-38)', () => {
     expect(m.stamp.classList.contains('is-struck')).toBe(true);
     click(m.game);
     expect(navigations).toEqual([]); // default prevented: the page opens after the exit
-    expect(localStorage.getItem('sb:variant')).toBe('game');
+    expect(localStorage.getItem('sb:variant')).toBeNull(); // not remembered (2026-10-07)
     expect(m.desk.dataset.exit).toBe('game');
     expect(m.desk.classList.contains('is-aside')).toBe(true); // the sheet makes way for the screen
     // the line across the page starts on the screen: its geometry is written once, at the click
@@ -405,10 +406,10 @@ describe('the data exit (MO-39)', () => {
     vi.useRealTimers();
   });
 
-  it('MO-39: the data link: data-exit=data, remembered, navigates after EXIT_MS.data (800); reduced → fade at 150 ms', () => {
+  it('MO-39: the data link: data-exit=data, navigates after EXIT_MS.data (800); reduced → fade at 150 ms', () => {
     click(m.data);
     expect(m.desk.dataset.exit).toBe('data');
-    expect(localStorage.getItem('sb:variant')).toBe('data');
+    expect(localStorage.getItem('sb:variant')).toBeNull(); // not remembered (2026-10-07)
     expect(m.dataFile.style.getPropertyValue('--fw')).toBe('556px');
     expect(m.dataFile.style.getPropertyValue('--fh')).toBe('556px');
     vi.advanceTimersByTime(EXIT_MS.data - 1);

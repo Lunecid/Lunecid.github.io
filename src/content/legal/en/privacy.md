@@ -34,7 +34,6 @@ The following settings are stored only in your browser (localStorage and session
 - Which of the four menu sections and which languages you have opened (for achievements)
 - Whether you have already seen the start-screen effect (the chooser's document-opening effect and the CRT intro) and the home text entrance in this visit
 - The background-music position so it continues on the next page (sessionStorage; cleared when the tab closes, ignored after 30 minutes)
-- The portfolio version you last chose (game or general)
 
 ## Game account data
 

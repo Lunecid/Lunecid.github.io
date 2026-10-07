@@ -52,11 +52,11 @@ test.describe('DataNav', () => {
     }
   });
 
-  test('the version switch goes to the same page of the game version and remembers the choice', async ({ page }) => {
+  test('the version switch goes to the same page of the game version (not remembered since 2026-10-07)', async ({ page }) => {
     await page.goto(`${dataPath('/records/')}#skills`, { waitUntil: 'networkidle' });
     await page.locator('.data-nav__tools [data-switch-variant="game"]').click();
     await expect(page).toHaveURL(/\/game\/records\/#skills$/);
-    expect(await page.evaluate(() => localStorage.getItem('sb:variant'))).toBe('game');
+    expect(await page.evaluate(() => localStorage.getItem('sb:variant'))).toBeNull();
   });
 });
 

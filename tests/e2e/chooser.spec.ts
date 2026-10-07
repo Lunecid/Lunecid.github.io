@@ -1,7 +1,8 @@
 import { test, expect } from './helpers';
 
 test.describe('chooser memory (§5.5, success criterion 2)', () => {
-  test('first visit shows the chooser; a choice is remembered and the next visit goes straight to that version', async ({ page }) => {
+  // 2026-10-07 (owner ruling, replaces success criterion 2's memory): '/' always shows the chooser
+  test('the chooser shows on every visit; a choice is not remembered, and a value an older build stored is removed', async ({ page }) => {
     await page.goto('/');
     await expect(page.locator('h1')).toHaveText('백성은');
     await expect(page).toHaveURL(/\/$/);
@@ -10,11 +11,16 @@ test.describe('chooser memory (§5.5, success criterion 2)', () => {
     await expect(page.locator('html')).not.toHaveAttribute('data-intro');
     await page.locator('a[data-choose-variant="data"]').click();
     await expect(page).toHaveURL(/\/data\/$/);
-    expect(await page.evaluate(() => localStorage.getItem('sb:variant'))).toBe('data');
+    expect(await page.evaluate(() => localStorage.getItem('sb:variant'))).toBeNull();
     await page.goto('/');
-    await expect(page).toHaveURL(/\/data\/$/);
+    await expect(page).toHaveURL(/\/$/);
+    await expect(page.locator('a[data-choose-variant]')).toHaveCount(2);
+    // a returning visitor whose browser kept an older build's choice still lands on the chooser, and the value goes
+    await page.evaluate(() => localStorage.setItem('sb:variant', 'data'));
     await page.goto('/en/');
-    await expect(page).toHaveURL(/\/en\/data\/$/);
+    await expect(page).toHaveURL(/\/en\/$/);
+    await expect(page.locator('a[data-choose-variant]')).toHaveCount(2);
+    expect(await page.evaluate(() => localStorage.getItem('sb:variant'))).toBeNull();
   });
 
   test('?choose always shows the chooser; the footer link uses it', async ({ page }) => {

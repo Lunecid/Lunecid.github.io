@@ -277,7 +277,6 @@ describe('legal content', () => {
       'CRT 인트로',
       '선택 화면의 문서 열람 연출', // MO-41: the chooser's opening shares sb:intro
       '첫 화면 문구 등장',
-      '- 마지막으로 고른 포트폴리오 버전(게임·일반)',
       '- 배경음악을 이어 듣기 위한 재생 위치(sessionStorage, 창을 닫으면 사라지고 30분이 지나면 쓰지 않음)',
     ]) {
       expect(ko).toContain(s);
@@ -291,12 +290,14 @@ describe('legal content', () => {
       'CRT intro',
       "the chooser's document-opening effect", // MO-41
       'home text entrance',
-      '- The portfolio version you last chose (game or general)',
       '- The background-music position so it continues on the next page (sessionStorage; cleared when the tab closes, ignored after 30 minutes)',
     ]) {
       expect(en).toContain(s);
     }
     expect(en.includes('Sound on/off'), 'en sound setting listed').toBe(sound.bgm);
+    // 2026-10-07: the chooser choice is no longer stored, so it is no longer listed
+    expect(ko).not.toContain('마지막으로 고른 포트폴리오 버전');
+    expect(en).not.toContain('The portfolio version you last chose');
   });
 
   it('P1-14: the closing "last updated" line of every legal file states its frontmatter date', () => {

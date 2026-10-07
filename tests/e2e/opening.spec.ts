@@ -192,15 +192,29 @@ test.describe('MO-41: the opening', () => {
     await nojs.close();
   });
 
-  test('MO-41: a stored choice redirects before paint with no opening, and /game/ then plays the CRT', async ({ browser }) => {
+  // 2026-10-07 (owner ruling): an older build's stored choice no longer redirects; the chooser opens as on a first visit
+  test('MO-41: an old home anchor redirects before paint with no opening, and /game/ then plays the CRT', async ({ browser }) => {
+    const context = await browser.newContext({ viewport: { width: 1280, height: 800 } });
+    const page = await context.newPage();
+    await page.goto('/#hello');
+    await page.waitForURL(/\/game\/#hello$/);
+    await expect(page.locator('html')).toHaveAttribute('data-intro-played', '');
+    await context.close();
+  });
+
+  test('2026-10-07: an older build\'s stored choice opens the chooser, not that version, and is removed', async ({ browser }) => {
     const context = await browser.newContext({ viewport: { width: 1280, height: 800 } });
     await context.addInitScript(() => {
-      if (location.pathname === '/') localStorage.setItem('sb:variant', 'game');
+      if (location.pathname === '/' && sessionStorage.getItem('seeded') === null) {
+        sessionStorage.setItem('seeded', '1');
+        localStorage.setItem('sb:variant', 'game');
+      }
     });
     const page = await context.newPage();
     await page.goto('/');
-    await page.waitForURL(/\/game\/$/);
-    await expect(page.locator('html')).toHaveAttribute('data-intro-played', '');
+    expect(new URL(page.url()).pathname).toBe('/');
+    await expect(page.locator('a[data-choose-variant]')).toHaveCount(2);
+    expect(await page.evaluate(() => localStorage.getItem('sb:variant'))).toBeNull();
     await context.close();
   });
 

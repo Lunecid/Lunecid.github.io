@@ -8,17 +8,17 @@ const nav = (route: string) =>
 const barSwitch = (route: string): string => `${nav(route).tools} a[data-switch-variant]`;
 
 test.describe('version switch (§5.5, §12)', () => {
-  test('goes to the same page of the other version and remembers the choice', async ({ page }) => {
+  test('goes to the same page of the other version (not remembered since 2026-10-07)', async ({ page }) => {
     await page.goto('/game/records/');
     const bar = page.locator(barSwitch('/game/records/'));
     await expect(bar).toHaveAttribute('href', '/data/records/');
     await expect(bar).toHaveAccessibleName('일반 버전으로 보기');
     await bar.click();
     await expect(page).toHaveURL(/\/data\/records\/$/);
-    expect(await page.evaluate(() => localStorage.getItem('sb:variant'))).toBe('data');
+    expect(await page.evaluate(() => localStorage.getItem('sb:variant'))).toBeNull();
     await page.locator(barSwitch('/data/records/')).click();
     await expect(page).toHaveURL(/\/game\/records\/$/);
-    expect(await page.evaluate(() => localStorage.getItem('sb:variant'))).toBe('game');
+    expect(await page.evaluate(() => localStorage.getItem('sb:variant'))).toBeNull();
   });
 
   test('a game-only page goes to the data home; the hash is kept only for the same page (A-26)', async ({ page }) => {

@@ -103,13 +103,13 @@ test('V1: page.goto and reload run no transition', async ({ page }) => {
   expect(entries.filter((e) => e.ev === 'ready')).toEqual([]);
 });
 
-test('V1: / with a stored choice redirects before the first paint without a transition', async ({ page }) => {
+// 2026-10-07: the only pre-paint redirect left on '/' is an old home anchor (A-27); a stored choice no longer forwards
+test('V1: / with an old home anchor redirects before the first paint without a transition', async ({ page }) => {
   await page.goto('/game/');
-  await page.evaluate(() => localStorage.setItem('sb:variant', 'game'));
   await clearLog(page);
   // a document-initiated navigation (eligible for a transition), to the chooser, which forwards before its first paint
-  await page.evaluate(() => { location.href = '/'; });
-  await expect(page).toHaveURL(/\/game\/$/);
+  await page.evaluate(() => { location.href = '/#hello'; });
+  await expect(page).toHaveURL(/\/game\/#hello$/);
   await page.waitForLoadState('load');
   await page.waitForTimeout(500);
   const entries = await log(page);
