@@ -556,7 +556,16 @@ test('Z1: on a touch screen a tapped link keeps no hover colour (patch notes, he
     const el = page.locator(selector).first();
     await el.scrollIntoViewIfNeeded();
     await expect(el).toBeVisible();
-    const before = await el.evaluate(read);
+    // the resting colour: read once it stops changing (CI run 37576265716 read the BibTeX copy button mid-transition
+    // right after its block opened: 147 → 177 → 207, so "before" was never the colour the tap had to keep)
+    let before = await el.evaluate(read);
+    await expect.poll(async () => {
+      await page.waitForTimeout(300);
+      const now = await el.evaluate(read);
+      const steady = now === before;
+      before = now;
+      return steady;
+    }, { timeout: 5000, message: `${selector} settles before the tap` }).toBe(true);
     // Right after the tap the element still matches :hover on a touch screen (sticky hover); the colour must not follow.
     await el.tap();
     expect(await el.evaluate((node) => node.matches(':hover') || !!node.closest(':hover')), `${selector} keeps :hover after the tap`).toBe(true);
