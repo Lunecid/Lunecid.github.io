@@ -40,7 +40,8 @@ export const GOATCOUNTER: { readonly code: string | null; readonly sri: string; 
 
 // Account link (spec 2026-09-29 §10): the owner-only management section talks to the relay Worker only.
 // relay: the owner's first `wrangler deploy` output; one commit fills it (AL-23) and changes the CSP and the privacy
-// sentence with it.
+// sentence with it. Owner ruling 2026-10-07: no relay for now; the cards run on Actions variables alone (README
+// "변수만으로 카드 켜기"), and privacy/credits drop the relay text while this is null (tests/content/legal.test.ts).
 export const ACCOUNT_ADMIN = {
   owner: 'Lunecid',
   repo: 'Lunecid.github.io',

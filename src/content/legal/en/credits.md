@@ -1,7 +1,7 @@
 ---
 title: Credits
 lang: en
-updated: '2026-10-05'
+updated: '2026-10-07'
 ---
 
 Sources and rights notices for the images, data, music, and fonts used on this site. Game-related images are used as fan content, and this site is not officially affiliated with any game company.
@@ -47,7 +47,7 @@ The account cards on the Player Log are built from the sources below. The notice
 |---|---|---|
 | Neople | Data provided through the Neople Open API service. | Shown when linked |
 | Riot Games | Seongeun Baek's portfolio isn't endorsed by Riot Games and doesn't reflect the views or opinions of Riot Games or anyone officially involved in producing or managing Riot Games properties. Riot Games, and all associated properties are trademarks or registered trademarks of Riot Games, Inc. | Outbound links only (no API; assets: see Riot Games assets) |
-| Valve (Steam) | Powered by Steam. Steam data is retrieved from the Steam Web API and provided "as is", without any guarantee of accuracy. This site is not affiliated with or endorsed by Valve. Valve, Steam, the Valve logo and the Steam logo are registered trademarks of Valve Corporation. The “Sign in through Steam” button image in the owner's management screen is Valve's. The Steam card shows my own Steam avatar. | Player Log account cards |
+| Valve (Steam) | Powered by Steam. Steam data is retrieved from the Steam Web API and provided "as is", without any guarantee of accuracy. This site is not affiliated with or endorsed by Valve. Valve, Steam, the Valve logo and the Steam logo are registered trademarks of Valve Corporation. The Steam card shows my own Steam avatar. | Player Log account cards |
 | Enka.Network | Genshin Impact and Zenless Zone Zero account data comes from Enka.Network (https://enka.network). | Player Log account cards |
 
 ## Research data
@@ -90,4 +90,4 @@ The text, photos, and design of this site are © Seongeun Baek. The source code 
 
 Questions about rights: todtjddms104204@pusan.ac.kr
 
-Last updated: October 5, 2026
+Last updated: October 7, 2026

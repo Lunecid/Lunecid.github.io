@@ -354,16 +354,18 @@ function workerConst(name: string): number {
   return Number(m[1]);
 }
 
-describe('account cards and the owner-only relay in privacy and credits', () => {
-  it('privacy ko carries the owner-relay sentences verbatim', () => {
+// Owner ruling 2026-10-07: the relay (Cloudflare Worker + GitHub App) is not set up; the account cards come from Actions
+// variables the owner sets by hand. While ACCOUNT_ADMIN.relay is null the privacy policy and credits say nothing about
+// the relay or the management screen; the enable commit (AL-23) restores that text from git history (removed in the
+// commit that added this note) together with the relay address.
+const RELAY_WORDS = { ko: ['중계 서버', 'Cloudflare', '연동 관리'], en: ['relay server', 'Cloudflare', 'management screen'] } as const;
+
+describe('account cards in privacy and credits; the owner-only relay only once it exists', () => {
+  it('privacy ko carries the account-card sentences verbatim', () => {
     const ko = body('ko', 'privacy');
     for (const s of [
-      '방문자가 이름이나 연락처를 입력하는 곳도 없습니다. 플레이 로그에는 사이트 주인만 쓰는 연동 관리 화면이 있습니다. 주인이 GitHub·Steam으로 로그인하고 게임 계정 ID를 저장할 때, 그 값과 로그인 정보는 주인의 브라우저에서 Cloudflare Worker(중계 서버)를 거쳐 GitHub와 Steam으로만 갑니다. 방문자의 브라우저는 이 중계 서버에 접속하지 않습니다.',
-      '방문자의 브라우저는 GitHub API나 중계 서버를 호출하지 않습니다.',
-      '사이트 주인만 쓰는 연동 관리는 Cloudflare, Inc.의 Workers 중계 서버를 씁니다. Cloudflare는 이 처리에서 주인을 대신해 요청을 전달하는 처리자입니다.',
-      '중계 서버를 지나가는 것: 주인의 GitHub 로그인 정보(GitHub가 발급한 접근 토큰. 중계 서버 밖에서는 암호화된 상태로만 있고 최대 60분 뒤 쓸 수 없으며, 로그아웃하면 GitHub에서 승인이 지워집니다), 주인이 저장하는 게임 계정 ID와 닉네임, 주인의 Steam 로그인 확인 정보(Steam이 서명한 응답), 주인의 SteamID와 Steam 프로필 이름·공개 여부.',
-      '중계 서버는 이 값을 저장하지 않고, 요청 기록(호출 로그)을 끄고 운영합니다. Cloudflare가 서비스 운영을 위해 따로 남기는 기록은 Cloudflare의 방침을 따릅니다.',
-      '로그인할 때 주인의 브라우저에 중계 서버 주소의 쿠키 하나(로그인 확인용)가 생깁니다. 로그인이 사이트로 돌아올 때 지워지고, 돌아오지 않으면 늦어도 10분 뒤 만료됩니다. 이 사이트 주소에는 새 쿠키나 저장소 항목이 없습니다.',
+      '방문자가 이름이나 연락처를 입력하는 곳도 없습니다.',
+      '방문자의 브라우저는 GitHub API를 호출하지 않습니다.',
       '던전앤파이터는 연동하지 않습니다.',
       '방문자의 게임 계정 정보는 어떤 경우에도 수집하지 않습니다.',
     ]) {
@@ -377,12 +379,8 @@ describe('account cards and the owner-only relay in privacy and credits', () => 
   it('privacy en carries the same content', () => {
     const en = body('en', 'privacy');
     for (const s of [
-      "The Player Log has an account-link management screen that only the site owner uses. When the owner signs in with GitHub and Steam and saves game account IDs, those values and the sign-in information go from the owner's browser through a Cloudflare Worker (relay server) to GitHub and Steam only. Visitors' browsers never connect to this relay server.",
-      "Visitors' browsers do not call the GitHub API or the relay server.",
-      'Cloudflare Workers relay server operated by Cloudflare, Inc.',
-      'What passes through the relay server:',
-      'runs with request logging (invocation logs) turned off',
-      'No new cookie or storage entry is created for this site\'s address.',
+      'there is nowhere for visitors to enter a name or contact details.',
+      "Visitors' browsers do not call the GitHub API.",
       'Dungeon & Fighter is not linked.',
       "The site never collects visitors' game account information.",
       'send no referrer',
@@ -400,30 +398,29 @@ describe('account cards and the owner-only relay in privacy and credits', () => 
     expect([feeds, shots, report]).toEqual([1, 14, 7]);
     const time = cronKst();
     expect(time).toBe('03:30');
-    const handle = workerConst('HANDLE_MAX') / 60;
-    const cookie = workerConst('COOKIE_TTL') / 60;
     const ko = body('ko', 'privacy');
     expect(ko).toContain(`계정 데이터 아티팩트는 ${feeds}일, 빌드 화면 사진 아티팩트는 최대 ${shots}일, 테스트 실패 보고서는 ${report}일 동안 남고`);
     expect(ko).toContain(`매일 ${time}(한국 시간)과 주인이 사이트를 다시 빌드할 때 갱신합니다. ${ACCOUNT_MAX_AGE_DAYS}일 동안 갱신되지 않으면 카드를 숨깁니다.`);
-    expect(ko).toContain(`최대 ${handle}분 뒤 쓸 수 없으며`);
-    expect(ko).toContain(`늦어도 ${cookie}분 뒤 만료됩니다`);
     const en = body('en', 'privacy');
     expect(en).toContain(`the account-data artifact is kept for ${feeds} day, the build screenshot artifact for up to ${shots} days, the failed-test report for ${report} days`);
     expect(en).toContain(`daily at ${time} KST and whenever the owner rebuilds the site. A card that has not been refreshed for ${ACCOUNT_MAX_AGE_DAYS} days is hidden.`);
-    expect(en).toContain(`unusable after at most ${handle} minutes`);
-    expect(en).toContain(`expires after at most ${cookie} minutes`);
   });
 
-  it('privacy links Cloudflare\'s privacy policy after the relay-records sentence, in both languages', () => {
-    expect(raw('ko', 'privacy')).toContain('Cloudflare가 서비스 운영을 위해 따로 남기는 기록은 Cloudflare의 방침을 따릅니다. 자세한 내용은 [Cloudflare 개인정보 처리방침](https://www.cloudflare.com/privacypolicy/)을 참고하세요.');
-    expect(raw('en', 'privacy')).toContain("Any records Cloudflare keeps separately to operate its service follow Cloudflare's policies. See the [Cloudflare Privacy Policy](https://www.cloudflare.com/privacypolicy/) for details.");
-  });
-
-  it('privacy names the relay host once ACCOUNT_ADMIN.relay is set', () => {
+  it('privacy and credits describe the relay only while ACCOUNT_ADMIN.relay is set', () => {
     const relay: string | null = ACCOUNT_ADMIN.relay;
     for (const lang of LANGS) {
-      if (relay === null) expect(raw(lang, 'privacy')).not.toContain('.workers.dev');
-      else expect(raw(lang, 'privacy'), lang).toContain(new URL(relay).host);
+      const text = raw(lang, 'privacy') + raw(lang, 'credits');
+      if (relay === null) {
+        for (const w of RELAY_WORDS[lang]) expect(text, `${lang}: ${w}`).not.toContain(w);
+        expect(text, lang).not.toContain('Sign in through Steam');
+      } else {
+        expect(raw(lang, 'privacy'), lang).toContain(new URL(relay).host);
+        // the relay paragraph states the Worker's lifetimes in minutes
+        const handle = workerConst('HANDLE_MAX') / 60;
+        const cookie = workerConst('COOKIE_TTL') / 60;
+        expect(raw(lang, 'privacy'), lang).toContain(lang === 'ko' ? `최대 ${handle}분 뒤 쓸 수 없으며` : `unusable after at most ${handle} minutes`);
+        expect(raw(lang, 'privacy'), lang).toContain(lang === 'ko' ? `늦어도 ${cookie}분 뒤 만료됩니다` : `expires after at most ${cookie} minutes`);
+      }
     }
   });
 
@@ -434,7 +431,7 @@ describe('account cards and the owner-only relay in privacy and credits', () => 
     }
   });
 
-  it('credits game-data statuses and the Valve button sentence', () => {
+  it('credits game-data statuses and the Valve row', () => {
     const row = (lang: L, start: string) => raw(lang, 'credits').split('\n').find((l) => l.startsWith(start)) ?? '';
     expect(row('ko', '| 네오플 |')).toMatch(/\| 연동 시 표시 \|$/);
     expect(row('en', '| Neople |')).toMatch(/\| Shown when linked \|$/);
@@ -444,8 +441,6 @@ describe('account cards and the owner-only relay in privacy and credits', () => 
     const valveEn = row('en', '| Valve (Steam) |');
     expect(valveKo).toMatch(/\| 플레이 로그 계정 카드 \|$/);
     expect(valveEn).toMatch(/\| Player Log account cards \|$/);
-    expect(valveKo).toContain('주인 연동 관리 화면의 <span lang="en">“Sign in through Steam”</span> 버튼 이미지는 Valve의 것입니다.');
-    expect(valveEn).toContain("The “Sign in through Steam” button image in the owner's management screen is Valve's.");
     for (const v of [valveKo, valveEn]) {
       expect(v).toContain('Valve Corporation');
       expect(v).not.toContain('nofollow');

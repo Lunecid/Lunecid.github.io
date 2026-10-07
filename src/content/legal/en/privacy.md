@@ -1,10 +1,10 @@
 ---
 title: Privacy Policy
 lang: en
-updated: '2026-10-05'
+updated: '2026-10-07'
 ---
 
-This site (https://lunecid.github.io) is a static website that Seongeun Baek runs as a personal portfolio. It has no sign-up, login, or comments, and there is nowhere for visitors to enter a name or contact details. The Player Log has an account-link management screen that only the site owner uses. When the owner signs in with GitHub and Steam and saves game account IDs, those values and the sign-in information go from the owner's browser through a Cloudflare Worker (relay server) to GitHub and Steam only. Visitors' browsers never connect to this relay server.
+This site (https://lunecid.github.io) is a static website that Seongeun Baek runs as a personal portfolio. It has no sign-up, login, or comments, and there is nowhere for visitors to enter a name or contact details.
 
 ## Visitor statistics
 
@@ -56,13 +56,9 @@ The site never collects visitors' game account information.
 
 - Fonts, music, images, and the visitor-count script are all served from this site. Visit data is sent only to GoatCounter's servers.
 - The numbers on the Visitor stats page are aggregates fetched from the GoatCounter API (read-only key) when the site is built. Only the running total is loaded by your browser directly from GoatCounter's public counter.
-- The list of GitHub repositories and the contribution graph are fetched from the GitHub API when the site is built. Visitors' browsers do not call the GitHub API or the relay server.
+- The list of GitHub repositories and the contribution graph are fetched from the GitHub API when the site is built. Visitors' browsers do not call the GitHub API.
 - When you follow an external link, such as GitHub or IEEE Xplore, that site's privacy policy applies.
 - The Player Log's outbound score links (op.gg, lolchess.gg) send no referrer (the previous page's address).
-- The account-link management, used only by the site owner, runs through a Cloudflare Workers relay server operated by Cloudflare, Inc. In this processing, Cloudflare is a processor that forwards requests on the owner's behalf. Cloudflare handles requests on its global network; where a request is handled depends on where the owner connects from.
-  - What passes through the relay server: the owner's GitHub sign-in information (an access token issued by GitHub; outside the relay server it exists only in encrypted form, it becomes unusable after at most 60 minutes, and signing out deletes the authorization on GitHub), the game account IDs and nicknames the owner saves, the owner's Steam sign-in confirmation (a response signed by Steam), and the owner's SteamID, Steam profile name and profile visibility.
-  - The relay server does not store these values and runs with request logging (invocation logs) turned off. Any records Cloudflare keeps separately to operate its service follow Cloudflare's policies. See the [Cloudflare Privacy Policy](https://www.cloudflare.com/privacypolicy/) for details.
-  - When the owner signs in, one cookie for the relay server's address (to verify the sign-in) is set in the owner's browser. It is deleted when the sign-in returns to the site and, if it never returns, expires after at most 10 minutes. No new cookie or storage entry is created for this site's address.
 
 ## Contact
 
@@ -72,4 +68,4 @@ todtjddms104204@pusan.ac.kr
 
 When this policy changes, the last-updated date on this page is changed as well. You can see what changed in the GitHub repository's history.
 
-Last updated: October 5, 2026
+Last updated: October 7, 2026

@@ -63,7 +63,20 @@ To run one shard locally the way CI does: `npm run build`, `npm run build:pdf`, 
 - Repository secrets (Settings → Secrets and variables → Actions): `GOATCOUNTER_TOKEN` (GoatCounter API key with "Read statistics" only), optional `GH_PROFILE_TOKEN` (fine-grained token, public repositories read-only) and optional `PII_DENYLIST` (literal values the dist scan must never find, separated by `|`). The GoatCounter site code is public and lives in `src/config.ts` (`null` = statistics off).
 - A 401/403 during the build-time fetch turns the run red in the `fetch-health` job after the deploy.
 - gitleaks scans the pushed commits on every push and the full history on the daily and manual runs.
-- Game account cards (Player Log): the `fetch-accounts` job runs before the build with Node built-ins only (no `npm ci`) in the `account-fetch` environment, whose environment secret `STEAM_API_KEY` is the only secret it reads. The account values come from repository variables (`ACCOUNT_*`); variable values are printed in the public run logs, so they are public by design. With no `ACCOUNT_*` variable set the job makes no request. Setup: see "연동 켜기" below.
+- Game account cards (Player Log): the `fetch-accounts` job runs before the build with Node built-ins only (no `npm ci`) in the `account-fetch` environment, whose environment secret `STEAM_API_KEY` is the only secret it reads. The account values come from repository variables (`ACCOUNT_*`); variable values are printed in the public run logs, so they are public by design. With no `ACCOUNT_*` variable set the job makes no request. Setup: "변수만으로 카드 켜기" (no relay) or "연동 켜기" below.
+
+## 변수만으로 카드 켜기
+
+중계 서버(Cloudflare Worker)와 GitHub App 없이 계정 카드를 켜는 방법입니다. 연동 관리 화면(`?manage`)은 쓰지 않고, 값은 GitHub 설정 화면에서 직접 넣습니다. 지금 사이트는 이 방식으로 운영합니다(`ACCOUNT_ADMIN.relay`가 `null`).
+
+1. 저장소 **Settings** → **Secrets and variables** → **Actions** → **Variables** 탭 → **New repository variable**(문구 미확인).
+2. 쓰려는 게임의 변수만 만들어 주세요. 값은 공개 실행 기록에 찍히므로 공개해도 되는 게임 ID와 닉네임만 넣습니다.
+   - 원신: `ACCOUNT_GENSHIN_UID`(UID 숫자), `ACCOUNT_GENSHIN_NAME`(게임 안 닉네임과 똑같이)
+   - 젠레스 존 제로: `ACCOUNT_ZZZ_UID`, `ACCOUNT_ZZZ_NAME`
+   - 리그 오브 레전드·TFT: `ACCOUNT_RIOT_ID`(`이름#태그` 형식, 한국 서버)
+   - Steam은 API 키(환경 비밀 `STEAM_API_KEY`)가 있어야 하므로 이 방법에서는 빼 둡니다.
+3. 원신·젠레스 존 제로는 게임 안에서 캐릭터 쇼케이스를 공개로 두어야 Enka.Network가 정보를 줍니다. 닉네임이 다르면 카드가 뜨지 않습니다(`name-mismatch`).
+4. **Actions** → `deploy.yml` → **Run workflow**로 다시 빌드하거나 다음 날 03:30(한국 시간) 정기 빌드를 기다리면 카드가 나타납니다.
 
 ## 연동 켜기
 
