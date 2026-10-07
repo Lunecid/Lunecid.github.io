@@ -76,7 +76,7 @@
   "tests/astro/VariantSwitch.test.ts": 17,
   "tests/astro/editorial-records.test.ts": 53,
   "tests/astro/editorial-research.test.ts": 22,
-  "tests/content/legal.test.ts": 133,
+  "tests/content/legal.test.ts": 130,
   "tests/content/projects.test.ts": 170,
   "tests/content/records.test.ts": 135,
   "tests/content/research.test.ts": 89,
