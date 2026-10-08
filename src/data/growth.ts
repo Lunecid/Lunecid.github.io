@@ -110,7 +110,8 @@ export const growthSteps: readonly GrowthStepDef[] = [
     role: 1,
     method: null,
     // summary: "4인 팀이 … 음식점 매출을 예측한 프로젝트로, 저는 데이터 탐색과 엔지니어링을"; teamTools
-    teamNote: { ko: '군집 분석·매출 예측 모델링', en: 'Clustering and sales-forecast modeling' },
+    // owner 2026-10-08: the DatoryLab final poster adds the team's three-year store-survival model
+    teamNote: { ko: '군집 분석·매출 예측·점포 생존 예측 모델링', en: 'Clustering, sales-forecast and store-survival modeling' },
     data: { ko: '생활인구·소비매출·음식점 데이터', en: 'Floating-population, spending and restaurant data' },
   },
   {

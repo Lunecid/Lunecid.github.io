@@ -1,6 +1,6 @@
 ---
 title: 'Restaurant Locations for Young Founders in Busan'
-summary: 'A four-person team grouped Busan districts into four commercial-area types and predicted restaurant sales; I did the data exploration and data engineering.'
+summary: 'A four-person team grouped Busan districts into four types and predicted restaurant sales and store survival; I did the data exploration and data engineering.'
 period:
   start: '2025-05' # earliest file: the plan of 2025-05-22 (drive survey 2.7); owner-confirmed 2026-09-28
   end: '2025-11'
@@ -42,7 +42,7 @@ links:
   report: 'https://github.com/Lunecid/busan-youth-startup-location/blob/main/docs/report.pdf'
 audience:
   game: 'In a game, this is the same structure as a segment strategy that offers different content and products to each player cluster instead of designing for the average player.'
-  research: 'The team clustered about 200 Busan administrative districts into four commercial-area types with K-Means on standardized spending, population and competition features (elbow method and silhouette score for the number of clusters), and predicted restaurant sales with LightGBM on a log-transformed target. Potential Gap, predicted minus actual sales, points to districts that earn less than their conditions suggest.'
+  research: 'The team clustered about 200 Busan administrative districts into four commercial-area types with K-Means on standardized spending, population and competition features (elbow method and silhouette score for the number of clusters), and predicted restaurant sales with LightGBM on a log-transformed target. Potential Gap, predicted minus actual sales, points to districts that earn less than their conditions suggest. Finally, an XGBoost classifier trained on about 50,000 actual stores predicted three-year survival (ROC-AUC 0.832), shown on a map of 100 m hexagons.'
 status: 'published'
 ---
 
@@ -86,6 +86,16 @@ Busan's restaurant districts fell into four distinct types (Figure 1).
 For sales, LightGBM with a log-transformed target fit best. The districts with the largest Potential Gap were Hadan 2-dong (Saha-gu), Bujeon 1-dong (Busanjin-gu) and Gupo 1-dong (Buk-gu).
 
 High foot traffic alone was not the answer. Matching the business idea and target customers to the right commercial-area type mattered most for a stable start. The team presented these results at the graduate school's summer workshop in August 2025.
+
+## Final deliverable: a three-year survival map
+
+To close the task, the team brought the analysis together in dashboards at two scales (the DatoryLab final poster). At the district scale, a commercial-area dashboard lets users pick and compare the population and spending data of Busan's 205 administrative dongs; at the scale of 100 m hexagons, a model predicts whether a store survives three years or more.
+
+- **Three-year survival**: an XGBoost classifier trained on data from about 50,000 actual stores predicts whether a store stays open for three years or more. Its ROC-AUC was 0.832: the probability that, for one surviving and one closed store picked at random, the model gives the surviving store the higher probability (Hanley & McNeil, 1982). The predicted probability became a "survival index" feature linked to the dashboard.
+- **Hexagon grid**: in QGIS, Busan was divided into 90,000 hexagons of 100 m, with 18 features computed for each; the competition features were computed separately for each business type.
+- **Data**: monthly averages for 2019–2024 from the national public data portal, the Busan Big Data Innovation Center and V-World: residential, working and visiting population and the number and amount of transactions by sex, time of day and age group; location (official land price, slope, building coverage and floor area ratios, large stores, established commercial areas); the commercial environment (stores of the same type, past closures); transport (distance to roads and bus stops, parking spaces, public parking within 300 m); and demand (nearby housing prices per unit area, large apartment complexes, schools, office clusters).
+
+The dashboard maps the survival probability by hexagon and business type and shows each hexagon's location features and survival index.
 
 ## For product & planning teams
 

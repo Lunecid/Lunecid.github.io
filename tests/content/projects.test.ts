@@ -398,9 +398,17 @@ describe('project case-study files', () => {
     expect(enBody).toContain('## Follow-up: BUSAN DATA WEEK 2025 entry');
     expect(koBody).toContain("팀 '부산한 부산'");
     expect(enBody).toContain('Busanhan Busan');
+    // owner 2026-10-08: the DatoryLab final poster states the survival model's ROC-AUC 0.832, so it appears once, in that
+    // section; the BUSAN DATA WEEK report has no such figure (drive survey, 2026-09-28) and 0.809 has no source at all.
+    const section = (body: string, heading: string) => body.split(`${heading}\n`)[1]?.split('\n## ')[0] ?? '';
     for (const body of [koBody, enBody]) {
-      expect(body).not.toMatch(/0\.832|0\.809/);
+      expect(body).not.toMatch(/0\.809/);
+      expect(body.match(/0\.832/g)).toHaveLength(1);
     }
+    expect(section(koBody, '## 최종 결과물: 3년 생존 예측 지도')).toContain('ROC-AUC는 0.832였습니다');
+    expect(section(enBody, '## Final deliverable: a three-year survival map')).toContain('Its ROC-AUC was 0.832');
+    expect(section(koBody, '## 후속: BUSAN DATA WEEK 2025 출품')).not.toMatch(/0\.832|XGBoost/);
+    expect(section(enBody, '## Follow-up: BUSAN DATA WEEK 2025 entry')).not.toMatch(/0\.832|XGBoost/);
   });
 
   it('owner-confirmed: the youth start-up period is 2025-05 to 2025-11', () => {
