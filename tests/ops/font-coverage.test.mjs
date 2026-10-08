@@ -307,7 +307,7 @@ test('DS-1: data pages declare and preload the display face; no game or neutral 
       if (preloads.some((u) => /sb-display/.test(u))) wrong.push(`${p.route}: preloads the display face`);
     }
   }
-  assert.equal(data, 16, 'the 16 general-version pages');
+  assert.equal(data, 18, 'the 18 general-version pages'); // owner 2026-10-08: + /data/projects/kbo-attendance/ (ko, en)
   assert.deepEqual(wrong, []);
 });
 

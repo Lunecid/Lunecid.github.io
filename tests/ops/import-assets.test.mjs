@@ -66,6 +66,7 @@ test('JOBS cover exactly the file map outputs', async () => {
   assert.equal(new Set(outs).size, outs.length, 'duplicate outputs');
   assert.equal(new Set(JOBS.map((j) => j.id)).size, JOBS.length, 'duplicate ids');
   assert.deepEqual(outs.filter((o) => o.startsWith('src/assets/projects/')).sort(), [
+    'src/assets/projects/kbo-attendance/slump-attendance.webp',
     'src/assets/projects/kickick-park/dong-ranking.webp',
     'src/assets/projects/kickick-park/parking-stand-detection.webp',
     'src/assets/projects/kickick-park/segmentation-v5.webp',
@@ -99,6 +100,16 @@ test('JOBS cover exactly the file map outputs', async () => {
     );
     assert.equal(j.format, j.out.endsWith('.png') ? 'png' : 'webp', `${j.id}: format matches the extension`);
     assert.equal(j.flatten === true, j.out.startsWith('src/assets/research/'), `${j.id}: only research figures are flattened`);
+  }
+});
+
+test("root: 'repo' sources are committed under scripts/assets/sources/ (figures this repo draws)", async () => {
+  const { JOBS } = await import(SCRIPT);
+  const repoJobs = JOBS.filter((j) => j.root === 'repo');
+  assert.deepEqual(repoJobs.map((j) => j.id), ['kbo-slump-attendance']);
+  for (const j of repoJobs) {
+    assert.ok(j.src.startsWith('scripts/assets/sources/'), `${j.id}: ${j.src}`);
+    assert.ok(existsSync(join(ROOT, j.src)), `${j.src} missing: run node scripts/assets/kbo-slump-chart.mjs`);
   }
 });
 

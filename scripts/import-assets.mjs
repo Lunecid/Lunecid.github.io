@@ -1,6 +1,7 @@
 // Converts staged sources into the committed src/assets/** files (WebP q85, max 1600px wide, metadata stripped).
-// Sources: the staging root (ASSET_STAGING) and the LOL_teamfight repo (LOL_ROOT). Both default to absolute paths,
-// so the script works from a git worktree. Character art stays PNG with alpha and is optional.
+// Sources: the staging root (ASSET_STAGING), the LOL_teamfight repo (LOL_ROOT) and, for figures this repo draws itself,
+// the repo (root: 'repo', sources under scripts/assets/sources/). The first two default to absolute paths, so the script
+// works from a git worktree. Character art stays PNG with alpha and is optional.
 import { existsSync } from 'node:fs';
 import { mkdir } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
@@ -14,9 +15,9 @@ export const MAX_WIDTH = 1600;
 
 const FIG1 = 'paper/figures/label_horizon.png'; // paper Fig. 1, 2816×1536
 
-/** @typedef {{ id: string; src: string; out: string; format: 'webp' | 'png'; root?: 'staging' | 'lol'; crop?: { left: number; top: number; width: number; height: number }; flatten?: boolean; optional?: boolean; greyscale?: boolean; height?: number }} Job */
+/** @typedef {{ id: string; src: string; out: string; format: 'webp' | 'png'; root?: 'staging' | 'lol' | 'repo'; crop?: { left: number; top: number; width: number; height: number }; flatten?: boolean; optional?: boolean; greyscale?: boolean; height?: number }} Job */
 
-/** src is relative to its root (staging unless root: 'lol'); out is repo-relative. @type {Job[]} */
+/** src is relative to its root (staging unless root: 'lol' or 'repo'); out is repo-relative. @type {Job[]} */
 export const JOBS = [
   // Project figures (content-projects §3)
   { id: 'dx-risk-heatmap', src: 'figures/dx/p08_1.png', out: 'src/assets/projects/school-zone-blindspots/risk-heatmap.webp', format: 'webp' },
@@ -29,6 +30,8 @@ export const JOBS = [
   { id: 'kick-selected-dongs', src: 'figures/kick/p13_1.png', out: 'src/assets/projects/kickick-park/selected-dongs.webp', format: 'webp' },
   { id: 'kick-segmentation-v5', src: 'figures/kick/p20_0.png', out: 'src/assets/projects/kickick-park/segmentation-v5.webp', format: 'webp' },
   { id: 'datory-cluster-zscore-heatmap', src: 'figures/datory/p08_0.png', out: 'src/assets/projects/youth-startup-location/cluster-zscore-heatmap.webp', format: 'webp' },
+  // drawn in this repo from the team report's Table 1 (scripts/assets/kbo-slump-chart.mjs; owner 2026-10-08)
+  { id: 'kbo-slump-attendance', root: 'repo', src: 'scripts/assets/sources/kbo-slump-attendance.png', out: 'src/assets/projects/kbo-attendance/slump-attendance.webp', format: 'webp' },
   // CoG 2026 research figures (content-research §1), flattened onto white
   { id: 'cog-label-horizon', root: 'lol', src: FIG1, out: 'src/assets/research/cog-2026/label-horizon.webp', format: 'webp', flatten: true },
   { id: 'cog-kill-gap-kde', root: 'lol', src: 'config/fight_boundary/temporal_kde_pooled.png', out: 'src/assets/research/cog-2026/kill-gap-kde.webp', format: 'webp', flatten: true },
@@ -71,7 +74,7 @@ export async function runJobs({ root, lolRoot, outDir = REPO_ROOT, only }) {
   const results = [];
   for (const job of JOBS) {
     if (only && !only.includes(job.id)) continue;
-    const srcPath = join(job.root === 'lol' ? lolRoot : root, job.src);
+    const srcPath = join(job.root === 'lol' ? lolRoot : job.root === 'repo' ? REPO_ROOT : root, job.src);
     const out = join(outDir, job.out);
     if (!existsSync(srcPath)) {
       if (job.optional) {
