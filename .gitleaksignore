@@ -1,0 +1,7 @@
+# gitleaks findings checked by hand and kept: one fingerprint per line (commit:file:rule:line).
+# The daily and manual runs scan the whole history; a push scans only its first-parent commits, which is why this one
+# surfaced in the first daily run after the merge that brought it in (2026-10-07).
+#
+# tests/react/ManagePanel.test.tsx: '0123456789abcdef' + '0123456789abcdef' is a made-up "secret-looking" Steam persona
+# name; the test checks that such a name is never stored, shown or sent. Not a credential.
+413a7c399d33931b8c34b119917abb37ffde3b35:tests/react/ManagePanel.test.tsx:generic-api-key:920
