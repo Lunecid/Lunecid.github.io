@@ -11,11 +11,13 @@ test.describe('GP-8: the game palette, measured', () => {
   test.describe.configure({ timeout: 180_000 });
 
   test('the game routes are all here', () => {
-    expect(ROUTES).toHaveLength(18);
+    // 11 per language: 5 static pages, the paper page and 5 project pages (owner 2026-10-08: + kbo-attendance,
+    // resort-menu-demand)
+    expect(ROUTES).toHaveLength(22);
   });
 
   for (const width of [375, 1280]) {
-    test(`GP-8: every visible text on the 18 game routes reads ≥ 4.5:1 on its computed ground at ${width}`, async ({ page }, info) => {
+    test(`GP-8: every visible text on the 22 game routes reads ≥ 4.5:1 on its computed ground at ${width}`, async ({ page }, info) => {
       await page.setViewportSize({ width, height: 900 });
       const fails: string[] = [];
       const lowest: string[] = [];

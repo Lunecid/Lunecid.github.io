@@ -194,10 +194,15 @@ test.describe('P1-6 / P2-23: cartridge labels and stickers', () => {
     });
   }
 
-  test('the chart labels (youth start-up, CoG paper Fig. 1) are drawn whole (contain), never cropped', async ({ page }) => {
+  test('the chart labels (CoG paper Fig. 1, LG Aimers pipeline, KBO chart, youth start-up) are drawn whole (contain), never cropped', async ({ page }) => {
     await openAt(page, '/game/projects/', 1440);
-    const fits = await page.locator('img.cart__img--contain').evaluateAll((els) => els.map((el) => getComputedStyle(el).objectFit));
-    expect(fits).toEqual(['contain', 'contain']);
+    const imgs = page.locator('img.cart__img--contain');
+    const fits = await imgs.evaluateAll((els) => els.map((el) => getComputedStyle(el).objectFit));
+    expect(fits).toEqual(['contain', 'contain', 'contain', 'contain']); // owner 2026-10-08: + KBO and LG Aimers (fit: contain)
+    const srcs = await imgs.evaluateAll((els) => els.map((el) => (el as HTMLImageElement).currentSrc));
+    for (const name of ['label-horizon', 'ensemble-pipeline', 'slump-attendance', 'cluster-zscore-heatmap']) {
+      expect(srcs.some((src) => src.includes(name)), name).toBe(true);
+    }
   });
 
   // Owner decision 2026-10-05: Fig. 1 is the cover (reverses F-045). The CoG label on home and /projects/ is the paper's
