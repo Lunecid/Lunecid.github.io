@@ -21,8 +21,9 @@ export type ProjectSlug = (typeof PROJECT_SLUGS)[number];
 /**
  * Projects with a case-study page at /projects/<slug>/. The others are status 'card' (D-4): a short, link-less
  * card on /projects/ and a line on /records/, no page (tests/content/projects.test.ts keeps the two in sync).
+ * kbo-attendance became a page on 2026-10-08 (owner: written from the team's slides and report).
  */
-export const PROJECT_PAGE_SLUGS = ['school-zone-blindspots', 'kickick-park', 'youth-startup-location'] as const satisfies readonly ProjectSlug[];
+export const PROJECT_PAGE_SLUGS = ['school-zone-blindspots', 'kickick-park', 'youth-startup-location', 'kbo-attendance'] as const satisfies readonly ProjectSlug[];
 /** Paper pages at /research/<slug>/ (publication ids with a caseStudy page; abstract-only since D-15). */
 export const STORY_SLUGS = ['cog-2026-engagement'] as const;
 

@@ -86,7 +86,7 @@ export const growthSteps: readonly GrowthStepDef[] = [
     source: { kind: 'project', slug: 'kbo-attendance' },
     role: 1,
     method: null,
-    // summary: "구단 성적과 관중 수의 관계를 4인 팀이 통계적으로 검정한"
+    // summary: "5인 팀이 부진할 때 홈 관중이 줄어드는지 검정한"
     teamNote: { ko: '구단 성적과 관중 수의 통계 검정', en: 'Statistical tests of team performance and attendance' },
     teamNoteBy: 'teamWork',
     data: { ko: '웹 크롤링 수집', en: 'Web crawling' },

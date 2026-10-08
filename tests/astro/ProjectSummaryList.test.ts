@@ -31,10 +31,10 @@ describe('ProjectSummaryList.astro', () => {
     // The rows follow the refs passed in (here resume.yaml's list; the page passes recordsProjectsOrder).
     const withPage = resume.projects.filter((p) => (PROJECT_PAGE_SLUGS as readonly string[]).includes(p.ref));
     expect(hrefsOf(ko)).toEqual(withPage.map((p) => `/game/projects/${p.ref}/`));
-    expect(hrefsOf(ko)).toHaveLength(3);
-    // D-4: the KBO and Seoul apartment rows keep their title as plain text (no page to link to).
-    expect(ko).toMatch(/<h3 class="psum__title"[^>]*>KBO 구단 성적과 관중 수<\/h3>/);
-    expect(ko).not.toMatch(/kbo-attendance|seoul-apartment-automl/);
+    expect(hrefsOf(ko)).toHaveLength(4); // owner 2026-10-08: kbo-attendance became a page
+    // D-4: the Seoul apartment row keeps its title as plain text (no page to link to).
+    expect(ko).toMatch(/<h3 class="psum__title"[^>]*>서울 아파트 매매가 예측<\/h3>/);
+    expect(ko).not.toMatch(/seoul-apartment-automl/);
     expect(ko.match(/class="psum__item lh-row"/g)).toHaveLength(5);
     const teams = teamsOf(ko);
     expect(teams).toHaveLength(5);

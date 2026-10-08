@@ -82,7 +82,7 @@ describe('project case-study files', () => {
 
   it('P2-21: every cover names its figure for the "FIG · <label>" strip, with no digits (no number headline)', () => {
     const labels = PROJECT_SLUGS.map((slug) => data('ko', slug).cover?.label).filter((l): l is string => l !== undefined);
-    expect(labels.sort()).toEqual(['CLUSTER PROFILES', 'PARKING DETECTION', 'RISK HEATMAP']);
+    expect(labels.sort()).toEqual(['CLUSTER PROFILES', 'PARKING DETECTION', 'RISK HEATMAP', 'SLUMP VS OTHER GAMES']);
     for (const label of labels) expect(label).not.toMatch(/\d/);
   });
 
@@ -102,7 +102,7 @@ describe('project case-study files', () => {
 
   it("status 'card' ⇔ no page (D-4): card files are exactly the slugs outside PROJECT_PAGE_SLUGS and have no body", () => {
     const cards = PROJECT_SLUGS.filter((slug) => data('ko', slug).status === 'card');
-    expect(cards).toEqual(['kbo-attendance', 'seoul-apartment-automl']);
+    expect(cards).toEqual(['seoul-apartment-automl']); // owner 2026-10-08: kbo-attendance became a page
     expect(PROJECT_SLUGS.filter((slug) => !(PROJECT_PAGE_SLUGS as readonly string[]).includes(slug))).toEqual(cards);
     for (const slug of cards) {
       for (const lang of LANGS) {
@@ -224,8 +224,9 @@ describe('project case-study files', () => {
     expect(readBody(fileOf('en', 'school-zone-blindspots'))).toContain('Big Data Analysis Division of the 2025 Big Data Utilization Contest');
     expect(readBody(fileOf('en', 'school-zone-blindspots'))).not.toMatch(/analysis track/i);
     // The KBO card reads as a team analysis with the owner's part (D-9), not as the owner's statistics.
-    expect(data('ko', 'kbo-attendance').summary).toMatch(/4인 팀.*저는 KBO 정규 시즌 데이터를 웹 크롤링으로 수집하고 전처리했습니다/);
-    expect(data('en', 'kbo-attendance').summary).toMatch(/four-person course project.*I crawled and cleaned the KBO regular-season data/);
+    // owner 2026-10-08: five members (the slides and the report list five; 4조 was the group number)
+    expect(data('ko', 'kbo-attendance').summary).toMatch(/5인 팀.*저는 KBO 정규 시즌 데이터를 웹 크롤링으로 수집하고 전처리했습니다/);
+    expect(data('en', 'kbo-attendance').summary).toMatch(/five-person course project.*I crawled and cleaned the KBO regular-season data/);
   });
 
   it('final review fix 1 item 1: the KickKick summary credits the team with the photo-judgment model and me only with my role parts', () => {

@@ -57,11 +57,12 @@ describe('route table after the move (contract §2.1)', () => {
     expect(records[i + 1]).toBe('awards');
   });
 
-  it('D-4: KBO and Seoul apartment have no page in either version', () => {
+  it('D-4: Seoul apartment has no page in either version (KBO has one since owner 2026-10-08)', () => {
     for (const v of ['game', 'data'] as const) {
       const bases = variantBasePaths(v);
-      expect(PROJECT_SLUGS.filter((slug) => !bases.includes(`/projects/${slug}/`))).toEqual(['kbo-attendance', 'seoul-apartment-automl']);
-      expect(isKnownInternalHref('/projects/kbo-attendance/', v)).toBe(false);
+      expect(PROJECT_SLUGS.filter((slug) => !bases.includes(`/projects/${slug}/`))).toEqual(['seoul-apartment-automl']);
+      expect(isKnownInternalHref('/projects/seoul-apartment-automl/', v)).toBe(false);
+      expect(isKnownInternalHref('/projects/kbo-attendance/', v)).toBe(true);
     }
     expect(STORY_SLUGS).toEqual(['cog-2026-engagement']);
   });

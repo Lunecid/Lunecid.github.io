@@ -55,7 +55,8 @@ describe('buildOgMap', () => {
     const map = buildOgMap(fixtureSources());
     const expected = allRoutes().map(ogSlugFor).sort();
     expect(new Set(expected).size).toBe(allRoutes().length);
-    expect(map['game/projects/kbo-attendance']).toBeUndefined(); // D-4: no page, so no OG card
+    expect(map['game/projects/seoul-apartment-automl']).toBeUndefined(); // D-4: no page, so no OG card
+    expect(map['game/projects/kbo-attendance']).toBeDefined(); // owner 2026-10-08: a page since then
     expect(Object.keys(map).sort()).toEqual(expected);
     expect(map['home'].eyebrow).toBe('백성은'); // P2-12: the chooser card is neutral, named by the site title
     expect(map['en/game/projects/kickick-park']).toEqual({

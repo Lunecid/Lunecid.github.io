@@ -232,8 +232,8 @@ export const resumeSchema = z.object({
   // resume: an optional PDF-only résumé-style bullet override (batch 3b P1-20/P2-32); when absent the PDF falls
   // back to the project's own summary/role (web copy). /records/ ignores both `resume` and `pdf` (records.ts).
   projects: z.array(z.object({ ref: slug, pdf: pdfFlags, resume: resumeBullets.optional() })),
-  // A single PDF-only résumé line merging the two card-status projects (kbo-attendance, seoul-apartment-automl)
-  // that have no page (D-4) and are otherwise too thin for their own bullet block (batch 3b P1-20). Korean only:
+  // A single PDF-only résumé line merging the two small projects (kbo-attendance, seoul-apartment-automl), too thin
+  // for their own bullet block (batch 3b P1-20; kbo-attendance has had a web page since 2026-10-08). Korean only:
   // both projects are already pdf.en=false/pdf.academic=false, so there is nothing to merge into those docs.
   projectsNote: z.object({ ko: z.string().min(1), pdf: pdfFlags }).optional(),
   // The CoG paper as the résumés' first project (batch 3b P1-20): not a projects-collection entry, so it is kept

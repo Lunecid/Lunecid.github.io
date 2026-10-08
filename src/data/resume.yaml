@@ -162,7 +162,8 @@ projects:
       en:
         - A four-person team segmented Busan districts into four commercial types and predicted restaurant sales.
         - Explored the floating-population, consumer-spending and restaurant data and did the data engineering.
-  # kbo-attendance, seoul-apartment-automl: status 'card' (D-4), too thin for their own bullets. Excluded from every
+  # kbo-attendance, seoul-apartment-automl: too thin for their own bullets (seoul-apartment-automl is status 'card',
+  # D-4; kbo-attendance has had a page since owner 2026-10-08 but stays out of the 2-page résumé). Excluded from every
   # PDF here (pdf all false) and merged into projectsNote below instead (batch 3b P1-20). /records/'s project
   # summary lists them through recordsProjectsOrder (src/variants/*.ts, P1-7b), regardless of these pdf flags.
   - ref: kbo-attendance
