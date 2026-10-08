@@ -30,3 +30,6 @@ test-results/
 .lighthouseci/
 coverage/
 .claude/worktrees/
+
+# Python bytecode (scripts/assets/manim/*.py)
+__pycache__/

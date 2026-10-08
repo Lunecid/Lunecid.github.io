@@ -71,6 +71,7 @@ test('JOBS cover exactly the file map outputs', async () => {
     'src/assets/projects/kickick-park/parking-stand-detection.webp',
     'src/assets/projects/kickick-park/segmentation-v5.webp',
     'src/assets/projects/kickick-park/selected-dongs.webp',
+    'src/assets/projects/resort-menu-demand/ensemble-pipeline.webp',
     'src/assets/projects/school-zone-blindspots/false-positive-areas.webp',
     'src/assets/projects/school-zone-blindspots/gupo-existing-zone.webp',
     'src/assets/projects/school-zone-blindspots/risk-heatmap.webp',
@@ -106,10 +107,10 @@ test('JOBS cover exactly the file map outputs', async () => {
 test("root: 'repo' sources are committed under scripts/assets/sources/ (figures this repo draws)", async () => {
   const { JOBS } = await import(SCRIPT);
   const repoJobs = JOBS.filter((j) => j.root === 'repo');
-  assert.deepEqual(repoJobs.map((j) => j.id), ['kbo-slump-attendance']);
+  assert.deepEqual(repoJobs.map((j) => j.id), ['kbo-slump-attendance', 'resort-menu-pipeline']);
   for (const j of repoJobs) {
     assert.ok(j.src.startsWith('scripts/assets/sources/'), `${j.id}: ${j.src}`);
-    assert.ok(existsSync(join(ROOT, j.src)), `${j.src} missing: run node scripts/assets/kbo-slump-chart.mjs`);
+    assert.ok(existsSync(join(ROOT, j.src)), `${j.src} missing: run its drawing script (scripts/assets/kbo-slump-chart.mjs, scripts/assets/manim/resort_menu_pipeline.py)`);
   }
 });
 

@@ -48,6 +48,8 @@ const SKY = Array.from({ length: 34 }, (_, k) => ({
 const twinkle = (i: number) => r1(((i * 7) % 11) / 5);
 const roleFoot = GROWTH_LEVELS.map((lv) => `${lv} ${copy.role[lv]}`).join(' · ');
 const methodFoot = GROWTH_LEVELS.map((lv) => `${lv} ${copy.method[lv]}`).join(' · ');
+// the blank-team note only while some step has no team on the site (since owner 2026-10-08 every step has one)
+const blankNote = steps.some((s) => s.team === null) ? ` ${copy.foot.blank}` : '';
 ---
 <link rel="stylesheet" href={growthGameCss} />
 <section id="growth" class="gq read read-sec" aria-labelledby="growth-title" data-growth>
@@ -196,7 +198,7 @@ const methodFoot = GROWTH_LEVELS.map((lv) => `${lv} ${copy.method[lv]}`).join(' 
         </table>
       </div>
     </details>
-    <p class="gq-foot">{copy.foot.role}: {roleFoot}. {copy.foot.method}: {methodFoot}. {copy.foot.blank}</p>
+    <p class="gq-foot">{copy.foot.role}: {roleFoot}. {copy.foot.method}: {methodFoot}.{blankNote}</p>
   </div>
 </section>
 

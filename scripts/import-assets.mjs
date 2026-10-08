@@ -32,6 +32,9 @@ export const JOBS = [
   { id: 'datory-cluster-zscore-heatmap', src: 'figures/datory/p08_0.png', out: 'src/assets/projects/youth-startup-location/cluster-zscore-heatmap.webp', format: 'webp' },
   // drawn in this repo from the team report's Table 1 (scripts/assets/kbo-slump-chart.mjs; owner 2026-10-08)
   { id: 'kbo-slump-attendance', root: 'repo', src: 'scripts/assets/sources/kbo-slump-attendance.png', out: 'src/assets/projects/kbo-attendance/slump-attendance.webp', format: 'webp' },
+  // the last frame of the Manim infographic drawn from the team's submission code (scripts/assets/manim/
+  // resort_menu_pipeline.py; owner 2026-10-08); its animation is public/video/resort-menu-pipeline.mp4
+  { id: 'resort-menu-pipeline', root: 'repo', src: 'scripts/assets/sources/resort-menu-pipeline.png', out: 'src/assets/projects/resort-menu-demand/ensemble-pipeline.webp', format: 'webp' },
   // CoG 2026 research figures (content-research §1), flattened onto white
   { id: 'cog-label-horizon', root: 'lol', src: FIG1, out: 'src/assets/research/cog-2026/label-horizon.webp', format: 'webp', flatten: true },
   { id: 'cog-kill-gap-kde', root: 'lol', src: 'config/fight_boundary/temporal_kde_pooled.png', out: 'src/assets/research/cog-2026/kill-gap-kde.webp', format: 'webp', flatten: true },

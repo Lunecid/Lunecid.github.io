@@ -54,6 +54,10 @@ export function projectSchema<TImage extends z.ZodType>(image: TImage) {
           caption: z.string().min(1),
           inlineAfter: z.string().min(1).optional(),
           table: z.object({ columns: z.array(localized).min(1), rows: z.array(z.array(z.string())).min(1) }).optional(),
+          // video: the figure as an animation, two files under public/video/: <video>.webm (VP9) and <video>.mp4 (H.264).
+          // FigureVideo plays it over this still, which is its last frame. Only the cover's figure is drawn with it
+          // (tests/content/projects.test.ts).
+          video: z.string().regex(/^\/video\/[a-z0-9-]+$/).optional(),
         }),
       )
       .default([]),

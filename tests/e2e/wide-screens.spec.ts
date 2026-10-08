@@ -56,11 +56,11 @@ test.describe('D-2 XL steps: the section container widens; every band keeps one 
     expect((await box(page.locator('.prose.read > p').first())).width).toBeCloseTo(38 * 17, 0);
   });
 
-  test('/game/projects/ at 1920px: four columns, CoG + five projects fill two complete rows', async ({ page }) => {
+  test('/game/projects/ at 1920px: four columns, CoG + six projects fill two complete rows', async ({ page }) => {
     await openAt(page, '/game/projects/', 1920);
     const grid = await box(page.locator('#project-grid'));
     const cards = await Promise.all((await page.locator('#project-grid .cart').all()).map(box));
-    expect(cards).toHaveLength(6); // CoG (two columns) + five projects, the last spanning two columns = 8 cells
+    expect(cards).toHaveLength(7); // CoG (two columns) + six projects = 8 cells (owner 2026-10-08: resort-menu-demand)
     const rows = new Map<number, Box[]>();
     for (const c of cards) rows.set(Math.round(c.y), [...(rows.get(Math.round(c.y)) ?? []), c]);
     expect(rows.size).toBe(2);
@@ -70,18 +70,20 @@ test.describe('D-2 XL steps: the section container widens; every band keeps one 
     }
   });
 
-  // P-07 acceptance (F-062, owner decision 13): the double-width project slot holds a linked case study, not a card without a page.
+  // P-07 acceptance (F-062, owner decision 13): a double-width project slot holds a linked case study, not a card without a
+  // page. With seven cards (owner 2026-10-08) both rows fill at four columns and no project card spans two; the last card is
+  // still a linked case study.
   for (const width of [1440, 1920]) {
-    test(`/game/projects/ at ${width}px: the double-width project card is a linked case study`, async ({ page }) => {
+    test(`/game/projects/ at ${width}px: no project card spans two columns, and the last one is a linked case study`, async ({ page }) => {
       await openAt(page, '/game/projects/', width);
       const projects = page.locator('#project-grid .cart:not(.cart--wide)');
       const widths = await projects.evaluateAll((els) => els.map((el) => el.getBoundingClientRect().width));
       const single = Math.min(...widths);
       const doubles = widths.map((w, i) => (w > 1.5 * single ? i : -1)).filter((i) => i >= 0);
-      expect(doubles.length, 'one project card spans two columns').toBe(1);
-      const card = projects.nth(doubles[0]!);
-      await expect(card.locator('.cart__link')).toHaveCount(1);
-      await expect(card).not.toHaveClass(/cart--static/);
+      expect(doubles, 'no project card spans two columns').toEqual([]);
+      for (const i of doubles) await expect(projects.nth(i)).not.toHaveClass(/cart--static/);
+      await expect(projects.last().locator('.cart__link')).toHaveCount(1);
+      await expect(projects.last()).not.toHaveClass(/cart--static/);
     });
   }
 });

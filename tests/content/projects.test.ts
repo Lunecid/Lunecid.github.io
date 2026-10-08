@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, statSync } from 'node:fs';
 import { basename } from 'node:path';
 import { z } from 'astro/zod';
 import { describe, expect, it } from 'vitest';
@@ -82,7 +82,7 @@ describe('project case-study files', () => {
 
   it('P2-21: every cover names its figure for the "FIG · <label>" strip, with no digits (no number headline)', () => {
     const labels = PROJECT_SLUGS.map((slug) => data('ko', slug).cover?.label).filter((l): l is string => l !== undefined);
-    expect(labels.sort()).toEqual(['CLUSTER PROFILES', 'PARKING DETECTION', 'RISK HEATMAP', 'SLUMP VS OTHER GAMES']);
+    expect(labels.sort()).toEqual(['CLUSTER PROFILES', 'ENSEMBLE PIPELINE', 'PARKING DETECTION', 'RISK HEATMAP', 'SLUMP VS OTHER GAMES']);
     for (const label of labels) expect(label).not.toMatch(/\d/);
   });
 
@@ -144,6 +144,27 @@ describe('project case-study files', () => {
         }
       }
     }
+  });
+
+  it('a figure animation (figures[].video) belongs to the cover figure, exists under public/ and stays small', () => {
+    // ProjectDetails draws the animation over the cover only (FigureVideo); an inline figure would drop it silently.
+    const withVideo: string[] = [];
+    for (const lang of LANGS) {
+      for (const slug of PROJECT_SLUGS) {
+        const d = data(lang, slug);
+        d.figures.forEach((f) => {
+          if (f.video === undefined) return;
+          withVideo.push(`${lang}/${slug}`);
+          expect(f.src, `${lang}/${slug}: the animated figure is the cover`).toBe(d.cover?.src);
+          for (const ext of ['.webm', '.mp4']) {
+            const file = `public${f.video}${ext}`;
+            expect(existsSync(file), file).toBe(true);
+            expect(statSync(file).size, `${file}: preload is none, but a visit that plays it downloads it all`).toBeLessThanOrEqual(600 * 1024);
+          }
+        });
+      }
+    }
+    expect(withVideo.sort()).toEqual(['en/resort-menu-demand', 'ko/resort-menu-demand']); // owner 2026-10-08: the Manim pipeline
   });
 
   it('D-3: the game home row is CoG + school-zone-blindspots + kickick-park, both projects published', () => {

@@ -85,7 +85,7 @@ test.describe('projects tag filter (P2-8)', () => {
     await page.goto('/game/projects/');
     const all = page.locator('#project-grid > [data-tags]');
     const visible = page.locator('#project-grid > [data-tags]:not([hidden])');
-    await expect(all).toHaveCount(6);
+    await expect(all).toHaveCount(7); // CoG + six projects (owner 2026-10-08: resort-menu-demand)
     const group = page.getByRole('group', { name: '태그로 거르기' });
     // geospatial/cv/web/gamification/stats each have exactly one project and nlp has none; all are hidden (P2-8):
     // 전체 + 머신러닝/공공데이터/시각화/데이터 수집 = 5 buttons (down from 11).
@@ -94,13 +94,13 @@ test.describe('projects tag filter (P2-8)', () => {
     const ml = group.getByRole('button', { name: '머신러닝', exact: true });
     await ml.click();
     await expect(ml).toHaveAttribute('aria-pressed', 'true');
-    await expect(visible).toHaveCount(4);
+    await expect(visible).toHaveCount(5);
     await group.getByRole('button', { name: '전체', exact: true }).click();
-    await expect(visible).toHaveCount(6);
+    await expect(visible).toHaveCount(7);
     await ml.click();
     await ml.click();
     await expect(group.getByRole('button', { name: '전체', exact: true })).toHaveAttribute('aria-pressed', 'true');
-    await expect(visible).toHaveCount(6);
+    await expect(visible).toHaveCount(7);
   });
 
   test('the selection lives in ?tag= and survives reload, and reappears after visiting a project and going back', async ({ page }) => {
@@ -135,7 +135,7 @@ test.describe('projects tag filter (P2-8)', () => {
     await expect(status).toBeEmpty();
     // A real, user-driven change afterwards does announce.
     await page.getByRole('button', { name: 'All', exact: true }).click();
-    await expect(status).toHaveText('6 projects');
+    await expect(status).toHaveText('7 projects');
   });
 
   test('fix round 2 item 8: a hash-only popstate (e.g. a skip link) does not re-announce the filter', async ({ page }) => {
@@ -160,7 +160,7 @@ test.describe('projects tag filter (P2-8)', () => {
       'aria-pressed',
       'true',
     );
-    await expect(page.locator('#project-grid > [data-tags]:not([hidden])')).toHaveCount(6);
+    await expect(page.locator('#project-grid > [data-tags]:not([hidden])')).toHaveCount(7);
     await expect(page).toHaveURL(/\/game\/projects\/$/);
     expect(new URL(page.url()).searchParams.has('tag')).toBe(false);
   });

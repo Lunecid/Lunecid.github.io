@@ -65,10 +65,11 @@ export const gameVariant: Variant = {
   },
   orders: {
     homeFeatured: ['pub:cog-2026-engagement', 'project:school-zone-blindspots', 'project:kickick-park'],
-    // P2 Task 6 (P-07 F-062, owner decision 13, audit 2026-09-29): the two page-less cards come before youth-startup-location,
-    // so from 734px the double-width last cell (the span-2 selector of ProjectCartridge, unchanged) holds a linked case study.
-    projectsOrder: ['pub:cog-2026-engagement', 'project:school-zone-blindspots', 'project:kickick-park', 'project:kbo-attendance', 'project:seoul-apartment-automl', 'project:youth-startup-location'],
-    recordsProjectsOrder: ['project:school-zone-blindspots', 'project:kickick-park', 'project:youth-startup-location', 'project:kbo-attendance', 'project:seoul-apartment-automl'],
+    // P2 Task 6 (P-07 F-062, owner decision 13, audit 2026-09-29): the page-less card comes before youth-startup-location,
+    // so a linked case study closes the grid. With seven cards (owner 2026-10-08: resort-menu-demand) the rows fill
+    // at two and at four columns, and the span-2 selector of ProjectCartridge (an even last card) no longer applies.
+    projectsOrder: ['pub:cog-2026-engagement', 'project:school-zone-blindspots', 'project:kickick-park', 'project:resort-menu-demand', 'project:kbo-attendance', 'project:seoul-apartment-automl', 'project:youth-startup-location'],
+    recordsProjectsOrder: ['project:school-zone-blindspots', 'project:kickick-park', 'project:youth-startup-location', 'project:resort-menu-demand', 'project:kbo-attendance', 'project:seoul-apartment-automl'],
     // A-17: equals today's end-month sort (tests/unit/resume-model.test.ts pins that).
     pdfProjectOrder: ['pub:cog-2026-engagement', 'project:youth-startup-location', 'project:school-zone-blindspots', 'project:kickick-park'],
   },

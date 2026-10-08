@@ -38,14 +38,16 @@ describe('GrowthReport.astro (general version)', () => {
     expect(html.match(/class="gd-paint gd-paint--y gd-paint--s" data-paint-text>예정</g)).toHaveLength(2);
   });
 
-  it("team lane and cards keep teammates' tools as 팀원 담당; LG Aimers shows no team", async () => {
+  it("team lane and cards keep teammates' tools as 팀원 담당; LG Aimers shows its page's team (owner 2026-10-08)", async () => {
     const html = await render('ko');
     expect(html).toMatch(/<b>팀원 담당<\/b> YOLOv8 · PyTorch/);
     expect(html).toMatch(/<b>팀원 담당<\/b> scikit-learn · LightGBM · XGBoost · QGIS · Streamlit/);
-    expect(html).toContain('팀 구성 기재 없음');
+    // every step states its team now, so neither the blank cell nor the footnote about blank cells is shown
+    expect(html).not.toContain('팀 구성 기재 없음');
+    expect(html).not.toContain('팀 구성이 사이트에 없는 항목은 비워 두었습니다');
     const sm = /<article class="gd-smc" id="gr-sm-lg-aimers-7"[\s\S]*?<\/article>/.exec(html)?.[0] ?? '';
-    expect(sm).not.toContain('gd-team"');
-    expect(sm).toContain('모델링 및 학습 파이프라인 설계 전반');
+    expect(sm).toMatch(/class="gd-team" role="img" aria-label="3인 팀"/);
+    expect(sm).toContain('예측 파이프라인 전체');
   });
 
   it('phones: vertical role chart (one labelled image) and one card per project plus the open slots; collaboration figure; table', async () => {

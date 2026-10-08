@@ -34,10 +34,10 @@ describe('version order lists', () => {
     const data = getVariant('data').orders;
     expect(game.homeFeatured).toEqual(['pub:cog-2026-engagement', 'project:school-zone-blindspots', 'project:kickick-park']);
     expect(data.homeFeatured).toEqual(['project:school-zone-blindspots', 'project:youth-startup-location', 'project:kickick-park']);
-    // P2 Task 6 (P-07 F-062, owner decision 13, audit 2026-09-29): the two page-less cards move before youth-startup-location,
-    // so from 734px the double-width last cell holds a linked case study; the span-2 selector of ProjectCartridge stays.
-    expect(game.projectsOrder).toEqual(['pub:cog-2026-engagement', 'project:school-zone-blindspots', 'project:kickick-park', 'project:kbo-attendance', 'project:seoul-apartment-automl', 'project:youth-startup-location']);
-    expect(data.projectsOrder).toEqual(['project:school-zone-blindspots', 'project:youth-startup-location', 'project:kickick-park', 'pub:cog-2026-engagement', 'project:kbo-attendance', 'project:seoul-apartment-automl']);
+    // P2 Task 6 (P-07 F-062, owner decision 13, audit 2026-09-29): the page-less card comes before youth-startup-location,
+    // so a linked case study closes the grid. owner 2026-10-08: resort-menu-demand (LG Aimers) before the course projects.
+    expect(game.projectsOrder).toEqual(['pub:cog-2026-engagement', 'project:school-zone-blindspots', 'project:kickick-park', 'project:resort-menu-demand', 'project:kbo-attendance', 'project:seoul-apartment-automl', 'project:youth-startup-location']);
+    expect(data.projectsOrder).toEqual(['project:school-zone-blindspots', 'project:youth-startup-location', 'project:kickick-park', 'pub:cog-2026-engagement', 'project:resort-menu-demand', 'project:kbo-attendance', 'project:seoul-apartment-automl']);
     expect(game.recordsProjectsOrder).toEqual(PROJECT_SLUGS.map((slug) => `project:${slug}`));
     expect(data.recordsProjectsOrder).toEqual(data.projectsOrder.filter((item) => item.startsWith('project:'))); // A-18
     expect(game.pdfProjectOrder).toEqual(['pub:cog-2026-engagement', 'project:youth-startup-location', 'project:school-zone-blindspots', 'project:kickick-park']);

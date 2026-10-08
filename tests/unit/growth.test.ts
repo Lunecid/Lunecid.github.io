@@ -99,7 +99,7 @@ describe('growth infographic data (GR-1)', () => {
     }
   });
 
-  it('LG Aimers: title, task and rank are the resume activity text split, nothing added; owner role, no team', () => {
+  it('LG Aimers: title, task and rank are the resume activity text split, nothing added; team and role sentence from its page', () => {
     for (const lang of LANGS) {
       const act = inputs[lang].resume.activities.find((a) => a.id === 'lg-aimers-7');
       const s = step(lang, 'lg-aimers-7');
@@ -107,11 +107,15 @@ describe('growth infographic data (GR-1)', () => {
       expect(joined).toBe(act?.text[lang]);
       expect(s.award?.kind).toBe('rank');
       expect(s.period).toBe(formatYm(act?.date ?? '', lang));
-      expect(s.team).toBeNull();
+      // owner 2026-10-08: the project page resort-menu-demand states the team and the role sentence
+      const p = project(lang, 'resort-menu-demand');
+      expect(s.team).toEqual({ size: 3, label: p.team });
+      expect(s.role.text).toBe(p.role);
+      expect(s.teamPart).toBeNull(); // the page names no teammates' tools
       expect(s.role.level).toBe(2);
     }
     expect(step('ko', 'lg-aimers-7').award?.name).toBe('817팀 중 32위 · 상위 4%');
-    expect(step('ko', 'lg-aimers-7').role.text).toBe('모델링 및 학습 파이프라인 설계 전반');
+    expect(step('ko', 'lg-aimers-7').role.text).toContain('예측 파이프라인 전체');
   });
 
   it('the CoG step: period and team from resume.yaml publicationProject, co-author = the advisor, numbers from the facts', () => {
@@ -165,11 +169,11 @@ describe('growth infographic data (GR-1)', () => {
     expect(model.ko.future.map((f) => f.status)).toEqual(['진행 중', '진행 중', '예정']);
   });
 
-  it('collaboration stages group the steps with a known team by role level; LG Aimers (team unknown) is not in them', () => {
+  it('collaboration stages group the steps with a known team by role level (LG Aimers since its page, owner 2026-10-08)', () => {
     for (const lang of LANGS) {
       const stages = model[lang].stages.map((st) => [st.n, st.items.map((s) => s.id)]);
       expect(stages).toEqual([
-        [1, ['seoul-apartment-automl', 'kickick-park', 'kbo-attendance', 'youth-startup-location']],
+        [1, ['seoul-apartment-automl', 'kickick-park', 'kbo-attendance', 'youth-startup-location', 'lg-aimers-7']],
         [2, ['school-zone-blindspots']],
         [3, ['cog-2026-engagement']],
       ]);
@@ -195,8 +199,10 @@ describe('growth infographic data (GR-1)', () => {
     expect(model.ko.copy.lede).toContain('모델링을 뺀 단계들');
     expect(model.ko.copy.ledeData).toContain('팀 파이프라인의 여러 단계를 맡는 데서');
     expect(model.en.copy.ledeData).toContain('several stages of a team pipeline');
-    expect(model.ko.copy.stages[1]).toBe('팀 파이프라인의 일부 단계를 맡았습니다');
-    expect(model.en.copy.party.title).toBe('From some stages of a team, to its direction, to first author');
+    // owner 2026-10-08: stage 1 also holds LG Aimers (the whole pipeline), so the heading no longer says "some"
+    expect(model.ko.copy.stages[1]).toBe('팀 파이프라인의 단계를 맡았습니다');
+    expect(model.en.copy.party.title).toBe('From stages of a team pipeline, to its direction, to first author');
+    for (const lang of LANGS) expect(`${model[lang].copy.stages[1]} ${model[lang].copy.party.title}`).not.toMatch(/일부|\bsome\b/);
   });
 
   it('copy: every entry has ko and en, none empty; the model resolves every token', () => {

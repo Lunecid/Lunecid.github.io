@@ -25,11 +25,11 @@ test('site is usable without JavaScript at 375px', async ({ page, request }) => 
     await expect(page.locator('[data-motion-toggle]')).toBeHidden();
   });
 
-  await test.step('/game/projects/: all 6 cartridges shown, tag filter hidden', async () => {
+  await test.step('/game/projects/: all 7 cartridges shown, tag filter hidden', async () => {
     await page.goto('/game/projects/');
     const cards = page.locator('#project-grid [data-tags]');
-    await expect(cards).toHaveCount(6);
-    for (let i = 0; i < 6; i += 1) await expect(cards.nth(i)).toBeVisible();
+    await expect(cards).toHaveCount(7);
+    for (let i = 0; i < 7; i += 1) await expect(cards.nth(i)).toBeVisible();
     await expect(page.locator('.tag-filter')).toBeHidden();
   });
 

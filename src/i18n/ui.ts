@@ -186,6 +186,8 @@ export const ui = {
     'project.award': '수상',
     'project.figure': '그림 {n}',
     'figure.editorial': '그림 {n} —',
+    'figure.play': '애니메이션 재생', // a figure with an animation (FigureVideo): the button over the still
+    'figure.video': '그림 {n} 애니메이션',
     'project.figures': '그림',
     'project.links': '링크',
     'project.report': '보고서 PDF',
@@ -561,6 +563,8 @@ export const ui = {
     'project.award': 'Award',
     'project.figure': 'Figure {n}',
     'figure.editorial': 'Fig. {n} —',
+    'figure.play': 'Play animation',
+    'figure.video': 'Figure {n} animation',
     'project.figures': 'Figures',
     'project.links': 'Links',
     'project.report': 'Report (PDF)',

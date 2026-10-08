@@ -1,0 +1,57 @@
+---
+// A figure's animation over its still (src/scripts/figure-video.ts; the content schema's figures[].video). The slot is
+// the still <picture>: it stays in the flow for the layout, the LCP image, the alt text, print and visits without
+// JavaScript. The <video> starts hidden with preload="none", so nothing downloads until it plays; it has no poster
+// (until its first frame paints, the still shows through it). Muted and inline, so a browser lets it start on its own;
+// the native controls pause and replay it (tabindex="0": the button hands focus to it). The button sits on the light
+// figure in both versions, so it is ink on paper whatever the page's theme, in the top-left corner (the resort-menu
+// infographic keeps that corner empty: its input card sits lower).
+import type { Lang } from '../../i18n/ui';
+import { t } from '../../i18n/utils';
+
+interface Props {
+  /** A public path without its extension: /video/<name>.webm (VP9, first: every Chromium plays it) and .mp4 (H.264). */
+  src: string;
+  lang: Lang;
+  /** The figure's number: the video is named "그림 N 애니메이션" / "Figure N animation". */
+  number?: number;
+  width: number;
+  height: number;
+}
+
+const { src, lang, number, width, height } = Astro.props;
+const label = number !== undefined ? t(lang, 'figure.video', { n: number }) : t(lang, 'figure.play');
+---
+
+<div class="figvid" data-figvid>
+  <slot />
+  <video class="figvid__video" data-figvid-video width={width} height={height} muted playsinline preload="none" controls hidden tabindex="0" aria-label={label}>
+    <source src={`${src}.webm`} type="video/webm" />
+    <source src={`${src}.mp4`} type="video/mp4" />
+  </video>
+  <button type="button" class="figvid__play" data-figvid-play hidden><span aria-hidden="true">▶</span> {t(lang, 'figure.play')}</button>
+</div>
+
+<script>
+  import { initFigureVideos } from '../../scripts/figure-video';
+  initFigureVideos();
+</script>
+
+<style>
+  .figvid { position: relative; }
+  .figvid__video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; background: transparent; }
+  .figvid__play {
+    position: absolute; left: 10px; top: 10px; display: inline-flex; align-items: center; gap: .4em; min-height: 32px;
+    padding: 4px 12px; border: 0; border-radius: 3px; background: rgb(11 11 11 / .86); color: #fff;
+    font: 600 var(--fs-label)/1.2 var(--font-sans, system-ui, sans-serif); letter-spacing: .01em; cursor: pointer;
+  }
+  @media (hover: hover) { .figvid__play:hover { background: #0b0b0b; } } .figvid__play:active { background: #0b0b0b; }
+  .figvid__play:focus-visible { outline: 2px solid #0b0b0b; outline-offset: 2px; }
+  .figvid__video[hidden], .figvid__play[hidden] { display: none; }
+  @media (forced-colors: active) {
+    .figvid__play { border: 1px solid ButtonText; background: ButtonFace; color: ButtonText; }
+  }
+  @media print {
+    .figvid__video, .figvid__play { display: none !important; }
+  }
+</style>

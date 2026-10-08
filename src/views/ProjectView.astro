@@ -85,7 +85,7 @@ const figure = data.cover
       alt: data.cover.alt,
       label: data.cover.label,
       ...(cited
-        ? { number: cited.number, caption: cited.caption, ...(cited.table ? { table: cited.table } : {}) }
+        ? { number: cited.number, caption: cited.caption, ...(cited.table ? { table: cited.table } : {}), ...(cited.video ? { video: cited.video } : {}) }
         : data.cover.caption
           ? { caption: data.cover.caption[lang] }
           : {}),

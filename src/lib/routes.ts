@@ -16,14 +16,15 @@ import {
 } from '../variants/ids.ts';
 
 /** Every project in the collection (records summary, résumé PDFs, /projects/ cards). */
-export const PROJECT_SLUGS = ['school-zone-blindspots', 'kickick-park', 'youth-startup-location', 'kbo-attendance', 'seoul-apartment-automl'] as const;
+export const PROJECT_SLUGS = ['school-zone-blindspots', 'kickick-park', 'youth-startup-location', 'resort-menu-demand', 'kbo-attendance', 'seoul-apartment-automl'] as const;
 export type ProjectSlug = (typeof PROJECT_SLUGS)[number];
 /**
  * Projects with a case-study page at /projects/<slug>/. The others are status 'card' (D-4): a short, link-less
  * card on /projects/ and a line on /records/, no page (tests/content/projects.test.ts keeps the two in sync).
- * kbo-attendance became a page on 2026-10-08 (owner: written from the team's slides and report).
+ * kbo-attendance became a page on 2026-10-08 (owner: written from the team's slides and report); resort-menu-demand
+ * (the LG Aimers hackathon) was added as one the same day, from the team's deck and the submission code.
  */
-export const PROJECT_PAGE_SLUGS = ['school-zone-blindspots', 'kickick-park', 'youth-startup-location', 'kbo-attendance'] as const satisfies readonly ProjectSlug[];
+export const PROJECT_PAGE_SLUGS = ['school-zone-blindspots', 'kickick-park', 'youth-startup-location', 'kbo-attendance', 'resort-menu-demand'] as const satisfies readonly ProjectSlug[];
 /** Paper pages at /research/<slug>/ (publication ids with a caseStudy page; abstract-only since D-15). */
 export const STORY_SLUGS = ['cog-2026-engagement'] as const;
 

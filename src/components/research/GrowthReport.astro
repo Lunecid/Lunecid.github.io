@@ -48,6 +48,8 @@ const vroleAlt = `${copy.laneAlt.role}: ${steps.map((s) => `${s.title} ${s.role.
 const scaleAlt = `${copy.laneAlt.scale}. ${steps.filter((s) => s.scale.length).map((s) => `${s.title}: ${s.scale.map((p) => `${p.label} ${p.unit}`).join(' → ')}`).join('. ')}.`;
 const them = (s: GrowthStep) => s.teamNote ? { label: s.teamNote.label, text: s.teamPart ? `${s.teamNote.text} (${s.teamPart.text})` : s.teamNote.text } : s.teamPart;
 const roleFoot = GROWTH_LEVELS.map((lv) => `${lv} ${copy.role[lv]}`).join(' · ');
+// the blank-team note only while some step has no team on the site (since owner 2026-10-08 every step has one)
+const blankNote = steps.some((s) => s.team === null) ? ` ${copy.foot.blank}` : '';
 ---
 <section id="growth" class="gd ed-sec" aria-labelledby="growth-title" data-growth>
   <div class="container">
@@ -204,7 +206,7 @@ const roleFoot = GROWTH_LEVELS.map((lv) => `${lv} ${copy.role[lv]}`).join(' · '
         <ol role="list">{future.map((f) => <li><span class="gd-paint gd-paint--y gd-paint--s" data-paint-text>{f.status}</span><span>{f.title}{f.sub && <span class="gd-fut__sub">{f.sub}</span>}</span></li>)}</ol>
       </article>
     </div>
-    <p class="gd-note">{copy.foot.role}: {roleFoot}. {copy.foot.scale} {copy.foot.blank}</p>
+    <p class="gd-note">{copy.foot.role}: {roleFoot}. {copy.foot.scale}{blankNote}</p>
 
     <section class="gd-collab" aria-labelledby="growth-collab">
       <h3 class="gd-sub-h" id="growth-collab">{copy.collab.title}</h3>

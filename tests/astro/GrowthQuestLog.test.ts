@@ -48,9 +48,10 @@ describe('GrowthQuestLog.astro (game version)', () => {
     expect(kick).toMatch(/<dt>팀원 담당<\/dt><dd>YOLOv8 · PyTorch<\/dd>/);
     expect(kick).toMatch(/class="gq-ach"[\s\S]*최우수상/);
     const lg = cards(html).find((c) => c.includes('id="gr-q-lg-aimers-7"')) ?? '';
-    expect(lg).not.toContain('gq-party');
+    // owner 2026-10-08: the project page states a team of three and the role sentence
+    expect(lg).toMatch(/class="gq-party"[^>]*role="img"[^>]*aria-label="3인 팀"/);
     expect(lg).toMatch(/class="gq-ach gq-ach--rank"[\s\S]*817팀 중 32위 · 상위 4%/);
-    expect(lg).toContain('모델링 및 학습 파이프라인 설계 전반');
+    expect(lg).toContain('예측 파이프라인 전체');
     const cog = cards(html).find((c) => c.includes('id="gr-q-cog-2026-engagement"')) ?? '';
     expect(cog).toContain('Lv.4');
     expect(cog).toMatch(/<dt>공저자<\/dt><dd>권준호 교수<\/dd>/);

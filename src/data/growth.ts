@@ -26,8 +26,9 @@ export const GROWTH_LEVELS: readonly GrowthLevel[] = [1, 2, 3, 4];
 
 export type GrowthSource =
   | { kind: 'project'; slug: ProjectSlug }
-  /** resume.yaml activities[id] */
-  | { kind: 'activity'; id: string }
+  /** resume.yaml activities[id]; `page`: the project page that states the team and the role sentence (both read from
+   *  its frontmatter, as for a project step), while the title, task and rank stay the activity line's. */
+  | { kind: 'activity'; id: string; page?: ProjectSlug }
   /** publications/<id>.md with resume.yaml publicationProject */
   | { kind: 'paper'; id: string };
 
@@ -114,10 +115,10 @@ export const growthSteps: readonly GrowthStepDef[] = [
   },
   {
     id: 'lg-aimers-7',
-    source: { kind: 'activity', id: 'lg-aimers-7' },
-    // owner, 2026-10-06: the role sentence below is the owner's answer (the site had none); team size unknown → not shown.
+    // owner 2026-10-08: the project page resort-menu-demand states the team (three) and the role sentence (the whole
+    // pipeline); level 2 stays the owner's reading of 2026-10-06 (no 주도 / "Led" in the sentence).
+    source: { kind: 'activity', id: 'lg-aimers-7', page: 'resort-menu-demand' },
     role: 2,
-    roleText: { ko: '모델링 및 학습 파이프라인 설계 전반', en: 'Designed the modeling and training pipeline end to end' },
     method: 3,
     methodText: { ko: '메뉴 수요 예측', en: 'Menu demand forecasting' },
     // resume.yaml: "아래 결과는 DACON 프로필 기록이다" (the activity's href is the DACON profile)
@@ -228,7 +229,8 @@ export const growthCopy = {
   },
   party: {
     kicker: { ko: 'PARTY LOG', en: 'PARTY LOG' },
-    title: { ko: '팀의 일부 단계에서, 팀의 방향으로, 제1저자로', en: 'From some stages of a team, to its direction, to first author' },
+    // owner 2026-10-08: stage 1 now also holds LG Aimers, where the owner built the whole pipeline, so no "some"
+    title: { ko: '팀 파이프라인의 단계에서, 팀의 방향으로, 제1저자로', en: 'From stages of a team pipeline, to its direction, to first author' },
     lede: {
       ko: '모든 퀘스트는 파티 플레이였습니다. 내가 맡은 부분과 팀원이 맡은 부분을 프로젝트 페이지에 적힌 그대로 나눴습니다. 팀원의 작업은 내 기술로 적지 않습니다.',
       en: 'Every quest was party play. My part and my teammates’ part are split as the project pages state them; teammates’ work is never listed as my skill.',
@@ -243,7 +245,7 @@ export const growthCopy = {
     },
   },
   stages: {
-    1: { ko: '팀 파이프라인의 일부 단계를 맡았습니다', en: 'I took some stages of a team pipeline' },
+    1: { ko: '팀 파이프라인의 단계를 맡았습니다', en: 'I took on stages of a team pipeline' },
     2: { ko: '팀의 문제 정의와 분석 방향을 이끌었습니다', en: 'I led a team’s problem framing and analysis direction' },
     3: { ko: '지도교수와의 공동 연구, 제1저자', en: 'Joint research with my advisor, as first author' },
   },

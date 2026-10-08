@@ -116,13 +116,14 @@ test.describe('P2-33: /stats/ says it is offline while no GoatCounter code is se
 
 test.describe('D-4 and P1-8: project cards and case studies', () => {
   for (const route of ['/game/projects/', '/en/game/projects/']) {
-    test(`${route}: KBO and Seoul apartment are link-less cards with a summary`, async ({ page }) => {
+    test(`${route}: the Seoul apartment card is link-less with a summary (KBO and LG Aimers have pages since 2026-10-08)`, async ({ page }) => {
       await page.goto(route);
       const cards = page.locator('#project-grid .cart--static');
-      await expect(cards).toHaveCount(2);
+      await expect(cards).toHaveCount(1);
       await expect(cards.locator('a')).toHaveCount(0);
-      await expect(cards.locator('.cart__summary')).toHaveCount(2);
-      await expect(page.locator('a[href*="kbo-attendance"], a[href*="seoul-apartment-automl"]')).toHaveCount(0);
+      await expect(cards.locator('.cart__summary')).toHaveCount(1);
+      await expect(page.locator('a[href*="seoul-apartment-automl"]')).toHaveCount(0);
+      for (const slug of ['kbo-attendance', 'resort-menu-demand']) await expect(page.locator(`#project-grid a[href$="/projects/${slug}/"]`)).toHaveCount(1);
       const github = page.locator('#github');
       if ((await github.count()) > 0) {
         await expect(github).not.toContainText(/PUBG_Lab|AudioSync|TIL/);

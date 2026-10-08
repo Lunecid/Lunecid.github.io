@@ -24,20 +24,20 @@ const teamsOf = (html: string): string[] =>
   [...html.matchAll(/<span(?=[^>]*class="psum__team")[^>]*>([^<]*)<\/span>/g)].map((m) => m[1]);
 
 describe('ProjectSummaryList.astro', () => {
-  it("5 projects in the order passed in, localized links for projects with a page, 'N인 팀' text", async () => {
+  it("6 projects in the order passed in, localized links for projects with a page, 'N인 팀' text", async () => {
     const ko = await render('ko');
     expect(ko).toMatch(/<section(?=[^>]*\bid="projects")[^>]*>/);
     expect(ko).toMatch(/<h2[^>]*>프로젝트<\/h2>/);
     // The rows follow the refs passed in (here resume.yaml's list; the page passes recordsProjectsOrder).
     const withPage = resume.projects.filter((p) => (PROJECT_PAGE_SLUGS as readonly string[]).includes(p.ref));
     expect(hrefsOf(ko)).toEqual(withPage.map((p) => `/game/projects/${p.ref}/`));
-    expect(hrefsOf(ko)).toHaveLength(4); // owner 2026-10-08: kbo-attendance became a page
+    expect(hrefsOf(ko)).toHaveLength(5); // owner 2026-10-08: kbo-attendance became a page, resort-menu-demand was added
     // D-4: the Seoul apartment row keeps its title as plain text (no page to link to).
     expect(ko).toMatch(/<h3 class="psum__title"[^>]*>서울 아파트 매매가 예측<\/h3>/);
     expect(ko).not.toMatch(/seoul-apartment-automl/);
-    expect(ko.match(/class="psum__item lh-row"/g)).toHaveLength(5);
+    expect(ko.match(/class="psum__item lh-row"/g)).toHaveLength(6);
     const teams = teamsOf(ko);
-    expect(teams).toHaveLength(5);
+    expect(teams).toHaveLength(6);
     for (const team of teams) expect(team).toMatch(/^\d+인 팀$/);
 
     const en = await render('en');
@@ -48,7 +48,7 @@ describe('ProjectSummaryList.astro', () => {
   it('shows the period of each project', async () => {
     const items = itemsFor('ko');
     const ko = await render('ko');
-    expect(ko.match(/class="psum__item lh-row"/g)).toHaveLength(5);
+    expect(ko.match(/class="psum__item lh-row"/g)).toHaveLength(6);
     const periods = [...ko.matchAll(/<span(?=[^>]*class="psum__period tnum")[^>]*>([^<]*)<\/span>/g)].map((m) => m[1]);
     expect(periods).toEqual(items.map((item) => item.period));
   });

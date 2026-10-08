@@ -26,8 +26,9 @@ export const dataVariant: Variant = {
   },
   orders: {
     homeFeatured: ['project:school-zone-blindspots', 'project:youth-startup-location', 'project:kickick-park'],
-    projectsOrder: ['project:school-zone-blindspots', 'project:youth-startup-location', 'project:kickick-park', 'pub:cog-2026-engagement', 'project:kbo-attendance', 'project:seoul-apartment-automl'],
-    recordsProjectsOrder: ['project:school-zone-blindspots', 'project:youth-startup-location', 'project:kickick-park', 'project:kbo-attendance', 'project:seoul-apartment-automl'],
+    // owner 2026-10-08: resort-menu-demand (LG Aimers) before the two course projects, as in the game version
+    projectsOrder: ['project:school-zone-blindspots', 'project:youth-startup-location', 'project:kickick-park', 'pub:cog-2026-engagement', 'project:resort-menu-demand', 'project:kbo-attendance', 'project:seoul-apartment-automl'],
+    recordsProjectsOrder: ['project:school-zone-blindspots', 'project:youth-startup-location', 'project:kickick-park', 'project:resort-menu-demand', 'project:kbo-attendance', 'project:seoul-apartment-automl'],
     pdfProjectOrder: ['project:school-zone-blindspots', 'project:youth-startup-location', 'project:kickick-park', 'pub:cog-2026-engagement'],
   },
   jobfit: 'data',

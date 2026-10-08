@@ -143,9 +143,11 @@ function stepFrom(def: GrowthStepDef, input: GrowthInputs, lang: Lang, copy: Gro
   }
 
   if (def.source.kind === 'activity') {
-    const { id } = def.source;
+    const { id, page } = def.source;
     const act = input.resume.activities.find((a) => a.id === id);
     if (!act) throw new Error(`growth: no resume activity ${id}`);
+    const p = page === undefined ? undefined : input.projects.find((x) => x.slug === page)?.data;
+    if (page !== undefined && !p) throw new Error(`growth: no project ${page}`);
     const parts = splitActivity(act.text[lang], lang);
     const end = act.end ?? act.date;
     return {
@@ -157,9 +159,9 @@ function stepFrom(def: GrowthStepDef, input: GrowthInputs, lang: Lang, copy: Gro
       sub: parts.sub,
       org: res(def.org) ?? '',
       type: res(def.type) ?? '',
-      team: null,
-      role: role(res(def.roleText) ?? ''),
-      teamPart: null,
+      team: p ? teamOf(p.team) : null,
+      role: role(p ? p.role : (res(def.roleText) ?? '')),
+      teamPart: p?.teamTools ? { label: copy.teamPart, text: p.teamTools.join(' · ') } : null,
       method: method(res(def.methodText)),
       award: { kind: 'rank', name: parts.rank, sub: null },
     };
