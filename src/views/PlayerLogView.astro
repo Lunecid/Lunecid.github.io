@@ -44,7 +44,7 @@ const defs = (await getCollection('achievements'))
   .map((e) => e.data)
   .sort((a, b) => ACHIEVEMENT_TRIGGERS.indexOf(a.trigger) - ACHIEVEMENT_TRIGGERS.indexOf(b.trigger));
 
-// D-13: until an account feed exists, the locked games (LoL, Dungeon & Fighter, Steam) stay out of the showcase.
+// D-13: until an account feed exists, the locked games (Steam) stay out of the showcase.
 // The bgm-on achievement is listed only when the BGM file exists.
 const showcase = await buildFavoriteGames(games.filter((g) => !g.locked), lang);
 const tiles = buildFavoriteTiles(games, lang);

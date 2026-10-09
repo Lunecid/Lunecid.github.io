@@ -170,7 +170,7 @@ describe('buildAccountView', () => {
     expect(skipped.steam?.state).toBe('error');
   });
 
-  it('orders tiles zzz, genshin, lol, tft, steam; dnf, eternal-return and hearthstone never make a tile', async () => {
+  it('orders tiles zzz, genshin, lol, tft, steam; dnf, cyphers, eternal-return and hearthstone never make a tile', async () => {
     const tiles = await buildAccountView(ALL_ON, FEEDS, LINKS, IMAGES, 'ko', NOW);
     expect(tiles.map((t) => t.key)).toEqual(['zzz', 'genshin', 'lol', 'tft', 'steam']);
     const reversed = await buildAccountView([...ALL_ON].reverse(), FEEDS, LINKS, IMAGES, 'ko', NOW);

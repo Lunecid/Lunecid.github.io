@@ -59,7 +59,7 @@ export function personJsonLd(
 
 /** Game trademarks that page URLs, hashes and <title>s never contain (Global Constraints → Routing and i18n). */
 export const TRADEMARK_TERMS: readonly string[] = [
-  '넥슨', 'NEXON', '메이플', 'MapleStory', '던전앤파이터', 'Dungeon & Fighter', '네오플', 'Neople',
+  '넥슨', 'NEXON', '메이플', 'MapleStory', '던전앤파이터', 'Dungeon & Fighter', '네오플', 'Neople', '사이퍼즈', 'Cyphers',
   '원신', 'Genshin', '젠레스', 'Zenless', 'ZZZ',
   '리그 오브 레전드', 'League of Legends', 'LoL', 'Riot', '배틀그라운드', 'PUBG', 'Steam',
   'HoYoverse', '이터널 리턴', 'Eternal Return', 'Nimble Neuron', '님블뉴런',

@@ -1,6 +1,7 @@
 // Showcase art for League of Legends and TFT only (owner ruling 2026-10-06): Ezreal on the LoL tab, Pengu on the TFT
-// tab, no art on Hearthstone or Eternal Return; Riot's Legal Jibber Jabber notice in the footer wherever that art is
-// on the page; the built asset names stay neutral.
+// tab, no art on Hearthstone or Eternal Return (nor on Dungeon & Fighter or Cyphers, 2026-10-09: no published Neople
+// permission found); Riot's Legal Jibber Jabber notice in the footer wherever that art is on the page; the built asset
+// names stay neutral.
 import { readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { ui } from '../../src/i18n/ui';
@@ -8,12 +9,12 @@ import { containsTrademark } from '../../src/lib/seo';
 import { test, expect, openAt } from './helpers';
 
 const TABS = {
-  ko: { lol: '리그 오브 레전드', tft: '전략적 팀 전투', hearthstone: '하스스톤', er: '이터널 리턴' },
-  en: { lol: 'League of Legends', tft: 'Teamfight Tactics', hearthstone: 'Hearthstone', er: 'Eternal Return' },
+  ko: { lol: '리그 오브 레전드', tft: '전략적 팀 전투', hearthstone: '하스스톤', er: '이터널 리턴', dnf: '던전앤파이터', cyphers: '사이퍼즈' },
+  en: { lol: 'League of Legends', tft: 'Teamfight Tactics', hearthstone: 'Hearthstone', er: 'Eternal Return', dnf: 'Dungeon & Fighter', cyphers: 'Cyphers' },
 } as const;
 
 for (const [lang, route] of [['ko', '/game/player-log/'], ['en', '/en/game/player-log/']] as const) {
-  test(`${route}: Ezreal on the LoL tab, Pengu on TFT, no art on Hearthstone or Eternal Return; the Riot notice is in the footer`, async ({ page }) => {
+  test(`${route}: Ezreal on the LoL tab, Pengu on TFT, no art on Hearthstone, Eternal Return, Dungeon & Fighter or Cyphers; the Riot notice is in the footer`, async ({ page }) => {
     await openAt(page, route, 1280);
     await page.locator('#favorite-games').scrollIntoViewIfNeeded();
     const tab = (name: string) => page.locator('.fg__tab', { hasText: name }).first();
@@ -27,11 +28,15 @@ for (const [lang, route] of [['ko', '/game/player-log/'], ['en', '/en/game/playe
       await expect.poll(() => img.evaluate((el) => (el as HTMLImageElement).complete && (el as HTMLImageElement).naturalWidth > 0), { message: key }).toBe(true);
       await expect(page.locator(`.fg__tint--${key === 'lol' ? 'ezreal' : 'pengu'}`)).toHaveAttribute('data-on', 'true');
     }
-    for (const key of ['hearthstone', 'er'] as const) {
+    for (const key of ['hearthstone', 'er', 'dnf', 'cyphers'] as const) {
       await tab(TABS[lang][key]).click();
       await expect(scene, key).toHaveAttribute('data-art', 'off');
       await expect(page.locator('.fg__chr img'), key).toHaveCount(0);
     }
+    // eight tabs since 2026-10-09: the column (two lines per Korean tab) still ends above the credit, inside the card
+    const [card, list, credit] = await Promise.all(['section.fg', '.fg__list', '.fg__credit'].map(async (s) => (await page.locator(s).boundingBox())!));
+    expect(list.y + list.height, 'tab column above the credit').toBeLessThan(credit.y - 8);
+    expect(list.y + list.height, 'tab column inside the card').toBeLessThanOrEqual(card.y + card.height);
     await expect(page.locator('.site-footer__notices')).toContainText(ui.en['notice.riotAssets']);
     await expect(page.locator('.fg__credit')).toContainText('© Riot Games');
     // stage art only: the membership row keeps its three favourite-character tiles

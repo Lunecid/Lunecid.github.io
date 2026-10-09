@@ -265,7 +265,7 @@ describe('toolchain', () => {
     expect(types.NOTICE_KEYS).toContain('riot-assets'); // PL-4
     expect(types.NOTICE_KEYS).toContain('blizzard'); // PL-4
     expect(types.CERTIFICATE_IDS).toEqual(['busan-mayor-award', 'cds-encouragement-award', 'multicampus-grand-award']);
-    expect(types.GAME_IDS).toEqual(['zzz', 'genshin', 'lol', 'tft', 'dnf', 'eternal-return', 'hearthstone', 'steam']);
+    expect(types.GAME_IDS).toEqual(['zzz', 'genshin', 'lol', 'tft', 'dnf', 'cyphers', 'eternal-return', 'hearthstone', 'steam']);
     expect(types.SFX_NAMES).toEqual(['move', 'select', 'open', 'close']);
     expect(types.PAGE_IDS).toContain('not-found');
     expect(types.PAGE_IDS).toContain('chooser');

@@ -129,10 +129,12 @@
   .fg--no-art .fg__meta { grid-area: facts; margin-top: 4px; }
 }
 /* A-03 G-020: landscape phones put the copy beside the art (it used to sit under a 420px art band, below the fold),
-   the art band and the stage capped by the short viewport. Six games (the brief had two): the tabs take three to a row
-   (two rows, not three), so the title under them still starts on a 375px-tall screen. */
+   the art band and the stage capped by the short viewport. Eight games (the brief had two; six until 2026-10-09): the
+   tabs take three to a row, one line each, so the title under the three rows still starts on a 375px-tall screen. */
 @media (max-width: 733.98px) and (orientation: landscape) {
   .fg__list { grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); }
+  /* one line per tab: the English caption under each Korean title is dropped on this short screen */
+  .fg__tab small:lang(en) { display: none; }
   .fg--art .fg__stage, .fg--art .fg__stage:lang(en) { min-height: min(520px, 80svh); }
   .fg--art .fg__scene { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-areas: "copy chr" "acct chr"; }
   .fg__chr { height: auto; min-height: min(420px, 80svh); margin: 0; }
@@ -162,6 +164,12 @@
   .fg--art .fg__layout { display: block; height: 100%; padding: 0; }
   .fg--art .fg__top { position: absolute; left: 32px; top: 24px; z-index: 6; }
   .fg--art .fg__list { position: absolute; left: 32px; top: 64px; width: 190px; z-index: 6; gap: 8px; }
+  /* eight games (owner 2026-10-09: Dungeon & Fighter and Cyphers joined): the column's eight two-line Korean tabs end
+     above the credit of the 600px card, so the column tabs are a little tighter than the row's */
+  .fg--art:not(.fg--tabs-row) .fg__list { gap: 6px; }
+  .fg--art:not(.fg--tabs-row) .fg__tab { padding-block: 7px; }
+  .fg--art:not(.fg--tabs-row) .fg__tab b { line-height: 1.25; }
+  .fg--art:not(.fg--tabs-row) .fg__tab small { line-height: 1.3; }
   .fg--art .fg__stage, .fg--art .fg__scene { position: absolute; inset: 0; display: block; min-height: 0; }
   .fg__streak { width: 600px; }
   .fg--art .fg__copy { position: absolute; left: 252px; top: 70px; width: 380px; }

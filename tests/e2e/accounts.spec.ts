@@ -49,7 +49,7 @@ test.describe('LINKED ACCOUNTS row — real build', () => {
         // CI: the owner's ACCOUNT_* variables (owner ruling 2026-10-07)
         await expect(page.locator('#membership .acct-row.acct-row--empty')).toHaveCount(0);
         await expect(page.locator('#membership .acct-tile')).toHaveCount(REAL_SHOWN);
-        await expect(page.locator('#favorite-games [role="tab"]')).toHaveCount(6);
+        await expect(page.locator('#favorite-games [role="tab"]')).toHaveCount(8);
         expect((await statusOf(page)).platforms).toEqual(REAL.platforms);
         return;
       }
@@ -58,7 +58,7 @@ test.describe('LINKED ACCOUNTS row — real build', () => {
       expect((await empty.boundingBox())?.height).toBe(0);
       await expect(page.locator('details.acct-tile')).toHaveCount(0);
       await expect(page.locator('.acct-links__cap')).toHaveCount(0);
-      await expect(page.locator('#favorite-games [role="tab"]')).toHaveCount(6);
+      await expect(page.locator('#favorite-games [role="tab"]')).toHaveCount(8);
       await expect(page.locator('.fg-acct')).toHaveCount(0);
       // the HUD container is exactly as tall as the card grid: the empty frame adds no space
       const heights = await page.evaluate(() => {
@@ -99,7 +99,7 @@ test.describe('LINKED ACCOUNTS row — fixture build (SB_E2E_ACCOUNTS=1)', () =>
       // <details> before hydration, <button> after (AL-11): the same count either way
       await expect(page.locator('#membership ul.acct-row[role="list"] > li > .acct-tile')).toHaveCount(shown);
       await expect(page.locator('#membership .acct-links__cap')).toBeVisible();
-      await expect(page.locator('#favorite-games [role="tab"]')).toHaveCount(6);
+      await expect(page.locator('#favorite-games [role="tab"]')).toHaveCount(8);
       await expect(page.locator('.fg-acct')).toHaveCount(0);
       const status = await statusOf(page);
       expect(status.platforms.map(({ slot, state }) => ({ slot, state }))).toEqual(expected.platforms.map(({ slot, state }) => ({ slot, state })));

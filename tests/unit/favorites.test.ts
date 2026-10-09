@@ -38,9 +38,9 @@ beforeEach(() => {
 describe('buildFavoriteGames', () => {
   it('buildFavoriteGames keeps yaml order, locks every game without an intro, uses reason as caption', async () => {
     const ko = await buildFavoriteGames(games, 'ko', none);
-    expect(ko.map((g) => g.id)).toEqual(['zzz', 'genshin', 'lol', 'tft', 'dnf', 'eternal-return', 'hearthstone', 'steam']);
-    expect(ko.filter((g) => g.locked).map((g) => g.id)).toEqual(['dnf', 'steam']);
-    expect(ko.find((g) => g.id === 'dnf')!.tabCaption).toBe('계정 연동 준비 중');
+    expect(ko.map((g) => g.id)).toEqual(['zzz', 'genshin', 'lol', 'tft', 'dnf', 'cyphers', 'eternal-return', 'hearthstone', 'steam']);
+    expect(ko.filter((g) => g.locked).map((g) => g.id)).toEqual(['steam']);
+    expect(ko.find((g) => g.id === 'steam')!.tabCaption).toBe('계정 연동 준비 중');
     expect(ko[0]).toMatchObject({
       tabTitle: '젠레스 존 제로',
       tabCaption: 'ZENLESS ZONE ZERO',
@@ -50,6 +50,12 @@ describe('buildFavoriteGames', () => {
     expect(ko[0].why).toContain('레미엘');
     expect(ko[0].meta?.[0]).toMatch(/^플레이 \d{4}/);
     expect(ko.find((g) => g.id === 'dnf')!.title).toEqual(['Dungeon', '& Fighter']);
+    // 2026-10-09 (owner): Dungeon & Fighter (unlocked) and Cyphers (new) carry the reasons the owner picked and their
+    // public genre; no start year or favourite character was given, so neither is shown.
+    expect(ko.find((g) => g.id === 'dnf')!.tabCaption).toBe('DUNGEON & FIGHTER');
+    expect(ko.find((g) => g.id === 'dnf')!.why).toContain('타격감 있는 횡스크롤 액션');
+    expect(ko.find((g) => g.id === 'cyphers')).toMatchObject({ tabTitle: '사이퍼즈', tabCaption: 'CYPHERS', title: ['Cyphers'], subtitle: '사이퍼즈 · Neople', meta: ['장르 액션 AOS'] });
+    expect(ko.find((g) => g.id === 'cyphers')!.why).toContain('4대4로 맞붙는 팀 교전');
     // 2026-09-30 (owner): TFT links with LoL's Riot ID; Eternal Return and Hearthstone have no link plan.
     // TFT and Hearthstone carry the owner's genre and reason (no favourite character); Eternal Return waits for its intro.
     expect(ko.find((g) => g.id === 'tft')!.meta).toEqual(['장르 전략 · 오토배틀러']);
@@ -58,10 +64,13 @@ describe('buildFavoriteGames', () => {
     // LoL (owner 2026-09-30): playing since 2012, no intro sentence; a game without meta has none.
     expect(ko[2].why).toBeUndefined();
     expect(ko[2].meta).toEqual(['플레이 2012 –', '장르 MOBA']);
-    expect(ko.find((g) => g.id === 'dnf')!.meta).toBeUndefined();
+    expect(ko.find((g) => g.id === 'dnf')!.meta).toEqual(['장르 횡스크롤 액션 RPG']);
+    expect(ko.find((g) => g.id === 'steam')!.meta).toBeUndefined();
 
     const en = await buildFavoriteGames(games, 'en', none);
-    expect(en.find((g) => g.id === 'dnf')!.tabCaption).toBe('Account link coming soon');
+    expect(en.find((g) => g.id === 'steam')!.tabCaption).toBe('Account link coming soon');
+    expect(en.find((g) => g.id === 'cyphers')).toMatchObject({ tabTitle: 'Cyphers', subtitle: 'Neople', meta: ['Genre Action MOBA'] });
+    expect(en.find((g) => g.id === 'dnf')!.meta).toEqual(['Genre Side-scrolling action RPG']);
     expect(en[0].subtitle).toBe('HoYoverse');
     expect(en[1].tabTitle).toBe('Genshin Impact');
   });
@@ -69,7 +78,8 @@ describe('buildFavoriteGames', () => {
   it('games without available art have no art, but keep the tint of their first favourite character (D-1)', async () => {
     const noArt = await buildFavoriteGames(games, 'ko', none);
     for (const g of noArt) expect(g.art).toBeUndefined();
-    // Characterless games (the locked ones) have no tint; the others keep their colour without art.
+    // Characterless games (Dungeon & Fighter, Cyphers, Eternal Return, Hearthstone, Steam) have no tint; the others keep
+    // their colour without art.
     expect(noArt.map((g) => g.tint)).toEqual(games.map((g) => g.characters[0]?.id));
     expect(noArt[0].tint).toBe('remielle');
     expect(noArt[1].tint).toBe('eula');
@@ -128,9 +138,11 @@ describe('showcase art for League of Legends and TFT only (owner ruling 2026-10-
     expect(by('tft').art?.objectPosition).toBe('50% 30%');
     expect(by('tft').art?.image.srcSet).toContain('/_astro/showcase-2.png?w=1232 1232w');
     expect(by('tft').tint).toBe('pengu');
-    for (const id of ['hearthstone', 'eternal-return', 'dnf', 'steam']) expect(by(id).art, id).toBeUndefined();
+    for (const id of ['hearthstone', 'eternal-return', 'dnf', 'cyphers', 'steam']) expect(by(id).art, id).toBeUndefined();
     expect(games.find((g) => g.id === 'hearthstone')!.characters).toEqual([]);
     expect(games.find((g) => g.id === 'eternal-return')!.characters).toEqual([]);
+    // no Neople art: no published permission for it was found (2026-10-09), so neither game names a character
+    expect(games.filter((g) => g.id === 'dnf' || g.id === 'cyphers').map((g) => g.characters)).toEqual([[], []]);
   });
 
   it('the narrower Riot art gets its own ladder and painted sizes (no 1520w file, no 1130px request)', async () => {
@@ -191,9 +203,9 @@ describe('buildFavoriteTiles', () => {
 });
 
 describe('favorites.yaml account switches (AL-10; owner answers 2026-10-01, OQ-1 and OQ-2)', () => {
-  it('the five tile games are on, dnf, Eternal Return and Hearthstone off; LoL and TFT both read the Riot ID; account stays null', () => {
+  it('the five tile games are on, dnf, Cyphers, Eternal Return and Hearthstone off; LoL and TFT both read the Riot ID; account stays null', () => {
     expect(Object.fromEntries(games.map((g) => [g.id, g.integration.enabled]))).toEqual({
-      zzz: true, genshin: true, lol: true, tft: true, dnf: false, 'eternal-return': false, hearthstone: false, steam: true,
+      zzz: true, genshin: true, lol: true, tft: true, dnf: false, cyphers: false, 'eternal-return': false, hearthstone: false, steam: true,
     });
     expect(games.filter((g) => g.id === 'lol' || g.id === 'tft').map((g) => g.integration.platform)).toEqual(['riot', 'riot']);
     for (const g of games) expect(g.account).toBeNull();

@@ -436,12 +436,12 @@ describe('records data files', () => {
 
   it('favorites order follows GAME_IDS, locked games have reasons, accounts are null', () => {
     const games = favorites();
-    expect(games.map((g) => g.id)).toEqual(['zzz', 'genshin', 'lol', 'tft', 'dnf', 'eternal-return', 'hearthstone', 'steam']);
+    expect(games.map((g) => g.id)).toEqual(['zzz', 'genshin', 'lol', 'tft', 'dnf', 'cyphers', 'eternal-return', 'hearthstone', 'steam']);
     for (const game of games) {
       if (game.locked) expect(game.reason, game.id).toBeDefined();
       expect(game.account, game.id).toBeNull();
     }
-    expect(games.filter((g) => !g.locked).map((g) => g.id)).toEqual(['zzz', 'genshin', 'lol', 'tft', 'eternal-return', 'hearthstone']);
+    expect(games.filter((g) => !g.locked).map((g) => g.id)).toEqual(['zzz', 'genshin', 'lol', 'tft', 'dnf', 'cyphers', 'eternal-return', 'hearthstone']);
   });
 
   it('favorite characters carry no image paths and use CHARACTER_IDS', () => {
