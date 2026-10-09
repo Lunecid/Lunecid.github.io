@@ -48,7 +48,11 @@ for (const { route, lang, version, links } of PAGES) {
 test('a Ctrl/Meta click opens the paper page in a new tab and leaves the sheet closed', async ({ page, context }) => {
   await page.goto('/game/research/', { waitUntil: 'networkidle' });
   const [tab] = await Promise.all([context.waitForEvent('page'), page.locator('a[data-case]').first().click({ modifiers: ['ControlOrMeta'] })]);
-  await tab.waitForURL(new RegExp(`${paperOf('ko', 'game')}$`));
+  // The browser opens it as a background tab. On CI (2026-10-09) that tab sat for 30 s without reaching the paper page,
+  // four tries in a row, while every local run passed: bring it forward so background-tab scheduling cannot stall the
+  // check, and compare the URL itself, so a failure prints the URL the tab actually has.
+  await tab.bringToFront();
+  await expect.poll(() => tab.url(), { message: 'the new tab is on the paper page', timeout: 15_000 }).toMatch(new RegExp(`${paperOf('ko', 'game')}$`));
   await expect(page.locator('dialog.cs')).toHaveCount(0);
 });
 
