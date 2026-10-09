@@ -174,8 +174,8 @@ games:
     studio: Neople
     characters: []
     why:
-      ko: 현대 도시를 무대로 한 이능력자들의 세계관과, 직접 조작해 맞히는 액션을 좋아합니다. 4대4로 맞붙는 팀 교전과 사이퍼마다 다른 개성도 큰 매력입니다.
-      en: I like its modern-city world of people with special powers, and action where you land every hit yourself. Four-on-four team fights and how distinct each Cypher is are big draws too.
+      ko: 현대 도시를 무대로 한 이능력자들의 세계관과, 직접 조작해 맞히는 액션을 좋아합니다. 5대5로 맞붙는 팀 교전과 사이퍼마다 다른 개성도 큰 매력입니다.
+      en: I like its modern-city world of people with special powers, and action where you land every hit yourself. Five-on-five team fights and how distinct each Cypher is are big draws too.
     meta:
       - label: { ko: 장르, en: Genre }
         value: { ko: 액션 AOS, en: Action MOBA }

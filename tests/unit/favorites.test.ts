@@ -55,7 +55,7 @@ describe('buildFavoriteGames', () => {
     expect(ko.find((g) => g.id === 'dnf')!.tabCaption).toBe('DUNGEON & FIGHTER');
     expect(ko.find((g) => g.id === 'dnf')!.why).toContain('타격감 있는 횡스크롤 액션');
     expect(ko.find((g) => g.id === 'cyphers')).toMatchObject({ tabTitle: '사이퍼즈', tabCaption: 'CYPHERS', title: ['Cyphers'], subtitle: '사이퍼즈 · Neople', meta: ['장르 액션 AOS'] });
-    expect(ko.find((g) => g.id === 'cyphers')!.why).toContain('4대4로 맞붙는 팀 교전');
+    expect(ko.find((g) => g.id === 'cyphers')!.why).toContain('5대5로 맞붙는 팀 교전');
     // 2026-09-30 (owner): TFT links with LoL's Riot ID; Eternal Return and Hearthstone have no link plan.
     // TFT and Hearthstone carry the owner's genre and reason (no favourite character); Eternal Return waits for its intro.
     expect(ko.find((g) => g.id === 'tft')!.meta).toEqual(['장르 전략 · 오토배틀러']);
