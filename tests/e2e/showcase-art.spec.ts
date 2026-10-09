@@ -17,6 +17,9 @@ for (const [lang, route] of [['ko', '/game/player-log/'], ['en', '/en/game/playe
   test(`${route}: Ezreal on the LoL tab, Pengu on TFT, no art on Hearthstone, Eternal Return, Dungeon & Fighter or Cyphers; the Riot notice is in the footer`, async ({ page }) => {
     await openAt(page, route, 1280);
     await page.locator('#favorite-games').scrollIntoViewIfNeeded();
+    // client:visible: a tab clicked before the island hydrates is lost (CI run 37973533306 clicked LoL and still showed
+    // the first game's art, both tries), so wait for it as the other showcase specs do
+    await expect(page.locator('#favorite-games astro-island:not([ssr])')).toHaveCount(1);
     const tab = (name: string) => page.locator('.fg__tab', { hasText: name }).first();
     const scene = page.locator('.fg__scene');
     for (const [key, file] of [['lol', 'showcase-1'], ['tft', 'showcase-2']] as const) {
