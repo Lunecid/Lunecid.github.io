@@ -77,10 +77,10 @@ test('each case face covers the characters of the sheets that its source font ha
   assert.ok(hangul.length > 200, `${hangul.length} Hangul in the Korean sheet`);
   const serifKo = cmapOf(declared[`${FAMILIES.serifKo}/normal`]);
   assert.deepEqual(hangul.filter((ch) => !serifKo.has(/** @type {number} */ (ch.codePointAt(0)))), [], 'SB Case Serif KR');
-  // the site's sans (the two files the Korean pages declare) draws the Hangul of the UI text
+  // the site's sans (the files the Korean pages declare) draws the Hangul of the UI text
   const page = readFileSync(join(DIST, 'game/research/cog-2026-engagement/index.html'), 'utf8');
   const sansFiles = [...page.matchAll(/@font-face\{font-family:"SB Sans"[^}]*src:url\(([^)]+)\)/g)].map((m) => m[1]);
-  assert.equal(sansFiles.length, 2, 'the Korean page declares the SB Sans Hangul and core files');
+  assert.equal(sansFiles.length, 3, 'the Korean page declares the shared SB Sans Hangul file, its own Hangul file and the core file');
   const sans = new Set(sansFiles.flatMap((url) => [...cmapOf(url)]));
   assert.deepEqual(hangul.filter((ch) => !sans.has(/** @type {number} */ (ch.codePointAt(0)))), [], 'SB Sans Hangul');
 });

@@ -3,8 +3,8 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { buildCmap4, buildName, cmapCodePoints, cmapGlyphs, parseName, sfntTables, woff2Tables } from '../../scripts/fonts/sfnt.mjs';
-import { SOURCES, buildFonts, renameSansRecord, subsetDisplay, subsetSans, subsetSerifKo } from '../../scripts/fonts/build.mjs';
-import { FONT_URL, fontFaceCss } from '../../src/lib/fonts';
+import { SOURCES, buildFonts, codePointRange, renameSansRecord, subsetDisplay, subsetSans, subsetSerifKo } from '../../scripts/fonts/build.mjs';
+import { FONT_URL, HANGUL_UNICODE_RANGE, fontFaceCss } from '../../src/lib/fonts';
 import { ALWAYS_SYMBOLS, DISPLAY_CHARACTERS, PRINTABLE_ASCII, htmlText, isIgnorable, paperSheetHtml, sansCharacters, shownText } from '../../scripts/fonts/glyphs.mjs';
 
 type NameRecord = { platformID: number; encodingID: number; languageID: number; nameID: number; value: string };
@@ -149,7 +149,8 @@ describe('buildFonts on a built page with characters the source fonts lack', () 
     const warnings: string[] = [];
     try {
       const results = await buildFonts(dist, { warn: (m: string) => warnings.push(m) });
-      expect(results.map((r: { face: string }) => r.face).sort()).toEqual(['mono', 'sans', 'sans', 'serifKo']);
+      // sans: core, the shared Hangul, and /research/x/'s own Hangul (the chooser, /, keeps the shared one)
+      expect(results.map((r: { face: string }) => r.face).sort()).toEqual(['mono', 'sans', 'sans', 'sans', 'serifKo']);
       expect(warnings.some((w) => /^font-subsets: \/: Pretendard Variable has no glyph for 漢 \(U\+6F22\) 字 \(U\+5B57\)/.test(w))).toBe(true);
       expect(warnings.some((w) => /^font-subsets: \/research\/x\/: Noto Serif KR has no glyph for ᄀ \(U\+1100\)/.test(w))).toBe(true);
       const page = readFileSync(join(dist, 'research', 'x', 'index.html'), 'utf8');
@@ -172,6 +173,51 @@ describe('buildFonts on a built page with characters the source fonts lack', () 
     }
   });
 
+});
+
+describe('buildFonts: a Hangul file of its own for each Korean page (2026-10-10)', () => {
+  it('codePointRange merges consecutive code points', () => {
+    expect(codePointRange(new Set(['나', '가', '각', '간']))).toBe('U+AC00-AC01,U+AC04,U+B098');
+  });
+
+  it('declares it between the shared Hangul rule and the core rule with exactly its code points and preloads it instead of the shared file; the chooser and English pages keep the shared files; pages with the same Hangul share one file', async () => {
+    const dist = mkdtempSync(join(tmpdir(), 'font-subsets-'));
+    mkdirSync(join(dist, '_astro'));
+    const head = `<style>${fontFaceCss(['sans'])}</style><link rel="preload" href="${FONT_URL.sans}" as="font" type="font/woff2" crossorigin>`;
+    const pageAt = (route: string, lang: string, body: string) => {
+      mkdirSync(join(dist, ...route.split('/').filter(Boolean)), { recursive: true });
+      writeFileSync(join(dist, ...route.split('/').filter(Boolean), 'index.html'), `<html lang="${lang}"><head>${head}</head><body>${body}</body></html>`);
+    };
+    pageAt('/', 'ko', '<p>선택</p>');
+    pageAt('/a/', 'ko', '<p>가각 나</p>');
+    pageAt('/b/', 'ko', '<p title="나">가각</p>'); // the same Hangul as /a/ (an attribute counts)
+    pageAt('/c/', 'ko', '<p>다</p>');
+    pageAt('/en/', 'en', '<p>한국어 English</p>');
+    try {
+      const results = await buildFonts(dist, { warn: () => {} });
+      const own = results.filter((r: { url: string }) => r.url.includes('/sb-sans-ko-page.'));
+      expect(own.map((r: { chars: number; pages: number }) => [r.chars, r.pages]).sort()).toEqual([[1, 1], [3, 2]]);
+      const read = (route: string) => readFileSync(join(dist, ...route.split('/').filter(Boolean), 'index.html'), 'utf8');
+      const sansRules = (html: string) => [...html.matchAll(/@font-face\{font-family:"SB Sans"[^}]*\}/g)].map((m) => m[0]);
+      const preloads = (html: string) => [...html.matchAll(/<link rel="preload" href="([^"]+)"/g)].map((m) => m[1]);
+      const a = read('/a/');
+      const rules = sansRules(a);
+      expect(rules.map((r) => /sb-sans[\w-]*/.exec(r)?.[0])).toEqual(['sb-sans-ko', 'sb-sans-ko-page', 'sb-sans']);
+      expect(rules[0]).toContain(`unicode-range:${HANGUL_UNICODE_RANGE}`);
+      expect(rules[1]).toMatch(/unicode-range:U\+AC00-AC01,U\+B098\}$/);
+      const aOwn = /src:url\(([^)]+)\)/.exec(rules[1])?.[1];
+      expect(preloads(a)).toEqual([expect.stringMatching(/\/sb-sans\./), aOwn]);
+      expect(/src:url\(([^)]+)\)/.exec(sansRules(read('/b/'))[1])?.[1]).toBe(aOwn);
+      expect(/unicode-range:([^}]+)\}$/.exec(sansRules(read('/c/'))[1])?.[1]).toBe('U+B2E4');
+      // the chooser keeps the shared Hangul file (its first-flight budget, B.3); English pages preload no Hangul
+      expect(sansRules(read('/')).map((r) => /sb-sans[\w-]*/.exec(r)?.[0])).toEqual(['sb-sans-ko', 'sb-sans']);
+      expect(preloads(read('/'))).toEqual([expect.stringMatching(/\/sb-sans\./), expect.stringMatching(/\/sb-sans-ko\./)]);
+      expect(sansRules(read('/en/')).map((r) => /sb-sans[\w-]*/.exec(r)?.[0])).toEqual(['sb-sans-ko', 'sb-sans']);
+      expect(preloads(read('/en/'))).toEqual([expect.stringMatching(/\/sb-sans\./)]);
+    } finally {
+      rmSync(dist, { recursive: true, force: true });
+    }
+  });
 });
 
 describe('buildFonts: the general paper page preloads its Korean serif with font-display: optional', () => {

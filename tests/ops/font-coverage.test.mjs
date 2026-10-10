@@ -354,8 +354,9 @@ test('DS-1: the display subset is one Archivo file with its copyright and licenc
 // ── OFL: the Pretendard subset is a Modified Version and must not be published under the Reserved Font Name ──
 
 test('the sans subsets do not present "Pretendard" as their name and keep the copyright and license records', () => {
-  const files = walk(join(DIST, '_astro')).filter((f) => /[\\/]sb-sans(?:-ko)?\.[\w-]+\.woff2$/.test(f));
-  assert.equal(files.length, 2, 'the core and the Hangul sans subset in dist/_astro');
+  const files = walk(join(DIST, '_astro')).filter((f) => /[\\/]sb-sans(?:-ko(?:-page)?)?\.[\w-]+\.woff2$/.test(f));
+  assert.equal(files.filter((f) => !/-ko-page\./.test(f)).length, 2, 'the core and the shared Hangul sans subset in dist/_astro');
+  assert.ok(files.some((f) => /-ko-page\./.test(f)), 'the Korean pages\' own Hangul subsets');
   for (const file of files) {
     const name = woff2Tables(readFileSync(file)).get('name');
     assert.ok(name, `${file}: name table`);
@@ -367,6 +368,52 @@ test('the sans subsets do not present "Pretendard" as their name and keep the co
     assert.match(records.find((r) => r.nameID === 13)?.value ?? '', /SIL Open Font License/, `${file}: license`);
     assert.match(records.find((r) => r.nameID === 14)?.value ?? '', /OFL/i, `${file}: license URL`);
   }
+});
+
+/** Every code point of "U+AC00-AC02,U+B098". @param {string} value */
+function rangeCodePoints(value) {
+  return new Set(
+    value.split(',').flatMap((part) => {
+      const [lo, hi = lo] = part.trim().replace(/^U\+/i, '').split('-').map((h) => parseInt(h, 16));
+      return Array.from({ length: hi - lo + 1 }, (_, i) => lo + i);
+    }),
+  );
+}
+
+test('each Korean page but the chooser declares and preloads a Hangul file of its own holding exactly its unicode-range; English pages and the chooser keep the shared files', () => {
+  /** @type {string[]} */
+  const wrong = [];
+  let own = 0;
+  for (const p of builtPages()) {
+    const html = readFileSync(p.file, 'utf8');
+    const rules = [...html.matchAll(/@font-face\{font-family:"SB Sans"[^}]*\}/g)].map((m) => m[0]);
+    if (rules.length === 0) continue;
+    const url = (/** @type {string} */ rule) => /src:url\(([^)]+)\)/.exec(rule)?.[1] ?? '';
+    const names = rules.map((r) => url(r).replace(/^\/_astro\//, '').replace(/\.\w+\.woff2$/, '')).join(', ');
+    const preloads = [...html.matchAll(/<link rel="preload" href="([^"]+)" as="font"/g)].map((m) => m[1]);
+    const korean = /<html[^>]*\slang="ko"/.test(html);
+    if (!korean || p.route === '/') {
+      if (names !== 'sb-sans-ko, sb-sans') wrong.push(`${p.route}: SB Sans rules ${names}`);
+      const hangulPreloads = preloads.filter((h) => /\/sb-sans-ko[.-]/.test(h));
+      if (hangulPreloads.length !== (korean ? 1 : 0)) wrong.push(`${p.route}: Hangul preloads ${hangulPreloads.join(', ') || 'none'}`);
+      continue;
+    }
+    own += 1;
+    // the shared Hangul rule first, the page's own next, the core rule last (the last declared face is tried first)
+    if (names !== 'sb-sans-ko, sb-sans-ko-page, sb-sans') {
+      wrong.push(`${p.route}: SB Sans rules ${names}`);
+      continue;
+    }
+    const pageUrl = url(rules[1]);
+    if (!preloads.includes(pageUrl) || preloads.some((h) => /\/sb-sans-ko\./.test(h))) wrong.push(`${p.route}: font preloads ${preloads.join(', ')}`);
+    const declared = rangeCodePoints(/unicode-range:([^;}]+)/.exec(rules[1])?.[1] ?? '');
+    const has = new Set([...fontCmap(pageUrl)].filter((cp) => isHangul(cp)));
+    const extra = [...declared].filter((cp) => !has.has(cp));
+    const unclaimed = [...has].filter((cp) => !declared.has(cp));
+    if (extra.length > 0 || unclaimed.length > 0) wrong.push(`${p.route}: range minus file ${extra.length}, file minus range ${unclaimed.length}`);
+  }
+  assert.deepEqual(wrong, []);
+  assert.ok(own > 10, `${own} Korean pages with a Hangul file of their own`);
 });
 
 /** Code points of a cover face's source file (JetBrains Mono latin, Anton latin). @param {string} family */

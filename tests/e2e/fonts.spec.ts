@@ -65,17 +65,21 @@ for (const route of ['/game/', '/en/game/']) {
     const brandFont = await brand.evaluate((el) => getComputedStyle(el).fontFamily);
     expect(brandFont.startsWith(`"${MONO_FAMILY}"`), brandFont).toBe(true);
 
-    // Two sans files: core (Latin, symbols, the Hangul English pages show) and the rest of the Hangul.
-    // English pages never fetch the Hangul file; Korean pages load both.
-    const hangulFetched = await page.evaluate(() => performance.getEntriesByType('resource').some((e) => e.name.includes('/sb-sans-ko.')));
-    expect(await faceStatus(page, SANS_FAMILY)).toEqual(route === '/game/' ? ['loaded', 'loaded'] : ['unloaded', 'loaded']);
-    expect(hangulFetched).toBe(route === '/game/');
+    // Sans files: core (Latin, symbols, the Hangul English pages show), the shared rest of the Hangul, and on Korean
+    // pages a Hangul file of the page's own (2026-10-10), declared between the two. English pages fetch no Hangul
+    // file; Korean pages load their own file, and the shared one only when client code shows a syllable the page
+    // file lacks (none on load).
+    const fetched = await page.evaluate(() => performance.getEntriesByType('resource').map((e) => e.name));
+    expect(await faceStatus(page, SANS_FAMILY)).toEqual(route === '/game/' ? ['unloaded', 'loaded', 'loaded'] : ['unloaded', 'loaded']);
+    expect(fetched.filter((u) => u.includes('/sb-sans-ko-page.')), 'the page\'s own Hangul file').toHaveLength(route === '/game/' ? 1 : 0);
+    expect(fetched.filter((u) => u.includes('/sb-sans-ko.')), 'the shared Hangul file').toEqual([]);
     expect(await faceStatus(page, MONO_FAMILY)).toEqual(['loaded']);
-    // After load, the faces for the page's sample are ready: Korean on /, English on /en/ (fonts.check() counts
-    // every face whose unicode-range meets the text, so on /en/ a Hangul sample would also wait for the unused
-    // Hangul file, which the English page rightly never fetches).
+    // After load, the faces that draw the page's sample are ready: Korean on /, English on /en/. fonts.check() counts
+    // every face whose unicode-range meets the text, so a Hangul sample also waits for the shared Hangul file, which
+    // neither page fetches on load (on /game/ the page's own file draws it): check() for the English sample, and the
+    // Korean one by how it is drawn (the own file is loaded above, and nothing falls back).
     const sample = route === '/game/' ? '안녕하세요 백성은, 게임 데이터 분석' : 'Seongeun Baek, game data analyst · 2026';
-    expect(await page.evaluate(({ f, s }) => document.fonts.check(`17px "${f}"`, s), { f: SANS_FAMILY, s: sample })).toBe(true);
+    if (route === '/en/game/') expect(await page.evaluate(({ f, s }) => document.fonts.check(`17px "${f}"`, s), { f: SANS_FAMILY, s: sample })).toBe(true);
     expect(await fallbackChars(page, SANS_FAMILY, sample), 'sample').toEqual([]);
     expect(await fallbackChars(page, SANS_FAMILY, '똠'), 'control: a syllable the site never uses falls back').toEqual(['똠']);
 

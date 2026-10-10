@@ -309,6 +309,28 @@ const NON_HANGUL_RANGE = 'U+0-10FF,U+1200-312F,U+3190-A95F,U+A980-ABFF,U+D800-10
 const contentHash = (data) => createHash('sha256').update(data).digest('base64url').slice(0, 10).replace(/[-_]/g, 'x');
 
 /**
+ * Korean pages that keep the shared Hangul file instead of one of their own: the chooser, whose HTML is within
+ * ~100 B of its first-flight budget (B.3, chooser-budget.test.ts) — a page file's unicode-range would not fit — and
+ * which measures 0.97 on mobile Lighthouse with the shared file.
+ */
+const SHARED_HANGUL_ROUTES = new Set(['/']);
+
+/** "U+AC00-AC02,U+B098" for a set of characters, consecutive code points merged. @param {Set<string>} chars */
+export function codePointRange(chars) {
+  const cps = [...chars].map((ch) => /** @type {number} */ (ch.codePointAt(0))).sort((a, b) => a - b);
+  const hex = (/** @type {number} */ cp) => cp.toString(16).toUpperCase();
+  /** @type {string[]} */
+  const out = [];
+  for (let i = 0; i < cps.length; ) {
+    let j = i;
+    while (j + 1 < cps.length && cps[j + 1] === cps[j] + 1) j += 1;
+    out.push(i === j ? `U+${hex(cps[i])}` : `U+${hex(cps[i])}-${hex(cps[j])}`);
+    i = j + 1;
+  }
+  return out.join(',');
+}
+
+/**
  * @typedef {{ face: keyof typeof FONT_URL; url: string; bytes: number; chars: number; pages: number }} FontResult
  */
 
@@ -317,15 +339,24 @@ const preloadTag = (url) => `<link rel="preload" href="${url}" as="font" type="f
 
 /**
  * Subsets every face the built pages reference, writes dist/_astro/<name>.<hash>.woff2, and rewrites the pages:
- * placeholder URLs → hashed files, the sans placeholder rule → the two sans rules, the sans preload → the core
+ * placeholder URLs → hashed files, the sans placeholder rule → the sans rules, the sans preload → the core
  * preload (+ the Hangul preload on Korean pages). Throws when a page still references a placeholder afterwards.
  *
- * The sans face ships as two files (measured: English pages 0.92 → 0.95 on mobile Lighthouse, Korean pages
+ * The sans face ships as two shared files (measured: English pages 0.92 → 0.95 on mobile Lighthouse, Korean pages
  * unchanged): "core" = Latin, symbols and every Hangul syllable some English page shows as text (the "한국어"
  * language switch, the Korean GitHub descriptions on /en/projects/), and "ko" = the rest of the Hangul. The ko
  * rule is declared first, so the core rule (declared last) wins for the Hangul both claim and no English page
  * needs the ko file. JetBrains Mono ships unmodified (fontsource latin file, hashed copy): subsetting it saved
  * 9 KB and measured no difference.
+ *
+ * Each Korean page (but the chooser, SHARED_HANGUL_ROUTES) also gets a Hangul file of its own (2026-10-10): the ko
+ * Hangul its HTML can put on screen (text, attributes, island props, inline scripts), declared between the shared ko
+ * rule and the core rule with exactly those code points as its unicode-range, and preloaded instead of the shared
+ * ko file. The ko file holds every Hangul syllable of the site (the Player Log shows 302 of 708: 40 KB of 91 KB),
+ * and on the simulated mobile network of Lighthouse it was the longest download before the first paint: with the
+ * page files the Player Log measured 0.94–0.98 (was 0.92–0.93; CI had failed it at 0.89) and /game/ 0.98–0.99. The
+ * shared ko rule stays: it draws what only client code shows (an island's own strings, the case sheets' UI text) and
+ * is fetched only then. Pages with the same Hangul share one file.
  *
  * Characters a source font does not have (a CJK ideograph in a fetched GitHub description, archaic jamo) are not
  * an error: they cannot be in any subset, the browser draws them with the next font of the stack, and the daily
@@ -349,11 +380,14 @@ export async function buildFonts(distDir, { warn = (message) => console.warn(mes
   const results = [];
   /** @type {Map<string, string>} */
   const replace = new Map();
-  /** @param {keyof typeof FONT_URL} face @param {string} name @param {Buffer} data @param {number} chars */
-  const write = (face, name, data, chars) => {
+  /**
+   * @param {keyof typeof FONT_URL} face @param {string} name @param {Buffer} data @param {number} chars
+   * @param {number} [pageCount] the pages that load the file (default: every page that declares the face)
+   */
+  const write = (face, name, data, chars, pageCount = pages.filter((p) => p.html.includes(FONT_URL[face])).length) => {
     const url = `/_astro/${name}.${contentHash(data)}.woff2`;
     writeFileSync(join(distDir, ...url.split('/').filter(Boolean)), data);
-    results.push({ face, url, bytes: data.length, chars, pages: pages.filter((p) => p.html.includes(FONT_URL[face])).length });
+    results.push({ face, url, bytes: data.length, chars, pages: pageCount });
     return url;
   };
   /**
@@ -391,10 +425,30 @@ export async function buildFonts(distDir, { warn = (message) => console.warn(mes
     koUrl = write('sans', 'sb-sans-ko', koFont, rest.size);
   }
   const coreRange = [NON_HANGUL_RANGE, ...[...core].filter(hangul).map((ch) => `U+${ch.codePointAt(0)?.toString(16).toUpperCase()}`)];
-  replace.set(
-    fontFaceRule('sans'),
-    (koUrl ? fontFaceRule('sans', koUrl, HANGUL_UNICODE_RANGE) : '') + fontFaceRule('sans', coreUrl, coreRange.join(',')),
-  );
+  const koRule = koUrl ? fontFaceRule('sans', koUrl, HANGUL_UNICODE_RANGE) : '';
+  const coreRule = fontFaceRule('sans', coreUrl, coreRange.join(','));
+  // each Korean page's own Hangul file (see above); route → its file and unicode-range
+  /** @type {Map<string, { url: string; range: string }>} */
+  const ownHangul = new Map();
+  if (koUrl) {
+    /** @type {Map<string, FontResult>} */
+    const shared = new Map(); // a page file's characters → its result (pages with the same Hangul share the file)
+    for (const page of pages) {
+      if (SHARED_HANGUL_ROUTES.has(page.route) || !/<html[^>]*\slang="ko"/.test(page.html) || !page.html.includes(fontFaceRule('sans'))) continue;
+      const own = new Set([...htmlText(page.html)].filter((ch) => rest.has(ch)));
+      if (own.size === 0) continue;
+      const text = setText(own);
+      let result = shared.get(text);
+      if (result) result.pages += 1;
+      else {
+        const data = await step(`subsetting Pretendard Variable (the Hangul of ${page.route}, ${own.size} characters)`, () => subsetSans(text));
+        write('sans', 'sb-sans-ko-page', data, own.size, 1);
+        result = /** @type {FontResult} */ (results.at(-1));
+        shared.set(text, result);
+      }
+      ownHangul.set(page.route, { url: result.url, range: codePointRange(own) });
+    }
+  }
 
   // ── mono ──
   if (pages.some((p) => p.html.includes(FONT_URL.mono))) {
@@ -476,8 +530,11 @@ export async function buildFonts(distDir, { warn = (message) => console.warn(mes
     await step(`rewriting ${page.route}`, () => {
       let html = page.html;
       for (const [from, to] of replace) html = html.split(from).join(to);
+      const own = ownHangul.get(page.route);
+      html = html.split(fontFaceRule('sans')).join(koRule + (own ? fontFaceRule('sans', own.url, own.range) : '') + coreRule);
       const korean = /<html[^>]*\slang="ko"/.test(html);
-      html = html.split(preloadTag(FONT_URL.sans)).join(preloadTag(coreUrl) + (korean && koUrl ? preloadTag(koUrl) : ''));
+      const hangulPreload = own ? preloadTag(own.url) : korean && koUrl ? preloadTag(koUrl) : '';
+      html = html.split(preloadTag(FONT_URL.sans)).join(preloadTag(coreUrl) + hangulPreload);
       const left = Object.values(FONT_URL).filter((url) => html.includes(url));
       if (left.length > 0) {
         throw new Error(
