@@ -233,6 +233,65 @@ describe('FavoriteGames', () => {
     release();
   });
 
+  describe('F-038: picks made while a scene exits (2026-10-10: a queued pick froze the stage)', () => {
+    const titleText = (root: ParentNode) => root.querySelector('.fg__scene .fg__title')?.textContent;
+    // three playable games, so a quick run of picks has a pick in between that must never show
+    const dnf: FavoriteGame = { ...GAMES[3], tabCaption: 'DUNGEON & FIGHTER', locked: false, subtitle: '던전앤파이터 · Neople', why: '타격감을 좋아합니다.' };
+
+    it('the last pick shows, with nothing left in between, and the stage still follows the tabs', async () => {
+      const user = userEvent.setup();
+      const { container } = render(<FavoriteGames {...props({ games: [GAMES[0], GAMES[1], dnf] })} />);
+      const tabs = screen.getAllByRole('tab');
+      await user.click(tabs[1]); // Zenless Zone Zero starts its exit (TL.exit)
+      await user.click(tabs[2]); // picked before that exit ends
+      expect(tabs[2]).toHaveAttribute('aria-selected', 'true');
+      await waitFor(() => expect(titleText(container)).toBe('Dungeon& Fighter'));
+      expect(screen.getByRole('tabpanel')).toHaveAttribute('aria-labelledby', tabs[2].id);
+      expect(container.querySelectorAll('.fg__scene')).toHaveLength(1);
+      await user.click(tabs[0]);
+      await waitFor(() => expect(titleText(container)).toBe('ZenlessZone Zero'));
+      expect(container.querySelectorAll('.fg__scene')).toHaveLength(1);
+    });
+
+    it('picking the exiting game again brings it back, and the next pick still switches', async () => {
+      const user = userEvent.setup();
+      const { container } = render(<FavoriteGames {...props({ games: [GAMES[0], GAMES[1], dnf] })} />);
+      const tabs = screen.getAllByRole('tab');
+      await user.click(tabs[1]);
+      await user.click(tabs[0]); // back to the game whose scene is on its way out
+      expect(tabs[0]).toHaveAttribute('aria-selected', 'true');
+      // its title is on the stage the whole time (first leaving, then back), so wait for the settled stage: its panel
+      // labelled by that tab, and one scene only
+      await waitFor(() => {
+        expect(screen.getByRole('tabpanel')).toHaveAttribute('aria-labelledby', tabs[0].id);
+        expect(container.querySelectorAll('.fg__scene')).toHaveLength(1);
+        expect(titleText(container)).toBe('ZenlessZone Zero');
+      });
+      await user.click(tabs[2]);
+      await waitFor(() => expect(titleText(container)).toBe('Dungeon& Fighter'));
+    });
+
+    it('an art decode that ends after the tab changed does not hold the leaving scene', async () => {
+      const user = userEvent.setup();
+      let release: () => void = () => undefined;
+      vi.mocked(preloadImage).mockImplementation((image) =>
+        image.src === '/eula.webp' ? new Promise<void>((resolve) => { release = resolve; }) : Promise.resolve(),
+      );
+      try {
+        const { container } = render(<FavoriteGames {...props({ games: [GAMES[0], GAMES[1], dnf] })} />);
+        const tabs = screen.getAllByRole('tab');
+        await user.click(tabs[1]);
+        await waitFor(() => expect(titleText(container)).toBe('GenshinImpact')); // in, Eula still decoding
+        await user.click(tabs[2]); // Genshin Impact starts to leave
+        release(); // and only now does its art become ready
+        await waitFor(() => expect(titleText(container)).toBe('Dungeon& Fighter'));
+        expect(container.querySelectorAll('.fg__scene')).toHaveLength(1);
+      } finally {
+        vi.mocked(preloadImage).mockImplementation(() => Promise.resolve());
+      }
+    });
+  });
+
   it('with art: the fixed-height art layout; the selected game tint is on and the facts stay chips', async () => {
     const { container } = render(<FavoriteGames {...props()} />);
     await waitFor(() => expect(container.querySelector('.fg__scene')).not.toBeNull());

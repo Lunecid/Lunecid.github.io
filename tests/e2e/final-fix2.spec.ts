@@ -663,6 +663,8 @@ test.describe('item 1, straight-cut guard: art is faded at the visible right bou
         test.setTimeout(90_000);
         test.skip(!HERO_ART, 'needs both hero characters');
         await open(page, '/game/player-log/', 667, 375);
+        // the art arrives when the island hydrates on its way into view (2026-10-10): bring the showcase there first
+        await page.locator('section.fg').scrollIntoViewIfNeeded();
         let tab0Src: string | undefined;
         for (const tab of [0, 1] as const) {
           if (tab === 1) await page.locator('.fg__tab').nth(1).click();

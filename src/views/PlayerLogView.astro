@@ -101,6 +101,9 @@ const labels = {
   {/* section#favorite-games (contract §5.14); unnamed wrapper, the island renders its own labelled section.fg inside */}
   <section id="favorite-games" class="pl-showcase">
     <div class="pl-showcase__inner">
+      {/* client:visible: the island (and with it the showcase art, kept out of the server markup) starts when the showcase
+          comes on screen, so the art never joins the page's first requests (Lighthouse; a 600px rootMargin was measured
+          and still hydrated it with the first load on a phone) */}
       <FavoriteGames
         client:visible
         lang={lang}

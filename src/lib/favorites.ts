@@ -18,6 +18,7 @@ export const ACCOUNT_HEADS: Record<string, string> = {
   steam: 'STEAM PROFILE',
   'nimble-neuron': 'PLAYER PROFILE',
   'battle-net': 'BATTLE.NET PROFILE',
+  'sports-interactive': 'MANAGER PROFILE',
 };
 
 export interface FavoriteTile {
@@ -71,6 +72,7 @@ export async function buildFavoriteGames(
       // favourite character, so the stage is never flat black.
       const tint = withArt ?? g.characters[0];
       if (tint) game.tint = tint.id;
+      else if (g.tint) game.tint = g.tint; // a team's colours (no character, no art)
       return game;
     }),
   );

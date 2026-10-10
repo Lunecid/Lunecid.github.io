@@ -75,6 +75,11 @@
      violet at the HoYoverse tints' .16 (favorites.yaml tint = the same RGB) */
   --tint-ezreal: rgba(200, 155, 60, .16);
   --tint-pengu: rgba(105, 87, 255, .16);
+  /* the football-manager team tint (owner 2026-10-10: Atlético de Madrid's red and white, no crest): the red at the
+     tints' .16, the kit stripes fainter so the copy beside them keeps its contrast */
+  --tint-red-white: rgba(203, 53, 36, .16);
+  --tint-red-white-stripe: rgba(203, 53, 36, .13);
+  --tint-white-stripe: rgba(255, 255, 255, .045);
   --gp-edge-cy: var(--gp-cy);   /* the edge frame's line-art */
   --gp-edge-y: var(--gp-y);
 }

@@ -1,6 +1,6 @@
 // A-03 F-052 (account-link AL-13): m.* components under LazyMotion with the domAnimation features (strict), so the
 // island ships the animation and gesture features only, not the full motion component.
-import { AnimatePresence, LazyMotion, MotionConfig, domAnimation, type Variants } from 'motion/react';
+import { AnimatePresence, LazyMotion, MotionConfig, domAnimation, useIsPresent, type Variants } from 'motion/react';
 import * as m from 'motion/react-m';
 import { useCallback, useEffect, useId, useRef, useState, type JSX, type KeyboardEvent, type ReactNode } from 'react';
 import type { Lang } from '../i18n/ui';
@@ -11,7 +11,7 @@ import { preloadImage, type IslandImage } from '../lib/island-image';
 import { useReducedMotionPref } from '../lib/motion-pref';
 import { playSfx } from '../lib/sound';
 import { useCountUp } from '../lib/use-count-up';
-import type { CharacterId, GameId } from '../types';
+import type { CharacterId, GameId, TeamTint } from '../types';
 import './FavoriteGames.css';
 
 export interface FavoriteGame {
@@ -24,7 +24,7 @@ export interface FavoriteGame {
   why?: string;
   meta?: string[];
   art?: { image: IslandImage; objectPosition: string };
-  tint?: CharacterId;
+  tint?: CharacterId | TeamTint;
   account?: { key: string; head: string };
 }
 
@@ -45,7 +45,7 @@ type Bezier = [number, number, number, number];
 const EASE_OUT: Bezier = [0.22, 1, 0.36, 1];
 const EASE_IN: Bezier = [0.4, 0, 1, 1];
 const EASE_WIPE: Bezier = [0.65, 0, 0.35, 1];
-const TINTS: readonly CharacterId[] = ['remielle', 'eula', 'mona', 'ezreal', 'pengu'];
+const TINTS: readonly (CharacterId | TeamTint)[] = ['remielle', 'eula', 'mona', 'ezreal', 'pengu', 'red-white'];
 
 /** Seconds from the new scene's mount (spec §4: the account card finishes within 2 s). The copy settles within
  *  0.75 s of a tab click (exit + gap + 3 staggers + enter) so games can be compared quickly; the art enters a little
@@ -133,8 +133,11 @@ export default function FavoriteGames({ lang, heading, games, initialId, account
   useEffect(() => {
     setHydrated(true);
   }, []);
-  // true while a scene exit is in flight (AnimatePresence mode="wait"); the first scene is always mounted, so every
-  // change of scene runs one exit
+  // True from a change of scene until the new scene has mounted. A pick made meanwhile shows in aria-selected at once
+  // and waits in `pending` for that mount. It must not reach AnimatePresence (mode="wait") any sooner: landing in the
+  // render where AnimatePresence first mounts the scene it was holding back, it makes that scene mount already exiting,
+  // whose exit then never runs, and the stage freezes on it (2026-10-10; the pick used to be applied in onExitComplete,
+  // which is that render, and applied at once it can still land there in a race with the exit's end).
   const busy = useRef(false);
   const pending = useRef<GameId | null>(null);
   const currentRef = useRef(current);
@@ -171,18 +174,24 @@ export default function FavoriteGames({ lang, heading, games, initialId, account
     (id: GameId) => {
       const g = games.find((x) => x.id === id);
       if (!g || g.locked) return;
-      // F-038: while an exit is in flight, update aria-selected immediately and queue the pick for onExitComplete.
       if (busy.current) {
         setSelected(id);
         pending.current = id;
         return;
       }
       if (id === currentRef.current) return;
-      pending.current = null;
       applyGame(id);
     },
     [applyGame, games],
   );
+
+  // the scene of `current` has mounted, so AnimatePresence is done with the change: apply the pick that waited for it
+  const onSceneMount = useCallback(() => {
+    busy.current = false;
+    const id = pending.current;
+    pending.current = null;
+    if (id !== null && id !== currentRef.current) applyGame(id);
+  }, [applyGame]);
 
   const onTabKey = (e: KeyboardEvent<HTMLDivElement>) => {
     const ids = games.map((g) => g.id);
@@ -263,17 +272,19 @@ export default function FavoriteGames({ lang, heading, games, initialId, account
                     </div>
                   ))}
               </noscript>
-              <AnimatePresence
-                mode="wait"
-                initial={false}
-                onExitComplete={() => {
-                  busy.current = false;
-                  const id = pending.current;
-                  pending.current = null;
-                  if (id !== null && id !== currentRef.current) applyGame(id);
-                }}
-              >
-                <Scene key={current} game={game} first={!switched} accounts={accounts} labels={labels} lang={lang} reduce={reduce} factsPanel={!hasArt} />
+              <AnimatePresence mode="wait" initial={false}>
+                <Scene
+                  key={current}
+                  game={game}
+                  first={!switched}
+                  live={hydrated}
+                  onMount={onSceneMount}
+                  accounts={accounts}
+                  labels={labels}
+                  lang={lang}
+                  reduce={reduce}
+                  factsPanel={!hasArt}
+                />
               </AnimatePresence>
             </div>
             {credit !== null && (
@@ -293,10 +304,16 @@ export default function FavoriteGames({ lang, heading, games, initialId, account
   );
 }
 
-function Scene({ game, first, accounts, labels, lang, reduce, factsPanel }: {
+function Scene({ game, first, live, onMount, accounts, labels, lang, reduce, factsPanel }: {
   game: FavoriteGame;
-  /** The server-rendered first scene: its art is in the HTML already, so it does not wait for a decode. */
+  /** The server-rendered first scene: shown at once, its art box included, so it does not wait for a decode. */
   first: boolean;
+  /** Hydrated. The art image itself is not in the server markup (2026-10-10): a lazy image that close to the fold was
+   *  still fetched with the page's first requests and cost the Player Log its Lighthouse headroom, so it arrives when
+   *  the island hydrates (client:visible, PlayerLogView.astro); its box is there from the start. */
+  live: boolean;
+  /** Once per mount: a pick made during the change of scene waits for it. */
+  onMount: () => void;
   accounts: FavoriteGamesProps['accounts'];
   labels: FavoriteGamesProps['labels'];
   lang: Lang;
@@ -306,6 +323,11 @@ function Scene({ game, first, accounts, labels, lang, reduce, factsPanel }: {
 }) {
   const acct = resolveAccount(game, accounts);
   const v = (full: Variants) => (reduce ? undefined : full);
+  useEffect(() => {
+    onMount();
+    // the scene is keyed by game: once per mount
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   // A-03 F-051: only the art waits for img.decode() (preloadImage); the copy enters at once.
   const [artReady, setArtReady] = useState(first || !game.art);
   useEffect(() => {
@@ -320,6 +342,14 @@ function Scene({ game, first, accounts, labels, lang, reduce, factsPanel }: {
     // the scene is keyed by game: one decode per mount
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+  // Once the scene starts leaving, .fg__chr keeps the target it had. A new one during its exit (the decode
+  // ending after the tab changed) stops that exit for good: in motion 13.4 the art's first variant, never played since
+  // initial equals animate, leaves its values flagged to animate past the exit's hold on them, the exit's promise never
+  // settles, and the stage freezes on this scene (2026-10-10). Blocking renders are never discarded midway, so the last
+  // present render is the last committed one.
+  const isPresent = useIsPresent();
+  const chrTarget = useRef<'show' | 'hidden'>(artReady ? 'show' : 'hidden');
+  if (isPresent) chrTarget.current = artReady ? 'show' : 'hidden';
   return (
     <m.div
       className="fg__scene"
@@ -341,12 +371,12 @@ function Scene({ game, first, accounts, labels, lang, reduce, factsPanel }: {
           className="fg__chr"
           variants={reduce ? chrReducedV : chrV}
           initial="hidden"
-          animate={artReady ? 'show' : 'hidden'}
+          animate={chrTarget.current}
           exit="exit"
           aria-hidden="true"
         >
           <div className="fg__chr-clip">
-            {game.art.image.avifSrcSet ? (
+            {!live ? null : game.art.image.avifSrcSet ? (
               <picture>
                 <source type="image/avif" srcSet={game.art.image.avifSrcSet} sizes={game.art.image.sizes} />
                 <img

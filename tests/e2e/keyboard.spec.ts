@@ -100,8 +100,8 @@ test('showcase tabs move with arrows (only the unlocked games are listed, D-13)'
   await section.scrollIntoViewIfNeeded();
   await expect(page.locator('astro-island:not([ssr]) [role="tablist"]')).toHaveCount(1);
   const tabs = section.getByRole('tab');
-  // favorites.yaml has 9 games; the locked one (Steam) stays out of the tabs until an account feed exists.
-  await expect(tabs).toHaveCount(8);
+  // favorites.yaml has 10 games; the locked one (Steam) stays out of the tabs until an account feed exists.
+  await expect(tabs).toHaveCount(9);
   await expect(section.locator('[role="tab"][aria-disabled="true"]')).toHaveCount(0);
 
   await expect(tabs.nth(0)).toHaveAttribute('aria-selected', 'true');

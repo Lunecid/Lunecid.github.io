@@ -9,12 +9,12 @@ import { containsTrademark } from '../../src/lib/seo';
 import { test, expect, openAt } from './helpers';
 
 const TABS = {
-  ko: { lol: '리그 오브 레전드', tft: '전략적 팀 전투', hearthstone: '하스스톤', er: '이터널 리턴', dnf: '던전앤파이터', cyphers: '사이퍼즈' },
-  en: { lol: 'League of Legends', tft: 'Teamfight Tactics', hearthstone: 'Hearthstone', er: 'Eternal Return', dnf: 'Dungeon & Fighter', cyphers: 'Cyphers' },
+  ko: { lol: '리그 오브 레전드', tft: '전략적 팀 전투', hearthstone: '하스스톤', er: '이터널 리턴', dnf: '던전앤파이터', cyphers: '사이퍼즈', fm: '풋볼 매니저 시리즈' },
+  en: { lol: 'League of Legends', tft: 'Teamfight Tactics', hearthstone: 'Hearthstone', er: 'Eternal Return', dnf: 'Dungeon & Fighter', cyphers: 'Cyphers', fm: 'Football Manager' },
 } as const;
 
 for (const [lang, route] of [['ko', '/game/player-log/'], ['en', '/en/game/player-log/']] as const) {
-  test(`${route}: Ezreal on the LoL tab, Pengu on TFT, no art on Hearthstone, Eternal Return, Dungeon & Fighter or Cyphers; the Riot notice is in the footer`, async ({ page }) => {
+  test(`${route}: Ezreal on the LoL tab, Pengu on TFT, no art on Hearthstone, Eternal Return, Dungeon & Fighter, Cyphers or Football Manager; the Riot notice is in the footer`, async ({ page }) => {
     await openAt(page, route, 1280);
     await page.locator('#favorite-games').scrollIntoViewIfNeeded();
     // client:visible: a tab clicked before the island hydrates is lost (CI run 37973533306 clicked LoL and still showed
@@ -31,12 +31,15 @@ for (const [lang, route] of [['ko', '/game/player-log/'], ['en', '/en/game/playe
       await expect.poll(() => img.evaluate((el) => (el as HTMLImageElement).complete && (el as HTMLImageElement).naturalWidth > 0), { message: key }).toBe(true);
       await expect(page.locator(`.fg__tint--${key === 'lol' ? 'ezreal' : 'pengu'}`)).toHaveAttribute('data-on', 'true');
     }
-    for (const key of ['hearthstone', 'er', 'dnf', 'cyphers'] as const) {
+    for (const key of ['hearthstone', 'er', 'dnf', 'cyphers', 'fm'] as const) {
       await tab(TABS[lang][key]).click();
       await expect(scene, key).toHaveAttribute('data-art', 'off');
       await expect(page.locator('.fg__chr img'), key).toHaveCount(0);
     }
-    // eight tabs since 2026-10-09: the column (two lines per Korean tab) still ends above the credit, inside the card
+    // Football Manager (2026-10-10): its team's red and white instead of a crest or logo; no image of any kind
+    await expect(page.locator('.fg__tint--red-white')).toHaveAttribute('data-on', 'true');
+    await expect(page.locator('.fg__scene img')).toHaveCount(0);
+    // nine tabs since 2026-10-10: the column (two lines per Korean tab) still ends above the credit, inside the card
     const [card, list, credit] = await Promise.all(['section.fg', '.fg__list', '.fg__credit'].map(async (s) => (await page.locator(s).boundingBox())!));
     expect(list.y + list.height, 'tab column above the credit').toBeLessThan(credit.y - 8);
     expect(list.y + list.height, 'tab column inside the card').toBeLessThanOrEqual(card.y + card.height);

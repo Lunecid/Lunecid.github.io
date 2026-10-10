@@ -73,8 +73,8 @@ test.describe('D-13: the Player Log shows only what exists', () => {
     test(route, async ({ page }) => {
       await page.goto(route, { waitUntil: 'load' });
       // the unlocked favourites (zzz, genshin, lol, tft, eternal-return, hearthstone since 2026-09-30; dnf and cyphers since
-      // 2026-10-09); locked ones stay out (D-13)
-      await expect(page.locator('#favorite-games [role="tab"]')).toHaveCount(8);
+      // 2026-10-09; football-manager since 2026-10-10); locked ones stay out (D-13)
+      await expect(page.locator('#favorite-games [role="tab"]')).toHaveCount(9);
       await expect(page.locator('#favorite-games [role="tab"][aria-disabled="true"]')).toHaveCount(0);
       // PL-4 (named change, was 0): 내 게임 업적 always shows the owner's three records
       await expect(page.locator('#game-achievements')).toHaveCount(1);

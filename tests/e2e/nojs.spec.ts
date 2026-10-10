@@ -85,7 +85,7 @@ test('site is usable without JavaScript at 375px', async ({ page, request }) => 
     await expect(page.getByRole('tab')).toHaveCount(0);
     await expect(page.locator('#favorite-games')).toContainText('GENSHIN IMPACT', { useInnerText: true });
     const copies = page.locator('#favorite-games .fg__copy--static');
-    await expect(copies).toHaveCount(8); // every unlocked favourite (D-13)
+    await expect(copies).toHaveCount(9); // every unlocked favourite (D-13)
     for (const copy of await copies.all()) await expect(copy).toBeVisible();
     // round 2 item 5: without the tabs the stage is a plain region (no tab panel, tab stop or name from a hidden tab)
     const stage = page.locator('#favorite-games .fg__stage');

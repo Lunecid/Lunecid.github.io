@@ -66,6 +66,7 @@ export const TRADEMARK_TERMS: readonly string[] = [
   'TFT', 'Teamfight Tactics', '전략적 팀 전투', '하스스톤', 'Hearthstone', 'Blizzard', 'Valve',
   '블리자드', 'Battle.net', 'BattleTag', '배틀태그',
   'Hatsune Miku', '하츠네 미쿠', '初音ミク',
+  '풋볼 매니저', 'Football Manager', 'Sports Interactive', 'SEGA', '세가', '아틀레티코', 'Atlético', 'Atletico',
 ];
 
 const ASCII = /^[\x20-\x7e]+$/;

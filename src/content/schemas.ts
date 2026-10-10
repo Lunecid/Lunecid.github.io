@@ -2,7 +2,7 @@
 // Plain module (no astro:* imports) so Vitest can import it; content.config.ts passes image() in,
 // tests pass z.string().
 import { z } from 'astro/zod';
-import { ACHIEVEMENT_TRIGGERS, AWARD_LEVELS, CERTIFICATE_IDS, CHARACTER_IDS, GAME_IDS, JOBFIT_IDS, JOBFIT_STATUSES, NOTICE_KEYS, type JobfitId } from '../types';
+import { ACHIEVEMENT_TRIGGERS, AWARD_LEVELS, CERTIFICATE_IDS, CHARACTER_IDS, GAME_IDS, JOBFIT_IDS, JOBFIT_STATUSES, NOTICE_KEYS, TEAM_TINTS, type JobfitId } from '../types';
 import { DOCUMENTS, type DocumentId } from '../config';
 import { containsTrademark } from '../lib/seo';
 import { TAG_KEYS, TAGS_EN, TAGS_KO } from './tags';
@@ -175,6 +175,8 @@ export const favoriteGameSchema = z
     title: localized,
     studio: z.string().min(1),
     characters: z.array(z.object({ id: z.enum(CHARACTER_IDS), name: localized, position: z.string().regex(/^\d{1,3}% \d{1,3}%$/), tint: hexColor })),
+    // a team's colours as the stage tint where no favourite character gives one (no crest or logo, owner 2026-10-10)
+    tint: z.enum(TEAM_TINTS).optional(),
     why: localized.nullable(),
     meta: z.array(z.object({ label: localized, value: localized })),
     notices: z.array(z.enum(NOTICE_KEYS)),

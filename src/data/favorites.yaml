@@ -9,12 +9,17 @@
 #   라이엇 그림이 보이는 페이지에는 Legal Jibber Jabber 고지(notice.riotAssets)가 붙는다. 하스스톤·이터널 리턴은 그림 없음.
 #   던전앤파이터·사이퍼즈도 그림 없음: 주인은 공식 그림을 원했지만(2026-10-09), 네오플·넥슨이 공개한 2차 창작·이미지 이용
 #   허락 문서를 찾지 못했다(같은 날 확인). 허락을 확인하면 그때 넣는다.
+#   풋볼 매니저 시리즈(2026-10-10 주인 요청)도 로고·엠블럼 없음: 주인은 FM 로고와 아틀레티코 마드리드 공식 엠블럼을 원했지만,
+#   두 곳 모두 팬 사이트 사용을 허락한 공개 문서가 없고 아틀레티코 법적 고지는 무단 사용을 금지한다(맨유는 엠블럼 문제로 FM
+#   제작사를 소송). 주인이 같은 날 '로고 없이 팀 색으로'를 골랐다: tint: red-white(빨강·흰 줄무늬, FavoriteGames.css).
+#   tint는 캐릭터가 없는 게임의 팀 색조이며 캐릭터 tint보다 뒤에 쓴다(favorites.ts).
 #   tint 값은 참조 보드의 LoL 금색(#C89B3C)과 TFT 보라(#6957FF).
 # - tint는 쇼케이스 배경 색조와 계정 아이콘 배경에만 쓴다. 글자 색으로 쓰지 않는다(spec §4: 캐릭터 고유색은 플레이 로그·쇼케이스에만).
 # - 계정 연동(LINKED ACCOUNTS 줄, account-link 설계 §9.4):
 #   - integration.enabled는 커밋된 주 스위치다. 켠 게임도 빌드가 정상·신선한 데이터를 받았을 때만 아이콘이 보인다(두 스위치).
-#     지금 켠 것: zzz, genshin, lol, tft, steam. dnf·cyphers·eternal-return·hearthstone은 꺼 둔다(이터널 리턴·하스스톤은 계정 카드를
-#     만들지 않음, 2026-10-01 주인 답; 던전앤파이터·사이퍼즈는 연동하지 않음, account-link 설계 A-2).
+#     지금 켠 것: zzz, genshin, lol, tft, steam. dnf·cyphers·eternal-return·hearthstone·football-manager는 꺼 둔다(이터널 리턴·
+#     하스스톤은 계정 카드를 만들지 않음, 2026-10-01 주인 답; 던전앤파이터·사이퍼즈는 연동하지 않음, account-link 설계 A-2;
+#     풋볼 매니저는 연동할 공개 API가 없음).
 #   - 계정 값(UID, SteamID64, Riot ID)은 yaml이 아니라 GitHub Actions 변수 ACCOUNT_*에 둔다.
 #   - Steam 게임 부분과 필터는 src/lib/account-config.ts에 있다.
 #   - 데이터는 빌드 때 src/data/generated/accounts/, 링크는 src/data/generated/links/에 생긴다(커밋하지 않음).
@@ -29,6 +34,8 @@
 #   맞춘 시작 연도 2024로 풀었다.
 #   던전앤파이터(잠겨 있던 '계정 연동 준비 중')와 새로 넣은 사이퍼즈는 2026-10-09 주인이 고른 이유와 공개 장르로 풀었다
 #   (시작 연도·최애는 받지 않아 넣지 않음). 탭이 8개가 되어 1068px 이상의 탭 열을 촘촘하게 했다(FavoriteGames.css).
+#   사이퍼즈 팀 교전은 5대5다(2026-10-09 주인 정정). 풋볼 매니저 시리즈는 2026-10-10 주인이 고른 이유(장기 구단 운영, 전술과
+#   경기 시뮬레이션, 선수 데이터와 스카우팅)와 실제 응원 팀(아틀레티코 마드리드)으로 넣었다(시작 작품·연도는 받지 않음).
 #   주인의 Riot ID: 루네시드#Lune (KR) — 계정 연동(op.gg·lolchess.gg 링크)에서 쓴다.
 # - notices 값 → ui.ts 키: cognosphere → notice.cognosphere · zzz-fan-guide → notice.zzzCopyright + notice.zzzLegalStatement · fan-content → footer.fanContent
 
@@ -222,6 +229,28 @@ games:
     notices: []
     integration:
       platform: battle-net
+      enabled: false
+    account: null
+
+  - id: football-manager
+    locked: false
+    title:
+      ko: 풋볼 매니저 시리즈
+      en: Football Manager
+    studio: Sports Interactive
+    characters: []
+    tint: red-white
+    why:
+      ko: 여러 시즌에 걸쳐 구단을 키워 가는 장기 운영과, 전술을 짜서 경기 시뮬레이션으로 확인하는 재미를 좋아합니다. 선수 능력치와 기록으로 좋은 선수를 찾아내는 스카우팅도 즐깁니다. 실제로는 아틀레티코 마드리드를 응원합니다.
+      en: I love building a club over many seasons, and drawing up tactics to see them play out in the match simulation. Scouting players through their attributes and records is a big part of the fun too. In real life I support Atlético de Madrid.
+    meta:
+      - label: { ko: 장르, en: Genre }
+        value: { ko: 축구 경영 시뮬레이션, en: Football management sim }
+      - label: { ko: 응원 팀, en: Team }
+        value: { ko: 아틀레티코 마드리드, en: Atlético de Madrid }
+    notices: []
+    integration:
+      platform: sports-interactive
       enabled: false
     account: null
 

@@ -1,6 +1,9 @@
 // Shared id lists and union types. Import-free and erasable TypeScript only (plain Node imports this file).
 export const CHARACTER_IDS = ['remielle', 'eula', 'mona', 'ezreal', 'pengu'] as const;
 export type CharacterId = (typeof CHARACTER_IDS)[number];
+// A team's colours for a favourite game without a favourite character or art (favorites.yaml `tint`; no crest or logo).
+export const TEAM_TINTS = ['red-white'] as const;
+export type TeamTint = (typeof TEAM_TINTS)[number];
 export const NAV_SECTIONS = ['research', 'projects', 'records', 'player-log'] as const;
 export type NavSection = (typeof NAV_SECTIONS)[number];
 export const NOTICE_KEYS = ['cognosphere', 'zzz-fan-guide', 'fan-content', 'riot', 'valve', 'riot-assets', 'blizzard'] as const; // 'riot' only on the CoG paper page when RIOT_NOTICE_ON_PAGES is true; 'valve' only with the Steam account tile (AL-9); 'riot-assets' / 'blizzard' wherever a Riot asset / the Hearthstone screenshot or card shows
@@ -9,7 +12,7 @@ export const CERTIFICATE_IDS = ['busan-mayor-award', 'cds-encouragement-award', 
 export type CertificateId = (typeof CERTIFICATE_IDS)[number];
 export const ACHIEVEMENT_TRIGGERS = ['open-abstract', 'finish-cog-story', 'open-certificate', 'visit-all-sections', 'switch-language', 'bgm-on', 'konami'] as const;
 export type AchievementTrigger = (typeof ACHIEVEMENT_TRIGGERS)[number];
-export const GAME_IDS = ['zzz', 'genshin', 'lol', 'tft', 'dnf', 'cyphers', 'eternal-return', 'hearthstone', 'steam'] as const;
+export const GAME_IDS = ['zzz', 'genshin', 'lol', 'tft', 'dnf', 'cyphers', 'eternal-return', 'hearthstone', 'football-manager', 'steam'] as const;
 export type GameId = (typeof GAME_IDS)[number];
 export const JOBFIT_STATUSES = ['met', 'partial', 'in-progress', 'later', 'n-a'] as const;
 export type JobfitStatus = (typeof JOBFIT_STATUSES)[number];
