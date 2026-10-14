@@ -293,7 +293,15 @@ export const jobfitSchema = z
           // short: the label shown in the table from 734px (P1-11); a part of `label`, which stays the accessible name and title.
           // note (P2-8 P-09, contract §1.9/§2.6): an honesty or timing qualifier shown as a visible suffix after the link
           // (never only in the title tooltip); timing notes use tokens ('{person.graduation} 졸업 예정').
-          evidence: z.array(z.object({ label: localized, short: localized.optional(), note: localized.optional(), href: z.string().min(1) })),
+          // No href (2026-10-14): the evidence is the owner's own account, stated in the table itself (label, with the
+          // particulars as `detail` under it) because no page shows it; the owner kept it to this table (AI·LLM).
+          evidence: z.array(
+            z
+              .object({ label: localized, short: localized.optional(), note: localized.optional(), detail: localized.optional(), href: z.string().min(1).optional() })
+              .refine((e) => e.href !== undefined || (e.detail !== undefined && e.short === undefined), {
+                message: 'an evidence item without href states its particulars in detail (and has no short label: nothing links)',
+              }),
+          ),
           status: z.enum(JOBFIT_STATUSES),
           // null = no next step: met rows and rows without a genuine skill step stay empty (D-6).
           plan: localized.nullable(),

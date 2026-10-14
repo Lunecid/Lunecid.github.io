@@ -7,7 +7,9 @@
 // The table keeps explicit ARIA roles because the card layout changes the rows' CSS display (table semantics then
 // stay for screen readers). Status is a text label (never colour alone) on a badge told apart at a glance: met =
 // filled accent-deep, partial = accent-deep outline, in progress = gold dashed, later / n-a = grey.
-// Evidence hrefs are base form in the data and built here with pageHref for the page's version. No game-account data (NEXON terms 8.2). The next-step cell stays
+// Evidence hrefs are base form in the data and built here with pageHref for the page's version; an item without href is
+// the owner's own account stated here (plain text, its particulars as a wrapping line under it). No game-account data
+// (NEXON terms 8.2). The next-step cell stays
 // empty when the row has no genuine skill step (plan: null, D-6); the source line names no company and links no
 // posting (D-6).
 import SectionHead from '../hud/SectionHead.astro';
@@ -42,7 +44,13 @@ const rows = (data?.rows ?? []).map((row) => ({
   requirement: r(row.requirement[lang]),
   // one value per requirement part (jobfit.<id>.yaml joins them with ' · ')
   frequency: row.frequency.split(' · '),
-  evidence: row.evidence.map((e) => ({ label: r(e.label[lang]), short: e.short ? r(e.short[lang]) : null, note: e.note ? r(e.note[lang]) : null, href: pageHref(e.href, { lang, variant }) })),
+  evidence: row.evidence.map((e) => ({
+    label: r(e.label[lang]),
+    short: e.short ? r(e.short[lang]) : null,
+    note: e.note ? r(e.note[lang]) : null,
+    detail: e.detail ? r(e.detail[lang]) : null,
+    href: e.href === undefined ? null : pageHref(e.href, { lang, variant }),
+  })),
   status: row.status,
   statusLabel: t(lang, STATUS_KEY[row.status]),
   plan: row.plan === null ? null : r(row.plan[lang]),
@@ -73,14 +81,16 @@ const title = t(lang, 'jobfit.title');
                   {row.evidence.length > 0 ? (
                     <ul class="jobfit__evidence" role="list">
                       {row.evidence.map((e) => {
-                        const external = e.href.startsWith('http');
+                        const external = e.href?.startsWith('http') ?? false;
                         return (
                           <li>
-                            {e.short ? (
+                            {e.href === null ? (
+                              <span class="jobfit__ev-text">{e.label}</span>
+                            ) : e.short ? (
                               <a class="jobfit__ev" href={e.href} title={e.label}><span class="jobfit__ev-short" aria-hidden="true">{e.short}</span><span class="jobfit__ev-full">{e.label}</span>{external && <span class="jobfit__ev-arrow" aria-hidden="true">↗</span>}</a>
                             ) : (
                               <a class="jobfit__ev" href={e.href}>{e.label}{external && <span class="jobfit__ev-arrow" aria-hidden="true">↗</span>}</a>
-                            )}{e.note && <span class="jobfit__ev-note">({e.note})</span>}
+                            )}{e.note && <span class="jobfit__ev-note">({e.note})</span>}{e.detail && <span class="jobfit__ev-detail">{e.detail}</span>}
                           </li>
                         );
                       })}
@@ -129,6 +139,10 @@ const title = t(lang, 'jobfit.title');
     font-family: var(--font-mono); font-size: var(--fs-caption); line-height: 1.4; color: var(--read-muted); white-space: nowrap;
   }
   .jobfit__ev-note:lang(ko) { font-family: var(--font-sans); letter-spacing: 0; }
+  /* evidence stated in the table (no page to link): the label sits on the first line where a link would (same box,
+     never a link's colour or underline: game.css styles .jobfit__ev as a link), the particulars wrap under it */
+  .jobfit__ev-text { font-weight: 600; color: var(--read-text); overflow-wrap: normal; word-break: keep-all; }
+  .jobfit__ev-detail { display: block; padding-bottom: 8px; font-size: var(--fs-caption); line-height: 1.5; color: var(--read-muted); }
   .jobfit__label { font-size: var(--fs-label); font-weight: 700; color: var(--read-muted); }
 
   /* Status badges (P2-18): square tags, one look per state; AA text contrast on each fill. */
@@ -169,6 +183,7 @@ const title = t(lang, 'jobfit.title');
     .jobfit__evidence { border-top: 1px solid var(--read-line); }
     .jobfit__evidence li { border-bottom: 1px solid var(--read-line); }
     .jobfit__ev { display: flex; align-items: center; min-height: var(--tap); padding-block: 8px; font-weight: 600; }
+    .jobfit__ev-text { display: flex; align-items: center; min-height: var(--tap); padding-block: 8px; } /* the same 44px row, unlinked */
     .jobfit__ev-short { display: none; }
     .jobfit__none { display: block; padding-block: 4px; }
   }
@@ -204,6 +219,7 @@ const title = t(lang, 'jobfit.title');
        shrunk the row's own flow height without shrinking the rendered (hit-tested) box, so neighbouring links'
        enlarged boxes overlapped and a tap could land on the wrong one. The evidence column is simply taller now. */
     .jobfit__ev { display: flex; align-items: center; min-height: var(--tap); white-space: nowrap; font-size: var(--fs-caption); }
+    .jobfit__ev-text { display: flex; align-items: center; min-height: var(--tap); white-space: nowrap; font-size: var(--fs-caption); }
     .jobfit__ev-full { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
   }
   @media (min-width: 1068px) {
@@ -225,7 +241,9 @@ const title = t(lang, 'jobfit.title');
   .jobfit--ed .jobfit__none,
   .jobfit--ed .jobfit__label,
   .jobfit--ed .jobfit__note,
-  .jobfit--ed .jobfit__ev-note { color: var(--ed-muted); }
+  .jobfit--ed .jobfit__ev-note,
+  .jobfit--ed .jobfit__ev-detail { color: var(--ed-muted); }
+  .jobfit--ed .jobfit__ev-text { color: var(--ed-ink); }
   .jobfit--ed .jobfit__status--met { background: var(--ed-fill); border-color: var(--ed-fill); color: var(--ed-fill-ink); }
   .jobfit--ed .jobfit__status--partial { background: var(--ed-bg); border-color: var(--ed-ink); color: var(--ed-ink); }
   .jobfit--ed .jobfit__status--in-progress { background: var(--ed-bg); border: 1px dashed var(--ed-ink); color: var(--ed-ink); }

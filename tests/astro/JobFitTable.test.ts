@@ -55,10 +55,10 @@ describe('JobFitTable.astro', () => {
     expect(hrefs).toContain('/en/game/records/#education');
     expect(hrefs).toContain('/en/game/research/#in-progress');
     // D-6: no posting URLs on the site; D-9: rows without evidence show 'None yet' (take-home, BM · anomaly; AI·LLM
-    // since 2026-10-14 links the owner's account under the project list).
+    // since 2026-10-14 states the owner's account in the table, unlinked).
     // the only external link is the owner's CoG code (PyTorch evidence), never a posting
     expect(hrefs.filter((href) => /^https?:/.test(href))).toEqual(['https://github.com/Lunecid/LOL_teamfight_Lab/tree/v1.0-cog2026']);
-    expect(hrefs).toContain('/en/game/projects/#ai-llm');
+    expect(hrefs.filter((href) => href.includes('ai-llm'))).toEqual([]);
     const empty = jobfit.rows.filter((row) => row.evidence.length === 0).length;
     expect(empty).toBe(2);
     expect(en.match(/None yet/g)).toHaveLength(empty);
@@ -66,7 +66,11 @@ describe('JobFitTable.astro', () => {
     const ko = await render('ko');
     expect(ko.match(/아직 없음/g)).toHaveLength(empty);
     expect(hrefsOf(ko)).toContain('/game/research/cog-2026-engagement/');
-    expect(hrefsOf(ko)).toContain('/game/projects/#ai-llm');
+    // AI·LLM: the evidence is text in its row (no link), its particulars on the line under it
+    const aiRow = /<tr class="jobfit__row" data-row="ai-llm"[\s\S]*?<\/tr>/.exec(ko)?.[0] ?? '';
+    expect(aiRow).toMatch(/<span class="jobfit__ev-text"[^>]*>프로젝트 전반<\/span>/);
+    expect(aiRow).toMatch(/<span class="jobfit__ev-detail"[^>]*>코드 작성·디버깅, 데이터 전처리·분석 보조, 자료 조사·논문 요약, 보고서·발표 자료 작성\(ChatGPT·Claude·Gemini·Cursor·Copilot\)<\/span>/);
+    expect(aiRow).not.toContain('<a ');
     expect(hrefsOf(ko).filter((href) => href.startsWith('/en/'))).toEqual([]);
     // D10a: the log-validation row never claims a leakage audit.
     expect(ko).not.toMatch(/누수 (감사|점검)/);

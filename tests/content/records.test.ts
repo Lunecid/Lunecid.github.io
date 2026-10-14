@@ -238,9 +238,11 @@ describe('records data files', () => {
   it('every jobfit evidence href is a known route or an https URL', () => {
     const data = jobfit();
     for (const row of data.rows) {
-      for (const ev of row.evidence) {
-        const ok = isKnownInternalHref(ev.href, 'game') || /^https:\/\//.test(ev.href);
-        expect(ok, `${row.id}: ${ev.href}`).toBe(true);
+      // an unlinked item (the owner's account stated in the table, AI·LLM) is covered by its own test below
+      for (const ev of row.evidence.filter((e) => e.href !== undefined)) {
+        const href = ev.href as string;
+        const ok = isKnownInternalHref(href, 'game') || /^https:\/\//.test(href);
+        expect(ok, `${row.id}: ${href}`).toBe(true);
       }
     }
   });
@@ -279,7 +281,7 @@ describe('records data files', () => {
       'bi-tableau': 'partial',
       sql: 'in-progress',
       'take-home': 'in-progress',
-      'ai-llm': 'met', // owner, 2026-10-14: AI and LLM tools in most projects, stated under the project list (D-9)
+      'ai-llm': 'met', // owner, 2026-10-14: AI and LLM tools in most projects, stated in the table itself (D-9)
       'bm-anomaly': 'later',
       'certs-languages': 'n-a',
     });
@@ -339,14 +341,19 @@ describe('records data files', () => {
     expect(hrefs('game-literacy')).not.toContain('/player-log/'); // D-13: no play-log pipeline yet
     expect(hrefs('bi-tableau')).toEqual(['/projects/kickick-park/']);
     expect(rows['bi-tableau'].evidence[0].label.ko).toContain('Tableau');
-    // the owner's account (2026-10-14), shown where the link lands: the note under the project list
+    // the owner's account (2026-10-14), kept to this table (no other page states it, so nothing to link): what for
+    // and with which tools, in the row's own text
     expect(rows['ai-llm'].evidence).toEqual([
       {
-        label: { ko: '프로젝트 전반(ChatGPT·Claude·Gemini·Cursor·Copilot)', en: 'Most projects (ChatGPT, Claude, Gemini, Cursor, Copilot)' },
-        short: { ko: '프로젝트 전반', en: 'Most projects' },
-        href: '/projects/#ai-llm',
+        label: { ko: '프로젝트 전반', en: 'Most projects' },
+        detail: {
+          ko: '코드 작성·디버깅, 데이터 전처리·분석 보조, 자료 조사·논문 요약, 보고서·발표 자료 작성(ChatGPT·Claude·Gemini·Cursor·Copilot)',
+          en: 'Writing and debugging code, preprocessing and analysis, researching and summarizing papers, drafting reports and slides (ChatGPT, Claude, Gemini, Cursor, Copilot)',
+        },
       },
     ]);
+    // every other row's evidence links to the page that shows it
+    expect(jobfit().rows.filter((r) => r.id !== 'ai-llm').flatMap((r) => r.evidence).filter((e) => e.href === undefined)).toEqual([]);
     expect(rows['communication'].evidence.map((e) => e.label.ko).join(' ')).not.toContain('수상 발표');
     // fix round 1: a page that shows a PM paragraph, not the /projects/ index
     expect(rows['communication'].evidence[1]).toMatchObject({
@@ -354,7 +361,7 @@ describe('records data files', () => {
       href: '/projects/school-zone-blindspots/',
     });
     const all = jobfit().rows.flatMap((r) => r.evidence);
-    expect(all.map((e) => e.href).filter((h) => /kbo-attendance|seoul-apartment-automl/.test(h))).toEqual([]);
+    expect(all.map((e) => e.href ?? '').filter((h) => /kbo-attendance|seoul-apartment-automl/.test(h))).toEqual([]);
     expect(all.map((e) => `${e.label.ko} ${e.label.en}`).join(' ')).not.toMatch(/YOLO|KBO/);
 
     const skills = [...resume().skills.primary, ...resume().skills.familiar];

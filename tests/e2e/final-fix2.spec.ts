@@ -1188,7 +1188,7 @@ test('item 7: job-fit table at 1440px: compact rows, evidence on the requirement
         const line = range.getClientRects()[0];
         return line ? line.top + line.height / 2 : 0;
       }),
-      r.locator('.jobfit__ev-short, .jobfit__ev, .jobfit__none').first().evaluate((el) => {
+      r.locator('.jobfit__ev-short, .jobfit__ev, .jobfit__ev-text, .jobfit__none').first().evaluate((el) => {
         const range = document.createRange();
         range.selectNodeContents(el);
         const line = range.getClientRects()[0];

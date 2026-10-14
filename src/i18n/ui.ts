@@ -164,9 +164,6 @@ export const ui = {
     'projects.featured': '대표 프로젝트',
     'projects.count': '{n}개',
     'projects.countOne': '{n}개', // Korean has no singular/plural distinction
-    // the job-fit table's AI·LLM evidence (/records/#job-fit → /projects/#ai-llm); the owner's account, 2026-10-14
-    'projects.aiTitle': 'AI·LLM 활용',
-    'projects.aiNote': '대부분의 프로젝트에서 AI·LLM 도구(ChatGPT·Claude·Gemini·Cursor·Copilot)를 코드 작성·디버깅, 데이터 전처리·분석 보조, 자료 조사·논문 요약, 보고서·발표 자료 작성에 활용했습니다.',
     'project.type': '유형',
     'project.period': '기간',
     'project.org': '소속',
@@ -544,8 +541,6 @@ export const ui = {
     'projects.featured': 'Selected projects',
     'projects.count': '{n} projects',
     'projects.countOne': '{n} project', // P2-8: proper singular ("1 project", not "1 projects")
-    'projects.aiTitle': 'AI and LLMs',
-    'projects.aiNote': 'In most of these projects I used AI and LLM tools (ChatGPT, Claude, Gemini, Cursor and Copilot) to write and debug code, to help with preprocessing and analysis, to research and summarize papers, and to draft reports and slides.',
     'project.type': 'Type',
     'project.period': 'Period',
     'project.org': 'Affiliation',
