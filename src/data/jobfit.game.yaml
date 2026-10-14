@@ -150,12 +150,17 @@ rows:
       ko: 패치 전후 영향 비교 리포트 샘플(문제 → 분석 → 해석 → 1쪽 리포트)
       en: 'A before/after patch-impact report sample (problem → analysis → interpretation → one-page report)'
 
+  # 주인 진술(2026-10-14): 대부분의 프로젝트에서 ChatGPT·Claude·Gemini·Cursor·Copilot을 코드 작성·디버깅,
+  # 데이터 전처리·분석 보조, 자료 조사·논문 요약, 보고서·발표 자료 작성에 썼다. 근거 문구는 프로젝트 목록 아래(#ai-llm)에 있다.
   - id: ai-llm
     requirement: { ko: AI·LLM 활용, en: Using AI and LLMs }
     frequency: '4/13'
-    evidence: []
-    status: in-progress
-    plan: { ko: LLM으로 검증·리포트를 자동화한 사례, en: An example of automating validation and reporting with an LLM }
+    evidence:
+      - label: { ko: '프로젝트 전반(ChatGPT·Claude·Gemini·Cursor·Copilot)', en: 'Most projects (ChatGPT, Claude, Gemini, Cursor, Copilot)' }
+        short: { ko: 프로젝트 전반, en: Most projects }
+        href: /projects/#ai-llm
+    status: met
+    plan: null
 
   - id: bm-anomaly
     requirement: { ko: BM·게임 경제 · 이상탐지, en: Monetization and game economy · Anomaly detection }

@@ -124,7 +124,7 @@ export const ANCHORS: Readonly<Record<string, readonly string[]>> = {
   '/': ['main-menu', 'featured-projects', 'research-highlight', 'patch-notes', 'hello'], // the version home, not the chooser
   '/research/': ['interests', 'publications', 'in-progress', 'for-labs'],
   '/research/cog-2026-engagement/': ['abstract', 'bibtex'],
-  '/projects/': ['project-list'],
+  '/projects/': ['project-list', 'ai-llm'], // ai-llm: the job-fit table's AI·LLM evidence (a note under the list)
   '/records/': ['profile', 'education', 'publications', 'projects', 'awards', 'activities', 'certifications', 'languages', 'training', 'skills', 'job-fit', 'documents'],
   '/player-log/': ['membership', 'favorite-games', 'game-achievements', 'site-achievements'],
   '/stats/': ['summary'],

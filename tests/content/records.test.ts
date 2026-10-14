@@ -279,7 +279,7 @@ describe('records data files', () => {
       'bi-tableau': 'partial',
       sql: 'in-progress',
       'take-home': 'in-progress',
-      'ai-llm': 'in-progress', // D-9: no evidence yet
+      'ai-llm': 'met', // owner, 2026-10-14: AI and LLM tools in most projects, stated under the project list (D-9)
       'bm-anomaly': 'later',
       'certs-languages': 'n-a',
     });
@@ -303,7 +303,7 @@ describe('records data files', () => {
         ko: '패치 전후 영향 비교 리포트 샘플(문제 → 분석 → 해석 → 1쪽 리포트)',
         en: 'A before/after patch-impact report sample (problem → analysis → interpretation → one-page report)',
       },
-      'ai-llm': { ko: 'LLM으로 검증·리포트를 자동화한 사례', en: 'An example of automating validation and reporting with an LLM' },
+      'ai-llm': null,
       'bm-anomaly': null,
       'certs-languages': null,
     });
@@ -339,7 +339,14 @@ describe('records data files', () => {
     expect(hrefs('game-literacy')).not.toContain('/player-log/'); // D-13: no play-log pipeline yet
     expect(hrefs('bi-tableau')).toEqual(['/projects/kickick-park/']);
     expect(rows['bi-tableau'].evidence[0].label.ko).toContain('Tableau');
-    expect(rows['ai-llm'].evidence).toEqual([]);
+    // the owner's account (2026-10-14), shown where the link lands: the note under the project list
+    expect(rows['ai-llm'].evidence).toEqual([
+      {
+        label: { ko: '프로젝트 전반(ChatGPT·Claude·Gemini·Cursor·Copilot)', en: 'Most projects (ChatGPT, Claude, Gemini, Cursor, Copilot)' },
+        short: { ko: '프로젝트 전반', en: 'Most projects' },
+        href: '/projects/#ai-llm',
+      },
+    ]);
     expect(rows['communication'].evidence.map((e) => e.label.ko).join(' ')).not.toContain('수상 발표');
     // fix round 1: a page that shows a PM paragraph, not the /projects/ index
     expect(rows['communication'].evidence[1]).toMatchObject({

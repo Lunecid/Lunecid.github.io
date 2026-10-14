@@ -76,7 +76,16 @@ const CARD_SIZES = '(min-width: 1248px) 430px, (min-width: 734px) calc(37vw - 36
           {cards.map((card, i) => <ProjectCartridge {...card} priority={i === firstImage} />)}
         </div>
       )}
+      {/* the job-fit table's evidence for "AI·LLM 활용" (/records/#job-fit links here): the owner's account, 2026-10-14 */}
+      <p id="ai-llm" class:list={['plist-ai', { 'plist-ai--ed': editorial }]}><span class="plist-ai__title">{t(lang, 'projects.aiTitle')}:</span> {t(lang, 'projects.aiNote')}</p>
     </div>
   </section>
   <GitHubSection lang={lang} variant={variant} data={github} />
 </Layout>
+
+<style>
+  .plist-ai { margin-top: 24px; max-width: var(--measure); font-size: var(--fs-meta); line-height: 1.6; color: var(--hud-muted); }
+  .plist-ai__title { font-weight: 700; color: var(--hud-text); }
+  .plist-ai--ed { color: var(--ed-muted); } /* in the main column under the list, beside the rail (editorial.css) */
+  .plist-ai--ed .plist-ai__title { color: var(--ed-ink); }
+</style>

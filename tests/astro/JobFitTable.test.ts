@@ -54,16 +54,19 @@ describe('JobFitTable.astro', () => {
     expect(hrefs.some((href) => href.includes('#for-game-teams'))).toBe(false);
     expect(hrefs).toContain('/en/game/records/#education');
     expect(hrefs).toContain('/en/game/research/#in-progress');
-    // D-6: no posting URLs on the site; D-9: AI·LLM has no evidence yet (take-home, AI·LLM, BM · anomaly).
+    // D-6: no posting URLs on the site; D-9: rows without evidence show 'None yet' (take-home, BM · anomaly; AI·LLM
+    // since 2026-10-14 links the owner's account under the project list).
     // the only external link is the owner's CoG code (PyTorch evidence), never a posting
     expect(hrefs.filter((href) => /^https?:/.test(href))).toEqual(['https://github.com/Lunecid/LOL_teamfight_Lab/tree/v1.0-cog2026']);
+    expect(hrefs).toContain('/en/game/projects/#ai-llm');
     const empty = jobfit.rows.filter((row) => row.evidence.length === 0).length;
-    expect(empty).toBe(3);
+    expect(empty).toBe(2);
     expect(en.match(/None yet/g)).toHaveLength(empty);
 
     const ko = await render('ko');
     expect(ko.match(/아직 없음/g)).toHaveLength(empty);
     expect(hrefsOf(ko)).toContain('/game/research/cog-2026-engagement/');
+    expect(hrefsOf(ko)).toContain('/game/projects/#ai-llm');
     expect(hrefsOf(ko).filter((href) => href.startsWith('/en/'))).toEqual([]);
     // D10a: the log-validation row never claims a leakage audit.
     expect(ko).not.toMatch(/누수 (감사|점검)/);
