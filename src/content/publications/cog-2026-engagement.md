@@ -25,7 +25,7 @@ statusNote:
   en: "To appear in IEEE Xplore"
 doi: null
 pdf: null          # spec §8: accepted manuscript + IEEE notice + DOI, only after the DOI exists
-code: "https://github.com/Lunecid/LOL_teamfight_Lab/tree/v1.0-cog2026"
+code: "https://github.com/Lunecid/lol-engagement-cog2026"
 caseStudy: "/research/cog-2026-engagement/"
 tldr:
   ko: "교전 직전 30초의 공개 경기 기록(Riot API)만으로 교전 뒤 어느 팀이 이득을 볼지 예측하고, 공개 데이터가 보여 주는 것과 보여 주지 못하는 것을 쟀습니다."
