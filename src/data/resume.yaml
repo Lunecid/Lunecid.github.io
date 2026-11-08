@@ -303,8 +303,8 @@ training:
 
 # 스킬은 숙련도 막대 없이 '주력'과 '사용해 본 기술'로만 나누고, 기술마다 근거를 붙인다.
 # evidence.kind: project → /projects/<id>/ (상세 페이지가 있는 프로젝트만), research → /research/<id>/,
-#   code → 논문의 공개 코드(publications의 code, v1.0-cog2026 태그). 논문 페이지는 초록만 보여 주므로(D-15)
-#   Python·pandas·PyTorch는 그 기술을 쓰는 태그의 코드로 연결한다(requirements.txt의 torch, 코드의 import torch·pandas).
+#   code → 논문의 공개 코드(publications의 code, lol-engagement-cog2026 저장소). 논문 페이지는 초록만 보여 주므로(D-15)
+#   Python·pandas·PyTorch는 그 기술을 쓰는 코드로 연결한다(requirements.txt의 torch, 코드의 import torch·pandas).
 # 근거는 본인이 그 기술을 쓴 작업이고, 링크한 곳이 지금 보여 주는 내용으로 확인할 수 있어야 한다(D-9).
 # 팀원이 맡은 도구(킥킥파크의 YOLOv8·PyTorch, 청년 창업 입지의 LightGBM·XGBoost·QGIS·Streamlit)는 본인 기술로 올리지 않는다.
 skills:

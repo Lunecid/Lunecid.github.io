@@ -321,7 +321,7 @@ describe('records data files', () => {
     // Every value (comments aside: the header cites the NEXON Open API terms, a rule, not a source).
     const values = JSON.stringify(load(text(FILES.jobfit)));
     // The only external link is the owner's own CoG code (evidence), never a job posting.
-    expect(values.match(/https?:\/\/[^"\s]+/g) ?? []).toEqual(['https://github.com/Lunecid/LOL_teamfight_Lab/tree/v1.0-cog2026']);
+    expect(values.match(/https?:\/\/[^"\s]+/g) ?? []).toEqual(['https://github.com/Lunecid/lol-engagement-cog2026']);
     expect(values).not.toMatch(/넥슨|NEXON|크래프톤|KRAFTON|컴투스|Com2uS|엔씨|NCSOFT|넷마블|Netmarble/i);
   });
 
@@ -336,7 +336,7 @@ describe('records data files', () => {
     // fix round 1: PyTorch is shown where it is visible, the tagged code; the paper page (abstract) shows LightGBM.
     expect(rows['python-ml'].evidence.slice(0, 2)).toMatchObject([
       { label: { ko: 'CoG 2026 논문(LightGBM)', en: 'CoG 2026 paper (LightGBM)' }, href: '/research/cog-2026-engagement/' },
-      { label: { ko: 'CoG 2026 코드(PyTorch)', en: 'CoG 2026 code (PyTorch)' }, href: 'https://github.com/Lunecid/LOL_teamfight_Lab/tree/v1.0-cog2026' },
+      { label: { ko: 'CoG 2026 코드(PyTorch)', en: 'CoG 2026 code (PyTorch)' }, href: 'https://github.com/Lunecid/lol-engagement-cog2026' },
     ]);
     expect(hrefs('game-literacy')).not.toContain('/player-log/'); // D-13: no play-log pipeline yet
     expect(hrefs('bi-tableau')).toEqual(['/projects/kickick-park/']);
@@ -370,8 +370,8 @@ describe('records data files', () => {
     expect(Object.keys(evidence)).not.toContain('Streamlit'); // team tool on the youth start-up case
     expect(evidence['QGIS']).toEqual(['project:school-zone-blindspots']);
     expect(evidence['LightGBM · XGBoost']).not.toContain('project:youth-startup-location');
-    // fix round 1: evidence must be visible at the link target. The v1.0-cog2026 code imports torch (requirements.txt)
-    // and pandas; the paper page shows neither, and the youth start-up page never names pandas.
+    // fix round 1: evidence must be visible at the link target. The code repository (lol-engagement-cog2026) imports
+    // torch (requirements.txt) and pandas; the paper page shows neither, and the youth start-up page never names pandas.
     expect(evidence['PyTorch']).toEqual(['code:cog-2026-engagement']);
     expect(evidence['pandas']).toEqual(['code:cog-2026-engagement']);
     expect(evidence['Python']?.[0]).toBe('code:cog-2026-engagement');

@@ -57,7 +57,7 @@ describe('JobFitTable.astro', () => {
     // D-6: no posting URLs on the site; D-9: rows without evidence show 'None yet' (take-home, BM · anomaly; AI·LLM
     // since 2026-10-14 states the owner's account in the table, unlinked).
     // the only external link is the owner's CoG code (PyTorch evidence), never a posting
-    expect(hrefs.filter((href) => /^https?:/.test(href))).toEqual(['https://github.com/Lunecid/LOL_teamfight_Lab/tree/v1.0-cog2026']);
+    expect(hrefs.filter((href) => /^https?:/.test(href))).toEqual(['https://github.com/Lunecid/lol-engagement-cog2026']);
     expect(hrefs.filter((href) => href.includes('ai-llm'))).toEqual([]);
     const empty = jobfit.rows.filter((row) => row.evidence.length === 0).length;
     expect(empty).toBe(2);
@@ -128,7 +128,7 @@ describe('JobFitTable.astro', () => {
     expect(ko).toContain('title="CoG 2026 논문(LightGBM)"');
     // P2-14: the code evidence link (GitHub) gets ↗ (leaves the site); the internal /research/ evidence link next
     // to it does not (anchorBlock: tests/astro/helpers.ts, shared with SkillList.test.ts).
-    expect(anchorBlock(ko, 'https://github.com/Lunecid/LOL_teamfight_Lab/tree/v1.0-cog2026')).toContain('↗');
+    expect(anchorBlock(ko, 'https://github.com/Lunecid/lol-engagement-cog2026')).toContain('↗');
     expect(anchorBlock(ko, '/game/research/cog-2026-engagement/')).not.toContain('↗');
     for (const row of jobfit.rows) for (const e of row.evidence) if (e.short) {
       expect(e.label.ko).toContain(e.short.ko);

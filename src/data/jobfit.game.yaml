@@ -37,10 +37,11 @@ rows:
       - label: { ko: '{pub.cog-2026-engagement.venueAbbr} 논문(LightGBM)', en: '{pub.cog-2026-engagement.venueAbbr} paper (LightGBM)' }
         short: { ko: '{pub.cog-2026-engagement.venueAbbr} 논문', en: '{pub.cog-2026-engagement.venueAbbr} paper' }
         href: /research/cog-2026-engagement/
-      # PyTorch is not on the paper page (abstract only, D-15); the tagged code uses it (requirements.txt, import torch).
+      # PyTorch is not on the paper page (abstract only, D-15); the code repository uses it (requirements.txt, import torch;
+      # lol-engagement-cog2026 since 2026-11-08, the old LOL_teamfight_Lab is gone).
       - label: { ko: '{pub.cog-2026-engagement.venueAbbr} 코드(PyTorch)', en: '{pub.cog-2026-engagement.venueAbbr} code (PyTorch)' }
         short: { ko: '{pub.cog-2026-engagement.venueAbbr} 코드', en: '{pub.cog-2026-engagement.venueAbbr} code' }
-        href: https://github.com/Lunecid/LOL_teamfight_Lab/tree/v1.0-cog2026
+        href: https://github.com/Lunecid/lol-engagement-cog2026
       # The youth start-up case backs no row: my part there was data exploration and data engineering (owner,
       # 2026-09-28); its models, K-Means and Streamlit dashboard are the team's work (D-9).
 

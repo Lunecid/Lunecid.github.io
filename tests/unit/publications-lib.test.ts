@@ -40,7 +40,7 @@ describe('toPaperCard', () => {
     expect(ko.oral).toBe(true);
     expect(ko.venueShort).toBe('IEEE CoG 2026');
     expect(ko.year).toBe(2026);
-    expect(ko.code).toBe('https://github.com/Lunecid/LOL_teamfight_Lab/tree/v1.0-cog2026');
+    expect(ko.code).toBe('https://github.com/Lunecid/lol-engagement-cog2026');
     expect(ko.bibtex.startsWith('@inproceedings{baek2026killconditioned,')).toBe(true);
     expect(ko.bibtex.endsWith('}')).toBe(true);
 
@@ -104,7 +104,7 @@ describe('toPaperPage', () => {
     expect(ko.keywords).toEqual(['League of Legends', 'esports analytics', 'engagement-outcome prediction', 'public game telemetry']);
     expect(ko.presentation).toBe('구두 발표 · 스페인 마드리드 · 2026.09.01–04');
     expect(ko.statusNote).toBe('IEEE Xplore 게재 예정');
-    expect(ko.code).toBe('https://github.com/Lunecid/LOL_teamfight_Lab/tree/v1.0-cog2026');
+    expect(ko.code).toBe('https://github.com/Lunecid/lol-engagement-cog2026');
     expect(ko.doi).toBeNull();
     expect(ko.pdf).toBeNull();
     expect(ko.bibtex).toBe(parsed.bibtex.trimEnd());

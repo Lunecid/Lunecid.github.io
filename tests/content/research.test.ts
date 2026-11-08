@@ -15,7 +15,7 @@ import { isKnownInternalHref } from '../../src/lib/routes';
 import { findDates, listMarkdown, readFrontmatter, resolveFromFile } from './helpers';
 
 const PUB = 'src/content/publications/cog-2026-engagement.md';
-const CODE_URL = 'https://github.com/Lunecid/LOL_teamfight_Lab/tree/v1.0-cog2026';
+const CODE_URL = 'https://github.com/Lunecid/lol-engagement-cog2026';
 const publication = publicationSchema(z.string());
 
 const fullText = (path: string) => readFileSync(path, 'utf8');
@@ -47,7 +47,7 @@ describe('publication', () => {
     expect(data.bibtex).toContain('booktitle = {2026 IEEE Conference on Games (CoG)}');
   });
 
-  it('code link is the v1.0-cog2026 tag', () => {
+  it('code link is the paper\'s code repository (lol-engagement-cog2026 since 2026-11-08)', () => {
     expect(publication.parse(readFrontmatter(PUB)).code).toBe(CODE_URL);
   });
 

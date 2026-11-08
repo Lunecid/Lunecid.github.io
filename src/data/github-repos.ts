@@ -13,7 +13,7 @@ import type { Localized } from '../i18n/utils';
 export const GITHUB_EXCLUDED: readonly string[] = ['AudioSync', 'PUBG_Lab', 'Child_Abuse', 'TIL'];
 
 /** Shown first, in this order, when present in the fetched data. */
-export const GITHUB_FIRST: readonly string[] = ['LOL_teamfight_Lab'];
+export const GITHUB_FIRST: readonly string[] = ['lol-engagement-cog2026']; // the CoG 2026 code (was LOL_teamfight_Lab until 2026-11-08)
 
 /**
  * Descriptions written on the site from facts on the pages the repositories belong to (the GitHub descriptions are
@@ -21,9 +21,10 @@ export const GITHUB_FIRST: readonly string[] = ['LOL_teamfight_Lab'];
  * description on /en/ only when that description has no Hangul.
  */
 export const GITHUB_DESCRIPTIONS: Readonly<Record<string, Localized>> = {
-  LOL_teamfight_Lab: {
-    ko: 'IEEE CoG 2026 논문 코드 (v1.0-cog2026)',
-    en: 'Code for the IEEE CoG 2026 paper (v1.0-cog2026)',
+  // the new repository has no v1.0-cog2026 tag (only main), so the description names none
+  'lol-engagement-cog2026': {
+    ko: 'IEEE CoG 2026 논문 코드',
+    en: 'Code for the IEEE CoG 2026 paper',
   },
   'busan-school-zone-blindspots': {
     ko: '사각지대를 예측하다 · 2025 Big Data 활용 대회 최우수상(부산광역시장상) · XGBoost와 공간 교차검증',

@@ -50,7 +50,7 @@ function fixture(overrides: Partial<GitHubData> = {}): GitHubData {
     authFailed: false,
     repos: [repo(1), repo(2, { archived: true }), repo(3), repo(4), repo(5), repo(6), repo(7), repo(8)],
     pinned: [
-      { name: 'LOL_teamfight_Lab', description: 'CoG 2026 paper code', url: 'https://github.com/Lunecid/LOL_teamfight_Lab', language: 'Python', topics: ['lol'], stars: 3 },
+      { name: 'lol-engagement-cog2026', description: 'CoG 2026 paper code', url: 'https://github.com/Lunecid/lol-engagement-cog2026', language: 'Python', topics: ['lol'], stars: 3 },
     ],
     calendar: calendar(),
     errors: [],
@@ -92,7 +92,7 @@ describe('GitHubSection.astro', () => {
     expect(html).not.toMatch(/<rect[^>]*\brx=/);
     // P1-17: one list; the pinned CoG code first, then the non-archived repos by last push, 6 in all.
     const names = [...html.matchAll(/class="gh__name"[^>]*>([^<]+)</g)].map((m) => m[1]);
-    expect(names).toEqual(['LOL_teamfight_Lab', 'repo-1', 'repo-3', 'repo-4', 'repo-5', 'repo-6']);
+    expect(names).toEqual(['lol-engagement-cog2026', 'repo-1', 'repo-3', 'repo-4', 'repo-5', 'repo-6']);
     expect(html).not.toContain('repo-2');
     expect(html).not.toContain('repo-8');
     expect(html.match(/<rect\b/g) ?? []).toHaveLength(371);
@@ -137,18 +137,19 @@ describe('GitHubSection.astro', () => {
         repo(1, { name: 'PUBG_Lab', description: '', stars: 0 }),
         repo(2, { name: 'MultiCamp_Final', description: '멀티캠퍼스 최종 프로젝트 최우수상', stars: 0, language: 'HTML' }),
         repo(3, { name: 'busan-school-zone-blindspots', description: '2025 부산 Big Data 활용대회 최우수상', stars: 0, language: null }),
-        repo(4, { name: 'LOL_teamfight_Lab', description: '', stars: 0 }),
+        repo(4, { name: 'lol-engagement-cog2026', description: '', stars: 0 }),
         repo(5, { name: 'AudioSync', description: '', stars: 0, language: 'C#' }),
         repo(6, { name: 'new-repo', description: '새 저장소', stars: 2 }),
       ],
     });
     const ko = await renderAstro(GitHubSection, { props: { lang: 'ko', variant: 'game', data } });
     const names = [...ko.matchAll(/class="gh__name"[^>]*>([^<]+)</g)].map((m) => m[1]);
-    expect(names).toEqual(['LOL_teamfight_Lab', 'MultiCamp_Final', 'busan-school-zone-blindspots', 'new-repo']);
+    expect(names).toEqual(['lol-engagement-cog2026', 'MultiCamp_Final', 'busan-school-zone-blindspots', 'new-repo']);
     expect(ko).not.toMatch(/PUBG_Lab|AudioSync/);
     expect(ko).not.toContain('별 0');
     expect(ko).toContain('별 2');
-    expect(ko).toContain('IEEE CoG 2026 논문 코드 (v1.0-cog2026)');
+    expect(ko).toContain('IEEE CoG 2026 논문 코드');
+    expect(ko).not.toContain('v1.0-cog2026'); // the new repository has no such tag
     // the site-side text replaces GitHub's own (whose contest name differs from the one used on the site)
     expect(ko).not.toContain('부산 Big Data 활용대회');
     expect(ko).toContain('새 저장소'); // a repo without a site entry keeps its GitHub description on /ko/
@@ -158,7 +159,7 @@ describe('GitHubSection.astro', () => {
     const en = await renderAstro(GitHubSection, { props: { lang: 'en', variant: 'game', data } });
     const text = en.replace(/<script\b[\s\S]*?<\/script>/g, '');
     expect(text).not.toMatch(/[가-힣]/); // no Hangul on /en/
-    expect(text).toContain('Code for the IEEE CoG 2026 paper (v1.0-cog2026)');
+    expect(text).toContain('Code for the IEEE CoG 2026 paper');
     expect(text).not.toContain('0 stars');
     expect(text).toContain('2 stars');
   });

@@ -208,7 +208,7 @@ export const gameRecordSchema = z.discriminatedUnion('kind', [
 ]);
 
 // Skill evidence: project → /projects/<id>/, research → the paper page /research/<id>/, code → the publication's public
-// code link (its `code` URL, e.g. the v1.0-cog2026 tag). The skill must be visible at the link target (D-9).
+// code link (its `code` URL, e.g. the CoG paper's code repository). The skill must be visible at the link target (D-9).
 const skill = z.object({ name: z.string(), evidence: z.array(z.object({ kind: z.enum(['project', 'research', 'code']), id: slug })).min(1) });
 
 // Résumé-style bullets for the PDF print path only (batch 3b): noun/"~함"/"~했다" endings, never the web's 합니다체.
